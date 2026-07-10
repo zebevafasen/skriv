@@ -1,0 +1,22 @@
+[
+  { "id": "genre.fantasy", "label": "Fantasy", "description": "Magic, myth, and imagined worlds." },
+  {
+    "id": "genre.science_fiction",
+    "label": "Science Fiction",
+    "description": "Speculative science and technology."
+  },
+  { "id": "genre.horror", "label": "Horror", "description": "Fear, dread, and the uncanny." },
+  { "id": "genre.mystery", "label": "Mystery", "description": "Questions, clues, and discovery." },
+  { "id": "genre.romance", "label": "Romance", "description": "Love and intimate relationships." },
+  {
+    "id": "genre.thriller",
+    "label": "Thriller",
+    "description": "High tension, danger, and pursuit."
+  },
+  {
+    "id": "genre.historical",
+    "label": "Historical Fiction",
+    "description": "Stories grounded in a historical period."
+  },
+  { "id": "genre.erotica", "label": "Erotica", "description": "Explicit sexual content." }
+]

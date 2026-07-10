@@ -1,0 +1,130 @@
+[
+  {
+    "id": "builtin.prose.start.default",
+    "name": "Default Start Writing",
+    "workflow": "prose.start",
+    "version": 1,
+    "description": "Establishes opening prose for the active scene.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a skilled long-form fiction collaborator. Write polished prose that remains consistent with supplied story knowledge."
+      },
+      {
+        "role": "user",
+        "content": "Story context:\n{{context_package}}\n\nScene context:\n{{scene_context}}\n\nInstructions:\n{{user_instructions}}\n\nBegin the scene in approximately {{target_length}}."
+      }
+    ],
+    "variables": ["context_package", "scene_context", "user_instructions", "target_length"],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.prose.continue.default",
+    "name": "Default Continue Writing",
+    "workflow": "prose.continue",
+    "version": 1,
+    "description": "Continues prose from the cursor while respecting following text.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a skilled long-form fiction collaborator. Preserve voice, tense, point of view, continuity, and established facts."
+      },
+      {
+        "role": "user",
+        "content": "Story context:\n{{context_package}}\n\nText before insertion:\n{{manuscript_before_cursor}}\n\nText after insertion:\n{{manuscript_after_cursor}}\n\nInstructions:\n{{user_instructions}}\n\nWrite approximately {{target_length}} that fits at the insertion point."
+      }
+    ],
+    "variables": [
+      "context_package",
+      "manuscript_before_cursor",
+      "manuscript_after_cursor",
+      "user_instructions",
+      "target_length"
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.prose.toward_event.default",
+    "name": "Default Continue Toward Event",
+    "workflow": "prose.toward_event",
+    "version": 1,
+    "description": "Continues naturally while progressing toward a narrative destination.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a skilled long-form fiction collaborator. Progress toward the target event naturally rather than forcing it immediately."
+      },
+      {
+        "role": "user",
+        "content": "Story context:\n{{context_package}}\n\nText before insertion:\n{{manuscript_before_cursor}}\n\nText after insertion:\n{{manuscript_after_cursor}}\n\nTarget event:\n{{event_target}}\n\nInstructions:\n{{user_instructions}}\n\nWrite approximately {{target_length}}."
+      }
+    ],
+    "variables": [
+      "context_package",
+      "manuscript_before_cursor",
+      "manuscript_after_cursor",
+      "event_target",
+      "user_instructions",
+      "target_length"
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.ideation.premise.default",
+    "name": "Default Premise Generation",
+    "workflow": "ideation.premise",
+    "version": 1,
+    "description": "Combines story ingredients into a coherent premise.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Create a distinctive fiction premise. Integrate the ingredients causally rather than listing them."
+      },
+      {
+        "role": "user",
+        "content": "Genres: {{genres}}\nThemes: {{themes}}\nTags: {{tags}}\nAdditional direction: {{user_instructions}}"
+      }
+    ],
+    "variables": ["genres", "themes", "tags", "user_instructions"],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.context.extract.default",
+    "name": "Default Smart Context Extraction",
+    "workflow": "context.extract",
+    "version": 1,
+    "description": "Selects grounded source fragments relevant to a request.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Select only supplied fragment IDs that are useful for the current writing request."
+      },
+      {
+        "role": "user",
+        "content": "Request context:\n{{request_context}}\n\nCandidate fragments:\n{{candidate_fragments}}"
+      }
+    ],
+    "variables": ["request_context", "candidate_fragments"],
+    "createdAt": null,
+    "updatedAt": null
+  }
+]

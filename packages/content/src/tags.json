@@ -1,0 +1,33 @@
+[
+  {
+    "id": "tag.unreliable_narrator",
+    "label": "Unreliable Narrator",
+    "description": "A viewpoint whose account cannot be fully trusted."
+  },
+  {
+    "id": "tag.isolated_village",
+    "label": "Isolated Village",
+    "description": "A remote community cut off from the wider world."
+  },
+  {
+    "id": "tag.trains",
+    "label": "Trains",
+    "description": "Rail travel, stations, or railway culture."
+  },
+  { "id": "tag.winter", "label": "Winter", "description": "Cold, snow, and seasonal isolation." },
+  {
+    "id": "tag.sibling_rivalry",
+    "label": "Sibling Rivalry",
+    "description": "Conflict or competition between siblings."
+  },
+  {
+    "id": "tag.forbidden_technology",
+    "label": "Forbidden Technology",
+    "description": "Technology suppressed by law, custom, or fear."
+  },
+  {
+    "id": "tag.animal_focus",
+    "label": "Animal Focus",
+    "description": "Animals are central to the premise."
+  }
+]

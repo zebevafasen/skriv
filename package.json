@@ -1,0 +1,30 @@
+{
+  "name": "asterism",
+  "private": true,
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev --parallel",
+    "typecheck": "turbo typecheck",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "test": "turbo test",
+    "test:e2e": "playwright test",
+    "infra:up": "docker compose up -d postgres",
+    "infra:down": "docker compose down",
+    "db:generate": "pnpm --filter @asterism/db db:generate",
+    "db:migrate": "pnpm --filter @asterism/db db:migrate",
+    "db:push": "pnpm --filter @asterism/db db:push"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@playwright/test": "1.61.1",
+    "@types/node": "26.1.1",
+    "turbo": "2.10.4",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

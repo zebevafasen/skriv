@@ -1,0 +1,29 @@
+[
+  { "id": "theme.grief", "label": "Grief", "description": "Loss and its aftermath." },
+  {
+    "id": "theme.identity",
+    "label": "Identity",
+    "description": "The search for or construction of self."
+  },
+  { "id": "theme.revenge", "label": "Revenge", "description": "Retribution and its consequences." },
+  {
+    "id": "theme.found_family",
+    "label": "Found Family",
+    "description": "Belonging created through chosen bonds."
+  },
+  {
+    "id": "theme.corruption",
+    "label": "Corruption",
+    "description": "The erosion of ideals or institutions."
+  },
+  {
+    "id": "theme.sacrifice",
+    "label": "Sacrifice",
+    "description": "What someone gives up for another purpose."
+  },
+  {
+    "id": "theme.freedom",
+    "label": "Freedom",
+    "description": "Liberation, agency, and constraint."
+  }
+]
