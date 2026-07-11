@@ -3,7 +3,7 @@
     "id": "builtin.prose.start.default",
     "name": "Default Start Writing",
     "workflow": "prose.start",
-    "version": 2,
+    "version": 3,
     "description": "Begins a scene using explicit project settings and prior-story context.",
     "ownership": "builtin",
     "ownerId": null,
@@ -15,11 +15,11 @@
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}\n\nInstructions for this beat:\n{{user_instructions}}"
+        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}\n\nInstructions for this beat:\n{{user_instructions}}"
       },
       {
         "role": "assistant",
-        "content": "{{previous_scene_excerpt}}"
+        "content": "{{style_reference_prose}}"
       },
       {
         "role": "user",
@@ -28,8 +28,9 @@
     ],
     "variables": [
       "context_package",
+      "current_scene_summary",
       "prior_scene_summaries",
-      "previous_scene_excerpt",
+      "style_reference_prose",
       "user_instructions",
       "target_length",
       "story_tense",
@@ -44,7 +45,7 @@
     "id": "builtin.prose.continue.default",
     "name": "Default Continue Writing",
     "workflow": "prose.continue",
-    "version": 2,
+    "version": 3,
     "description": "Continues prose from the cursor while respecting following text.",
     "ownership": "builtin",
     "ownerId": null,
@@ -56,11 +57,11 @@
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}"
+        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}"
       },
       {
         "role": "assistant",
-        "content": "{{manuscript_before_cursor}}"
+        "content": "{{style_reference_prose}}"
       },
       {
         "role": "user",
@@ -69,7 +70,9 @@
     ],
     "variables": [
       "context_package",
-      "manuscript_before_cursor",
+      "current_scene_summary",
+      "prior_scene_summaries",
+      "style_reference_prose",
       "manuscript_after_cursor",
       "user_instructions",
       "target_length",
@@ -85,7 +88,7 @@
     "id": "builtin.prose.toward_event.default",
     "name": "Default Continue Toward Event",
     "workflow": "prose.toward_event",
-    "version": 2,
+    "version": 3,
     "description": "Continues naturally while progressing toward a narrative destination.",
     "ownership": "builtin",
     "ownerId": null,
@@ -97,11 +100,11 @@
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}"
+        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}"
       },
       {
         "role": "assistant",
-        "content": "{{manuscript_before_cursor}}"
+        "content": "{{style_reference_prose}}"
       },
       {
         "role": "user",
@@ -110,8 +113,9 @@
     ],
     "variables": [
       "context_package",
+      "current_scene_summary",
       "prior_scene_summaries",
-      "manuscript_before_cursor",
+      "style_reference_prose",
       "manuscript_after_cursor",
       "event_target",
       "user_instructions",

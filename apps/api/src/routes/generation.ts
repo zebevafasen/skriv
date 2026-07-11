@@ -171,6 +171,24 @@ function formatContext(fragments: z.infer<typeof contextFragmentSchema>[]): stri
     .join("\n\n");
 }
 
+const SUMMARY_CONTEXT_LIMIT = 12_000;
+const STYLE_REFERENCE_LIMIT = 12_000;
+
+export function recentSummaryContext(summaries: string[]): string {
+  const selected: string[] = [];
+  let used = 0;
+  for (const summary of summaries
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .reverse()) {
+    const cost = summary.length + (selected.length > 0 ? 2 : 0);
+    if (used + cost > SUMMARY_CONTEXT_LIMIT) break;
+    selected.push(summary);
+    used += cost;
+  }
+  return selected.reverse().join("\n\n");
+}
+
 async function prosePlanningContext(
   context: AppContext,
   projectId: string,
@@ -186,11 +204,16 @@ async function prosePlanningContext(
   const currentIndex = orderedScenes.findIndex((candidate) => candidate.id === scene.id);
   const earlierScenes = currentIndex < 0 ? [] : orderedScenes.slice(0, currentIndex);
   return {
-    priorSceneSummaries: earlierScenes
-      .map((candidate) => candidate.metadata.summary.trim())
-      .filter(Boolean)
-      .join("\n\n"),
-    previousSceneExcerpt: earlierScenes.at(-1)?.plainText.trim().slice(-12_000) ?? "",
+    currentSceneSummary: scene.metadata.summary.trim(),
+    priorSceneSummaries: recentSummaryContext(
+      earlierScenes.map((candidate) => candidate.metadata.summary),
+    ),
+    previousProse:
+      earlierScenes
+        .toReversed()
+        .find((candidate) => candidate.plainText.trim())
+        ?.plainText.trim()
+        .slice(-STYLE_REFERENCE_LIMIT) ?? "",
   };
 }
 
@@ -251,9 +274,11 @@ export async function registerGenerationRoutes(
         protectedProtocolMessage(input.workflow),
         ...renderPrompt(prompt, {
           context_package: contextPackage,
+          current_scene_summary: planningContext.currentSceneSummary,
           prior_scene_summaries: planningContext.priorSceneSummaries,
-          previous_scene_excerpt: planningContext.previousSceneExcerpt,
-          manuscript_before_cursor: input.manuscriptBeforeCursor.slice(-12_000),
+          style_reference_prose:
+            input.manuscriptBeforeCursor.trim().slice(-STYLE_REFERENCE_LIMIT) ||
+            planningContext.previousProse,
           manuscript_after_cursor: input.manuscriptAfterCursor.slice(0, 2_000),
           event_target: input.eventTarget,
           user_instructions: input.instructions,
