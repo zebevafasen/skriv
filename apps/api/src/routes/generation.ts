@@ -15,6 +15,8 @@ import {
   segmentEntry,
 } from "@asterism/core";
 import {
+  acts,
+  chapters,
   compendiumEntries,
   generations,
   sceneRevisions,
@@ -22,7 +24,7 @@ import {
   touchUpdatedAt,
   usageEvents,
 } from "@asterism/db";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -180,6 +182,40 @@ function formatContext(fragments: z.infer<typeof contextFragmentSchema>[]): stri
     .join("\n\n");
 }
 
+async function protectedPlanningContext(
+  context: AppContext,
+  projectId: string,
+  scene: typeof scenes.$inferSelect,
+) {
+  const orderedScenes = await context.db
+    .select({ id: scenes.id, title: scenes.title, metadata: scenes.metadata })
+    .from(scenes)
+    .innerJoin(chapters, eq(chapters.id, scenes.chapterId))
+    .innerJoin(acts, eq(acts.id, chapters.actId))
+    .where(eq(acts.projectId, projectId))
+    .orderBy(asc(acts.position), asc(chapters.position), asc(scenes.position));
+  const currentIndex = orderedScenes.findIndex((candidate) => candidate.id === scene.id);
+  const previous = currentIndex > 0 ? (orderedScenes[currentIndex - 1] ?? null) : null;
+  return formatProtectedPlanningContext(scene, previous);
+}
+
+export function formatProtectedPlanningContext(
+  scene: Pick<typeof scenes.$inferSelect, "title" | "metadata">,
+  previous: { title: string; metadata: typeof scenes.$inferSelect.metadata } | null,
+) {
+  const sections = [
+    `Current Scene: ${scene.title}`,
+    scene.metadata.summary.trim() ? `Current Scene summary:\n${scene.metadata.summary.trim()}` : "",
+    previous?.metadata.summary.trim()
+      ? `Immediately previous Scene: ${previous.title}\nPrevious Scene summary:\n${previous.metadata.summary.trim()}`
+      : "",
+  ].filter(Boolean);
+  return {
+    role: "developer" as const,
+    content: `Protected manuscript planning context:\n${sections.join("\n\n")}`,
+  };
+}
+
 export async function registerGenerationRoutes(
   app: FastifyInstance,
   context: AppContext,
@@ -213,12 +249,18 @@ export async function registerGenerationRoutes(
         ownedRecord.scene,
       );
       const contextPackage = formatContext(fragments);
+      const planningContext = await protectedPlanningContext(
+        context,
+        ownedRecord.projectId,
+        ownedRecord.scene,
+      );
       const targetLength =
         input.targetLength === null
           ? "as much prose as the scene needs; there is no requested word or paragraph limit"
           : `${input.targetLength} ${input.lengthUnit}`;
       const messages = [
         protectedProtocolMessage(input.workflow),
+        planningContext,
         ...renderPrompt(prompt, {
           context_package: contextPackage,
           scene_context: [

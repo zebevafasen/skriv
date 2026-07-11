@@ -126,5 +126,28 @@
     "variables": ["request_context", "candidate_fragments"],
     "createdAt": null,
     "updatedAt": null
+  },
+  {
+    "id": "builtin.summary.scene.default",
+    "name": "Default Scene Summary",
+    "workflow": "summary.scene",
+    "version": 1,
+    "description": "Summarizes canonical Scene prose for planning and continuity.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Summarize the supplied fiction scene accurately and concisely. Preserve causal events, consequential decisions, discoveries, and changes in character circumstances. Do not invent facts or provide critique."
+      },
+      {
+        "role": "user",
+        "content": "Scene title: {{scene_title}}\n\nScene prose:\n{{scene_prose}}\n\nWrite a plain-prose summary of approximately 100 to 250 words."
+      }
+    ],
+    "variables": ["scene_title", "scene_prose"],
+    "createdAt": null,
+    "updatedAt": null
   }
 ]

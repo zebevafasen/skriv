@@ -88,6 +88,13 @@ export class FakeAIProvider implements AIProvider {
         usage: { inputTokens: 1, outputTokens: 1 },
       };
     }
+    const isSummary = request.messages.some((message) => message.content.includes("Scene prose:"));
+    if (isSummary) {
+      return {
+        text: "The scene establishes a decisive change in the characters’ immediate situation, carrying the central action forward while preserving the consequences that the next scene must address.",
+        usage: { inputTokens: 1, outputTokens: 32 },
+      };
+    }
     let text = "";
     for await (const chunk of this.stream(request)) text += chunk;
     return { text, usage: { inputTokens: 1, outputTokens: Math.ceil(text.length / 4) } };

@@ -17,6 +17,7 @@ import { registerInviteRoutes } from "./routes/invites.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
+import { registerSummaryRoutes } from "./routes/summaries.js";
 
 export async function buildApp(env: ServerEnv = loadServerEnv()) {
   validateBuiltinContent();
@@ -66,6 +67,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   await registerPromptRoutes(app, context);
   await registerSettingsRoutes(app, context);
   await registerGenerationRoutes(app, context);
+  await registerSummaryRoutes(app, context);
   await registerIdeationRoutes(app, context);
   await registerInviteRoutes(app, context);
   await registerExportRoutes(app, context);

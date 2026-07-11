@@ -1,6 +1,6 @@
 # Asterism
 
-Asterism is a full-stack, AI-assisted long-form fiction workspace. It combines a Scene-based manuscript editor, streamed prose generation, a navigable Compendium, grounded Smart Context, editable workflow prompts, and story ideation.
+Asterism is a full-stack, AI-assisted long-form fiction workspace. It combines a continuous Scene-based manuscript editor, a draggable planning Outline, streamed prose generation, AI-assisted Scene summaries, a navigable Compendium, grounded Smart Context, editable workflow prompts, and story ideation.
 
 ## Prerequisites
 
@@ -92,6 +92,6 @@ Every Project query is scoped through Workspace membership. New accounts receive
 
 ## Data safety
 
-Scene saves use optimistic versions. Manual/editor saves and accepted generations create restore points, and generation candidates remain outside canonical Tiptap documents until acceptance. Project export is available from `GET /api/projects/:id/export`.
+Scene saves use optimistic versions, including when several locked Scene blocks are displayed in one continuous editor. Manual/editor saves and accepted generations create restore points, generation candidates remain outside canonical Tiptap documents until acceptance, and sibling reordering preserves stable hierarchy IDs. Project export is available from `GET /api/projects/:id/export`.
 
 See [operations](docs/operations.md) for deployment, backup, and recovery guidance.

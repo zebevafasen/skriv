@@ -1,45 +1,51 @@
 import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asterism/contracts";
 import { findMentions } from "@asterism/core";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import {
-  ArrowDown,
-  ArrowUp,
-  BookMarked,
-  BookOpenText,
-  ChevronDown,
-  Download,
-  FileText,
-  Lightbulb,
-  Pencil,
-  Plus,
-  Trash2,
-  Users,
-  X,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { BookOpenText, Download, Lightbulb, Pencil, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
-import {
-  ContinuousManuscriptView,
-  type ManuscriptScope,
-} from "../components/ContinuousManuscriptView.js";
 import { IdeationPanel } from "../components/IdeationPanel.js";
-import { SceneEditor } from "../components/SceneEditor.js";
+import {
+  ManuscriptEditor,
+  type ManuscriptEditorHandle,
+  type ManuscriptScope,
+} from "../components/ManuscriptEditor.js";
+import { OutlineGrid } from "../components/OutlineGrid.js";
 
 type Tab = "manuscript" | "ideation";
+type ManuscriptView = "write" | "outline";
 type Model = { id: string; name: string };
+
+function updateScene(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
+  return {
+    ...tree,
+    acts: tree.acts.map((act) => ({
+      ...act,
+      chapters: act.chapters.map((chapter) => ({
+        ...chapter,
+        scenes: chapter.scenes.map((scene) => (scene.id === updated.id ? updated : scene)),
+      })),
+    })),
+  };
+}
+
+function scopeValue(scope: ManuscriptScope): string {
+  return `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
+}
 
 export function ProjectPage() {
   const { projectId } = useParams({ from: "/projects/$projectId" });
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("manuscript");
-  const [sidebar, setSidebar] = useState<"manuscript" | "compendium">("manuscript");
+  const [view, setView] = useState<ManuscriptView>("write");
   const [scope, setScope] = useState<ManuscriptScope | null>(null);
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [previewEntryIds, setPreviewEntryIds] = useState<string[]>([]);
+  const editorRef = useRef<ManuscriptEditorHandle | null>(null);
   const tree = useQuery({
     queryKey: ["project-tree", projectId],
     queryFn: () => api<ManuscriptTree>(`/api/projects/${projectId}/tree`),
@@ -57,12 +63,16 @@ export function ProjectPage() {
     () => tree.data?.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes)) ?? [],
     [tree.data],
   );
+
   useEffect(() => {
-    if (!selectedSceneId || !allScenes.some((scene) => scene.id === selectedSceneId)) {
-      setSelectedSceneId(allScenes[0]?.id ?? null);
+    const selected = allScenes.find((scene) => scene.id === selectedSceneId) ?? allScenes[0];
+    if (!selected) return;
+    if (selected.id !== selectedSceneId) setSelectedSceneId(selected.id);
+    if (!scope || (scope.kind === "scene" && !allScenes.some((scene) => scene.id === scope.id))) {
+      setScope({ kind: "scene", id: selected.id });
     }
-  }, [allScenes, selectedSceneId]);
-  const selectedScene = allScenes.find((scene) => scene.id === selectedSceneId) ?? null;
+  }, [allScenes, scope, selectedSceneId]);
+
   const selectedEntryMentionCount = useMemo(() => {
     if (!selectedEntryId) return 0;
     return allScenes.reduce(
@@ -74,61 +84,26 @@ export function ProjectPage() {
       0,
     );
   }, [allScenes, compendium.data, selectedEntryId]);
-  const createScene = useMutation({
-    mutationFn: (chapterId: string) =>
-      api<Scene>(`/api/chapters/${chapterId}/scenes`, {
-        method: "POST",
-        body: JSON.stringify({ title: "New Scene" }),
-      }),
-    onSuccess: async (scene) => {
-      await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
-      setSelectedSceneId(scene.id);
-    },
-  });
-  const createChapter = useMutation({
-    mutationFn: (actId: string) =>
-      api(`/api/acts/${actId}/chapters`, {
-        method: "POST",
-        body: JSON.stringify({ title: "New Chapter" }),
-      }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["project-tree", projectId] }),
-  });
-  const createAct = useMutation({
-    mutationFn: () =>
-      api(`/api/projects/${projectId}/acts`, {
-        method: "POST",
-        body: JSON.stringify({ title: "New Act" }),
-      }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["project-tree", projectId] }),
-  });
-  const refreshTree = () => client.invalidateQueries({ queryKey: ["project-tree", projectId] });
-  const mutateTree = useMutation({
-    mutationFn: ({
-      path,
-      method,
-      body,
-    }: {
-      path: string;
-      method: "PATCH" | "POST" | "DELETE";
-      body?: object;
-    }) => api(path, { method, ...(body ? { body: JSON.stringify(body) } : {}) }),
-    onSuccess: refreshTree,
-  });
-  const move = (ids: string[], index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= ids.length) return ids;
-    const next = [...ids];
-    [next[index], next[target]] = [next[target] as string, next[index] as string];
-    return next;
+
+  const selectedLocation = useMemo(() => {
+    for (const act of tree.data?.acts ?? []) {
+      for (const chapter of act.chapters) {
+        const scene = chapter.scenes.find((candidate) => candidate.id === selectedSceneId);
+        if (scene) return { act, chapter, scene };
+      }
+    }
+    return null;
+  }, [selectedSceneId, tree.data]);
+
+  const changeScope = async (nextScope: ManuscriptScope) => {
+    await editorRef.current?.flush();
+    setScope(nextScope);
   };
-  const rename = (path: string, currentTitle: string, body: object = {}) => {
-    const title = window.prompt("Rename", currentTitle)?.trim();
-    if (title && title !== currentTitle)
-      mutateTree.mutate({ path, method: "PATCH", body: { ...body, title } });
-  };
-  const remove = (path: string, title: string) => {
-    if (window.confirm(`Delete ${title} and all of its contents?`))
-      mutateTree.mutate({ path, method: "DELETE" });
+  const selectScene = async (sceneId: string) => {
+    await editorRef.current?.flush();
+    setSelectedSceneId(sceneId);
+    setScope({ kind: "scene", id: sceneId });
+    setView("write");
   };
 
   if (tree.isLoading) return <div className="page loading">Opening manuscript…</div>;
@@ -149,7 +124,15 @@ export function ProjectPage() {
             <button
               type="button"
               title="Rename Project"
-              onClick={() => rename(`/api/projects/${projectId}`, tree.data.project.title)}
+              onClick={async () => {
+                const title = window.prompt("Rename", tree.data?.project.title)?.trim();
+                if (!title || title === tree.data?.project.title) return;
+                await api(`/api/projects/${projectId}`, {
+                  method: "PATCH",
+                  body: JSON.stringify({ title }),
+                });
+                await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
+              }}
             >
               <Pencil size={12} />
             </button>
@@ -157,10 +140,9 @@ export function ProjectPage() {
               type="button"
               title="Delete Project"
               onClick={async () => {
-                if (window.confirm("Delete this Project and all of its contents?")) {
-                  await api(`/api/projects/${projectId}`, { method: "DELETE" });
-                  window.location.assign("/");
-                }
+                if (!window.confirm("Delete this Project and all of its contents?")) return;
+                await api(`/api/projects/${projectId}`, { method: "DELETE" });
+                window.location.assign("/");
               }}
             >
               <Trash2 size={12} />
@@ -181,340 +163,180 @@ export function ProjectPage() {
           <button
             type="button"
             className={tab === "ideation" ? "active" : ""}
-            onClick={() => setTab("ideation")}
+            onClick={async () => {
+              await editorRef.current?.flush();
+              setTab("ideation");
+            }}
           >
             <Lightbulb size={16} /> Ideation
           </button>
         </nav>
       </div>
+
       {tab === "manuscript" ? (
-        <div
-          className={
-            sidebar === "compendium" ? "manuscript-layout compendium-open" : "manuscript-layout"
-          }
-        >
-          {sidebar === "manuscript" ? (
-            <aside className="manuscript-tree">
-              <div className="sidebar-tabs">
-                <button type="button" className="active">
-                  <BookOpenText size={14} /> Manuscript
-                </button>
-                <button type="button" onClick={() => setSidebar("compendium")}>
-                  <BookMarked size={14} /> Compendium
-                </button>
-              </div>
-              <div className="tree-title">
+        <div className="manuscript-layout compendium-open">
+          <CompendiumPanel
+            projectId={projectId}
+            entries={compendium.data ?? []}
+            selectedEntryId={selectedEntryId}
+            onSelect={setSelectedEntryId}
+          />
+          <div className="manuscript-main">
+            <div className="manuscript-viewbar">
+              <div className="manuscript-view-tabs">
                 <button
                   type="button"
-                  className="tree-scope"
-                  onClick={() => setScope({ kind: "story" })}
+                  className={view === "write" ? "active" : ""}
+                  onClick={() => setView("write")}
                 >
-                  Full story
+                  Write
                 </button>
-                <button type="button" onClick={() => createAct.mutate()}>
-                  <Plus size={15} />
+                <button
+                  type="button"
+                  className={view === "outline" ? "active" : ""}
+                  onClick={async () => {
+                    await editorRef.current?.flush();
+                    setView("outline");
+                  }}
+                >
+                  Outline
                 </button>
               </div>
-              {tree.data.acts.map((act, actIndex) => (
-                <div key={act.id} className="tree-act">
-                  <div className="tree-group">
-                    <ChevronDown size={14} />
-                    <button
-                      type="button"
-                      className="tree-scope"
-                      onClick={() => setScope({ kind: "act", id: act.id })}
+              {view === "write" && scope ? (
+                <div className="manuscript-scope-controls">
+                  <label>
+                    <span>Viewing mode</span>
+                    <select
+                      aria-label="Viewing mode"
+                      value={scopeValue(scope)}
+                      onChange={(event) => {
+                        const [kind, id] = event.target.value.split(":");
+                        if (kind === "story") void changeScope({ kind: "story" });
+                        else if (kind === "act" && id) void changeScope({ kind: "act", id });
+                        else if (kind === "chapter" && id)
+                          void changeScope({ kind: "chapter", id });
+                        else if (kind === "scene" && id) void selectScene(id);
+                      }}
                     >
-                      <strong>{act.title}</strong>
-                    </button>
-                    <span className="tree-actions">
-                      <button
-                        type="button"
-                        title="Move Act up"
-                        onClick={() =>
-                          mutateTree.mutate({
-                            path: `/api/projects/${projectId}/acts/reorder`,
-                            method: "POST",
-                            body: {
-                              orderedIds: move(
-                                tree.data.acts.map((item) => item.id),
-                                actIndex,
-                                -1,
-                              ),
-                            },
-                          })
-                        }
-                      >
-                        <ArrowUp size={10} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Move Act down"
-                        onClick={() =>
-                          mutateTree.mutate({
-                            path: `/api/projects/${projectId}/acts/reorder`,
-                            method: "POST",
-                            body: {
-                              orderedIds: move(
-                                tree.data.acts.map((item) => item.id),
-                                actIndex,
-                                1,
-                              ),
-                            },
-                          })
-                        }
-                      >
-                        <ArrowDown size={10} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Rename Act"
-                        onClick={() => rename(`/api/acts/${act.id}`, act.title)}
-                      >
-                        <Pencil size={10} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Delete Act"
-                        onClick={() => remove(`/api/acts/${act.id}`, act.title)}
-                      >
-                        <Trash2 size={10} />
-                      </button>
-                    </span>
-                    <button type="button" onClick={() => createChapter.mutate(act.id)}>
-                      <Plus size={13} />
-                    </button>
-                  </div>
-                  {act.chapters.map((chapter, chapterIndex) => (
-                    <div key={chapter.id} className="tree-chapter">
-                      <div className="tree-group">
-                        <FileText size={13} />
-                        <button
-                          type="button"
-                          className="tree-scope"
-                          onClick={() => setScope({ kind: "chapter", id: chapter.id })}
-                        >
-                          {chapter.title}
-                        </button>
-                        <span className="tree-actions">
-                          <button
-                            type="button"
-                            title="Move Chapter up"
-                            onClick={() =>
-                              mutateTree.mutate({
-                                path: `/api/acts/${act.id}/chapters/reorder`,
-                                method: "POST",
-                                body: {
-                                  orderedIds: move(
-                                    act.chapters.map((item) => item.id),
-                                    chapterIndex,
-                                    -1,
-                                  ),
-                                },
-                              })
-                            }
-                          >
-                            <ArrowUp size={10} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Move Chapter down"
-                            onClick={() =>
-                              mutateTree.mutate({
-                                path: `/api/acts/${act.id}/chapters/reorder`,
-                                method: "POST",
-                                body: {
-                                  orderedIds: move(
-                                    act.chapters.map((item) => item.id),
-                                    chapterIndex,
-                                    1,
-                                  ),
-                                },
-                              })
-                            }
-                          >
-                            <ArrowDown size={10} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Rename Chapter"
-                            onClick={() => rename(`/api/chapters/${chapter.id}`, chapter.title)}
-                          >
-                            <Pencil size={10} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete Chapter"
-                            onClick={() => remove(`/api/chapters/${chapter.id}`, chapter.title)}
-                          >
-                            <Trash2 size={10} />
-                          </button>
-                        </span>
-                        <button type="button" onClick={() => createScene.mutate(chapter.id)}>
-                          <Plus size={13} />
-                        </button>
-                      </div>
-                      {chapter.scenes.map((scene, sceneIndex) => (
-                        <div key={scene.id} className="tree-scene-row">
-                          <button
-                            type="button"
-                            className={
-                              scene.id === selectedSceneId ? "tree-scene active" : "tree-scene"
-                            }
-                            onClick={() => {
-                              setSelectedSceneId(scene.id);
-                              setScope(null);
-                            }}
-                          >
-                            {scene.title}
-                          </button>
-                          <span className="tree-actions">
-                            <button
-                              type="button"
-                              title="Move Scene up"
-                              onClick={() =>
-                                mutateTree.mutate({
-                                  path: `/api/chapters/${chapter.id}/scenes/reorder`,
-                                  method: "POST",
-                                  body: {
-                                    orderedIds: move(
-                                      chapter.scenes.map((item) => item.id),
-                                      sceneIndex,
-                                      -1,
-                                    ),
-                                  },
-                                })
-                              }
-                            >
-                              <ArrowUp size={10} />
-                            </button>
-                            <button
-                              type="button"
-                              title="Move Scene down"
-                              onClick={() =>
-                                mutateTree.mutate({
-                                  path: `/api/chapters/${chapter.id}/scenes/reorder`,
-                                  method: "POST",
-                                  body: {
-                                    orderedIds: move(
-                                      chapter.scenes.map((item) => item.id),
-                                      sceneIndex,
-                                      1,
-                                    ),
-                                  },
-                                })
-                              }
-                            >
-                              <ArrowDown size={10} />
-                            </button>
-                            <button
-                              type="button"
-                              title="Rename Scene"
-                              onClick={() =>
-                                rename(`/api/scenes/${scene.id}`, scene.title, {
-                                  expectedVersion: scene.version,
-                                })
-                              }
-                            >
-                              <Pencil size={10} />
-                            </button>
-                            <button
-                              type="button"
-                              title="Delete Scene"
-                              onClick={() => remove(`/api/scenes/${scene.id}`, scene.title)}
-                            >
-                              <Trash2 size={10} />
-                            </button>
-                          </span>
-                        </div>
+                      {selectedSceneId ? (
+                        <option value={`scene:${selectedSceneId}`}>
+                          Current Scene · {selectedLocation?.scene.title}
+                        </option>
+                      ) : null}
+                      <option value="story:all">Everything</option>
+                      {tree.data.acts.map((act) => (
+                        <optgroup key={act.id} label={act.title}>
+                          <option value={`act:${act.id}`}>Full Act</option>
+                          {act.chapters.map((chapter) => (
+                            <option key={chapter.id} value={`chapter:${chapter.id}`}>
+                              {chapter.title}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
+                    </select>
+                  </label>
+                  {scope.kind === "scene" && selectedLocation ? (
+                    <div className="scene-breadcrumb-selectors">
+                      <select
+                        aria-label="Act"
+                        value={selectedLocation.act.id}
+                        onChange={(event) => {
+                          const act = tree.data?.acts.find(
+                            (candidate) => candidate.id === event.target.value,
+                          );
+                          const scene = act?.chapters[0]?.scenes[0];
+                          if (scene) selectScene(scene.id);
+                        }}
+                      >
+                        {tree.data.acts.map((act) => (
+                          <option key={act.id} value={act.id}>
+                            {act.title}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Chapter"
+                        value={selectedLocation.chapter.id}
+                        onChange={(event) => {
+                          const chapter = selectedLocation.act.chapters.find(
+                            (candidate) => candidate.id === event.target.value,
+                          );
+                          if (chapter?.scenes[0]) selectScene(chapter.scenes[0].id);
+                        }}
+                      >
+                        {selectedLocation.act.chapters.map((chapter) => (
+                          <option key={chapter.id} value={chapter.id}>
+                            {chapter.title}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Scene"
+                        value={selectedLocation.scene.id}
+                        onChange={(event) => selectScene(event.target.value)}
+                      >
+                        {selectedLocation.chapter.scenes.map((scene) => (
+                          <option key={scene.id} value={scene.id}>
+                            {scene.title}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  ))}
+                  ) : null}
                 </div>
-              ))}
-            </aside>
-          ) : (
-            <CompendiumPanel
+              ) : null}
+            </div>
+
+            <div className="manuscript-view-content">
+              {view === "outline" ? (
+                <OutlineGrid
+                  projectId={projectId}
+                  tree={tree.data}
+                  entries={compendium.data ?? []}
+                  onOpenScene={selectScene}
+                  onOpenEntry={setPreviewEntryIds}
+                />
+              ) : scope ? (
+                <ManuscriptEditor
+                  ref={editorRef}
+                  key={scopeValue(scope)}
+                  tree={tree.data}
+                  scope={scope}
+                  entries={compendium.data ?? []}
+                  baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
+                  models={
+                    models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]
+                  }
+                  onSaved={(updated) =>
+                    client.setQueryData<ManuscriptTree>(["project-tree", projectId], (current) =>
+                      current ? updateScene(current, updated) : current,
+                    )
+                  }
+                  onOpenEntry={(entryIds, direct) => {
+                    if (direct && entryIds.length === 1) setSelectedEntryId(entryIds[0] ?? null);
+                    else setPreviewEntryIds(entryIds);
+                  }}
+                  onSelectScene={selectScene}
+                />
+              ) : (
+                <div className="empty-editor">
+                  <h2>Create a Scene to begin</h2>
+                </div>
+              )}
+            </div>
+
+            <CompendiumEntryDrawer
               projectId={projectId}
-              entries={compendium.data ?? []}
-              selectedEntryId={selectedEntryId}
-              onSelect={setSelectedEntryId}
-              onShowManuscript={() => setSidebar("manuscript")}
+              entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
+              mentionCount={selectedEntryMentionCount}
+              onClose={() => setSelectedEntryId(null)}
             />
-          )}
-          <div className="manuscript-main">
-            {scope ? (
-              <ContinuousManuscriptView
-                tree={tree.data}
-                scope={scope}
-                entries={compendium.data ?? []}
-                onEditScene={(sceneId) => {
-                  setSelectedSceneId(sceneId);
-                  setScope(null);
-                }}
-                onOpenEntry={(entryIds, direct) => {
-                  if (direct && entryIds.length === 1) {
-                    setSelectedEntryId(entryIds[0] ?? null);
-                    setSidebar("compendium");
-                    setScope(null);
-                  } else {
-                    setPreviewEntryIds(entryIds);
-                  }
-                }}
-              />
-            ) : selectedScene ? (
-              <SceneEditor
-                key={selectedScene.id}
-                initialScene={selectedScene}
-                entries={compendium.data ?? []}
-                baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
-                models={models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]}
-                onSaved={(scene) =>
-                  client.setQueryData<ManuscriptTree>(["project-tree", projectId], (current) =>
-                    current
-                      ? {
-                          ...current,
-                          acts: current.acts.map((act) => ({
-                            ...act,
-                            chapters: act.chapters.map((chapter) => ({
-                              ...chapter,
-                              scenes: chapter.scenes.map((item) =>
-                                item.id === scene.id ? scene : item,
-                              ),
-                            })),
-                          })),
-                        }
-                      : current,
-                  )
-                }
-                onOpenEntry={(entryIds, direct) => {
-                  if (direct && entryIds.length === 1) {
-                    setSelectedEntryId(entryIds[0] ?? null);
-                    setSidebar("compendium");
-                  } else {
-                    setPreviewEntryIds(entryIds);
-                  }
-                }}
-              />
-            ) : (
-              <div className="empty-editor">
-                <Users size={30} />
-                <h2>Create a Scene to begin</h2>
-              </div>
-            )}
-            {sidebar === "compendium" ? (
-              <CompendiumEntryDrawer
-                projectId={projectId}
-                entry={
-                  (compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null
-                }
-                mentionCount={selectedEntryMentionCount}
-                onClose={() => setSelectedEntryId(null)}
-              />
-            ) : null}
           </div>
         </div>
       ) : null}
       {tab === "ideation" ? <IdeationPanel projectId={projectId} /> : null}
+
       {previewEntryIds.length > 0 ? (
         <div className="modal-backdrop">
           <section className="modal mention-preview" aria-label="Compendium mention">
@@ -555,7 +377,6 @@ export function ProjectPage() {
                         setSelectedEntryId(entry.id);
                         setPreviewEntryIds([]);
                         setTab("manuscript");
-                        setSidebar("compendium");
                       }}
                     >
                       Open entry

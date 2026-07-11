@@ -28,7 +28,32 @@ export const emptyTiptapDocument: TiptapNode = {
 
 export const sceneStatusSchema = z.enum(["draft", "revising", "complete"]);
 
-export const sceneMetadataSchema = z.object({
+export const sceneLabelColorSchema = z.enum([
+  "amber",
+  "orange",
+  "red",
+  "rose",
+  "pink",
+  "violet",
+  "purple",
+  "indigo",
+  "blue",
+  "cyan",
+  "teal",
+  "green",
+  "lime",
+  "yellow",
+  "stone",
+  "slate",
+]);
+
+export const sceneLabelSchema = z.object({
+  id: idSchema,
+  text: z.string().trim().min(1).max(60),
+  color: sceneLabelColorSchema,
+});
+
+const sceneMetadataBaseSchema = z.object({
   summary: z.string().max(20_000).default(""),
   povEntryId: idSchema.nullable().default(null),
   locationEntryId: idSchema.nullable().default(null),
@@ -36,6 +61,22 @@ export const sceneMetadataSchema = z.object({
   goal: z.string().max(10_000).default(""),
   notes: z.string().max(50_000).default(""),
   status: sceneStatusSchema.default("draft"),
+  labels: z.array(sceneLabelSchema).max(24).default([]),
+});
+
+export const sceneMetadataSchema = sceneMetadataBaseSchema.superRefine((metadata, context) => {
+  const labels = new Set<string>();
+  metadata.labels.forEach((label, index) => {
+    const normalized = label.text.toLocaleLowerCase();
+    if (labels.has(normalized)) {
+      context.addIssue({
+        code: "custom",
+        path: ["labels", index, "text"],
+        message: "Scene labels must be unique, ignoring capitalization.",
+      });
+    }
+    labels.add(normalized);
+  });
 });
 
 export const projectSchema = z.object({
@@ -98,13 +139,19 @@ export const updateSceneInputSchema = z.object({
   title: z.string().trim().min(1).max(300).optional(),
   document: tiptapDocumentSchema.optional(),
   plainText: z.string().max(2_000_000).optional(),
-  metadata: sceneMetadataSchema.partial().optional(),
+  metadata: sceneMetadataBaseSchema.partial().optional(),
   revisionReason: z.enum(["autosave", "manual", "generation_accept"]).default("autosave"),
 });
 
 export const reorderInputSchema = z.object({ orderedIds: z.array(idSchema).min(1) });
 
+export const generateSceneSummaryInputSchema = z.object({
+  expectedVersion: z.number().int().positive(),
+});
+
 export type Project = z.infer<typeof projectSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type SceneMetadata = z.infer<typeof sceneMetadataSchema>;
+export type SceneLabel = z.infer<typeof sceneLabelSchema>;
+export type SceneLabelColor = z.infer<typeof sceneLabelColorSchema>;
 export type ManuscriptTree = z.infer<typeof manuscriptTreeSchema>;

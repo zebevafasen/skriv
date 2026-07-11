@@ -37,4 +37,14 @@ describe("FakeAIProvider", () => {
     }
     expect(result.split("\n\n")).toHaveLength(3);
   });
+
+  it("returns a deterministic Scene summary", async () => {
+    const provider = new FakeAIProvider(0);
+    const result = await provider.complete({
+      model: "asterism/fake-prose",
+      messages: [{ role: "user", content: "Scene prose:\nA door opened." }],
+      maxOutputTokens: 700,
+    });
+    expect(result.text).toContain("decisive change");
+  });
 });

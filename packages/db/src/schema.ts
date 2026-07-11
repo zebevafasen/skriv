@@ -345,7 +345,7 @@ export const usageEvents = pgTable("usage_events", {
   projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
   generationId: uuid("generation_id").references(() => generations.id, { onDelete: "set null" }),
   model: text("model").notNull(),
-  role: text("role", { enum: ["writing", "context", "ideation"] }).notNull(),
+  role: text("role", { enum: ["writing", "context", "ideation", "summary"] }).notNull(),
   inputTokens: integer("input_tokens"),
   outputTokens: integer("output_tokens"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

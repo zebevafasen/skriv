@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generationRequestSchema, promptDefinitionSchema } from "./index.js";
+import { generationRequestSchema, promptDefinitionSchema, sceneMetadataSchema } from "./index.js";
 
 describe("shared contracts", () => {
   it("requires an event for toward-event generation", () => {
@@ -46,5 +46,15 @@ describe("shared contracts", () => {
       updatedAt: null,
     });
     expect(result.success).toBe(true);
+  });
+
+  it("rejects duplicate Scene labels regardless of capitalization", () => {
+    const result = sceneMetadataSchema.safeParse({
+      labels: [
+        { id: crypto.randomUUID(), text: "Foreshadowing", color: "amber" },
+        { id: crypto.randomUUID(), text: "foreshadowing", color: "blue" },
+      ],
+    });
+    expect(result.success).toBe(false);
   });
 });

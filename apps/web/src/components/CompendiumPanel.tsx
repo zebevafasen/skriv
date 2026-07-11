@@ -2,7 +2,6 @@ import type { CompendiumEntry } from "@asterism/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   BookMarked,
-  BookOpenText,
   Box,
   ChevronDown,
   Cog,
@@ -75,13 +74,11 @@ export function CompendiumPanel({
   entries,
   selectedEntryId,
   onSelect,
-  onShowManuscript,
 }: {
   projectId: string;
   entries: CompendiumEntry[];
   selectedEntryId: string | null;
   onSelect: (id: string | null) => void;
-  onShowManuscript: () => void;
 }) {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
@@ -149,9 +146,6 @@ export function CompendiumPanel({
   return (
     <aside className="entry-list compendium-sidebar">
       <div className="sidebar-tabs">
-        <button type="button" onClick={onShowManuscript}>
-          <BookOpenText size={14} /> Manuscript
-        </button>
         <button type="button" className="active">
           <BookMarked size={14} /> Compendium
         </button>

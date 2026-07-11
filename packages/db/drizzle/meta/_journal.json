@@ -22,6 +22,13 @@
       "when": 1783727609570,
       "tag": "0002_overconfident_silk_fever",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783731708870,
+      "tag": "0003_scene_labels",
+      "breakpoints": true
     }
   ]
 }
