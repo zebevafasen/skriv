@@ -29,7 +29,7 @@ export function GenerationPanel({
   const [length, setLength] = useState<{
     value: number | null;
     unit: GenerationOptions["lengthUnit"];
-  }>({ value: 250, unit: "words" });
+  }>({ value: 200, unit: "words" });
   const [model, setModel] = useState(
     () => localStorage.getItem("asterism-latest-model") ?? baseModel,
   );
@@ -44,98 +44,142 @@ export function GenerationPanel({
           <X size={16} />
         </button>
       </div>
-      <div className="segmented">
-        <button
-          type="button"
-          className={workflow === "prose.start" ? "active" : ""}
-          onClick={() => setWorkflow("prose.start")}
-        >
-          Start
-        </button>
-        <button
-          type="button"
-          className={workflow === "prose.continue" ? "active" : ""}
-          onClick={() => setWorkflow("prose.continue")}
-        >
-          Continue
-        </button>
-        <button
-          type="button"
-          className={workflow === "prose.toward_event" ? "active" : ""}
-          onClick={() => setWorkflow("prose.toward_event")}
-        >
-          Toward event
-        </button>
-      </div>
-      {workflow === "prose.toward_event" ? (
-        <label>
-          Target event
-          <textarea
-            value={eventTarget}
-            onChange={(event) => setEventTarget(event.target.value)}
-            placeholder="Julia finds the concealed door."
-          />
-        </label>
-      ) : null}
-      <label>
-        Additional direction
-        <textarea
-          value={instructions}
-          onChange={(event) => setInstructions(event.target.value)}
-          placeholder="Keep the dialogue tense and understated."
-        />
-      </label>
-      <fieldset className="length-presets">
-        <legend>Target length</legend>
-        <div className="length-preset-grid">
-          {[
-            ["Short", 150, "words"],
-            ["Medium", 350, "words"],
-            ["Long", 750, "words"],
-            ["1 paragraph", 1, "paragraphs"],
-            ["3 paragraphs", 3, "paragraphs"],
-            ["6 paragraphs", 6, "paragraphs"],
-          ].map(([label, value, unit]) => (
-            <button
-              type="button"
-              key={label}
-              className={length.value === value && length.unit === unit ? "active" : ""}
-              onClick={() =>
-                setLength({
-                  value: value as number,
-                  unit: unit as GenerationOptions["lengthUnit"],
-                })
-              }
-            >
-              <strong className="length-preset-title">{label}</strong>
-              {unit === "words" ? <small>{value} words</small> : null}
-            </button>
-          ))}
+
+      <div style={{ display: "grid", gridTemplateColumns: "135px 1fr", gap: "16px", marginTop: "2px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <button
             type="button"
-            className={length.value === null ? "active unlimited" : "unlimited"}
-            onClick={() => setLength({ value: null, unit: "words" })}
+            className={`workflow-tab ${workflow === "prose.start" ? "active" : ""}`}
+            onClick={() => setWorkflow("prose.start")}
           >
-            <strong className="length-preset-title">No limit</strong>
-            <small>Write until complete</small>
+            Start
+          </button>
+          <button
+            type="button"
+            className={`workflow-tab ${workflow === "prose.continue" ? "active" : ""}`}
+            onClick={() => setWorkflow("prose.continue")}
+          >
+            Continue
+          </button>
+          <button
+            type="button"
+            className={`workflow-tab ${workflow === "prose.toward_event" ? "active" : ""}`}
+            onClick={() => setWorkflow("prose.toward_event")}
+          >
+            Toward event
           </button>
         </div>
-      </fieldset>
-      <div className="form-field">
-        <span>Model</span>
-        <ModelSelect
-          value={model}
-          onChange={(value) => {
-            setModel(value);
-            localStorage.setItem("asterism-latest-model", value);
-          }}
-          models={models}
-        />
-        <small>Base: {baseModel}</small>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", minWidth: 0 }}>
+          {workflow === "prose.toward_event" ? (
+            <label style={{ gap: "4px" }}>
+              Target event
+              <textarea
+                value={eventTarget}
+                onChange={(event) => setEventTarget(event.target.value)}
+                placeholder="Julia finds the concealed door."
+                style={{ minHeight: "60px", padding: "8px 10px" }}
+              />
+            </label>
+          ) : null}
+          <label style={{ gap: "4px" }}>
+            Additional direction
+            <textarea
+              value={instructions}
+              onChange={(event) => setInstructions(event.target.value)}
+              placeholder="Keep the dialogue tense and understated."
+              style={{ minHeight: "60px", padding: "8px 10px" }}
+            />
+          </label>
+          <fieldset className="length-presets">
+            <legend style={{ marginBottom: "4px" }}>Segment length</legend>
+            <div className="segmented" style={{ marginBottom: length.value !== null ? "8px" : "0" }}>
+              <button
+                type="button"
+                className={length.unit === "words" && length.value !== null ? "active" : ""}
+                onClick={() => {
+                  if (length.unit !== "words" || length.value === null) setLength({ ...length, value: 200, unit: "words" });
+                }}
+              >
+                Words
+              </button>
+              <button
+                type="button"
+                className={length.unit === "paragraphs" && length.value !== null ? "active" : ""}
+                onClick={() => {
+                  if (length.unit !== "paragraphs" || length.value === null) setLength({ ...length, value: 3, unit: "paragraphs" });
+                }}
+              >
+                Paragraphs
+              </button>
+              <button
+                type="button"
+                className={length.value === null ? "active" : ""}
+                onClick={() => setLength({ ...length, value: null })}
+              >
+                No Limit
+              </button>
+            </div>
+            {length.value !== null ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {(length.unit === "words" ? [200, 400, 600] : [1, 3, 5]).map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setLength({ ...length, value: val })}
+                      style={{
+                        padding: "5px 12px",
+                        fontSize: "12px",
+                        background: length.value === val ? "var(--accent)" : "#171512",
+                        color: length.value === val ? "#21160a" : "var(--muted)",
+                        border: `1px solid ${length.value === val ? "var(--accent)" : "#3b352d"}`,
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        fontWeight: length.value === val ? "bold" : "normal"
+                      }}
+                    >
+                      {val}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#171512", padding: "5px 8px", borderRadius: "6px", border: "1px solid #3b352d", flex: 1 }}>
+                  <input
+                    type="number"
+                    value={length.value}
+                    onChange={(e) => setLength({ ...length, value: Number(e.target.value) })}
+                    style={{ width: "100%", padding: 0, border: 0, background: "transparent", color: "#fff", fontWeight: "bold", fontSize: "12px" }}
+                  />
+                  <span style={{ fontSize: "11px", color: "var(--muted)" }}>{length.unit}</span>
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: "var(--faint)", fontSize: "11px", margin: "8px 0 0", fontStyle: "italic" }}>
+                AI chooses a natural stopping point for the segment.
+              </p>
+            )}
+          </fieldset>
+          <div className="form-field">
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "#c4bdb2" }}>Model</span>
+            <div style={{ marginTop: "4px" }}>
+              <ModelSelect
+                value={model}
+                onChange={(value) => {
+                  setModel(value);
+                  localStorage.setItem("asterism-latest-model", value);
+                }}
+                models={models}
+              />
+              <div style={{ marginTop: "4px", fontSize: "10px", color: "var(--faint)" }}>Base: {baseModel}</div>
+            </div>
+          </div>
+        </div>
       </div>
+
       <button
         type="button"
         className="button primary full"
+        style={{ marginTop: "10px" }}
         disabled={workflow === "prose.toward_event" && !eventTarget.trim()}
         onClick={() =>
           onGenerate({

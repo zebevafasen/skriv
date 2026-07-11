@@ -604,13 +604,6 @@ export function OutlineGrid({
           <p className="eyebrow">Planning grid</p>
           <h2>Outline</h2>
         </div>
-        <button
-          type="button"
-          className="button primary"
-          onClick={() => void create(`/api/projects/${projectId}/acts`, "New Act")}
-        >
-          <Plus size={14} /> New Act
-        </button>
       </header>
       {error ? <ErrorNotice error={error} /> : null}
       <DndContext
@@ -872,6 +865,15 @@ export function OutlineGrid({
                 </SortableBox>
               );
             })}
+            <div>
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => void create(`/api/projects/${projectId}/acts`, "New Act")}
+              >
+                <Plus size={14} /> New Act
+              </button>
+            </div>
           </div>
         </SortableContext>
       </DndContext>
