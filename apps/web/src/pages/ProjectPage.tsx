@@ -20,16 +20,16 @@ import { ChatPanel } from "../components/ChatPanel.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { IdeationPanel } from "../components/IdeationPanel.js";
-import {
-  ManuscriptEditor,
+import { ManuscriptEditor,
   type ManuscriptEditorHandle,
   type ManuscriptScope,
 } from "../components/ManuscriptEditor.js";
 import { OutlineGrid } from "../components/OutlineGrid.js";
+import { ProjectNotesPanel } from "../components/ProjectNotesPanel.js";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel.js";
 
 type Tab = "manuscript" | "ideation" | "chat" | "settings";
-type ManuscriptView = "write" | "outline";
+type ManuscriptView = "write" | "outline" | "notes";
 type Model = { id: string; name: string };
 
 function updateScene(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
@@ -339,6 +339,16 @@ export function ProjectPage() {
                 >
                   Outline
                 </button>
+                <button
+                  type="button"
+                  className={view === "notes" ? "active" : ""}
+                  onClick={async () => {
+                    await editorRef.current?.flush();
+                    await updateSearch({ view: "notes" });
+                  }}
+                >
+                  Notes
+                </button>
               </div>
               {view === "write" && scope ? (
                 <div className="manuscript-scope-controls">
@@ -435,6 +445,8 @@ export function ProjectPage() {
                   onOpenScene={selectScene}
                   onOpenEntry={setPreviewEntryIds}
                 />
+              ) : view === "notes" ? (
+                <ProjectNotesPanel projectId={projectId} project={tree.data.project} />
               ) : scope ? (
                 <ManuscriptEditor
                   ref={editorRef}

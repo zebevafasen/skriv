@@ -94,6 +94,7 @@ export const projectSettingsSchema = z.object({
     "3rd Person (Omniscient)",
   ]).default("3rd Person (Limited)"),
   povCharacterEntryId: idSchema.nullable().default(null),
+  notes: z.string().max(500_000).default(""),
 });
 
 export const projectSchema = z.object({
