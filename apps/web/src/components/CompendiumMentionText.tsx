@@ -26,6 +26,7 @@ export function CompendiumMentionText({
     content.push(
       <button
         type="button"
+        spellCheck={false}
         className="compendium-mention continuous-compendium-mention"
         data-entry-ids={match.entryIds.join(",")}
         key={`${match.from}-${match.to}-${match.entryIds.join("-")}`}

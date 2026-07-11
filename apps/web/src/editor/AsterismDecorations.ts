@@ -47,6 +47,7 @@ export const AsterismDecorations = Extension.create({
             const decorations: Decoration[] = pluginState.mentions.map((mention) =>
               Decoration.inline(mention.from, mention.to, {
                 class: "compendium-mention",
+                spellcheck: "false",
                 "data-entry-ids": mention.entryIds.join(","),
               }),
             );

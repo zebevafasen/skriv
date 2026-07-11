@@ -2266,7 +2266,6 @@ label small {
 .manuscript-structure-heading {
   margin: 60px 0 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-soft);
   color: var(--text);
   font-family: var(--serif);
   text-align: center;

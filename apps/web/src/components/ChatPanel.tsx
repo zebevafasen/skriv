@@ -127,6 +127,7 @@ function MentionComposer({
       </div>
       <textarea
         value={value}
+        spellCheck={false}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Ask anything about this project..."
         onKeyDown={onKeyDown}

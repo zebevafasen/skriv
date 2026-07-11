@@ -317,12 +317,16 @@ export function CompendiumEntryDrawer({
   const [labelInput, setLabelInput] = useState("");
   const [labelMenuOpen, setLabelMenuOpen] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [aliasesInput, setAliasesInput] = useState(entry?.aliases.join(", ") ?? "");
+  const [exclusionsInput, setExclusionsInput] = useState(entry?.matchExclusions.join(", ") ?? "");
   useEffect(() => {
     setDraft(entry);
     setTab("details");
     setTypeMenuOpen(false);
     setLabelInput("");
     setImageError(null);
+    setAliasesInput(entry?.aliases.join(", ") ?? "");
+    setExclusionsInput(entry?.matchExclusions.join(", ") ?? "");
   }, [entry]);
   const invalidate = () => client.invalidateQueries({ queryKey: ["compendium", projectId] });
   const save = useMutation({
@@ -623,16 +627,17 @@ export function CompendiumEntryDrawer({
                 Separate names with commas. These names are used for tracking, not as labels.
               </small>
               <input
-                value={draft.aliases.join(", ")}
-                onChange={(event) =>
+                value={aliasesInput}
+                onChange={(event) => {
+                  setAliasesInput(event.target.value);
                   setDraft({
                     ...draft,
                     aliases: event.target.value
                       .split(",")
                       .map((value) => value.trim())
                       .filter(Boolean),
-                  })
-                }
+                  });
+                }}
                 placeholder="Add aliases, …"
               />
             </label>
@@ -693,16 +698,17 @@ export function CompendiumEntryDrawer({
                 <strong>Exclusions</strong>
                 <small>Comma-separated phrases that should not trigger this entry.</small>
                 <input
-                  value={draft.matchExclusions.join(", ")}
-                  onChange={(event) =>
+                  value={exclusionsInput}
+                  onChange={(event) => {
+                    setExclusionsInput(event.target.value);
                     setDraft({
                       ...draft,
                       matchExclusions: event.target.value
                         .split(",")
                         .map((value) => value.trim())
                         .filter(Boolean),
-                    })
-                  }
+                    });
+                  }}
                   placeholder="Add phrases to exclude, …"
                 />
               </label>
