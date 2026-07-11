@@ -46,6 +46,7 @@ describe("composite manuscript documents", () => {
           language: "General English",
           povType: "3rd Person (Limited)",
           povCharacterEntryId: null,
+          notes: "",
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

@@ -9,7 +9,7 @@ import { SettingsPage } from "./pages/SettingsPage.js";
 
 type ProjectSearch = {
   tab?: "chat" | "ideation" | "settings";
-  view?: "outline";
+  view?: "outline" | "notes";
   scope?: string;
   scene?: string;
   thread?: string;
@@ -38,7 +38,7 @@ const projectRoute = createRoute({
   path: "/projects/$projectId",
   validateSearch: (search: Record<string, unknown>): ProjectSearch => ({
     ...(search.tab === "chat" || search.tab === "ideation" || search.tab === "settings" ? { tab: search.tab } : {}),
-    ...(search.view === "outline" ? { view: search.view } : {}),
+    ...(search.view === "outline" || search.view === "notes" ? { view: search.view } : {}),
     ...(typeof search.scope === "string" &&
     /^(story|(?:act|chapter|scene):[0-9a-f-]+)$/.test(search.scope)
       ? { scope: search.scope }
