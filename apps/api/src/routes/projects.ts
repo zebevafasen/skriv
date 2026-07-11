@@ -7,8 +7,10 @@ import {
   createProjectInputSchema,
   createSceneInputSchema,
   emptyTiptapDocument,
+  projectSettingsSchema,
   reorderInputSchema,
   sceneMetadataSchema,
+  updateProjectInputSchema,
   updateSceneInputSchema,
 } from "@asterism/contracts";
 import {
@@ -119,7 +121,7 @@ export async function registerProjectRoutes(
     const result = await context.db.transaction(async (tx) => {
       const [project] = await tx
         .insert(projects)
-        .values({ workspaceId, title: input.title })
+        .values({ workspaceId, title: input.title, settings: projectSettingsSchema.parse({}) })
         .returning();
       if (!project) throw new Error("Project creation failed.");
       const [act] = await tx
@@ -412,12 +414,20 @@ export async function registerProjectRoutes(
 
   app.patch("/api/projects/:id", async (request, reply) => {
     const { id } = parseWith(idParams, request.params);
-    const { title } = parseWith(renameInputSchema, request.body);
+    const input = parseWith(updateProjectInputSchema, request.body);
     if (!(await ownsProject(context, request.userId, id)))
       return notFound(reply, "Project not found.");
+    
+    const [current] = await context.db.select({ settings: projects.settings }).from(projects).where(eq(projects.id, id)).limit(1);
+    if (!current) return notFound(reply, "Project not found.");
+
     const [project] = await context.db
       .update(projects)
-      .set({ title, ...touchUpdatedAt })
+      .set({
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.settings !== undefined ? { settings: { ...current.settings, ...input.settings } } : {}),
+        ...touchUpdatedAt 
+      })
       .where(eq(projects.id, id))
       .returning();
     return project;

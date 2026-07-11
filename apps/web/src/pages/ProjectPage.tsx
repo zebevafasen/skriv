@@ -9,6 +9,7 @@ import {
   Lightbulb,
   MessageCircle,
   Pencil,
+  Settings,
   Trash2,
   X,
 } from "lucide-react";
@@ -25,8 +26,9 @@ import {
   type ManuscriptScope,
 } from "../components/ManuscriptEditor.js";
 import { OutlineGrid } from "../components/OutlineGrid.js";
+import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel.js";
 
-type Tab = "manuscript" | "ideation" | "chat";
+type Tab = "manuscript" | "ideation" | "chat" | "settings";
 type ManuscriptView = "write" | "outline";
 type Model = { id: string; name: string };
 
@@ -277,6 +279,16 @@ export function ProjectPage() {
           >
             <Lightbulb size={16} /> Ideation
           </button>
+          <button
+            type="button"
+            className={tab === "settings" ? "active" : ""}
+            onClick={async () => {
+              await editorRef.current?.flush();
+              await updateSearch({ tab: "settings" });
+            }}
+          >
+            <Settings size={16} /> Settings
+          </button>
           {(tab === "manuscript" || tab === "chat") && (
             <button
               type="button"
@@ -485,6 +497,9 @@ export function ProjectPage() {
             />
           </div>
         </div>
+      ) : null}
+      {tab === "settings" ? (
+        <ProjectSettingsPanel projectId={projectId} project={tree.data.project} entries={compendium.data ?? []} />
       ) : null}
 
       {previewEntryIds.length > 0 ? (

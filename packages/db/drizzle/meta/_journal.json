@@ -36,6 +36,13 @@
       "when": 1783792800000,
       "tag": "0004_project_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783796154862,
+      "tag": "0005_salty_wallop",
+      "breakpoints": true
     }
   ]
 }

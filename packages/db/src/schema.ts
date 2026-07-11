@@ -1,6 +1,7 @@
 import type {
   ChatContextSource,
   CompendiumContent,
+  ProjectSettings,
   PromptMessage,
   SceneMetadata,
   TiptapNode,
@@ -114,6 +115,7 @@ export const projects = pgTable("projects", {
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
+  settings: jsonb("settings").$type<ProjectSettings>().notNull().default({} as any),
   ...timestamps,
 });
 

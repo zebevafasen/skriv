@@ -79,10 +79,28 @@ export const sceneMetadataSchema = sceneMetadataBaseSchema.superRefine((metadata
   });
 });
 
+export const projectSettingsSchema = z.object({
+  author: z.string().max(100).default(""),
+  series: z.string().max(100).default(""),
+  seriesIndex: z.string().max(50).default(""),
+  coverDataUrl: z.string().nullable().default(null),
+  tense: z.enum(["Past", "Present"]).default("Past"),
+  language: z.string().max(100).default("General English"),
+  povType: z.enum([
+    "1st Person",
+    "2nd Person",
+    "3rd Person",
+    "3rd Person (Limited)",
+    "3rd Person (Omniscient)",
+  ]).default("3rd Person (Limited)"),
+  povCharacterEntryId: idSchema.nullable().default(null),
+});
+
 export const projectSchema = z.object({
   id: idSchema,
   workspaceId: idSchema,
   title: z.string().min(1).max(300),
+  settings: projectSettingsSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 });
@@ -124,6 +142,12 @@ export const manuscriptTreeSchema = z.object({
 });
 
 export const createProjectInputSchema = z.object({ title: z.string().trim().max(300) });
+
+export const updateProjectInputSchema = z.object({
+  title: z.string().trim().max(300).optional(),
+  settings: projectSettingsSchema.partial().optional(),
+});
+
 export const createActInputSchema = z.object({
   title: z.string().trim().max(300).default(""),
 });
@@ -150,6 +174,7 @@ export const generateSceneSummaryInputSchema = z.object({
   modelOverride: z.string().min(1).nullable().optional(),
 });
 
+export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type SceneMetadata = z.infer<typeof sceneMetadataSchema>;
