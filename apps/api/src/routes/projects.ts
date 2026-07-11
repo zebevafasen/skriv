@@ -39,12 +39,7 @@ const defaultSceneMetadata = sceneMetadataSchema.parse({});
 const singletonEntries: Array<{
   key: string;
   name: string;
-  typeId:
-    | "project.premise"
-    | "project.genres"
-    | "project.themes"
-    | "project.tags"
-    | "project.instructions";
+  typeId: "project.premise" | "project.genres" | "project.themes" | "project.tags";
   content: CompendiumContent;
 }> = [
   {
@@ -66,12 +61,6 @@ const singletonEntries: Array<{
     content: { kind: "selection", values: [] },
   },
   { key: "tags", name: "Tags", typeId: "project.tags", content: { kind: "selection", values: [] } },
-  {
-    key: "instructions",
-    name: "Project Instructions",
-    typeId: "project.instructions",
-    content: { kind: "text", text: "" },
-  },
 ];
 
 function timestamp(value: Date): string {
@@ -417,16 +406,22 @@ export async function registerProjectRoutes(
     const input = parseWith(updateProjectInputSchema, request.body);
     if (!(await ownsProject(context, request.userId, id)))
       return notFound(reply, "Project not found.");
-    
-    const [current] = await context.db.select({ settings: projects.settings }).from(projects).where(eq(projects.id, id)).limit(1);
+
+    const [current] = await context.db
+      .select({ settings: projects.settings })
+      .from(projects)
+      .where(eq(projects.id, id))
+      .limit(1);
     if (!current) return notFound(reply, "Project not found.");
 
     const [project] = await context.db
       .update(projects)
       .set({
         ...(input.title !== undefined ? { title: input.title } : {}),
-        ...(input.settings !== undefined ? { settings: projectSettingsSchema.parse({ ...current.settings, ...input.settings }) } : {}),
-        ...touchUpdatedAt 
+        ...(input.settings !== undefined
+          ? { settings: projectSettingsSchema.parse({ ...current.settings, ...input.settings }) }
+          : {}),
+        ...touchUpdatedAt,
       })
       .where(eq(projects.id, id))
       .returning();

@@ -48,7 +48,6 @@ const metadataUpdateSchema = z.object({
       }),
     )
     .optional(),
-  instructions: z.string().max(50_000).optional(),
 });
 const premiseRequestSchema = z.object({
   instructions: z.string().max(20_000).default(""),
@@ -147,7 +146,7 @@ export async function registerIdeationRoutes(
       return notFound(reply, "Project not found.");
     const entries = await metadataEntries(context, projectId);
     return Object.fromEntries(
-      ["premise", "genres", "themes", "tags", "instructions"].map((key) => [
+      ["premise", "genres", "themes", "tags"].map((key) => [
         key,
         entries.get(key)?.content ?? null,
       ]),
@@ -165,9 +164,7 @@ export async function registerIdeationRoutes(
         const entry = entries.get(key);
         if (!entry || value === undefined) continue;
         const content = compendiumContentSchema.parse(
-          key === "premise" || key === "instructions"
-            ? { kind: "text", text: value }
-            : { kind: "selection", values: value },
+          key === "premise" ? { kind: "text", text: value } : { kind: "selection", values: value },
         );
         await tx
           .update(compendiumEntries)

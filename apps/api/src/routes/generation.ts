@@ -60,36 +60,25 @@ async function assembleContext(
     .select()
     .from(compendiumEntries)
     .where(eq(compendiumEntries.projectId, projectId));
-  const entries = rows.map((entry) =>
-    compendiumEntrySchema.parse({
-      ...entry,
-      singleton: entry.singletonKey !== null,
-      createdAt: entry.createdAt.toISOString(),
-      updatedAt: entry.updatedAt.toISOString(),
-    }),
-  );
+  const entries = rows
+    .filter((entry) => entry.typeId !== "project.instructions")
+    .map((entry) =>
+      compendiumEntrySchema.parse({
+        ...entry,
+        singleton: entry.singletonKey !== null,
+        createdAt: entry.createdAt.toISOString(),
+        updatedAt: entry.updatedAt.toISOString(),
+      }),
+    );
   const before = input.manuscriptBeforeCursor.slice(-12_000);
   const after = input.manuscriptAfterCursor.slice(0, 2_000);
-  const scanText = [
-    before,
-    after,
-    scene.title,
-    scene.metadata.summary,
-    scene.metadata.goal,
-    input.instructions,
-    input.eventTarget,
-  ]
+  const scanText = [before, after, scene.metadata.summary, input.instructions, input.eventTarget]
     .filter(Boolean)
     .join("\n");
-  const scenePresenceEntryIds = [
-    scene.metadata.povEntryId,
-    scene.metadata.locationEntryId,
-    ...scene.metadata.presentCharacterEntryIds,
-  ].filter((value): value is string => Boolean(value));
   const discovered = discoverEntries({
     entries,
     scanText,
-    scenePresenceEntryIds,
+    scenePresenceEntryIds: [],
     maxDepth: settings.recursionDepth,
     includeSmartCandidates: settings.smartContextEnabled,
   });
@@ -182,42 +171,26 @@ function formatContext(fragments: z.infer<typeof contextFragmentSchema>[]): stri
     .join("\n\n");
 }
 
-async function protectedPlanningContext(
+async function prosePlanningContext(
   context: AppContext,
   projectId: string,
   scene: typeof scenes.$inferSelect,
 ) {
   const orderedScenes = await context.db
-    .select({ id: scenes.id, title: scenes.title, metadata: scenes.metadata })
+    .select({ id: scenes.id, plainText: scenes.plainText, metadata: scenes.metadata })
     .from(scenes)
     .innerJoin(chapters, eq(chapters.id, scenes.chapterId))
     .innerJoin(acts, eq(acts.id, chapters.actId))
     .where(eq(acts.projectId, projectId))
     .orderBy(asc(acts.position), asc(chapters.position), asc(scenes.position));
   const currentIndex = orderedScenes.findIndex((candidate) => candidate.id === scene.id);
-  const previousWithSummary = orderedScenes
-    .slice(0, currentIndex)
-    .reverse()
-    .find((s) => s.metadata.summary.trim() !== "");
-  const previous =
-    previousWithSummary ?? (currentIndex > 0 ? orderedScenes[currentIndex - 1] : null);
-  return formatProtectedPlanningContext(scene, previous ?? null);
-}
-
-export function formatProtectedPlanningContext(
-  scene: Pick<typeof scenes.$inferSelect, "title" | "metadata">,
-  previous: { title: string; metadata: typeof scenes.$inferSelect.metadata } | null,
-) {
-  const sections = [
-    `Current Scene: ${scene.title}`,
-    scene.metadata.summary.trim() ? `Current Scene summary:\n${scene.metadata.summary.trim()}` : "",
-    previous?.metadata.summary.trim()
-      ? `Immediately previous Scene: ${previous.title}\nPrevious Scene summary:\n${previous.metadata.summary.trim()}`
-      : "",
-  ].filter(Boolean);
+  const earlierScenes = currentIndex < 0 ? [] : orderedScenes.slice(0, currentIndex);
   return {
-    role: "developer" as const,
-    content: `Protected manuscript planning context:\n${sections.join("\n\n")}`,
+    priorSceneSummaries: earlierScenes
+      .map((candidate) => candidate.metadata.summary.trim())
+      .filter(Boolean)
+      .join("\n\n"),
+    previousSceneExcerpt: earlierScenes.at(-1)?.plainText.trim().slice(-12_000) ?? "",
   };
 }
 
@@ -254,7 +227,7 @@ export async function registerGenerationRoutes(
         ownedRecord.scene,
       );
       const contextPackage = formatContext(fragments);
-      const planningContext = await protectedPlanningContext(
+      const planningContext = await prosePlanningContext(
         context,
         ownedRecord.projectId,
         ownedRecord.scene,
@@ -274,34 +247,21 @@ export async function registerGenerationRoutes(
         if (entry) povCharacterName = entry.name;
       }
 
-      const povString = povCharacterName
-        ? `${ownedRecord.project.settings.povType}, following ${povCharacterName}`
-        : ownedRecord.project.settings.povType;
-
-      const projectSettingsString = [
-        `Tense: ${ownedRecord.project.settings.tense}`,
-        `Point of View: ${povString}`,
-        `Language: ${ownedRecord.project.settings.language}`,
-      ].join("\n");
-
       const messages = [
         protectedProtocolMessage(input.workflow),
-        planningContext,
         ...renderPrompt(prompt, {
           context_package: contextPackage,
-          scene_context: [
-            ownedRecord.scene.title,
-            ownedRecord.scene.metadata.summary,
-            ownedRecord.scene.metadata.goal,
-          ]
-            .filter(Boolean)
-            .join("\n"),
-          manuscript_before_cursor: input.manuscriptBeforeCursor,
-          manuscript_after_cursor: input.manuscriptAfterCursor,
+          prior_scene_summaries: planningContext.priorSceneSummaries,
+          previous_scene_excerpt: planningContext.previousSceneExcerpt,
+          manuscript_before_cursor: input.manuscriptBeforeCursor.slice(-12_000),
+          manuscript_after_cursor: input.manuscriptAfterCursor.slice(0, 2_000),
           event_target: input.eventTarget,
           user_instructions: input.instructions,
           target_length: targetLength,
-          project_settings: projectSettingsString,
+          story_tense: ownedRecord.project.settings.tense,
+          story_language: ownedRecord.project.settings.language,
+          story_pov: ownedRecord.project.settings.povType,
+          pov_character: povCharacterName ?? "not separately configured",
         }),
       ];
       const [generation] = await context.db

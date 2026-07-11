@@ -100,10 +100,12 @@ async function resolveManualContext(
         .where(inArray(scenes.chapterId, chapterIds))
         .orderBy(asc(scenes.position))
     : [];
-  const entryRows = await context.db
-    .select()
-    .from(compendiumEntries)
-    .where(eq(compendiumEntries.projectId, projectId));
+  const entryRows = (
+    await context.db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId))
+  ).filter((entry) => entry.typeId !== "project.instructions");
   const selectedScenes = new Set<string>();
   const selectedEntries = new Set<string>();
   const pieces: ChatContextPiece[] = [];

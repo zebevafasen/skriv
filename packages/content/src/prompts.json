@@ -3,22 +3,40 @@
     "id": "builtin.prose.start.default",
     "name": "Default Start Writing",
     "workflow": "prose.start",
-    "version": 1,
-    "description": "Establishes opening prose for the active scene.",
+    "version": 2,
+    "description": "Begins a scene using explicit project settings and prior-story context.",
     "ownership": "builtin",
     "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
         "role": "system",
-        "content": "You are a skilled long-form fiction collaborator. Write polished prose that remains consistent with supplied story knowledge.\n\nProject Settings:\n{{project_settings}}"
+        "content": "You are an expert fiction writer.\n\nAlways follow these rules:\n- Write in {{story_tense}} tense.\n- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.\n- Write in {{story_pov}} point of view.\n- The point-of-view character is {{pov_character}}.\n- Preserve the voice, continuity, characterization, and canonical facts supplied in context.\n- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.\n- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.\n- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.\n\nWhen writing:\n- Follow the requested beat closely.\n- Do not continue beyond the requested material or invent unrelated developments.\n- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.\n- Stop once the requested material is complete; do not add filler merely to reach the target length."
       },
       {
         "role": "user",
-        "content": "Story context:\n{{context_package}}\n\nScene context:\n{{scene_context}}\n\nInstructions:\n{{user_instructions}}\n\nBegin the scene in approximately {{target_length}}."
+        "content": "Relevant canonical story context:\n{{context_package}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}\n\nInstructions for this beat:\n{{user_instructions}}"
+      },
+      {
+        "role": "assistant",
+        "content": "{{previous_scene_excerpt}}"
+      },
+      {
+        "role": "user",
+        "content": "Begin the new scene. Aim for {{target_length}}, but stop early when the requested beat is complete. Return prose only."
       }
     ],
-    "variables": ["context_package", "scene_context", "user_instructions", "target_length", "project_settings"],
+    "variables": [
+      "context_package",
+      "prior_scene_summaries",
+      "previous_scene_excerpt",
+      "user_instructions",
+      "target_length",
+      "story_tense",
+      "story_language",
+      "story_pov",
+      "pov_character"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -26,7 +44,7 @@
     "id": "builtin.prose.continue.default",
     "name": "Default Continue Writing",
     "workflow": "prose.continue",
-    "version": 1,
+    "version": 2,
     "description": "Continues prose from the cursor while respecting following text.",
     "ownership": "builtin",
     "ownerId": null,
@@ -34,11 +52,19 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a skilled long-form fiction collaborator. Preserve voice, tense, point of view, continuity, and established facts.\n\nProject Settings:\n{{project_settings}}"
+        "content": "You are an expert fiction writer.\n\nAlways follow these rules:\n- Write in {{story_tense}} tense.\n- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.\n- Write in {{story_pov}} point of view.\n- The point-of-view character is {{pov_character}}.\n- Match the voice and style of the preceding manuscript prose. Preserve continuity, characterization, and canonical facts.\n- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.\n- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.\n- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.\n\nWhen writing:\n- Follow the requested beat closely.\n- Do not continue beyond the requested material or invent unrelated developments.\n- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.\n- Stop once the requested material is complete; do not add filler merely to reach the target length."
       },
       {
         "role": "user",
-        "content": "Story context:\n{{context_package}}\n\nText before insertion:\n{{manuscript_before_cursor}}\n\nText after insertion:\n{{manuscript_after_cursor}}\n\nInstructions:\n{{user_instructions}}\n\nWrite approximately {{target_length}} that fits at the insertion point."
+        "content": "Relevant canonical story context:\n{{context_package}}"
+      },
+      {
+        "role": "assistant",
+        "content": "{{manuscript_before_cursor}}"
+      },
+      {
+        "role": "user",
+        "content": "Following canonical prose that the continuation must lead into without repeating or contradicting:\n{{manuscript_after_cursor}}\n\nInstructions for this beat:\n{{user_instructions}}\n\nContinue at the insertion point. Aim for {{target_length}}, but stop early when the requested beat is complete. Return prose only."
       }
     ],
     "variables": [
@@ -47,7 +73,10 @@
       "manuscript_after_cursor",
       "user_instructions",
       "target_length",
-      "project_settings"
+      "story_tense",
+      "story_language",
+      "story_pov",
+      "pov_character"
     ],
     "createdAt": null,
     "updatedAt": null
@@ -56,7 +85,7 @@
     "id": "builtin.prose.toward_event.default",
     "name": "Default Continue Toward Event",
     "workflow": "prose.toward_event",
-    "version": 1,
+    "version": 2,
     "description": "Continues naturally while progressing toward a narrative destination.",
     "ownership": "builtin",
     "ownerId": null,
@@ -64,21 +93,33 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a skilled long-form fiction collaborator. Progress toward the target event naturally rather than forcing it immediately.\n\nProject Settings:\n{{project_settings}}"
+        "content": "You are an expert fiction writer.\n\nAlways follow these rules:\n- Write in {{story_tense}} tense.\n- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.\n- Write in {{story_pov}} point of view.\n- The point-of-view character is {{pov_character}}.\n- Match the voice and style of the preceding manuscript prose. Preserve continuity, characterization, and canonical facts.\n- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.\n- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.\n- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.\n\nWhen writing:\n- Progress naturally toward the target event without forcing it immediately.\n- Follow the requested beat closely and do not continue beyond it.\n- Do not invent unrelated developments, manufacture an ending, add foreshadowing, or write a summary-style closing line.\n- Stop once the target event or requested material is reached; do not add filler merely to reach the target length."
       },
       {
         "role": "user",
-        "content": "Story context:\n{{context_package}}\n\nText before insertion:\n{{manuscript_before_cursor}}\n\nText after insertion:\n{{manuscript_after_cursor}}\n\nTarget event:\n{{event_target}}\n\nInstructions:\n{{user_instructions}}\n\nWrite approximately {{target_length}}."
+        "content": "Relevant canonical story context:\n{{context_package}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}"
+      },
+      {
+        "role": "assistant",
+        "content": "{{manuscript_before_cursor}}"
+      },
+      {
+        "role": "user",
+        "content": "Following canonical prose that the continuation must remain compatible with:\n{{manuscript_after_cursor}}\n\nTarget event:\n{{event_target}}\n\nAdditional instructions:\n{{user_instructions}}\n\nContinue naturally toward the target event. Aim for {{target_length}}, but stop as soon as the requested development is complete. Return prose only."
       }
     ],
     "variables": [
       "context_package",
+      "prior_scene_summaries",
       "manuscript_before_cursor",
       "manuscript_after_cursor",
       "event_target",
       "user_instructions",
       "target_length",
-      "project_settings"
+      "story_tense",
+      "story_language",
+      "story_pov",
+      "pov_character"
     ],
     "createdAt": null,
     "updatedAt": null

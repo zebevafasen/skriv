@@ -12,7 +12,6 @@ type Metadata = {
   genres: { kind: "selection"; values: Value[] };
   themes: { kind: "selection"; values: Value[] };
   tags: { kind: "selection"; values: Value[] };
-  instructions: { kind: "text"; text: string };
 };
 type Collection = {
   id: string;
@@ -60,7 +59,6 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
       setThemes(metadata.data.themes?.values ?? []);
       setTags(metadata.data.tags?.values ?? []);
       setPremise(metadata.data.premise?.text ?? "");
-      setInstructions(metadata.data.instructions?.text ?? "");
     }
   }, [metadata.data]);
   useEffect(() => {
@@ -137,7 +135,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     setThemes(choose(available.themes, rand(1, 3), themes));
     setTags(choose(available.tags, rand(3, 15), tags));
   };
-  const persistIngredients = () => save.mutate({ genres, themes, tags, premise, instructions });
+  const persistIngredients = () => save.mutate({ genres, themes, tags, premise });
 
   return (
     <div className="workspace-panel ideation-panel">
