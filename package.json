@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "turbo build",
-    "build:vercel": "node scripts/build-vercel-api.mjs && pnpm --filter @asterism/web build",
+    "build:vercel": "pnpm --filter @asterism/db exec drizzle-kit push --force && node scripts/build-vercel-api.mjs && pnpm --filter @asterism/web build",
     "dev": "turbo dev --parallel",
     "typecheck": "turbo typecheck",
     "lint": "biome check .",
