@@ -195,8 +195,12 @@ async function protectedPlanningContext(
     .where(eq(acts.projectId, projectId))
     .orderBy(asc(acts.position), asc(chapters.position), asc(scenes.position));
   const currentIndex = orderedScenes.findIndex((candidate) => candidate.id === scene.id);
-  const previous = currentIndex > 0 ? (orderedScenes[currentIndex - 1] ?? null) : null;
-  return formatProtectedPlanningContext(scene, previous);
+  const previousWithSummary = orderedScenes
+    .slice(0, currentIndex)
+    .reverse()
+    .find((s) => s.metadata.summary.trim() !== "");
+  const previous = previousWithSummary ?? (currentIndex > 0 ? orderedScenes[currentIndex - 1] : null);
+  return formatProtectedPlanningContext(scene, previous ?? null);
 }
 
 export function formatProtectedPlanningContext(

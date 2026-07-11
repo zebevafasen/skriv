@@ -47,8 +47,9 @@ export async function registerSummaryRoutes(
         usage: { inputTokens: number | null; outputTokens: number | null };
       };
       try {
-        completion = await (await context.getAi(request.userId, settings.baseModel)).complete({
-          model: settings.baseModel,
+        const targetModel = input.modelOverride ?? settings.baseModel;
+        completion = await (await context.getAi(request.userId, targetModel)).complete({
+          model: targetModel,
           messages: [
             protectedProtocolMessage("summary.scene"),
             ...renderPrompt(prompt, {

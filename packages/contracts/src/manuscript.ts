@@ -147,6 +147,7 @@ export const reorderInputSchema = z.object({ orderedIds: z.array(idSchema).min(1
 
 export const generateSceneSummaryInputSchema = z.object({
   expectedVersion: z.number().int().positive(),
+  modelOverride: z.string().min(1).nullable().optional(),
 });
 
 export type Project = z.infer<typeof projectSchema>;

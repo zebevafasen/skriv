@@ -432,7 +432,10 @@ function SceneCard({
             try {
               const updated = await api<Scene>(`/api/scenes/${scene.id}/summary/generate`, {
                 method: "POST",
-                body: JSON.stringify({ expectedVersion }),
+                body: JSON.stringify({
+                  expectedVersion,
+                  modelOverride: localStorage.getItem("asterism-latest-model"),
+                }),
               });
               version.current = updated.version;
               metadataRef.current = updated.metadata;
