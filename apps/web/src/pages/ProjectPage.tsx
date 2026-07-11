@@ -2,7 +2,7 @@ import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asteri
 import { findMentions } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import { BookOpenText, Download, Lightbulb, Pencil, Trash2, X } from "lucide-react";
+import { BookMarked, BookOpenText, Download, Lightbulb, Pencil, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
@@ -40,10 +40,20 @@ export function ProjectPage() {
   const { projectId } = useParams({ from: "/projects/$projectId" });
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("manuscript");
+  const [compendiumOpen, setCompendiumOpen] = useState(
+    () => !window.matchMedia("(max-width: 900px)").matches,
+  );
   const [view, setView] = useState<ManuscriptView>("write");
   const [scope, setScope] = useState<ManuscriptScope | null>({ kind: "story" });
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 900px)");
+    const handleViewportChange = (event: MediaQueryListEvent) => setCompendiumOpen(!event.matches);
+    mobileQuery.addEventListener("change", handleViewportChange);
+    return () => mobileQuery.removeEventListener("change", handleViewportChange);
+  }, []);
   const [previewEntryIds, setPreviewEntryIds] = useState<string[]>([]);
   const editorRef = useRef<ManuscriptEditorHandle | null>(null);
   const tree = useQuery({
@@ -170,11 +180,24 @@ export function ProjectPage() {
           >
             <Lightbulb size={16} /> Ideation
           </button>
+          {tab === "manuscript" && (
+            <button
+              type="button"
+              className={`mobile-only-tab ${compendiumOpen ? "active" : ""}`}
+              aria-pressed={compendiumOpen}
+              aria-label={compendiumOpen ? "Show manuscript" : "Show compendium"}
+              onClick={() => setCompendiumOpen(!compendiumOpen)}
+            >
+              <BookMarked size={16} /> Compendium
+            </button>
+          )}
         </nav>
       </div>
 
       {tab === "manuscript" ? (
-        <div className="manuscript-layout compendium-open">
+        <div
+          className={`manuscript-layout ${compendiumOpen ? "compendium-open" : ""} ${selectedEntryId ? "entry-open" : ""}`}
+        >
           <CompendiumPanel
             projectId={projectId}
             entries={compendium.data ?? []}

@@ -84,6 +84,14 @@ export function CompendiumPanel({
   const [search, setSearch] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    if (!createMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCreateMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [createMenuOpen]);
   const createEntry = useMutation({
     mutationFn: (typeId: (typeof storyTypes)[number]["id"]) => {
       const type = storyTypes.find((candidate) => candidate.id === typeId);
@@ -169,15 +177,27 @@ export function CompendiumPanel({
             type="button"
             className="button ghost new-entry-button"
             aria-expanded={createMenuOpen}
+            aria-haspopup="menu"
+            aria-controls="new-entry-type-menu"
             onClick={() => setCreateMenuOpen((value) => !value)}
           >
             <Plus size={15} /> New Entry
           </button>
           {createMenuOpen ? (
-            <StoryTypeMenu
-              disabled={createEntry.isPending}
-              onSelect={(typeId) => createEntry.mutate(typeId)}
-            />
+            <>
+              <button
+                type="button"
+                className="new-entry-backdrop"
+                aria-label="Close entry type menu"
+                onClick={() => setCreateMenuOpen(false)}
+              />
+              <div id="new-entry-type-menu">
+                <StoryTypeMenu
+                  disabled={createEntry.isPending}
+                  onSelect={(typeId) => createEntry.mutate(typeId)}
+                />
+              </div>
+            </>
           ) : null}
         </div>
       </div>
