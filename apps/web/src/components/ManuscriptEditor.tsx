@@ -10,7 +10,7 @@ import { type Editor, Extension, type JSONContent, mergeAttributes, Node } from 
 import Placeholder from "@tiptap/extension-placeholder";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
-import { EditorContent, useEditor, ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
+import { EditorContent, useEditor, ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent, type NodeViewProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -19,13 +19,14 @@ import {
   ChevronRight,
   Clipboard,
   History,
+  Plus,
   RefreshCw,
   RotateCcw,
   Sparkles,
   Trash2,
   X,
 } from "lucide-react";
-import {
+import React, {
   forwardRef,
   useCallback,
   useEffect,
@@ -92,34 +93,107 @@ const ManuscriptHeadingView = (props: NodeViewProps) => {
     }
   };
 
+  const createChapterBefore = async () => {
+    const pos = props.getPos();
+    if (pos === undefined) return;
+    const actId = findActIdBackward(props.editor, pos);
+    if (!actId) return;
+    const chapter = await api<any>(`/api/acts/${actId}/chapters`, {
+      method: "POST",
+      body: JSON.stringify({ title: "" }),
+    });
+    const scene = await api<Scene>(`/api/chapters/${chapter.id}/scenes`, {
+      method: "POST",
+      body: JSON.stringify({ title: "" }),
+    });
+    await queryClient.invalidateQueries({ queryKey: ["project-tree"] });
+    props.editor.chain().insertContentAt(pos, [
+      { type: "manuscriptHeading", attrs: { id: chapter.id, level: "chapter", title: "", position: chapter.position } },
+      { type: "sceneBlock", attrs: { sceneId: scene.id, title: "", position: scene.position }, content: [{ type: "paragraph" }, { type: "paragraph" }, { type: "paragraph" }] }
+    ]).run();
+  };
+
+  const createActBefore = async () => {
+    const projectIdMatch = window.location.pathname.match(/\/projects\/([^/]+)/);
+    if (!projectIdMatch) return;
+    const act = await api<any>(`/api/projects/${projectIdMatch[1]}/acts`, {
+      method: "POST",
+      body: JSON.stringify({ title: "" }),
+    });
+    const chapter = await api<any>(`/api/acts/${act.id}/chapters`, {
+      method: "POST",
+      body: JSON.stringify({ title: "" }),
+    });
+    const scene = await api<Scene>(`/api/chapters/${chapter.id}/scenes`, {
+      method: "POST",
+      body: JSON.stringify({ title: "" }),
+    });
+    await queryClient.invalidateQueries({ queryKey: ["project-tree"] });
+    const pos = props.getPos();
+    if (pos === undefined) return;
+    props.editor.chain().insertContentAt(pos, [
+      { type: "manuscriptHeading", attrs: { id: act.id, level: "act", title: "", position: act.position } },
+      { type: "manuscriptHeading", attrs: { id: chapter.id, level: "chapter", title: "", position: chapter.position } },
+      { type: "sceneBlock", attrs: { sceneId: scene.id, title: "", position: scene.position }, content: [{ type: "paragraph" }, { type: "paragraph" }, { type: "paragraph" }] }
+    ]).run();
+  };
+
+  const pos = props.getPos();
+  const isFirst = pos === 0;
+  const nodeBefore = typeof pos === "number" && pos > 0 ? props.editor.state.doc.resolve(pos).nodeBefore : null;
+  const isDirectlyAfterAct = nodeBefore?.type.name === "manuscriptHeading" && nodeBefore.attrs.level === "act";
+  const showDivider = !isFirst && !(props.node.attrs.level === "chapter" && isDirectlyAfterAct);
+
   return (
-    <NodeViewWrapper 
-      as={isAct ? "h2" : "h3"} 
-      className={`manuscript-structure-heading ${props.node.attrs.level}`}
-      onClick={(e: React.MouseEvent) => {
-        const input = e.currentTarget.querySelector('.title-input') as HTMLElement;
-        if (input && document.activeElement !== input) {
-          input.focus();
-        }
-      }}
-    >
-      <span>{label}{localTitle ? ": " : ""}</span>
-      <span
-        className="title-input"
-        contentEditable
-        suppressContentEditableWarning
-        onInput={(e) => setLocalTitle(e.currentTarget.textContent || "")}
-        onBlur={handleBlur}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-          if (e.key === "Enter") {
-            e.preventDefault();
-            e.currentTarget.blur();
+    <NodeViewWrapper as="div" className="manuscript-heading-wrapper">
+      {showDivider && (
+        <div className={`nc-structure-divider ${isAct ? "nc-act-divider" : "nc-chapter-divider"}`} contentEditable={false}>
+          <div className="nc-scene-divider-diamond" />
+          <div className="nc-scene-divider-diamond" />
+          {isAct && <div className="nc-scene-divider-diamond" />}
+        </div>
+      )}
+      {!isFirst && (
+        <div className="inline-append-controls" contentEditable={false}>
+          {isAct && (
+            <button className="inline-append-button" onClick={createActBefore} title="New Act">
+              <Plus size={14} /> New Act
+            </button>
+          )}
+          <button className="inline-append-button" onClick={createChapterBefore} title="New Chapter">
+            <Plus size={14} /> New Chapter
+          </button>
+        </div>
+      )}
+      {React.createElement(
+        isAct ? "h2" : "h3",
+        {
+          className: `manuscript-structure-heading ${props.node.attrs.level}`,
+          onClick: (e: React.MouseEvent) => {
+            const input = e.currentTarget.querySelector('.title-input') as HTMLElement;
+            if (input && document.activeElement !== input) input.focus();
           }
-        }}
-      >
-        {props.node.attrs.title}
-      </span>
+        },
+        <>
+          <span>{label}{localTitle ? ": " : ""}</span>
+          <span
+            className="title-input"
+            contentEditable
+            suppressContentEditableWarning
+            onInput={(e) => setLocalTitle(e.currentTarget.textContent || "")}
+            onBlur={handleBlur}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
+          >
+            {props.node.attrs.title}
+          </span>
+        </>
+      )}
     </NodeViewWrapper>
   );
 };
@@ -159,6 +233,41 @@ const ManuscriptHeading = Node.create({
   },
 });
 
+const SceneBlockView = (props: NodeViewProps) => {
+  const queryClient = useQueryClient();
+
+  const createSceneAfter = async () => {
+    const pos = props.getPos();
+    if (pos === undefined) return;
+    const chapterId = findChapterIdBackward(props.editor, pos);
+    if (!chapterId) return;
+    const scene = await api<Scene>(`/api/chapters/${chapterId}/scenes`, {
+      method: "POST",
+      body: JSON.stringify({ title: "" }),
+    });
+    await queryClient.invalidateQueries({ queryKey: ["project-tree"] });
+    props.editor.chain().insertContentAt(pos + props.node.nodeSize, [
+      { type: "sceneBlock", attrs: { sceneId: scene.id, title: "", position: scene.position }, content: [{ type: "paragraph" }, { type: "paragraph" }, { type: "paragraph" }] }
+    ]).run();
+  };
+
+  return (
+    <NodeViewWrapper as="section" className="continuous-scene-block" data-scene-id={props.node.attrs.sceneId}>
+      <div className="nc-scene-divider" contentEditable={false} title={props.node.attrs.title}>
+        <div className="nc-scene-divider-diamond" />
+      </div>
+      <div className="continuous-scene-content">
+        <NodeViewContent />
+      </div>
+      <div className="inline-append-controls" contentEditable={false}>
+        <button className="inline-append-button" onClick={createSceneAfter} title="New Scene">
+          <Plus size={14} /> New Scene
+        </button>
+      </div>
+    </NodeViewWrapper>
+  );
+};
+
 const SceneBlock = Node.create({
   name: "sceneBlock",
   group: "block",
@@ -176,6 +285,9 @@ const SceneBlock = Node.create({
   parseHTML() {
     return [{ tag: "section[data-scene-id]" }];
   },
+  addNodeView() {
+    return ReactNodeViewRenderer(SceneBlockView);
+  },
   renderHTML({ node, HTMLAttributes }) {
     return [
       "section",
@@ -186,12 +298,34 @@ const SceneBlock = Node.create({
       [
         "div",
         { class: "nc-scene-divider", contenteditable: "false", title: node.attrs.title },
-        "— ⟡ —"
+        ["div", { class: "nc-scene-divider-diamond" }]
       ],
       ["div", { class: "continuous-scene-content" }, 0],
     ];
   },
 });
+
+function findChapterIdBackward(editor: Editor, pos: number): string | null {
+  let foundId: string | null = null;
+  editor.state.doc.nodesBetween(0, pos, (node) => {
+    if (node.type.name === "manuscriptHeading" && node.attrs.level === "chapter" && node.attrs.id) {
+      foundId = node.attrs.id;
+    }
+    return true; // continue traversing
+  });
+  return foundId;
+}
+
+function findActIdBackward(editor: Editor, pos: number): string | null {
+  let foundId: string | null = null;
+  editor.state.doc.nodesBetween(0, pos, (node) => {
+    if (node.type.name === "manuscriptHeading" && node.attrs.level === "act" && node.attrs.id) {
+      foundId = node.attrs.id;
+    }
+    return true;
+  });
+  return foundId;
+}
 
 function sceneIdAt(editor: Editor, position: number): string | null {
   return sceneIdAtDocument(editor.state.doc, position);
@@ -673,6 +807,8 @@ export const ManuscriptEditor = forwardRef<
       setError(historyError);
     }
   };
+
+  const queryClient = useQueryClient();
 
   const allScenes = tree.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes));
   const selectedIndex = allScenes.findIndex((scene) => scene.id === activeSceneId);

@@ -958,17 +958,66 @@ label small {
 }
 
 .nc-scene-divider {
-  text-align: center;
+  display: none; /* Hidden by default, only shown between scenes */
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
   color: var(--muted);
-  font-size: 16px;
   margin: 40px 0;
-  letter-spacing: 0.5em;
   user-select: none;
-  display: none;
+  width: 100%;
 }
 
+.nc-scene-divider::before,
+.nc-scene-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-soft);
+  opacity: 0.5;
+}
+
+.nc-scene-divider-diamond {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border-soft);
+  transform: rotate(45deg);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.nc-structure-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  color: var(--muted);
+  margin: 60px 0 40px;
+  user-select: none;
+  width: 100%;
+}
+
+.nc-structure-divider::before,
+.nc-structure-divider::after {
+  content: "";
+  flex: 1;
+  background-color: var(--border-soft);
+  opacity: 0.7;
+}
+
+.nc-chapter-divider::before,
+.nc-chapter-divider::after {
+  height: 2px;
+}
+
+.nc-act-divider::before,
+.nc-act-divider::after {
+  height: 3px;
+}
+
+.react-renderer + .react-renderer > .continuous-scene-block > .nc-scene-divider,
 .continuous-scene-block + .continuous-scene-block > .nc-scene-divider {
-  display: block;
+  display: flex;
 }
 
 
@@ -3516,4 +3565,51 @@ label small {
   .candidate-controls>div {
     justify-content: flex-end;
   }
+}
+
+/* Inline Manuscript Controls */
+.manuscript-heading-wrapper {
+  position: relative;
+}
+
+.inline-append-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+  margin: 1rem 0;
+}
+
+.continuous-scene-block {
+  position: relative;
+}
+
+.manuscript-heading-wrapper:hover > .inline-append-controls,
+.continuous-scene-block:hover > .inline-append-controls,
+.inline-append-controls:focus-within,
+.inline-append-controls:hover {
+  opacity: 1;
+}
+
+.inline-append-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inline-append-button:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--border-medium);
 }
