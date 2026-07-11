@@ -263,6 +263,27 @@ export async function registerGenerationRoutes(
         input.targetLength === null
           ? "as much prose as the scene needs; there is no requested word or paragraph limit"
           : `${input.targetLength} ${input.lengthUnit}`;
+
+      let povCharacterName: string | null = null;
+      if (ownedRecord.project.settings.povCharacterEntryId) {
+        const [entry] = await context.db
+          .select({ name: compendiumEntries.name })
+          .from(compendiumEntries)
+          .where(eq(compendiumEntries.id, ownedRecord.project.settings.povCharacterEntryId))
+          .limit(1);
+        if (entry) povCharacterName = entry.name;
+      }
+
+      const povString = povCharacterName
+        ? `${ownedRecord.project.settings.povType}, following ${povCharacterName}`
+        : ownedRecord.project.settings.povType;
+
+      const projectSettingsString = [
+        `Tense: ${ownedRecord.project.settings.tense}`,
+        `Point of View: ${povString}`,
+        `Language: ${ownedRecord.project.settings.language}`,
+      ].join("\n");
+
       const messages = [
         protectedProtocolMessage(input.workflow),
         planningContext,
@@ -280,6 +301,7 @@ export async function registerGenerationRoutes(
           event_target: input.eventTarget,
           user_instructions: input.instructions,
           target_length: targetLength,
+          project_settings: projectSettingsString,
         }),
       ];
       const [generation] = await context.db

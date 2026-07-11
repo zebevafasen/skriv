@@ -42,13 +42,14 @@ export const createPromptInputSchema = promptDefinitionSchema
 export const updatePromptInputSchema = createPromptInputSchema.partial();
 
 export const workflowVariables: Record<z.infer<typeof workflowKeySchema>, readonly string[]> = {
-  "prose.start": ["context_package", "scene_context", "user_instructions", "target_length"],
+  "prose.start": ["context_package", "scene_context", "user_instructions", "target_length", "project_settings"],
   "prose.continue": [
     "context_package",
     "manuscript_before_cursor",
     "manuscript_after_cursor",
     "user_instructions",
     "target_length",
+    "project_settings",
   ],
   "prose.toward_event": [
     "context_package",
@@ -57,6 +58,7 @@ export const workflowVariables: Record<z.infer<typeof workflowKeySchema>, readon
     "event_target",
     "user_instructions",
     "target_length",
+    "project_settings",
   ],
   "ideation.premise": ["genres", "themes", "tags", "user_instructions"],
   "context.extract": ["request_context", "candidate_fragments"],

@@ -425,7 +425,7 @@ export async function registerProjectRoutes(
       .update(projects)
       .set({
         ...(input.title !== undefined ? { title: input.title } : {}),
-        ...(input.settings !== undefined ? { settings: { ...current.settings, ...input.settings } } : {}),
+        ...(input.settings !== undefined ? { settings: projectSettingsSchema.parse({ ...current.settings, ...input.settings }) } : {}),
         ...touchUpdatedAt 
       })
       .where(eq(projects.id, id))

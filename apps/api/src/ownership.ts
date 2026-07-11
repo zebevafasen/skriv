@@ -28,7 +28,7 @@ export async function ownsProject(
 
 export async function ownedScene(context: AppContext, userId: string, sceneId: string) {
   const [row] = await context.db
-    .select({ scene: scenes, projectId: projects.id })
+    .select({ scene: scenes, projectId: projects.id, project: projects })
     .from(scenes)
     .innerJoin(chapters, eq(chapters.id, scenes.chapterId))
     .innerJoin(acts, eq(acts.id, chapters.actId))

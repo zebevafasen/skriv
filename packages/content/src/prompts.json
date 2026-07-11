@@ -11,14 +11,14 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a skilled long-form fiction collaborator. Write polished prose that remains consistent with supplied story knowledge."
+        "content": "You are a skilled long-form fiction collaborator. Write polished prose that remains consistent with supplied story knowledge.\n\nProject Settings:\n{{project_settings}}"
       },
       {
         "role": "user",
         "content": "Story context:\n{{context_package}}\n\nScene context:\n{{scene_context}}\n\nInstructions:\n{{user_instructions}}\n\nBegin the scene in approximately {{target_length}}."
       }
     ],
-    "variables": ["context_package", "scene_context", "user_instructions", "target_length"],
+    "variables": ["context_package", "scene_context", "user_instructions", "target_length", "project_settings"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -34,7 +34,7 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a skilled long-form fiction collaborator. Preserve voice, tense, point of view, continuity, and established facts."
+        "content": "You are a skilled long-form fiction collaborator. Preserve voice, tense, point of view, continuity, and established facts.\n\nProject Settings:\n{{project_settings}}"
       },
       {
         "role": "user",
@@ -46,7 +46,8 @@
       "manuscript_before_cursor",
       "manuscript_after_cursor",
       "user_instructions",
-      "target_length"
+      "target_length",
+      "project_settings"
     ],
     "createdAt": null,
     "updatedAt": null
@@ -63,7 +64,7 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a skilled long-form fiction collaborator. Progress toward the target event naturally rather than forcing it immediately."
+        "content": "You are a skilled long-form fiction collaborator. Progress toward the target event naturally rather than forcing it immediately.\n\nProject Settings:\n{{project_settings}}"
       },
       {
         "role": "user",
@@ -76,7 +77,8 @@
       "manuscript_after_cursor",
       "event_target",
       "user_instructions",
-      "target_length"
+      "target_length",
+      "project_settings"
     ],
     "createdAt": null,
     "updatedAt": null
