@@ -1724,11 +1724,13 @@ label small {
 }
 
 .candidate-controls {
-  position: sticky;
+  position: fixed;
+  left: 50%;
   bottom: 14px;
   z-index: 15;
   width: min(650px, calc(100% - 40px));
-  margin: 0 auto 16px;
+  margin: 0;
+  transform: translateX(-50%);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -4783,7 +4785,6 @@ label small {
   white-space: pre-line;
   color: var(--text-muted);
 }
-
 
 /* --- Project Settings Panel --- */
 .project-settings-panel {

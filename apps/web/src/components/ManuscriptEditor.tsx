@@ -664,13 +664,23 @@ export const ManuscriptEditor = forwardRef<
       content: compositeDocument(tree, scope),
       editorProps: {
         attributes: { class: "manuscript-prose continuous-editor-prose", spellcheck: "true" },
+        handleTextInput(view, _from, _to, text) {
+          if (text !== "/") return false;
+          const sceneBeat = view.state.schema.nodes.sceneBeat;
+          if (!sceneBeat) return false;
+          const latestModel = localStorage.getItem("asterism-latest-model");
+          const attrs = latestModel ? { modelOverride: latestModel } : {};
+          view.dispatch(view.state.tr.replaceSelectionWith(sceneBeat.create(attrs)));
+          return true;
+        },
         handleKeyDown(view, event) {
           if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
             event.preventDefault();
-            view.dispatch(view.state.tr.deleteSelection());
+            const sceneBeat = view.state.schema.nodes.sceneBeat;
+            if (!sceneBeat) return false;
             const latestModel = localStorage.getItem("asterism-latest-model");
             const attrs = latestModel ? { modelOverride: latestModel } : {};
-            editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
+            view.dispatch(view.state.tr.replaceSelectionWith(sceneBeat.create(attrs)));
             return true;
           }
           return false;
