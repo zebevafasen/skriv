@@ -10,8 +10,9 @@ import { type Editor, Extension, type JSONContent, mergeAttributes, Node } from 
 import Placeholder from "@tiptap/extension-placeholder";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   ChevronLeft,
@@ -66,6 +67,62 @@ const CompositeDocument = Node.create({
   topNode: true,
   content: "block+",
 });
+const ManuscriptHeadingView = (props: NodeViewProps) => {
+  const isAct = props.node.attrs.level === "act";
+  const label = `${isAct ? "Act" : "Chapter"} ${Number(props.node.attrs.position) + 1}`;
+  const queryClient = useQueryClient();
+
+  const [localTitle, setLocalTitle] = useState(props.node.attrs.title);
+
+  useEffect(() => {
+    setLocalTitle(props.node.attrs.title);
+  }, [props.node.attrs.title]);
+
+  const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
+    const newTitle = e.currentTarget.textContent?.trim() || "";
+    e.currentTarget.textContent = newTitle; // format text cleanly on blur
+    if (newTitle !== props.node.attrs.title) {
+      props.updateAttributes({ title: newTitle });
+      void api(`/${isAct ? "api/acts" : "api/chapters"}/${props.node.attrs.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title: newTitle }),
+      }).then(() => {
+        void queryClient.invalidateQueries({ queryKey: ["project-tree"] });
+      });
+    }
+  };
+
+  return (
+    <NodeViewWrapper 
+      as={isAct ? "h2" : "h3"} 
+      className={`manuscript-structure-heading ${props.node.attrs.level}`}
+      onClick={(e) => {
+        const input = e.currentTarget.querySelector('.title-input') as HTMLElement;
+        if (input && document.activeElement !== input) {
+          input.focus();
+        }
+      }}
+    >
+      <span>{label}{localTitle ? ": " : ""}</span>
+      <span
+        className="title-input"
+        contentEditable
+        suppressContentEditableWarning
+        onInput={(e) => setLocalTitle(e.currentTarget.textContent || "")}
+        onBlur={handleBlur}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.currentTarget.blur();
+          }
+        }}
+      >
+        {props.node.attrs.title}
+      </span>
+    </NodeViewWrapper>
+  );
+};
 
 const ManuscriptHeading = Node.create({
   name: "manuscriptHeading",
@@ -74,23 +131,30 @@ const ManuscriptHeading = Node.create({
   selectable: false,
   addAttributes() {
     return {
+      id: { default: "" },
       level: { default: "chapter" },
       title: { default: "" },
       position: { default: 0 },
     };
   },
   parseHTML() {
-    return [{ tag: "div[data-manuscript-heading]" }];
+    return [{ tag: "*[data-manuscript-heading]" }];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ManuscriptHeadingView);
   },
   renderHTML({ node, HTMLAttributes }) {
+    const isAct = node.attrs.level === "act";
+    const label = `${isAct ? "Act" : "Chapter"} ${Number(node.attrs.position) + 1}`;
+    const text = node.attrs.title ? `${label}: ${node.attrs.title}` : label;
     return [
-      "div",
+      isAct ? "h2" : "h3",
       mergeAttributes(HTMLAttributes, {
         "data-manuscript-heading": node.attrs.level,
         class: `manuscript-structure-heading ${node.attrs.level}`,
         contenteditable: "false",
       }),
-      `${String(node.attrs.level).toUpperCase()} ${Number(node.attrs.position) + 1} · ${node.attrs.title}`,
+      text,
     ];
   },
 });
@@ -120,10 +184,9 @@ const SceneBlock = Node.create({
         class: "continuous-scene-block",
       }),
       [
-        "header",
-        { class: "continuous-scene-heading", contenteditable: "false" },
-        ["span", {}, `SCENE ${Number(node.attrs.position) + 1}`],
-        ["strong", {}, node.attrs.title],
+        "div",
+        { class: "nc-scene-divider", contenteditable: "false", title: node.attrs.title },
+        "— ⟡ —"
       ],
       ["div", { class: "continuous-scene-content" }, 0],
     ];
@@ -248,7 +311,7 @@ export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope):
     if (scope.kind !== "chapter") {
       content.push({
         type: "manuscriptHeading",
-        attrs: { level: "act", title: act.title, position: act.position },
+        attrs: { id: act.id, level: "act", title: act.title, position: act.position },
       });
     }
     for (const chapter of act.chapters.filter(
@@ -256,7 +319,7 @@ export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope):
     )) {
       content.push({
         type: "manuscriptHeading",
-        attrs: { level: "chapter", title: chapter.title, position: chapter.position },
+        attrs: { id: chapter.id, level: "chapter", title: chapter.title, position: chapter.position },
       });
       for (const scene of chapter.scenes) {
         content.push({
@@ -649,35 +712,80 @@ export const ManuscriptEditor = forwardRef<
           </button>
         </div>
       </div>
-      <div className="editor-frame continuous-editor-frame">
-        <div className="editor-toolbar">
-          <button type="button" onClick={() => editor?.chain().focus().toggleBold().run()}>
-            B
-          </button>
-          <button type="button" onClick={() => editor?.chain().focus().toggleItalic().run()}>
-            <em>I</em>
-          </button>
-          <span />
-          <button
-            type="button"
-            className="ai-command"
-            onClick={() => {
-              cursorRef.current = editor?.state.selection.from ?? 1;
-              setMenuOpen(true);
-            }}
-          >
-            <Sparkles size={15} /> AI /
-          </button>
+      <div className="editor-body">
+        <div className="editor-frame continuous-editor-frame">
+          <div className="editor-toolbar">
+            <button type="button" onClick={() => editor?.chain().focus().toggleBold().run()}>
+              B
+            </button>
+            <button type="button" onClick={() => editor?.chain().focus().toggleItalic().run()}>
+              <em>I</em>
+            </button>
+            <span />
+            <button
+              type="button"
+              className="ai-command"
+              onClick={() => {
+                cursorRef.current = editor?.state.selection.from ?? 1;
+                setMenuOpen(true);
+              }}
+            >
+              <Sparkles size={15} /> AI /
+            </button>
+          </div>
+          <EditorContent editor={editor} />
+          {menuOpen ? (
+            <GenerationPanel
+              baseModel={baseModel}
+              models={models}
+              onClose={() => setMenuOpen(false)}
+              onGenerate={startGeneration}
+            />
+          ) : null}
         </div>
-        <EditorContent editor={editor} />
-        {menuOpen ? (
-          <GenerationPanel
-            baseModel={baseModel}
-            models={models}
-            onClose={() => setMenuOpen(false)}
-            onGenerate={startGeneration}
-          />
-        ) : null}
+        <nav className="editor-side-nav">
+          {tree.acts.map((act) => {
+            const actScenes = visibleScenes.filter((s) =>
+              act.chapters.some((c) => c.scenes.some((cs) => cs.id === s.id)),
+            );
+            if (actScenes.length === 0) return null;
+            return (
+              <div key={act.id} className="nav-act">
+                <span className="nav-act-title">Act {act.position + 1}{act.title ? `: ${act.title}` : ""}</span>
+                {act.chapters.map((chapter) => {
+                  const chapterScenes = visibleScenes.filter((s) =>
+                    chapter.scenes.some((cs) => cs.id === s.id),
+                  );
+                  if (chapterScenes.length === 0) return null;
+                  return (
+                    <div key={chapter.id} className="nav-chapter">
+                      <span className="nav-chapter-title">Chapter {chapter.position + 1}{chapter.title ? `: ${chapter.title}` : ""}</span>
+                      {chapter.scenes.map((scene) => {
+                        if (!visibleScenes.some((s) => s.id === scene.id)) return null;
+                        return (
+                          <button
+                            key={scene.id}
+                            type="button"
+                            className={`nav-scene ${scene.id === activeSceneId ? "active" : ""}`}
+                            onClick={() => {
+                              onSelectScene(scene.id);
+                              const el = document.querySelector(`[data-scene-id="${scene.id}"]`);
+                              if (el) {
+                                el.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }
+                            }}
+                          >
+                            {scene.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
       </div>
       {conflicts.size ? (
         <div className="scene-conflict-banner">

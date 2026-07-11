@@ -41,7 +41,7 @@ export function ProjectPage() {
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("manuscript");
   const [view, setView] = useState<ManuscriptView>("write");
-  const [scope, setScope] = useState<ManuscriptScope | null>(null);
+  const [scope, setScope] = useState<ManuscriptScope | null>({ kind: "story" });
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [previewEntryIds, setPreviewEntryIds] = useState<string[]>([]);

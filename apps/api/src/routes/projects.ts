@@ -30,7 +30,7 @@ import { ownedAct, ownedChapter, ownedScene, ownedWorkspaceId, ownsProject } fro
 
 const idParams = z.object({ id: z.uuid() });
 const childParams = z.object({ id: z.uuid(), childId: z.uuid().optional() });
-const renameInputSchema = z.object({ title: z.string().trim().min(1).max(300) });
+const renameInputSchema = z.object({ title: z.string().trim().max(300) });
 
 const defaultSceneMetadata = sceneMetadataSchema.parse({});
 
@@ -124,19 +124,19 @@ export async function registerProjectRoutes(
       if (!project) throw new Error("Project creation failed.");
       const [act] = await tx
         .insert(acts)
-        .values({ projectId: project.id, title: "Act One", position: 0 })
+        .values({ projectId: project.id, title: "", position: 0 })
         .returning();
       if (!act) throw new Error("Act creation failed.");
       const [chapter] = await tx
         .insert(chapters)
-        .values({ actId: act.id, title: "Chapter One", position: 0 })
+        .values({ actId: act.id, title: "", position: 0 })
         .returning();
       if (!chapter) throw new Error("Chapter creation failed.");
       const [scene] = await tx
         .insert(scenes)
         .values({
           chapterId: chapter.id,
-          title: "Opening Scene",
+          title: "",
           position: 0,
           document: emptyTiptapDocument,
           plainText: "",

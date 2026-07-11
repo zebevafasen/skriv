@@ -123,20 +123,20 @@ export const manuscriptTreeSchema = z.object({
   ),
 });
 
-export const createProjectInputSchema = z.object({ title: z.string().trim().min(1).max(300) });
+export const createProjectInputSchema = z.object({ title: z.string().trim().max(300) });
 export const createActInputSchema = z.object({
-  title: z.string().trim().min(1).max(300).default("New Act"),
+  title: z.string().trim().max(300).default(""),
 });
 export const createChapterInputSchema = z.object({
-  title: z.string().trim().min(1).max(300).default("New Chapter"),
+  title: z.string().trim().max(300).default(""),
 });
 export const createSceneInputSchema = z.object({
-  title: z.string().trim().min(1).max(300).default("New Scene"),
+  title: z.string().trim().max(300).default(""),
 });
 
 export const updateSceneInputSchema = z.object({
   expectedVersion: z.number().int().positive(),
-  title: z.string().trim().min(1).max(300).optional(),
+  title: z.string().trim().max(300).optional(),
   document: tiptapDocumentSchema.optional(),
   plainText: z.string().max(2_000_000).optional(),
   metadata: sceneMetadataBaseSchema.partial().optional(),

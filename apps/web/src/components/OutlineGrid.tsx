@@ -734,7 +734,7 @@ export function OutlineGrid({
                         <button
                           type="button"
                           className="button ghost"
-                          onClick={() => void create(`/api/acts/${act.id}/chapters`, "New Chapter")}
+                          onClick={() => void create(`/api/acts/${act.id}/chapters`, "")}
                         >
                           <Plus size={13} /> Chapter
                         </button>
@@ -847,7 +847,7 @@ export function OutlineGrid({
                                       onClick={() =>
                                         void create(
                                           `/api/chapters/${chapter.id}/scenes`,
-                                          "New Scene",
+                                          "",
                                         )
                                       }
                                     >
@@ -869,7 +869,7 @@ export function OutlineGrid({
               <button
                 type="button"
                 className="button primary"
-                onClick={() => void create(`/api/projects/${projectId}/acts`, "New Act")}
+                onClick={() => void create(`/api/projects/${projectId}/acts`, "")}
               >
                 <Plus size={14} /> New Act
               </button>
