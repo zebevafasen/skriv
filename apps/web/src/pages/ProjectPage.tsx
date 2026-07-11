@@ -76,6 +76,11 @@ export function ProjectPage() {
     mobileQuery.addEventListener("change", handleViewportChange);
     return () => mobileQuery.removeEventListener("change", handleViewportChange);
   }, []);
+  useEffect(() => {
+    if (tab === "chat" && window.matchMedia("(max-width: 900px)").matches) {
+      setCompendiumOpen(false);
+    }
+  }, [tab]);
   const [previewEntryIds, setPreviewEntryIds] = useState<string[]>([]);
   const editorRef = useRef<ManuscriptEditorHandle | null>(null);
   const tree = useQuery({
@@ -264,6 +269,7 @@ export function ProjectPage() {
             className={tab === "chat" ? "active" : ""}
             onClick={async () => {
               await editorRef.current?.flush();
+              setCompendiumOpen(false);
               await updateSearch({ tab: "chat" });
             }}
           >
@@ -499,7 +505,11 @@ export function ProjectPage() {
         </div>
       ) : null}
       {tab === "settings" ? (
-        <ProjectSettingsPanel projectId={projectId} project={tree.data.project} entries={compendium.data ?? []} />
+        <ProjectSettingsPanel
+          projectId={projectId}
+          project={tree.data.project}
+          entries={compendium.data ?? []}
+        />
       ) : null}
 
       {previewEntryIds.length > 0 ? (

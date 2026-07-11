@@ -461,6 +461,7 @@ export function ChatPanel({
           className="icon-button"
           type="button"
           title="Rename"
+          aria-label="Rename thread"
           onClick={async () => {
             const title = await dialog.prompt({
               title: "Rename Chat thread",
@@ -476,6 +477,7 @@ export function ChatPanel({
           className="icon-button danger"
           type="button"
           title="Delete"
+          aria-label="Delete thread"
           onClick={async () => {
             if (
               !(await dialog.confirm({
@@ -503,6 +505,7 @@ export function ChatPanel({
                 <button
                   type="button"
                   title="Copy"
+                  aria-label="Copy message"
                   onClick={() => navigator.clipboard.writeText(message.content)}
                 >
                   <Copy size={13} />
@@ -630,7 +633,12 @@ export function ChatPanel({
           entries={entries}
           onChange={setDraft}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing &&
+              window.matchMedia("(pointer: fine)").matches
+            ) {
               event.preventDefault();
               void send();
             }
