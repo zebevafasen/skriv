@@ -140,6 +140,7 @@ export function ProjectSettingsPanel({
                           const newSeries = await dialog.prompt({
                             title: "New Series",
                             label: "Series Name",
+                            initialValue: "",
                           });
                           if (newSeries) {
                             await updateSetting("series", newSeries);

@@ -8,7 +8,7 @@ import { PromptsPage } from "./pages/PromptsPage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
 
 type ProjectSearch = {
-  tab?: "chat" | "ideation";
+  tab?: "chat" | "ideation" | "settings";
   view?: "outline";
   scope?: string;
   scene?: string;
@@ -37,7 +37,7 @@ const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects/$projectId",
   validateSearch: (search: Record<string, unknown>): ProjectSearch => ({
-    ...(search.tab === "chat" || search.tab === "ideation" ? { tab: search.tab } : {}),
+    ...(search.tab === "chat" || search.tab === "ideation" || search.tab === "settings" ? { tab: search.tab } : {}),
     ...(search.view === "outline" ? { view: search.view } : {}),
     ...(typeof search.scope === "string" &&
     /^(story|(?:act|chapter|scene):[0-9a-f-]+)$/.test(search.scope)
