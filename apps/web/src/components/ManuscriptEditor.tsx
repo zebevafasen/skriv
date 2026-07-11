@@ -96,7 +96,7 @@ const ManuscriptHeadingView = (props: NodeViewProps) => {
     <NodeViewWrapper 
       as={isAct ? "h2" : "h3"} 
       className={`manuscript-structure-heading ${props.node.attrs.level}`}
-      onClick={(e) => {
+      onClick={(e: React.MouseEvent) => {
         const input = e.currentTarget.querySelector('.title-input') as HTMLElement;
         if (input && document.activeElement !== input) {
           input.focus();

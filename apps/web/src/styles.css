@@ -971,24 +971,7 @@ label small {
   display: block;
 }
 
-.manuscript-structure-heading {
-  text-align: center;
-  margin-top: 60px;
-  margin-bottom: 20px;
-  user-select: none;
-}
 
-.manuscript-structure-heading.act {
-  font: 500 28px var(--serif);
-  color: var(--text);
-  border-bottom: 1px solid var(--border-soft);
-  padding-bottom: 10px;
-}
-
-.manuscript-structure-heading.chapter {
-  font: 500 22px var(--serif);
-  color: var(--text);
-}
 
 .manuscript-prose p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -1743,21 +1726,24 @@ label small {
 }
 
 .manuscript-structure-heading {
-  margin: 34px 0 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #493b2a;
-  color: var(--accent);
-  font-family: var(--sans);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  margin: 60px 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text);
+  font-family: var(--serif);
   text-align: center;
+  user-select: none;
+}
+
+.manuscript-structure-heading.act {
+  font-size: 28px;
+  font-weight: 500;
 }
 
 .manuscript-structure-heading.chapter {
+  font-size: 22px;
+  font-weight: 500;
   margin-top: 26px;
-  border-bottom-color: #302d29;
-  color: #b9aea1;
 }
 
 .manuscript-structure-heading .title-input {
