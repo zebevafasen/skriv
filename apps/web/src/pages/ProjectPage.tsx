@@ -2,10 +2,20 @@ import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asteri
 import { findMentions } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import { BookMarked, BookOpenText, Download, Lightbulb, Pencil, Trash2, X } from "lucide-react";
+import {
+  BookMarked,
+  BookOpenText,
+  Download,
+  Lightbulb,
+  MessageCircle,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
+import { ChatPanel } from "../components/ChatPanel.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { IdeationPanel } from "../components/IdeationPanel.js";
 import {
@@ -15,7 +25,7 @@ import {
 } from "../components/ManuscriptEditor.js";
 import { OutlineGrid } from "../components/OutlineGrid.js";
 
-type Tab = "manuscript" | "ideation";
+type Tab = "manuscript" | "ideation" | "chat";
 type ManuscriptView = "write" | "outline";
 type Model = { id: string; name: string };
 
@@ -172,6 +182,16 @@ export function ProjectPage() {
           </button>
           <button
             type="button"
+            className={tab === "chat" ? "active" : ""}
+            onClick={async () => {
+              await editorRef.current?.flush();
+              setTab("chat");
+            }}
+          >
+            <MessageCircle size={16} /> Chat
+          </button>
+          <button
+            type="button"
             className={tab === "ideation" ? "active" : ""}
             onClick={async () => {
               await editorRef.current?.flush();
@@ -180,7 +200,7 @@ export function ProjectPage() {
           >
             <Lightbulb size={16} /> Ideation
           </button>
-          {tab === "manuscript" && (
+          {(tab === "manuscript" || tab === "chat") && (
             <button
               type="button"
               className={`mobile-only-tab ${compendiumOpen ? "active" : ""}`}
@@ -359,6 +379,34 @@ export function ProjectPage() {
         </div>
       ) : null}
       {tab === "ideation" ? <IdeationPanel projectId={projectId} /> : null}
+      {tab === "chat" ? (
+        <div
+          className={`manuscript-layout chat-layout ${compendiumOpen ? "compendium-open" : ""} ${selectedEntryId ? "entry-open" : ""}`}
+        >
+          <CompendiumPanel
+            projectId={projectId}
+            entries={compendium.data ?? []}
+            selectedEntryId={selectedEntryId}
+            onSelect={setSelectedEntryId}
+          />
+          <div className="manuscript-main">
+            <ChatPanel
+              projectId={projectId}
+              tree={tree.data}
+              entries={compendium.data ?? []}
+              baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
+              models={models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]}
+              onOpenEntry={setPreviewEntryIds}
+            />
+            <CompendiumEntryDrawer
+              projectId={projectId}
+              entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
+              mentionCount={selectedEntryMentionCount}
+              onClose={() => setSelectedEntryId(null)}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {previewEntryIds.length > 0 ? (
         <div className="modal-backdrop">

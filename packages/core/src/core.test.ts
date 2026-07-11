@@ -30,6 +30,18 @@ const entry = (
 });
 
 describe("mention matching", () => {
+  it("can include untracked entries for explicit chat mentions", () => {
+    const hidden = entry({
+      id: crypto.randomUUID(),
+      name: "Cedora",
+      trackingEnabled: false,
+      activationMode: "never",
+    });
+    expect(findMentions("Ask about Cedora", [hidden])).toHaveLength(0);
+    expect(
+      findMentions("Ask about Cedora", [hidden], { includeUntracked: true })[0]?.entryIds,
+    ).toEqual([hidden.id]);
+  });
   it("uses boundaries and longest-match precedence", () => {
     const ann = entry({ id: crypto.randomUUID(), name: "Ann" });
     const anna = entry({ id: crypto.randomUUID(), name: "Anna Bell" });

@@ -9,6 +9,7 @@ import Fastify from "fastify";
 import { createAuth, ensureDevelopmentUser, registerAuth } from "./auth.js";
 import type { AppContext } from "./context.js";
 import { createProviderResolver } from "./credentials.js";
+import { registerChatRoutes } from "./routes/chat.js";
 import { registerCompendiumRoutes } from "./routes/compendium.js";
 import { registerExportRoutes } from "./routes/export.js";
 import { registerGenerationRoutes } from "./routes/generation.js";
@@ -65,6 +66,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   }));
   await registerProjectRoutes(app, context);
   await registerCompendiumRoutes(app, context);
+  await registerChatRoutes(app, context);
   await registerPromptRoutes(app, context);
   await registerSettingsRoutes(app, context);
   await registerGenerationRoutes(app, context);

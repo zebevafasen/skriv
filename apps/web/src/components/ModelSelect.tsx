@@ -5,10 +5,12 @@ export function ModelSelect({
   value,
   onChange,
   models,
+  placement = "bottom",
 }: {
   value: string;
   onChange: (value: string) => void;
   models: Array<{ id: string; name: string }>;
+  placement?: "top" | "bottom";
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -67,14 +69,22 @@ export function ModelSelect({
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {selectedName || "Select a model..."}
         </span>
-        <ChevronDown size={16} style={{ opacity: 0.5, marginLeft: "8px", flexShrink: 0 }} />
+        <ChevronDown
+          size={16}
+          style={{
+            opacity: 0.5,
+            marginLeft: "8px",
+            flexShrink: 0,
+            transform: placement === "top" && isOpen ? "rotate(180deg)" : undefined,
+          }}
+        />
       </button>
 
       {isOpen && (
         <div
           style={{
             position: "absolute",
-            top: "calc(100% + 4px)",
+            ...(placement === "top" ? { bottom: "calc(100% + 4px)" } : { top: "calc(100% + 4px)" }),
             left: 0,
             right: 0,
             zIndex: 100,

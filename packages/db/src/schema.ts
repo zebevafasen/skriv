@@ -1,4 +1,5 @@
 import type {
+  ChatContextSource,
   CompendiumContent,
   PromptMessage,
   SceneMetadata,
@@ -292,6 +293,39 @@ export const generations = pgTable("generations", {
   ...timestamps,
 });
 
+export const chatThreads = pgTable("chat_threads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("New thread"),
+  model: text("model").notNull(),
+  contextSources: jsonb("context_sources").$type<ChatContextSource[]>().notNull().default([]),
+  rollingSummary: text("rolling_summary").notNull().default(""),
+  summarizedThroughMessageId: uuid("summarized_through_message_id"),
+  ...timestamps,
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  threadId: uuid("thread_id")
+    .notNull()
+    .references(() => chatThreads.id, { onDelete: "cascade" }),
+  role: text("role", { enum: ["user", "assistant"] }).notNull(),
+  content: text("content").notNull().default(""),
+  status: text("status", { enum: ["streaming", "completed", "cancelled", "failed"] })
+    .notNull()
+    .default("completed"),
+  model: text("model"),
+  failureMessage: text("failure_message"),
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  ...timestamps,
+});
+
 export const userCollections = pgTable("user_collections", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id")
@@ -345,7 +379,9 @@ export const usageEvents = pgTable("usage_events", {
   projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
   generationId: uuid("generation_id").references(() => generations.id, { onDelete: "set null" }),
   model: text("model").notNull(),
-  role: text("role", { enum: ["writing", "context", "ideation", "summary"] }).notNull(),
+  role: text("role", {
+    enum: ["writing", "context", "ideation", "summary", "chat", "chat_utility"],
+  }).notNull(),
   inputTokens: integer("input_tokens"),
   outputTokens: integer("output_tokens"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

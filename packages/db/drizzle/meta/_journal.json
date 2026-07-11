@@ -29,6 +29,13 @@
       "when": 1783731708870,
       "tag": "0003_scene_labels",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783792800000,
+      "tag": "0004_project_chat",
+      "breakpoints": true
     }
   ]
 }

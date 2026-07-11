@@ -6,12 +6,14 @@ export function CompendiumMentionText({
   text,
   entries,
   onOpenEntry,
+  includeUntracked = false,
 }: {
   text: string;
   entries: CompendiumEntry[];
   onOpenEntry: (entryIds: string[], direct: boolean) => void;
+  includeUntracked?: boolean;
 }) {
-  const matches = findMentions(text, entries);
+  const matches = findMentions(text, entries, { includeUntracked });
   if (matches.length === 0) return text;
 
   const content: ReactNode[] = [];

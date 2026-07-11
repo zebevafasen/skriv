@@ -1,4 +1,8 @@
-import type { GenerationRequest, GenerationStreamEvent } from "@asterism/contracts";
+import type {
+  ChatStreamEvent,
+  GenerationRequest,
+  GenerationStreamEvent,
+} from "@asterism/contracts";
 
 export class ApiError extends Error {
   constructor(
@@ -8,6 +12,34 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
+}
+
+export async function streamChat(
+  path: string,
+  content: string | null,
+  onEvent: (event: ChatStreamEvent) => void,
+  signal?: AbortSignal,
+) {
+  const response = await fetch(path, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", Accept: "application/x-ndjson" },
+    ...(content === null ? {} : { body: JSON.stringify({ content }) }),
+    ...(signal ? { signal } : {}),
+  });
+  if (!response.ok || !response.body)
+    throw new ApiError("Chat response could not start.", response.status);
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += value;
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) if (line.trim()) onEvent(JSON.parse(line) as ChatStreamEvent);
+  }
+  if (buffer.trim()) onEvent(JSON.parse(buffer) as ChatStreamEvent);
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {

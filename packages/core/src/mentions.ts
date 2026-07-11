@@ -12,11 +12,15 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function findMentions(text: string, entries: readonly CompendiumEntry[]): MentionMatch[] {
+export function findMentions(
+  text: string,
+  entries: readonly CompendiumEntry[],
+  options: { includeUntracked?: boolean } = {},
+): MentionMatch[] {
   const candidates: MentionMatch[] = [];
 
   for (const entry of entries) {
-    if (!entry.trackingEnabled) continue;
+    if (!entry.trackingEnabled && !options.includeUntracked) continue;
     const exclusionRanges = entry.matchExclusions.flatMap((phrase) => {
       if (!phrase.trim()) return [];
       const flags = entry.caseSensitive ? "gu" : "giu";
