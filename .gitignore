@@ -9,3 +9,8 @@ test-results/
 *.log
 *.tsbuildinfo
 .DS_Store
+
+.vercel
+.vercel-build/
+
+.env*

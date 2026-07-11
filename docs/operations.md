@@ -2,7 +2,12 @@
 
 ## Environment separation
 
-Use separate Vercel projects for `apps/web` and `apps/api`, and separate Neon databases for preview and production. Configure the web project to proxy or route `/api` to the API project in hosted environments.
+For personal use, deploy the repository as one Vercel project so the Vite frontend, Fastify API,
+authentication cookies, and `/api` routes share one origin. Use a Neon database in the same region
+as the Vercel Function. See [Personal Vercel deployment](vercel.md) for the exact setup.
+
+For a future multi-user beta, use separate Neon databases for preview and production. Preview
+deployments must not share the production database.
 
 Required production variables:
 
@@ -10,12 +15,12 @@ Required production variables:
 NODE_ENV=production
 WEB_ORIGIN=https://your-web-host
 DATABASE_URL=postgresql://...
-BETTER_AUTH_URL=https://your-api-host
+BETTER_AUTH_URL=https://your-web-host
 BETTER_AUTH_SECRET=<at least 32 high-entropy characters>
 DEV_AUTH_BYPASS=false
 INVITE_ONLY=true
-AI_PROVIDER=openrouter
-OPENROUTER_API_KEY=...
+CREDENTIAL_ENCRYPTION_KEY=<a separate high-entropy secret>
+AI_PROVIDER=fake
 ```
 
 ## Release checklist
@@ -50,4 +55,3 @@ pg_restore --clean --if-exists --no-owner --dbname="$RESTORE_DATABASE_URL" aster
 ## Serverless portability
 
 The API owns provider and NDJSON stream normalization behind framework-neutral contracts. If hosted generation duration exceeds the selected serverless limits, move only `apps/api` to a long-running Node host and update the web API origin; the database, browser contracts, and provider adapters do not need redesign.
-

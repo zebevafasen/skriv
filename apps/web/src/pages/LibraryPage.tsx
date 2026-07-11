@@ -1,8 +1,8 @@
 import type { Project } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Plus, Search, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowRight, BookOpen, Plus, Search, Sparkles, Upload } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 
@@ -12,6 +12,7 @@ export function LibraryPage() {
   const [query, setQuery] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [creating, setCreating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const client = useQueryClient();
   const navigate = useNavigate();
   const projects = useQuery({
@@ -26,6 +27,37 @@ export function LibraryPage() {
       await navigate({ to: "/projects/$projectId", params: { projectId: project.id } });
     },
   });
+  const importProject = useMutation({
+    mutationFn: (jsonString: string) =>
+      api<CreatedProject>("/api/projects/import", {
+        method: "POST",
+        body: jsonString,
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: async ({ project }) => {
+      await client.invalidateQueries({ queryKey: ["projects"] });
+      await navigate({ to: "/projects/$projectId", params: { projectId: project.id } });
+    },
+  });
+
+  const handleImportChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text === "string") {
+          importProject.mutate(text);
+        }
+      } catch (err) {
+        console.error("Failed to parse imported project", err);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  };
   const filtered = useMemo(
     () =>
       (projects.data ?? []).filter((project) =>
@@ -45,6 +77,21 @@ export function LibraryPage() {
         <button type="button" className="button primary" onClick={() => setCreating(true)}>
           <Plus size={18} /> Create story
         </button>
+        <button
+          type="button"
+          className="button ghost"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importProject.isPending}
+        >
+          <Upload size={18} /> {importProject.isPending ? "Importing..." : "Import story"}
+        </button>
+        <input
+          type="file"
+          accept=".json"
+          style={{ display: "none" }}
+          ref={fileInputRef}
+          onChange={handleImportChange}
+        />
         <label className="search-field">
           <Search size={18} />
           <input
@@ -55,6 +102,7 @@ export function LibraryPage() {
         </label>
       </div>
       {projects.error ? <ErrorNotice error={projects.error} /> : null}
+      {importProject.error ? <ErrorNotice error={importProject.error} /> : null}
       {projects.isLoading ? <div className="loading">Gathering your stories…</div> : null}
       {!projects.isLoading && filtered.length === 0 ? (
         <EmptyState

@@ -1,8 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && pnpm --filter @asterism/api build",
-  "functions": {
-    "src/vercel.ts": { "maxDuration": 60 }
-  },
-  "rewrites": [{ "source": "/(.*)", "destination": "/src/vercel.ts" }]
-}

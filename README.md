@@ -95,3 +95,9 @@ Every Project query is scoped through Workspace membership. New accounts receive
 Scene saves use optimistic versions, including when several locked Scene blocks are displayed in one continuous editor. Manual/editor saves and accepted generations create restore points, generation candidates remain outside canonical Tiptap documents until acceptance, and sibling reordering preserves stable hierarchy IDs. Project export is available from `GET /api/projects/:id/export`.
 
 See [operations](docs/operations.md) for deployment, backup, and recovery guidance.
+
+## Personal Vercel deployment
+
+Asterism can be deployed as one Vercel project, with the Vite frontend and Fastify API sharing
+the same domain. Use a hosted PostgreSQL database; the recommended personal setup is Neon in
+the Frankfurt region. Follow the complete [Vercel deployment guide](docs/vercel.md).

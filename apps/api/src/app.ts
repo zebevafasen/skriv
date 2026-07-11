@@ -13,6 +13,7 @@ import { registerCompendiumRoutes } from "./routes/compendium.js";
 import { registerExportRoutes } from "./routes/export.js";
 import { registerGenerationRoutes } from "./routes/generation.js";
 import { registerIdeationRoutes } from "./routes/ideation.js";
+import { registerImportRoutes } from "./routes/import.js";
 import { registerInviteRoutes } from "./routes/invites.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
@@ -71,6 +72,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   await registerIdeationRoutes(app, context);
   await registerInviteRoutes(app, context);
   await registerExportRoutes(app, context);
+  await registerImportRoutes(app, context);
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
