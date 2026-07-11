@@ -13,6 +13,7 @@
     "test": "vitest run --passWithNoTests",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
+    "db:cleanup": "tsx src/cleanup.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
