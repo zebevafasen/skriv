@@ -42,8 +42,8 @@ import {
 } from "../editor/AsterismDecorations.js";
 import { generatedProseContent } from "../editor/generatedProse.js";
 import { ErrorNotice } from "./AppShell.js";
-import { type GenerationOptions, GenerationPanel } from "./GenerationPanel.js";
-
+import { type GenerationOptions, EditorActionsContext } from "./editor/EditorActionsContext.js";
+import { SceneBeat } from "./editor/sceneBeat.js";
 export type ManuscriptScope =
   | { kind: "scene"; id: string }
   | { kind: "story" }
@@ -449,6 +449,7 @@ export const ManuscriptEditor = forwardRef<
         CompositeDocument,
         ManuscriptHeading,
         SceneBlock,
+        SceneBeat,
         LockedSceneBoundaries,
         Placeholder.configure({ placeholder: "Begin the scene… Press / for Asterism." }),
         AsterismDecorations,
@@ -459,10 +460,10 @@ export const ManuscriptEditor = forwardRef<
         handleKeyDown(view, event) {
           if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
             event.preventDefault();
-            cursorRef.current = view.state.selection.from;
-            const sceneId = sceneIdAtDocument(view.state.doc, cursorRef.current);
-            if (sceneId) setActiveSceneId(sceneId);
-            setMenuOpen(true);
+            view.dispatch(view.state.tr.deleteSelection());
+            const latestModel = localStorage.getItem("asterism-latest-model");
+            const attrs = latestModel ? { modelOverride: latestModel } : {};
+            editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
             return true;
           }
           return false;
@@ -553,9 +554,9 @@ export const ManuscriptEditor = forwardRef<
   );
 
   const startGeneration = useCallback(
-    async (options: GenerationOptions) => {
+    async (options: GenerationOptions, positionOverride?: number) => {
       if (!editor) return;
-      const position = cursorRef.current;
+      const position = positionOverride ?? cursorRef.current;
       const sceneId = sceneIdAt(editor, position);
       if (!sceneId) return;
       await saveScene(editor, sceneId);
@@ -726,22 +727,17 @@ export const ManuscriptEditor = forwardRef<
               type="button"
               className="ai-command"
               onClick={() => {
-                cursorRef.current = editor?.state.selection.from ?? 1;
-                setMenuOpen(true);
+                const latestModel = localStorage.getItem("asterism-latest-model");
+                const attrs = latestModel ? { modelOverride: latestModel } : {};
+                editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
               }}
             >
               <Sparkles size={15} /> AI /
             </button>
           </div>
-          <EditorContent editor={editor} />
-          {menuOpen ? (
-            <GenerationPanel
-              baseModel={baseModel}
-              models={models}
-              onClose={() => setMenuOpen(false)}
-              onGenerate={startGeneration}
-            />
-          ) : null}
+          <EditorActionsContext.Provider value={{ baseModel, models, startGeneration }}>
+            <EditorContent editor={editor} />
+          </EditorActionsContext.Provider>
         </div>
         <nav className="editor-side-nav">
           {tree.acts.map((act) => {
