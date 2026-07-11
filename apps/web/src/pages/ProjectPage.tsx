@@ -1,4 +1,5 @@
 import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asterism/contracts";
+import { findMentions } from "@asterism/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import {
@@ -62,6 +63,17 @@ export function ProjectPage() {
     }
   }, [allScenes, selectedSceneId]);
   const selectedScene = allScenes.find((scene) => scene.id === selectedSceneId) ?? null;
+  const selectedEntryMentionCount = useMemo(() => {
+    if (!selectedEntryId) return 0;
+    return allScenes.reduce(
+      (total, scene) =>
+        total +
+        findMentions(scene.plainText, compendium.data ?? []).filter((match) =>
+          match.entryIds.includes(selectedEntryId),
+        ).length,
+      0,
+    );
+  }, [allScenes, compendium.data, selectedEntryId]);
   const createScene = useMutation({
     mutationFn: (chapterId: string) =>
       api<Scene>(`/api/chapters/${chapterId}/scenes`, {
@@ -495,6 +507,7 @@ export function ProjectPage() {
                 entry={
                   (compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null
                 }
+                mentionCount={selectedEntryMentionCount}
                 onClose={() => setSelectedEntryId(null)}
               />
             ) : null}

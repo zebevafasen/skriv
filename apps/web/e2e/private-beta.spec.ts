@@ -51,17 +51,31 @@ test("creates a manuscript and accepts streamed prose", async ({ page }) => {
   await page.getByRole("button", { name: "Compendium" }).click();
   await expect(page.locator(".compendium-sidebar")).toBeVisible();
   await expect(page.getByText("Continuous manuscript")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Premise/ })).toBeVisible();
   await page.getByRole("button", { name: "New entry" }).click();
   await expect(page.getByRole("menu", { name: "Choose entry type" })).toBeVisible();
   await page.getByRole("menuitem", { name: "Character" }).click();
-  const titleInput = page.locator(".title-input");
+  const titleInput = page.getByRole("textbox", { name: "Entry name" });
   await expect(titleInput).toHaveValue("Untitled Character");
   await expect(page.getByTestId("compendium-drawer-layer")).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Details" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Tracking" })).toBeVisible();
   await expect(page.getByText("Continuous manuscript")).toBeAttached();
   await titleInput.fill("Disposable Test Entry");
+  await page
+    .getByTestId("compendium-drawer-layer")
+    .getByRole("button", { name: "Character" })
+    .click();
+  await page.getByRole("menuitem", { name: "Location" }).click();
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByRole("button", { name: /Disposable Test Entry/ })).toBeVisible();
+  const disposableRow = page.getByRole("button", { name: /Disposable Test Entry/ });
+  await expect(disposableRow).toBeVisible();
+  await expect(disposableRow.locator(".lucide-map-pin")).toBeVisible();
+  const locationToggle = page.locator(".entry-group-toggle", { hasText: "Location" });
+  await locationToggle.click();
+  await expect(disposableRow).toBeHidden();
+  await expect(locationToggle).toHaveAttribute("aria-expanded", "false");
+  await locationToggle.click();
+  await expect(disposableRow).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Delete entry" }).click();
   await expect(page.getByRole("button", { name: /Disposable Test Entry/ })).toHaveCount(0);
@@ -70,7 +84,22 @@ test("creates a manuscript and accepts streamed prose", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Character" }).click();
   await expect(titleInput).toHaveValue("Untitled Character");
   await titleInput.fill("Evelyn");
+  await page.getByRole("textbox", { name: "Add tags or labels" }).fill("POV");
+  await page.getByRole("button", { name: "POV", exact: true }).click();
+  await page.getByPlaceholder("Add aliases, …").fill("Evie, Evelyn Hart");
+  await page.getByPlaceholder("Write a description…").fill("A determined apprentice cartographer.");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "evelyn.gif",
+    mimeType: "image/gif",
+    buffer: Buffer.from("R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==", "base64"),
+  });
+  await page.getByRole("tab", { name: "Tracking" }).click();
+  await page.getByRole("radio", { name: /Smart inclusion/ }).check();
   await page.getByRole("button", { name: "Save" }).click();
+  const evelynRow = page.getByRole("button", { name: /Evelyn.*POV/ });
+  await expect(evelynRow).toBeVisible();
+  await expect(evelynRow.locator(".entry-row-avatar img")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Entry portrait" })).toBeVisible();
   await page.locator(".sidebar-tabs").getByRole("button", { name: "Manuscript" }).click();
   await page.getByRole("button", { name: "Opening Scene" }).click();
   await editor.click();

@@ -16,8 +16,12 @@ const entry = (
   projectId: overrides.projectId ?? crypto.randomUUID(),
   typeId: overrides.typeId ?? "story.character",
   aliases: overrides.aliases ?? [],
+  labels: overrides.labels ?? [],
+  imageDataUrl: overrides.imageDataUrl ?? null,
   activationMode: overrides.activationMode ?? "mention",
+  trackingEnabled: overrides.trackingEnabled ?? true,
   caseSensitive: overrides.caseSensitive ?? false,
+  matchExclusions: overrides.matchExclusions ?? [],
   content: overrides.content ?? { kind: "text", text: "" },
   revision: overrides.revision ?? 1,
   singleton: overrides.singleton ?? false,
@@ -41,6 +45,18 @@ describe("mention matching", () => {
     ];
     expect(findMentions("Ash waited.", entries)[0]?.entryIds).toHaveLength(2);
   });
+
+  it("honors disabled tracking and phrase exclusions", () => {
+    const hidden = entry({ id: crypto.randomUUID(), name: "Nora", trackingEnabled: false });
+    const ash = entry({
+      id: crypto.randomUUID(),
+      name: "Ash",
+      matchExclusions: ["Ash Tree"],
+    });
+    expect(findMentions("Nora stood by the Ash Tree. Ash waited.", [hidden, ash])).toEqual([
+      expect.objectContaining({ text: "Ash", from: 28 }),
+    ]);
+  });
 });
 
 describe("context discovery", () => {
@@ -59,6 +75,23 @@ describe("context discovery", () => {
     });
     expect(found.map((item) => item.entry.name)).toEqual(["Julia", "Nora"]);
     expect(segmentEntry(found[0] as (typeof found)[number])[0]?.id).toContain(julia.id);
+  });
+
+  it("only exposes smart entries as extractor candidates when requested", () => {
+    const smart = entry({
+      id: crypto.randomUUID(),
+      name: "The Glass Sea",
+      activationMode: "smart",
+      content: { kind: "text", text: "A dangerous inland ocean." },
+    });
+    expect(discoverEntries({ entries: [smart], scanText: "No exact reference." })).toEqual([]);
+    expect(
+      discoverEntries({
+        entries: [smart],
+        scanText: "No exact reference.",
+        includeSmartCandidates: true,
+      })[0],
+    ).toEqual(expect.objectContaining({ activationSource: "smart", priority: 40 }));
   });
 });
 

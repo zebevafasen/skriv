@@ -14,7 +14,11 @@
     "label": "Trains",
     "description": "Rail travel, stations, or railway culture."
   },
-  { "id": "tag.winter", "label": "Winter", "description": "Cold, snow, and seasonal isolation." },
+  {
+    "id": "tag.winter",
+    "label": "Winter",
+    "description": "Cold, snow, and seasonal isolation."
+  },
   {
     "id": "tag.sibling_rivalry",
     "label": "Sibling Rivalry",
@@ -29,5 +33,605 @@
     "id": "tag.animal_focus",
     "label": "Animal Focus",
     "description": "Animals are central to the premise."
+  },
+  {
+    "id": "tag.medieval",
+    "label": "Medieval",
+    "description": "Medieval stories are stories set in the Middle Ages."
+  },
+  {
+    "id": "tag.human_centric",
+    "label": "Human-Centric",
+    "description": "Human-centric stories are stories that center on human characters and their experiences."
+  },
+  {
+    "id": "tag.industrial",
+    "label": "Industrial",
+    "description": "Industrial stories are stories that center on industry and industrialization."
+  },
+  {
+    "id": "tag.female_protagonist",
+    "label": "Female Protagonist",
+    "description": "Female protagonist stories are stories that center on female characters as the main characters."
+  },
+  {
+    "id": "tag.male_protagonist",
+    "label": "Male Protagonist",
+    "description": "Male protagonist stories are stories that center on male characters as the main characters."
+  },
+  {
+    "id": "tag.magic_system",
+    "label": "Magic-System",
+    "description": "Magic-system stories are stories that center on magic systems."
+  },
+  {
+    "id": "tag.steampunk",
+    "label": "Steampunk",
+    "description": "Steampunk stories are stories that center on steam-powered technology and machinery."
+  },
+  {
+    "id": "tag.cyberpunk",
+    "label": "Cyberpunk",
+    "description": "Cyberpunk stories are stories that center on cybernetics and artificial intelligence."
+  },
+  {
+    "id": "tag.high_fantasy",
+    "label": "High-Fantasy",
+    "description": "High-fantasy stories are stories that center on magic and fantasy elements."
+  },
+  {
+    "id": "tag.grimdark",
+    "label": "Grimdark",
+    "description": "Grimdark stories are stories that center on dark and gritty themes."
+  },
+  {
+    "id": "tag.gothic",
+    "label": "Gothic",
+    "description": "Gothic stories are stories that center on dark and mysterious themes."
+  },
+  {
+    "id": "tag.erotic",
+    "label": "Erotic",
+    "description": "Erotic stories are stories that center on erotic themes."
+  },
+  {
+    "id": "tag.slow_burn",
+    "label": "Slow-Burn",
+    "description": "Slow-burn stories are stories that develop slowly over time."
+  },
+  {
+    "id": "tag.modern_day",
+    "label": "Modern Day",
+    "description": "Modern-day stories are stories that take place in the present day."
+  },
+  {
+    "id": "tag.ancient",
+    "label": "Ancient",
+    "description": "Ancient stories are stories that take place in ancient times."
+  },
+  {
+    "id": "tag.prehistoric",
+    "label": "Prehistoric",
+    "description": "Prehistoric stories are stories that take place in prehistoric times."
+  },
+  {
+    "id": "tag.victorian",
+    "label": "Victorian",
+    "description": "Victorian stories are stories that take place in Victorian England."
+  },
+  {
+    "id": "tag.colonial",
+    "label": "Colonial",
+    "description": "Colonial stories are stories that take place during colonial times."
+  },
+  {
+    "id": "tag.western",
+    "label": "Western",
+    "description": "Western stories are stories that take place in the American West."
+  },
+  {
+    "id": "tag.wartime",
+    "label": "Wartime",
+    "description": "Wartime stories are stories that take place during wartime."
+  },
+  {
+    "id": "tag.retrofuturistic",
+    "label": "Retrofuturistic",
+    "description": "Retrofuturistic stories are stories that take place in a futuristic setting that is based on a past vision of the future."
+  },
+  {
+    "id": "tag.post_apocalyptic",
+    "label": "Post-Apocalyptic",
+    "description": "Post-apocalyptic stories are stories that take place after an apocalypse."
+  },
+  {
+    "id": "tag.post_collapse",
+    "label": "Post-Collapse",
+    "description": "Post-collapse stories are stories that take place after a societal collapse."
+  },
+  {
+    "id": "tag.near_future",
+    "label": "Near-Future",
+    "description": "Near-future stories are stories that take place in the near future."
+  },
+  {
+    "id": "tag.far_future",
+    "label": "Far-Future",
+    "description": "Far-future stories are stories that take place in the distant future."
+  },
+  {
+    "id": "tag.spacefaring",
+    "label": "Spacefaring",
+    "description": "Spacefaring stories are stories that take place in space."
+  },
+  {
+    "id": "tag.globetrotting",
+    "label": "Globetrotting",
+    "description": "Globetrotting stories are stories that take place in multiple locations around the world."
+  },
+  {
+    "id": "tag.frontier",
+    "label": "Frontier",
+    "description": "Frontier stories are stories that take place in the frontier."
+  },
+  {
+    "id": "tag.urban",
+    "label": "Urban",
+    "description": "Urban stories are stories that take place in cities."
+  },
+  {
+    "id": "tag.rural",
+    "label": "Rural",
+    "description": "Rural stories are stories that take place in the countryside."
+  },
+  {
+    "id": "tag.isolated",
+    "label": "Isolated",
+    "description": "Isolated stories are stories that take place in isolated locations."
+  },
+  {
+    "id": "tag.underground",
+    "label": "Underground",
+    "description": "Underground stories are stories that take place underground."
+  },
+  {
+    "id": "tag.underwater",
+    "label": "Underwater",
+    "description": "Underwater stories are stories that take place underwater."
+  },
+  {
+    "id": "tag.zero_gravity",
+    "label": "Zero Gravity",
+    "description": "Zero-gravity stories are stories that take place in zero gravity."
+  },
+  {
+    "id": "tag.low_gravity",
+    "label": "Low Gravity",
+    "description": "Low-gravity stories are stories that take place in low gravity."
+  },
+  {
+    "id": "tag.floating_city",
+    "label": "Floating City",
+    "description": "Floating-city stories are stories that take place in floating cities."
+  },
+  {
+    "id": "tag.megacity",
+    "label": "Megacity",
+    "description": "Megacity stories are stories that take place in megacities."
+  },
+  {
+    "id": "tag.small_town",
+    "label": "Small Town",
+    "description": "Small-town stories are stories that take place in small towns."
+  },
+  {
+    "id": "tag.single_location",
+    "label": "Single Location",
+    "description": "Single-location stories are stories that take place in a single location."
+  },
+  {
+    "id": "tag.time_pressure",
+    "label": "Time Pressure",
+    "description": "Time-pressure stories are stories that take place under time pressure."
+  },
+  {
+    "id": "tag.road_trip",
+    "label": "Road Trip",
+    "description": "Road-trip stories are stories that take place during a road trip."
+  },
+  {
+    "id": "tag.alternate_history",
+    "label": "Alternate History",
+    "description": "Alternate-history stories are stories that take place in an alternate history."
+  },
+  {
+    "id": "tag.alternate_world",
+    "label": "Alternate World",
+    "description": "Alternate-world stories are stories that take place in an alternate world."
+  },
+  {
+    "id": "tag.parallel_worlds",
+    "label": "Parallel Worlds",
+    "description": "Parallel-worlds stories are stories that take place in parallel worlds."
+  },
+  {
+    "id": "tag.dying_world",
+    "label": "Dying World",
+    "description": "Dying-world stories are stories that take place in a dying world."
+  },
+  {
+    "id": "tag.lost_civilization",
+    "label": "Lost Civilization",
+    "description": "Lost-civilization stories are stories that take place in a lost civilization."
+  },
+  {
+    "id": "tag.ruins",
+    "label": "Ruins",
+    "description": "Ruins stories are stories that take place in ruins."
+  },
+  {
+    "id": "tag.low_technology",
+    "label": "Low Technology",
+    "description": "Low-technology stories are stories that take place in a low-technology setting."
+  },
+  {
+    "id": "tag.advanced_technology",
+    "label": "Advanced Technology",
+    "description": "Advanced-technology stories are stories that take place in an advanced-technology setting."
+  },
+  {
+    "id": "tag.artificial_intelligence",
+    "label": "Artificial Intelligence",
+    "description": "Artificial-intelligence stories are stories that feature artificial intelligence."
+  },
+  {
+    "id": "tag.transhumanism",
+    "label": "Transhumanism",
+    "description": "Transhumanism stories are stories that feature transhumanism."
+  },
+  {
+    "id": "tag.cybernetics",
+    "label": "Cybernetics",
+    "description": "Cybernetics stories are stories that feature cybernetics."
+  },
+  {
+    "id": "tag.cyborgs",
+    "label": "Cyborgs",
+    "description": "Cyborg stories are stories that feature cyborgs."
+  },
+  {
+    "id": "tag.androids",
+    "label": "Androids",
+    "description": "Android stories are stories that feature androids."
+  },
+  {
+    "id": "tag.robots",
+    "label": "Robots",
+    "description": "Robot stories are stories that feature robots."
+  },
+  {
+    "id": "tag.clockwork",
+    "label": "Clockwork",
+    "description": "Clockwork stories are stories that feature clockwork technology."
+  },
+  {
+    "id": "tag.alchemy",
+    "label": "Alchemy",
+    "description": "Alchemy stories are stories that feature alchemy."
+  },
+  {
+    "id": "tag.gunpowder",
+    "label": "Gunpowder",
+    "description": "Gunpowder stories are stories that feature gunpowder technology."
+  },
+  {
+    "id": "tag.rare_magic",
+    "label": "Rare Magic",
+    "description": "Rare-magic stories are stories that feature rare magic."
+  },
+  {
+    "id": "tag.common_magic",
+    "label": "Common Magic",
+    "description": "Common-magic stories are stories that feature common magic."
+  },
+  {
+    "id": "tag.hard_magic",
+    "label": "Hard Magic",
+    "description": "Hard-magic stories are stories that feature hard magic."
+  },
+  {
+    "id": "tag.soft_magic",
+    "label": "Soft Magic",
+    "description": "Soft-magic stories are stories that feature soft magic."
+  },
+  {
+    "id": "tag.no_magic",
+    "label": "No Magic",
+    "description": "No-magic stories are stories that feature no magic."
+  },
+  {
+    "id": "tag.low_fantasy",
+    "label": "Low-Fantasy",
+    "description": "Low-fantasy stories are stories that feature low fantasy."
+  },
+  {
+    "id": "tag.hard_sci_fi",
+    "label": "Hard Sci-Fi",
+    "description": "Hard-sci-fi stories are stories that feature hard sci-fi."
+  },
+  {
+    "id": "tag.soft_sci_fi",
+    "label": "Soft Sci-Fi",
+    "description": "Soft-sci-fi stories are stories that feature soft sci-fi."
+  },
+  {
+    "id": "tag.faster_than_light",
+    "label": "Faster Than Light",
+    "description": "Faster-than-light stories are stories that feature faster-than-light travel."
+  },
+  {
+    "id": "tag.ensemble_cast",
+    "label": "Ensemble Cast",
+    "description": "Ensemble-cast stories are stories that feature an ensemble cast."
+  },
+  {
+    "id": "tag.antihero",
+    "label": "Antihero",
+    "description": "Antihero stories are stories that feature an antihero."
+  },
+  {
+    "id": "tag.dialogue_heavy",
+    "label": "Dialogue Heavy",
+    "description": "Dialogue-heavy stories are stories that feature heavy dialogue."
+  },
+  {
+    "id": "tag.no_dialogue",
+    "label": "No Dialogue",
+    "description": "No-dialogue stories are stories that feature no dialogue."
+  },
+  {
+    "id": "tag.dialogue_light",
+    "label": "Dialogue Light",
+    "description": "Dialogue-light stories are stories that feature light dialogue."
+  },
+  {
+    "id": "tag.grounded",
+    "label": "Grounded",
+    "description": "Grounded stories are stories that are grounded in reality."
+  },
+  {
+    "id": "tag.realistic",
+    "label": "Realistic",
+    "description": "Realistic stories are stories that are realistic."
+  },
+  {
+    "id": "tag.surreal",
+    "label": "Surreal",
+    "description": "Surreal stories are stories that are surreal."
+  },
+  {
+    "id": "tag.dreamlike",
+    "label": "Dreamlike",
+    "description": "Dreamlike stories are stories that are dreamlike."
+  },
+  {
+    "id": "tag.hopeful",
+    "label": "Hopeful",
+    "description": "Hopeful stories are stories that are hopeful."
+  },
+  {
+    "id": "tag.bleak",
+    "label": "Bleak",
+    "description": "Bleak stories are stories that are bleak."
+  },
+  {
+    "id": "tag.low_stakes",
+    "label": "Low-Stakes",
+    "description": "Low-stakes stories are stories that are low-stakes."
+  },
+  {
+    "id": "tag.high_stakes",
+    "label": "High-Stakes",
+    "description": "High-stakes stories are stories that are high-stakes."
+  },
+  {
+    "id": "tag.cozy",
+    "label": "Cozy",
+    "description": "Cozy stories are stories that are cozy."
+  },
+  {
+    "id": "tag.intimate",
+    "label": "Intimate",
+    "description": "Intimate stories are stories that are intimate."
+  },
+  {
+    "id": "tag.political_intrigue",
+    "label": "Political Intrigue",
+    "description": "Political-intrigue stories are stories that feature political intrigue."
+  },
+  {
+    "id": "tag.court_intrigue",
+    "label": "Court Intrigue",
+    "description": "Court-intrigue stories are stories that feature court intrigue."
+  },
+  {
+    "id": "tag.forbidden_romance",
+    "label": "Forbidden Romance",
+    "description": "Forbidden-romance stories are stories that feature forbidden romance."
+  },
+  {
+    "id": "tag.found_family",
+    "label": "Found Family",
+    "description": "Found-family stories are stories that feature found family."
+  },
+  {
+    "id": "tag.morally_gray",
+    "label": "Morally Gray",
+    "description": "Morally-gray stories are stories that feature morally gray characters."
+  },
+  {
+    "id": "tag.chosen_one",
+    "label": "Chosen One",
+    "description": "Chosen-one stories are stories that feature a chosen one."
+  },
+  {
+    "id": "tag.heist",
+    "label": "Heist",
+    "description": "Heist stories are stories that feature heists."
+  },
+  {
+    "id": "tag.monster_hunting",
+    "label": "Monster Hunting",
+    "description": "Monster-hunting stories are stories that feature monster hunting."
+  },
+  {
+    "id": "tag.survivalist",
+    "label": "Survivalist",
+    "description": "Survivalist stories are stories that feature survivalists."
+  },
+  {
+    "id": "tag.science_fantasy",
+    "label": "Science Fantasy",
+    "description": "Science-fantasy stories are stories that feature science fantasy."
+  },
+  {
+    "id": "tag.eldritch",
+    "label": "Eldritch",
+    "description": "Eldritch stories are stories that feature eldritch horror."
+  },
+  {
+    "id": "tag.body_horror",
+    "label": "Body Horror",
+    "description": "Body-horror stories are stories that feature body horror."
+  },
+  {
+    "id": "tag.folk_horror",
+    "label": "Folk Horror",
+    "description": "Folk-horror stories are stories that feature folk horror."
+  },
+  {
+    "id": "tag.academia",
+    "label": "Academia",
+    "description": "Academia stories are stories that feature academia."
+  },
+  {
+    "id": "tag.military",
+    "label": "Military",
+    "description": "Military stories are stories that feature military elements."
+  },
+  {
+    "id": "tag.naval",
+    "label": "Naval",
+    "description": "Naval stories are stories that feature naval elements."
+  },
+  {
+    "id": "tag.wilderness",
+    "label": "Wilderness",
+    "description": "Wilderness stories are stories that feature wilderness elements."
+  },
+  {
+    "id": "tag.religious_order",
+    "label": "Religious Order",
+    "description": "Religious-order stories are stories that feature religious orders."
+  },
+  {
+    "id": "tag.sex",
+    "label": "Sex",
+    "description": "Sex stories are stories that feature sex."
+  },
+  {
+    "id": "tag.nsfw",
+    "label": "NSFW",
+    "description": "NSFW stories are stories that feature NSFW content."
+  },
+  {
+    "id": "tag.violence",
+    "label": "Violence",
+    "description": "Violence stories are stories that feature violence."
+  },
+  {
+    "id": "tag.war",
+    "label": "War",
+    "description": "War stories are stories that feature war."
+  },
+  {
+    "id": "tag.gifted_individual",
+    "label": "Gifted Individual",
+    "description": "Gifted-individual stories are stories that feature gifted individuals."
+  },
+  {
+    "id": "tag.supernatural_abilities",
+    "label": "Supernatural Abilities",
+    "description": "Supernatural-abilities stories are stories that feature supernatural abilities."
+  },
+  {
+    "id": "tag.superpowers",
+    "label": "Superpowers",
+    "description": "Superpowers stories are stories that feature superpowers."
+  },
+  {
+    "id": "tag.mutants",
+    "label": "Mutants",
+    "description": "Mutant stories are stories that feature mutants."
+  },
+  {
+    "id": "tag.the_beauty_of_struggle",
+    "label": "The Beauty Of Struggle",
+    "description": "The-beauty-of-struggle stories are stories that feature the beauty of struggle."
+  },
+  {
+    "id": "tag.pirates",
+    "label": "Pirates",
+    "description": "Pirate stories are stories that feature pirates."
+  },
+  {
+    "id": "tag.seafaring",
+    "label": "Seafaring",
+    "description": "Seafaring stories are stories that feature seafaring."
+  },
+  {
+    "id": "tag.guilds",
+    "label": "Guilds",
+    "description": "Guild stories are stories that feature guilds."
+  },
+  {
+    "id": "tag.mercenaries",
+    "label": "Mercenaries",
+    "description": "Mercenary stories are stories that feature mercenaries."
+  },
+  {
+    "id": "tag.empire",
+    "label": "Empire",
+    "description": "Empire stories are stories that feature empires."
+  },
+  {
+    "id": "tag.fallen_empire",
+    "label": "Fallen Empire",
+    "description": "Fallen-empire stories are stories that feature fallen empires."
+  },
+  {
+    "id": "tag.rebellion",
+    "label": "Rebellion",
+    "description": "Rebellion stories are stories that feature rebellion."
+  },
+  {
+    "id": "tag.civil_war",
+    "label": "Civil War",
+    "description": "Civil-war stories are stories that feature civil wars."
+  },
+  {
+    "id": "tag.golden_age",
+    "label": "Golden Age",
+    "description": "Golden-age stories are stories that feature a golden age."
+  },
+  {
+    "id": "tag.shoulders_of_giants",
+    "label": "Shoulders Of Giants",
+    "description": "Shoulders-of-giants stories are stories that feature shoulders of giants."
+  },
+  {
+    "id": "tag.lost_knowledge",
+    "label": "Lost Knowledge",
+    "description": "Lost-knowledge stories are stories that feature lost knowledge."
   }
 ]

@@ -167,7 +167,12 @@ export const sceneRevisions = pgTable("scene_revisions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const activationModeEnum = pgEnum("activation_mode", ["mention", "always", "never"]);
+export const activationModeEnum = pgEnum("activation_mode", [
+  "mention",
+  "always",
+  "never",
+  "smart",
+]);
 
 export const compendiumEntries = pgTable(
   "compendium_entries",
@@ -179,6 +184,10 @@ export const compendiumEntries = pgTable(
     name: text("name").notNull(),
     typeId: text("type_id").notNull(),
     aliases: jsonb("aliases").$type<string[]>().notNull().default([]),
+    labels: jsonb("labels").$type<string[]>().notNull().default([]),
+    imageDataUrl: text("image_data_url"),
+    trackingEnabled: boolean("tracking_enabled").notNull().default(true),
+    matchExclusions: jsonb("match_exclusions").$type<string[]>().notNull().default([]),
     activationMode: activationModeEnum("activation_mode").notNull().default("mention"),
     caseSensitive: boolean("case_sensitive").notNull().default(false),
     content: jsonb("content").$type<CompendiumContent>().notNull(),

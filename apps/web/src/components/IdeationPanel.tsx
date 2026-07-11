@@ -120,24 +120,22 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     return { definitionId: created.id, label: created.label, locked: false } satisfies Value;
   };
   const available = definitions.data?.enabled ? definitions.data.package : null;
+  const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const choose = (items: Array<{ id: string; label: string }>, count: number, current: Value[]) => {
+    const locked = current.filter((value) => value.locked);
+    const random = [...items]
+      .filter((item) => !locked.some((value) => value.label === item.label))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, Math.max(0, count - locked.length))
+      .map((item) => ({ definitionId: item.id, label: item.label, locked: false }));
+    return [...locked, ...random];
+  };
+
   const randomize = () => {
     if (!available) return;
-    const choose = (
-      items: Array<{ id: string; label: string }>,
-      count: number,
-      current: Value[],
-    ) => {
-      const locked = current.filter((value) => value.locked);
-      const random = [...items]
-        .filter((item) => !locked.some((value) => value.label === item.label))
-        .sort(() => Math.random() - 0.5)
-        .slice(0, Math.max(0, count - locked.length))
-        .map((item) => ({ definitionId: item.id, label: item.label, locked: false }));
-      return [...locked, ...random];
-    };
-    setGenres(choose(available.genres, 1, genres));
-    setThemes(choose(available.themes, 1, themes));
-    setTags(choose(available.tags, 3, tags));
+    setGenres(choose(available.genres, rand(1, 2), genres));
+    setThemes(choose(available.themes, rand(1, 3), themes));
+    setTags(choose(available.tags, rand(3, 15), tags));
   };
   const persistIngredients = () => save.mutate({ genres, themes, tags, premise, instructions });
 
@@ -184,6 +182,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
                 values={genres}
                 onChange={setGenres}
                 onCreate={createDefinition}
+                onRandomize={() => setGenres(choose(available.genres, rand(1, 2), genres))}
               />
               <UnifiedTagInput
                 title="Themes"
@@ -196,6 +195,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
                 values={themes}
                 onChange={setThemes}
                 onCreate={createDefinition}
+                onRandomize={() => setThemes(choose(available.themes, rand(1, 3), themes))}
               />
               <UnifiedTagInput
                 title="Tags"
@@ -208,6 +208,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
                 values={tags}
                 onChange={setTags}
                 onCreate={createDefinition}
+                onRandomize={() => setTags(choose(available.tags, rand(3, 15), tags))}
               />
             </>
           ) : (
@@ -315,6 +316,7 @@ function UnifiedTagInput({
   values,
   onChange,
   onCreate,
+  onRandomize,
 }: {
   title: string;
   kind: CustomDefinition["kind"];
@@ -322,6 +324,7 @@ function UnifiedTagInput({
   values: Value[];
   onChange: (values: Value[]) => void;
   onCreate: (kind: CustomDefinition["kind"], label: string) => Promise<Value>;
+  onRandomize?: () => void;
 }) {
   const [input, setInput] = useState("");
   const [open, setOpen] = useState(false);
@@ -332,7 +335,7 @@ function UnifiedTagInput({
         !values.some((value) => value.label.toLocaleLowerCase() === item.label.toLocaleLowerCase()),
     )
     .filter((item) => item.label.toLocaleLowerCase().includes(input.trim().toLocaleLowerCase()))
-    .slice(0, 8);
+    .sort((a, b) => a.label.localeCompare(b.label));
   const add = async () => {
     const label = input.trim().replace(/,$/, "").trim();
     if (!label) return;
@@ -357,7 +360,29 @@ function UnifiedTagInput({
   };
   return (
     <section className="ingredient-group unified-tags">
-      <span className="field-label">{title}</span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "6px",
+        }}
+      >
+        <span className="field-label" style={{ margin: 0 }}>
+          {title}
+        </span>
+        {onRandomize && (
+          <button
+            type="button"
+            className="button ghost"
+            style={{ minHeight: "24px", padding: "2px 8px", fontSize: "11px", gap: "4px" }}
+            onClick={onRandomize}
+            title={`Randomize ${title.toLocaleLowerCase()}`}
+          >
+            <Dice5 size={12} /> Randomize
+          </button>
+        )}
+      </div>
       <div className="tag-input-shell">
         <div className="selected-tags">
           {values.map((value) => (

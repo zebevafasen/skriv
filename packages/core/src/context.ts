@@ -6,6 +6,7 @@ export type ContextDiscoveryInput = {
   scanText: string;
   scenePresenceEntryIds?: string[];
   maxDepth?: number;
+  includeSmartCandidates?: boolean;
 };
 
 export type DiscoveredEntry = {
@@ -30,6 +31,7 @@ export function discoverEntries({
   scanText,
   scenePresenceEntryIds = [],
   maxDepth = 2,
+  includeSmartCandidates = false,
 }: ContextDiscoveryInput): DiscoveredEntry[] {
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const found = new Map<string, DiscoveredEntry>();
@@ -41,6 +43,7 @@ export function discoverEntries({
     priority: number,
   ) => {
     if (entry.activationMode === "never") return false;
+    if (entry.activationMode === "smart" && activationSource !== "smart") return false;
     const previous = found.get(entry.id);
     if (!previous || priority > previous.priority) {
       found.set(entry.id, { entry, activationSource, recursionDepth, priority });
@@ -57,10 +60,15 @@ export function discoverEntries({
   }
   for (const entryId of scenePresenceEntryIds) {
     const entry = byId.get(entryId);
-    if (entry) include(entry, "scene_presence", 0, 110);
+    if (entry?.activationMode === "smart") {
+      if (includeSmartCandidates) include(entry, "smart", 0, 70);
+    } else if (entry) include(entry, "scene_presence", 0, 110);
   }
   for (const entry of entries) {
     if (entry.activationMode === "always") include(entry, "always", 0, 80);
+    if (entry.activationMode === "smart" && includeSmartCandidates) {
+      include(entry, "smart", 0, 40);
+    }
   }
 
   let frontier = [...found.values()];
@@ -73,7 +81,12 @@ export function discoverEntries({
           if (
             entry &&
             entry.id !== source.entry.id &&
-            include(entry, "recursive", depth, 60 - depth * 10)
+            include(
+              entry,
+              entry.activationMode === "smart" ? "smart" : "recursive",
+              depth,
+              entry.activationMode === "smart" ? 50 - depth * 5 : 60 - depth * 10,
+            )
           ) {
             next.push(found.get(entry.id) as DiscoveredEntry);
           }

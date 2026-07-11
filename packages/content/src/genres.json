@@ -1,22 +1,122 @@
 [
-  { "id": "genre.fantasy", "label": "Fantasy", "description": "Magic, myth, and imagined worlds." },
+  {
+    "id": "genre.fantasy",
+    "label": "Fantasy",
+    "description": "Magic, myth, and imagined worlds."
+  },
   {
     "id": "genre.science_fiction",
     "label": "Science Fiction",
     "description": "Speculative science and technology."
   },
-  { "id": "genre.horror", "label": "Horror", "description": "Fear, dread, and the uncanny." },
-  { "id": "genre.mystery", "label": "Mystery", "description": "Questions, clues, and discovery." },
-  { "id": "genre.romance", "label": "Romance", "description": "Love and intimate relationships." },
+  {
+    "id": "genre.horror",
+    "label": "Horror",
+    "description": "Fear, dread, and the uncanny."
+  },
+  {
+    "id": "genre.mystery",
+    "label": "Mystery",
+    "description": "Questions, clues, and discovery."
+  },
+  {
+    "id": "genre.romance",
+    "label": "Romance",
+    "description": "Love and intimate relationships."
+  },
   {
     "id": "genre.thriller",
     "label": "Thriller",
     "description": "High tension, danger, and pursuit."
   },
   {
-    "id": "genre.historical",
+    "id": "genre.historical_fiction",
     "label": "Historical Fiction",
-    "description": "Stories grounded in a historical period."
+    "description": "Historical fiction stories are stories set in a specific time period in the past. The accuracy of the setting and the details of the era are important to the story."
   },
-  { "id": "genre.erotica", "label": "Erotica", "description": "Explicit sexual content." }
+  {
+    "id": "genre.erotica",
+    "label": "Erotica",
+    "description": "Explicit sexual content."
+  },
+  {
+    "id": "genre.comedy",
+    "label": "Comedy",
+    "description": "Humorous stories."
+  },
+  {
+    "id": "genre.adventure",
+    "label": "Adventure",
+    "description": "Journeys, quests, and exploration."
+  },
+  {
+    "id": "genre.drama",
+    "label": "Drama",
+    "description": "Stories focused on character development and emotional conflict."
+  },
+  {
+    "id": "genre.slice_of_life",
+    "label": "Slice of Life",
+    "description": "Stories focused on everyday life."
+  },
+  {
+    "id": "genre.crime",
+    "label": "Crime",
+    "description": "Stories focused on crime and the criminal justice system."
+  },
+  {
+    "id": "genre.dystopian",
+    "label": "Dystopian",
+    "description": "Oppressive societies and struggles against them."
+  },
+  {
+    "id": "genre.urban_fantasy",
+    "label": "Urban Fantasy",
+    "description": "Fantasy stories set in a modern urban environment."
+  },
+  {
+    "id": "genre.supernatural",
+    "label": "Supernatural",
+    "description": "Stories that feature supernatural elements."
+  },
+  {
+    "id": "genre.paranormal",
+    "label": "Paranormal",
+    "description": "Stories that feature paranormal elements."
+  },
+  {
+    "id": "genre.superhero",
+    "label": "Superhero",
+    "description": "Stories that feature superheroes."
+  },
+  {
+    "id": "genre.dark_fantasy",
+    "label": "Dark Fantasy",
+    "description": "Fantasy stories with dark and/or mature themes."
+  },
+  {
+    "id": "genre.sword_and_sorcery",
+    "label": "Sword and Sorcery",
+    "description": "Sword-and-sorcery stories are fast-paced adventure fantasies that center on powerful, larger-than-life heroes engaging in thrilling sword fights against terrifying monsters, corrupt sorcerers, and ruthless villains, often in dark, gritty, or morally ambiguous settings."
+  },
+  {
+    "id": "genre.epic_fantasy",
+    "label": "Epic Fantasy",
+    "description": "Epic fantasy stories are grand-scale fantasies that center on powerful heroes engaging in thrilling sword fights against terrifying monsters, corrupt sorcerers, and ruthless villains, often in dark, gritty, or morally ambiguous settings."
+  },
+  {
+    "id": "genre.political",
+    "label": "Political",
+    "description": "Political stories are stories that center on power, governance, and the struggle for control."
+  },
+  {
+    "id": "genre.space_opera",
+    "label": "Space Opera",
+    "description": "Space opera stories are grand-scale science fiction stories that center on interstellar empires, galactic conflicts, and heroic spacefarers, often blending elements of adventure, romance, and political intrigue across vast cosmic backdrops."
+  },
+  {
+    "id": "genre.literary_fiction",
+    "label": "Literary Fiction",
+    "description": "Literary fiction is fiction that is intended to be artistically significant. It is often characterized by its focus on character development, emotional conflict, and social commentary. Literary fiction is often contrasted with genre fiction, which is written to appeal to a specific audience and is often characterized by its focus on plot and action."
+  }
 ]

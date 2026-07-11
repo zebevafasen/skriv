@@ -16,6 +16,19 @@ export function findMentions(text: string, entries: readonly CompendiumEntry[]):
   const candidates: MentionMatch[] = [];
 
   for (const entry of entries) {
+    if (!entry.trackingEnabled) continue;
+    const exclusionRanges = entry.matchExclusions.flatMap((phrase) => {
+      if (!phrase.trim()) return [];
+      const flags = entry.caseSensitive ? "gu" : "giu";
+      const pattern = new RegExp(
+        `(?<![\\p{L}\\p{N}_])${escapeRegExp(phrase.trim())}(?![\\p{L}\\p{N}_])`,
+        flags,
+      );
+      return [...text.matchAll(pattern)].map((match) => ({
+        from: match.index,
+        to: match.index + match[0].length,
+      }));
+    });
     const terms = [...new Set([entry.name, ...entry.aliases].filter(Boolean))].sort(
       (left, right) => right.length - left.length,
     );
@@ -28,6 +41,7 @@ export function findMentions(text: string, entries: readonly CompendiumEntry[]):
       for (const match of text.matchAll(pattern)) {
         const from = match.index;
         const to = from + match[0].length;
+        if (exclusionRanges.some((range) => from >= range.from && to <= range.to)) continue;
         const existing = candidates.find(
           (candidate) =>
             candidate.from === from && candidate.to === to && candidate.matchedTerm === match[0],

@@ -89,10 +89,26 @@ async function assembleContext(
     scanText,
     scenePresenceEntryIds,
     maxDepth: settings.recursionDepth,
+    includeSmartCandidates: settings.smartContextEnabled,
   });
-  const candidates = budgetFragments(discovered.flatMap(segmentEntry), 8_000);
-  if (!settings.smartContextEnabled || candidates.length === 0) {
-    return { fragments: candidates, fallback: false };
+  const allFragments = discovered.flatMap(segmentEntry);
+  const fixedCandidates = budgetFragments(
+    allFragments.filter((fragment) => fragment.activationSource !== "smart"),
+    8_000,
+  );
+  const smartCandidates = budgetFragments(
+    allFragments.filter((fragment) => fragment.activationSource === "smart"),
+    Math.max(
+      0,
+      8_000 -
+        fixedCandidates.reduce(
+          (sum, fragment) => sum + Math.ceil(fragment.text.length / 4) + 12,
+          0,
+        ),
+    ),
+  );
+  if (!settings.smartContextEnabled || smartCandidates.length === 0) {
+    return { fragments: fixedCandidates, fallback: false };
   }
   const cacheKey = createHash("sha256")
     .update(
@@ -118,7 +134,7 @@ async function assembleContext(
       protectedProtocolMessage("context.extract"),
       ...renderPrompt(extractionPrompt, {
         request_context: scanText,
-        candidate_fragments: candidates
+        candidate_fragments: smartCandidates
           .map((fragment) => `[fragment:${fragment.id}] ${fragment.text}`)
           .join("\n"),
       }),
@@ -133,10 +149,11 @@ async function assembleContext(
     });
     clearTimeout(timeout);
     const selected = selectedFragmentsSchema.parse(JSON.parse(result.text));
-    const byId = new Map(candidates.map((fragment) => [fragment.id, fragment]));
-    const fragments = selected.selectedFragmentIds
+    const byId = new Map(smartCandidates.map((fragment) => [fragment.id, fragment]));
+    const selectedSmart = selected.selectedFragmentIds
       .map((id) => byId.get(id))
-      .filter((value): value is (typeof candidates)[number] => Boolean(value));
+      .filter((value): value is (typeof smartCandidates)[number] => Boolean(value));
+    const fragments = budgetFragments([...fixedCandidates, ...selectedSmart], 8_000);
     await context.db.insert(usageEvents).values({
       userId,
       projectId,
@@ -150,7 +167,7 @@ async function assembleContext(
     contextCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60 * 1_000, value });
     return value;
   } catch {
-    return { fragments: candidates, fallback: true };
+    return { fragments: fixedCandidates, fallback: true };
   }
 }
 

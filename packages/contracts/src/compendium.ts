@@ -2,7 +2,7 @@ import { z } from "zod";
 import { tiptapDocumentSchema } from "./manuscript.js";
 import { idSchema, timestampSchema } from "./primitives.js";
 
-export const activationModeSchema = z.enum(["mention", "always", "never"]);
+export const activationModeSchema = z.enum(["mention", "always", "never", "smart"]);
 
 export const compendiumTypeIdSchema = z.enum([
   "story.character",
@@ -35,6 +35,17 @@ export const compendiumEntrySchema = z.object({
   name: z.string().trim().min(1).max(300),
   typeId: compendiumTypeIdSchema,
   aliases: z.array(z.string().trim().min(1).max(300)),
+  labels: z.array(z.string().trim().min(1).max(80)).max(50),
+  imageDataUrl: z
+    .string()
+    .max(3_000_000)
+    .refine(
+      (value) => /^data:image\/(png|jpeg|webp|gif);base64,/.test(value),
+      "Image must be a PNG, JPEG, WebP, or GIF data URL.",
+    )
+    .nullable(),
+  trackingEnabled: z.boolean(),
+  matchExclusions: z.array(z.string().trim().min(1).max(300)).max(100),
   activationMode: activationModeSchema,
   caseSensitive: z.boolean(),
   content: compendiumContentSchema,
@@ -49,11 +60,23 @@ export const createCompendiumEntryInputSchema = compendiumEntrySchema
     name: true,
     typeId: true,
     aliases: true,
+    labels: true,
+    imageDataUrl: true,
+    trackingEnabled: true,
+    matchExclusions: true,
     activationMode: true,
     caseSensitive: true,
     content: true,
   })
-  .partial({ aliases: true, activationMode: true, caseSensitive: true });
+  .partial({
+    aliases: true,
+    labels: true,
+    imageDataUrl: true,
+    trackingEnabled: true,
+    matchExclusions: true,
+    activationMode: true,
+    caseSensitive: true,
+  });
 
 export const updateCompendiumEntryInputSchema = createCompendiumEntryInputSchema.partial().extend({
   expectedRevision: z.number().int().positive(),
@@ -64,7 +87,7 @@ export const contextFragmentSchema = z.object({
   entryId: idSchema,
   entryName: z.string(),
   text: z.string(),
-  activationSource: z.enum(["direct", "scene_presence", "always", "recursive"]),
+  activationSource: z.enum(["direct", "scene_presence", "always", "recursive", "smart"]),
   recursionDepth: z.number().int().nonnegative(),
   priority: z.number(),
 });

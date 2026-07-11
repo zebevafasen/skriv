@@ -15,6 +15,13 @@
       "when": 1783709443803,
       "tag": "0001_sturdy_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783727609570,
+      "tag": "0002_overconfident_silk_fever",
+      "breakpoints": true
     }
   ]
 }

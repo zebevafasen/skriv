@@ -93,7 +93,7 @@
     "messages": [
       {
         "role": "system",
-        "content": "Create a distinctive fiction premise. Integrate the ingredients causally rather than listing them."
+        "content": "Create a distinctive fiction premise. You MUST incorporate all provided genres, themes, and tags into the core concept of the premise. Integrate the ingredients causally rather than listing them."
       },
       {
         "role": "user",
