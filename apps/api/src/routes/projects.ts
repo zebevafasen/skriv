@@ -124,19 +124,19 @@ export async function registerProjectRoutes(
       if (!project) throw new Error("Project creation failed.");
       const [act] = await tx
         .insert(acts)
-        .values({ projectId: project.id, title: "", position: 0 })
+        .values({ projectId: project.id, title: "Act I", position: 0 })
         .returning();
       if (!act) throw new Error("Act creation failed.");
       const [chapter] = await tx
         .insert(chapters)
-        .values({ actId: act.id, title: "", position: 0 })
+        .values({ actId: act.id, title: "Chapter 1", position: 0 })
         .returning();
       if (!chapter) throw new Error("Chapter creation failed.");
       const [scene] = await tx
         .insert(scenes)
         .values({
           chapterId: chapter.id,
-          title: "",
+          title: "Opening Scene",
           position: 0,
           document: emptyTiptapDocument,
           plainText: "",

@@ -199,7 +199,8 @@ async function protectedPlanningContext(
     .slice(0, currentIndex)
     .reverse()
     .find((s) => s.metadata.summary.trim() !== "");
-  const previous = previousWithSummary ?? (currentIndex > 0 ? orderedScenes[currentIndex - 1] : null);
+  const previous =
+    previousWithSummary ?? (currentIndex > 0 ? orderedScenes[currentIndex - 1] : null);
   return formatProtectedPlanningContext(scene, previous ?? null);
 }
 

@@ -1,5 +1,7 @@
 # Personal Vercel deployment
 
+The supported deployment remains one Vercel project and one public origin for the Vite frontend and Fastify API. Run the repository CI workflow successfully before deploying; deployment success does not replace typecheck, unit, migration, and E2E validation.
+
 This setup deploys the Vite frontend and Fastify API as one Vercel project. Keeping both on one
 domain avoids cross-origin cookie and API routing problems. The API runs as a Node.js Vercel
 Function in Frankfurt (`fra1`), so create the PostgreSQL database in Frankfurt as well.

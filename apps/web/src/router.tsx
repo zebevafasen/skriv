@@ -7,6 +7,15 @@ import { ProjectPage } from "./pages/ProjectPage.js";
 import { PromptsPage } from "./pages/PromptsPage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
 
+type ProjectSearch = {
+  tab?: "chat" | "ideation";
+  view?: "outline";
+  scope?: string;
+  scene?: string;
+  thread?: string;
+  entry?: string;
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, retry: 1 }, mutations: { retry: 0 } },
 });
@@ -27,6 +36,17 @@ const libraryRoute = createRoute({
 const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/projects/$projectId",
+  validateSearch: (search: Record<string, unknown>): ProjectSearch => ({
+    ...(search.tab === "chat" || search.tab === "ideation" ? { tab: search.tab } : {}),
+    ...(search.view === "outline" ? { view: search.view } : {}),
+    ...(typeof search.scope === "string" &&
+    /^(story|(?:act|chapter|scene):[0-9a-f-]+)$/.test(search.scope)
+      ? { scope: search.scope }
+      : {}),
+    ...(typeof search.scene === "string" ? { scene: search.scene } : {}),
+    ...(typeof search.thread === "string" ? { thread: search.thread } : {}),
+    ...(typeof search.entry === "string" ? { entry: search.entry } : {}),
+  }),
   component: ProjectPage,
 });
 const promptsRoute = createRoute({

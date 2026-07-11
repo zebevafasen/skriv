@@ -1,6 +1,6 @@
 # Asterism
 
-Asterism is a full-stack, AI-assisted long-form fiction workspace. It combines a continuous Scene-based manuscript editor, a draggable planning Outline, streamed prose generation, AI-assisted Scene summaries, a navigable Compendium, grounded Smart Context, editable workflow prompts, and story ideation.
+Asterism is a full-stack, AI-assisted long-form fiction workspace. It combines a continuous Scene-based manuscript editor, a draggable planning Outline, streamed prose generation, AI-assisted Scene summaries, a navigable Compendium, grounded Smart Context, editable workflow prompts, story ideation, and persistent project-grounded Chat.
 
 ## Prerequisites
 
@@ -73,6 +73,8 @@ pnpm db:migrate   # Apply committed migrations
 pnpm infra:down   # Stop local infrastructure
 ```
 
+Pull requests run the same typecheck, lint, unit-test, build, clean-migration, and Playwright gates in GitHub Actions.
+
 ## Repository layout
 
 - `apps/web` — React, Vite, TanStack Query/Router, and Tiptap UI.
@@ -93,6 +95,8 @@ Every Project query is scoped through Workspace membership. New accounts receive
 ## Data safety
 
 Scene saves use optimistic versions, including when several locked Scene blocks are displayed in one continuous editor. Manual/editor saves and accepted generations create restore points, generation candidates remain outside canonical Tiptap documents until acceptance, and sibling reordering preserves stable hierarchy IDs. Project export is available from `GET /api/projects/:id/export`.
+
+Major project workspace state is URL-addressable. Tabs, manuscript scope, selected Scenes, Chat threads, and Compendium entries survive refresh and browser history navigation.
 
 See [operations](docs/operations.md) for deployment, backup, and recovery guidance.
 

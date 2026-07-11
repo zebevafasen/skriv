@@ -4779,3 +4779,8 @@ label small {
     min-height: 40px;
   }
 }
+.app-dialog .dialog-body {
+  max-width: 52ch;
+  white-space: pre-line;
+  color: var(--text-muted);
+}

@@ -4,7 +4,8 @@ import { basePackage, getBuiltinPrompt, validateBuiltinContent } from "./index.j
 describe("base content package", () => {
   it("validates and contains every implemented workflow", () => {
     expect(validateBuiltinContent().id).toBe("asterism.base");
-    expect(basePackage.prompts).toHaveLength(6);
+    expect(basePackage.prompts).toHaveLength(9);
     expect(getBuiltinPrompt("prose.continue").ownership).toBe("builtin");
+    expect(getBuiltinPrompt("chat.respond").variables).toContain("project_context");
   });
 });

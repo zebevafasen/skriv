@@ -34,8 +34,9 @@ import {
 } from "react";
 import Markdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
-import { api, streamChat } from "../api.js";
+import { ApiError, api, streamChat } from "../api.js";
 import { CompendiumMentionText } from "./CompendiumMentionText.js";
+import { useAppDialog } from "./DialogProvider.js";
 import { ModelSelect } from "./ModelSelect.js";
 
 const sourceKey = (source: ChatContextSource) =>
@@ -147,6 +148,8 @@ export function ChatPanel({
   models,
   baseModel,
   onOpenEntry,
+  threadId,
+  onThreadChange,
 }: {
   projectId: string;
   tree: ManuscriptTree;
@@ -154,9 +157,11 @@ export function ChatPanel({
   models: Array<{ id: string; name: string }>;
   baseModel: string;
   onOpenEntry: (ids: string[]) => void;
+  threadId: string | null;
+  onThreadChange: (id: string | null) => void;
 }) {
   const client = useQueryClient();
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const dialog = useAppDialog();
   const [draft, setDraft] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [warning, setWarning] = useState("");
@@ -165,6 +170,7 @@ export function ChatPanel({
   const [contextOpen, setContextOpen] = useState(false);
   const [contextSubmenu, setContextSubmenu] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
+  const replacements = useRef(new Set<string>());
   const messageEndRef = useRef<HTMLDivElement>(null);
   const threads = useQuery({
     queryKey: ["chat-threads", projectId],
@@ -175,6 +181,9 @@ export function ChatPanel({
     queryFn: () => api<ChatThread>(`/api/chat/threads/${threadId}`),
     enabled: Boolean(threadId),
   });
+  useEffect(() => {
+    if (thread.error instanceof ApiError && thread.error.status === 404) onThreadChange(null);
+  }, [onThreadChange, thread.error]);
   const createThread = async () => {
     setHomeError("");
     setCreatingThread(true);
@@ -185,7 +194,7 @@ export function ChatPanel({
         body: JSON.stringify({ model: latestModel }),
       });
       await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
-      setThreadId(created.id);
+      onThreadChange(created.id);
     } catch (error) {
       setHomeError(
         error instanceof Error
@@ -212,11 +221,18 @@ export function ChatPanel({
   const applyEvent = (event: import("@asterism/contracts").ChatStreamEvent) => {
     client.setQueryData<ChatThread>(["chat-thread", threadId], (old) => {
       if (!old) return old;
-      if (event.type === "chat.started")
+      if (event.type === "chat.started") {
+        if (event.replacedMessageId) replacements.current.add(event.assistantMessage.id);
         return {
           ...old,
-          messages: [...(old.messages ?? []), event.userMessage, event.assistantMessage],
+          messages: event.replacedMessageId
+            ? [
+                ...(old.messages ?? []).filter((message) => message.id !== event.replacedMessageId),
+                event.assistantMessage,
+              ]
+            : [...(old.messages ?? []), event.userMessage, event.assistantMessage],
         };
+      }
       if (event.type === "chat.delta")
         return {
           ...old,
@@ -225,6 +241,7 @@ export function ChatPanel({
           ),
         };
       if (event.type === "chat.completed") {
+        replacements.current.delete(event.message.id);
         if (event.warnings.length) setWarning(event.warnings.join(" "));
         return {
           ...old,
@@ -233,14 +250,19 @@ export function ChatPanel({
           ),
         };
       }
-      if (event.type === "chat.cancelled")
+      if (event.type === "chat.cancelled") {
+        if (replacements.current.delete(event.messageId))
+          void client.invalidateQueries({ queryKey: ["chat-thread", threadId] });
         return {
           ...old,
           messages: (old.messages ?? []).map((m) =>
             m.id === event.messageId ? { ...m, status: "cancelled" } : m,
           ),
         };
+      }
       if (event.type === "chat.failed") {
+        if (replacements.current.delete(event.messageId))
+          void client.invalidateQueries({ queryKey: ["chat-thread", threadId] });
         setWarning(event.message);
         return {
           ...old,
@@ -380,11 +402,12 @@ export function ChatPanel({
   );
   const latestMessage = thread.data?.messages?.at(-1);
   useEffect(() => {
+    if (!latestMessage) return;
     messageEndRef.current?.scrollIntoView({
       block: "end",
       behavior: streaming ? "auto" : "smooth",
     });
-  }, [latestMessage?.content, latestMessage?.id, streaming]);
+  }, [latestMessage, streaming]);
   if (!threadId)
     return (
       <section className="chat-home">
@@ -409,7 +432,7 @@ export function ChatPanel({
         {threads.data?.length ? (
           <div className="chat-thread-list">
             {threads.data.map((item) => (
-              <button type="button" key={item.id} onClick={() => setThreadId(item.id)}>
+              <button type="button" key={item.id} onClick={() => onThreadChange(item.id)}>
                 <strong>{item.title}</strong>
                 <small>{formatDate(item.updatedAt)}</small>
               </button>
@@ -426,7 +449,7 @@ export function ChatPanel({
   return (
     <section className="chat-workspace">
       <header className="chat-header">
-        <button className="button ghost" type="button" onClick={() => setThreadId(null)}>
+        <button className="button ghost" type="button" onClick={() => onThreadChange(null)}>
           All threads
         </button>
         <div>
@@ -437,8 +460,12 @@ export function ChatPanel({
           className="icon-button"
           type="button"
           title="Rename"
-          onClick={() => {
-            const title = window.prompt("Thread title", thread.data?.title);
+          onClick={async () => {
+            const title = await dialog.prompt({
+              title: "Rename Chat thread",
+              label: "Thread title",
+              initialValue: thread.data?.title ?? "",
+            });
             if (title?.trim()) void patchThread({ title: title.trim() });
           }}
         >
@@ -449,9 +476,17 @@ export function ChatPanel({
           type="button"
           title="Delete"
           onClick={async () => {
-            if (!window.confirm("Delete this chat thread?")) return;
+            if (
+              !(await dialog.confirm({
+                title: `Delete “${thread.data?.title ?? "Chat thread"}”?`,
+                body: `This permanently deletes ${(thread.data?.messages ?? []).length} messages. This cannot be undone.`,
+                confirmLabel: "Delete thread",
+                destructive: true,
+              }))
+            )
+              return;
             await api(`/api/chat/threads/${threadId}`, { method: "DELETE" });
-            setThreadId(null);
+            onThreadChange(null);
             await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
           }}
         >
@@ -612,22 +647,24 @@ export function ChatPanel({
               placement="top"
             />
           </div>
-          {(thread.data.messages ?? []).at(-1)?.role === "assistant" && !streaming && (
-            <button
-              className="button ghost"
-              type="button"
-              onClick={async () => {
-                setStreaming(true);
-                try {
-                  await streamChat(`/api/chat/threads/${threadId}/regenerate`, null, applyEvent);
-                } finally {
-                  setStreaming(false);
-                }
-              }}
-            >
-              <RefreshCw size={14} /> Regenerate
-            </button>
-          )}
+          {(thread.data.messages ?? []).at(-1)?.role === "assistant" &&
+            (thread.data.messages ?? []).at(-1)?.status === "completed" &&
+            !streaming && (
+              <button
+                className="button ghost"
+                type="button"
+                onClick={async () => {
+                  setStreaming(true);
+                  try {
+                    await streamChat(`/api/chat/threads/${threadId}/regenerate`, null, applyEvent);
+                  } finally {
+                    setStreaming(false);
+                  }
+                }}
+              >
+                <RefreshCw size={14} /> Regenerate
+              </button>
+            )}
           {streaming ? (
             <button
               className="button"

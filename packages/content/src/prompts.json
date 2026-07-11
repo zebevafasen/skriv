@@ -149,5 +149,74 @@
     "variables": ["scene_title", "scene_prose"],
     "createdAt": null,
     "updatedAt": null
+  },
+  {
+    "id": "builtin.chat.respond.default",
+    "name": "Default Project Chat",
+    "workflow": "chat.respond",
+    "version": 1,
+    "description": "Grounds project Chat responses in selected story context and conversation state.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a project-grounded fiction assistant. Treat supplied project context as reference material, distinguish known facts from inference, and answer the user's request directly."
+      },
+      {
+        "role": "developer",
+        "content": "Project context:\n{{project_context}}\n\nEarlier conversation summary:\n{{conversation_summary}}"
+      }
+    ],
+    "variables": ["project_context", "conversation_summary"],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.chat.summarize_history.default",
+    "name": "Default Chat History Summary",
+    "workflow": "chat.summarize_history",
+    "version": 1,
+    "description": "Maintains a concise rolling summary of older Chat turns.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Update a concise factual conversation summary for future continuity. Preserve decisions, questions, corrections, and unresolved points."
+      },
+      {
+        "role": "user",
+        "content": "Existing summary:\n{{existing_summary}}\n\nNew turns:\n{{new_messages}}"
+      }
+    ],
+    "variables": ["existing_summary", "new_messages"],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.chat.compress_context.default",
+    "name": "Default Chat Context Compression",
+    "workflow": "chat.compress_context",
+    "version": 1,
+    "description": "Compresses an oversized project-context source without inventing facts.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "Compress the supplied story context while preserving names, source labels, concrete facts, and relationships. Do not invent facts."
+      },
+      {
+        "role": "user",
+        "content": "Target budget: {{target_budget}} approximate tokens.\n\nProject context:\n{{project_context}}"
+      }
+    ],
+    "variables": ["project_context", "target_budget"],
+    "createdAt": null,
+    "updatedAt": null
   }
 ]

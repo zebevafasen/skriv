@@ -1,7 +1,7 @@
 import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asterism/contracts";
 import { findMentions } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   BookMarked,
   BookOpenText,
@@ -12,11 +12,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { ChatPanel } from "../components/ChatPanel.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
+import { useAppDialog } from "../components/DialogProvider.js";
 import { IdeationPanel } from "../components/IdeationPanel.js";
 import {
   ManuscriptEditor,
@@ -46,17 +47,26 @@ function scopeValue(scope: ManuscriptScope): string {
   return `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
 }
 
+function parseScope(value: string | undefined): ManuscriptScope {
+  if (!value || value === "story") return { kind: "story" };
+  const [kind, id] = value.split(":");
+  if (id && (kind === "act" || kind === "chapter" || kind === "scene")) return { kind, id };
+  return { kind: "story" };
+}
+
 export function ProjectPage() {
   const { projectId } = useParams({ from: "/projects/$projectId" });
+  const search = useSearch({ from: "/projects/$projectId" });
+  const navigate = useNavigate({ from: "/projects/$projectId" });
   const client = useQueryClient();
-  const [tab, setTab] = useState<Tab>("manuscript");
+  const dialog = useAppDialog();
+  const tab: Tab = search.tab ?? "manuscript";
   const [compendiumOpen, setCompendiumOpen] = useState(
     () => !window.matchMedia("(max-width: 900px)").matches,
   );
-  const [view, setView] = useState<ManuscriptView>("write");
-  const [scope, setScope] = useState<ManuscriptScope | null>({ kind: "story" });
-  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const view: ManuscriptView = search.view ?? "write";
+  const scope = parseScope(search.scope);
+  const selectedEntryId = search.entry ?? null;
 
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 900px)");
@@ -83,15 +93,67 @@ export function ProjectPage() {
     () => tree.data?.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes)) ?? [],
     [tree.data],
   );
+  const selectedSceneId =
+    allScenes.find((scene) => scene.id === search.scene)?.id ?? allScenes[0]?.id ?? null;
+
+  const updateSearch = useCallback(
+    (
+      changes: Partial<{
+        tab: Tab | undefined;
+        view: ManuscriptView | undefined;
+        scope: string | undefined;
+        scene: string | undefined;
+        thread: string | undefined;
+        entry: string | undefined;
+      }>,
+      replace = false,
+    ) =>
+      navigate({
+        search: (previous) => {
+          const next = { ...previous };
+          for (const [key, value] of Object.entries(changes)) {
+            if (value === undefined || value === "manuscript" || value === "write")
+              delete next[key as keyof typeof next];
+            else Object.assign(next, { [key]: value });
+          }
+          return next;
+        },
+        replace,
+      }),
+    [navigate],
+  );
 
   useEffect(() => {
-    const selected = allScenes.find((scene) => scene.id === selectedSceneId) ?? allScenes[0];
-    if (!selected) return;
-    if (selected.id !== selectedSceneId) setSelectedSceneId(selected.id);
-    if (!scope || (scope.kind === "scene" && !allScenes.some((scene) => scene.id === scope.id))) {
-      setScope({ kind: "scene", id: selected.id });
-    }
-  }, [allScenes, scope, selectedSceneId]);
+    const sceneValid = !search.scene || allScenes.some((scene) => scene.id === search.scene);
+    const entryValid =
+      !search.entry || (compendium.data ?? []).some((entry) => entry.id === search.entry);
+    const routeScope = parseScope(search.scope);
+    const scopeValid =
+      routeScope.kind === "story" ||
+      (routeScope.kind === "act" && tree.data?.acts.some((act) => act.id === routeScope.id)) ||
+      (routeScope.kind === "chapter" &&
+        tree.data?.acts.some((act) =>
+          act.chapters.some((chapter) => chapter.id === routeScope.id),
+        )) ||
+      (routeScope.kind === "scene" && allScenes.some((scene) => scene.id === routeScope.id));
+    if (!sceneValid || !entryValid || !scopeValid)
+      void updateSearch(
+        {
+          ...(!sceneValid ? { scene: undefined } : {}),
+          ...(!entryValid ? { entry: undefined } : {}),
+          ...(!scopeValid ? { scope: undefined } : {}),
+        },
+        true,
+      );
+  }, [
+    allScenes,
+    compendium.data,
+    search.entry,
+    search.scene,
+    search.scope,
+    tree.data,
+    updateSearch,
+  ]);
 
   const selectedEntryMentionCount = useMemo(() => {
     if (!selectedEntryId) return 0;
@@ -117,13 +179,11 @@ export function ProjectPage() {
 
   const changeScope = async (nextScope: ManuscriptScope) => {
     await editorRef.current?.flush();
-    setScope(nextScope);
+    await updateSearch({ scope: nextScope.kind === "story" ? undefined : scopeValue(nextScope) });
   };
   const selectScene = async (sceneId: string) => {
     await editorRef.current?.flush();
-    setSelectedSceneId(sceneId);
-    setScope({ kind: "scene", id: sceneId });
-    setView("write");
+    await updateSearch({ scene: sceneId, scope: `scene:${sceneId}`, view: undefined });
   };
 
   if (tree.isLoading) return <div className="page loading">Opening manuscript…</div>;
@@ -145,7 +205,13 @@ export function ProjectPage() {
               type="button"
               title="Rename Project"
               onClick={async () => {
-                const title = window.prompt("Rename", tree.data?.project.title)?.trim();
+                const title = (
+                  await dialog.prompt({
+                    title: "Rename Project",
+                    label: "Project title",
+                    initialValue: tree.data.project.title,
+                  })
+                )?.trim();
                 if (!title || title === tree.data?.project.title) return;
                 await api(`/api/projects/${projectId}`, {
                   method: "PATCH",
@@ -160,7 +226,18 @@ export function ProjectPage() {
               type="button"
               title="Delete Project"
               onClick={async () => {
-                if (!window.confirm("Delete this Project and all of its contents?")) return;
+                const acts = tree.data.acts.length;
+                const chapters = tree.data.acts.reduce((sum, act) => sum + act.chapters.length, 0);
+                const scenes = allScenes.length;
+                if (
+                  !(await dialog.confirm({
+                    title: `Delete “${tree.data.project.title}”?`,
+                    body: `This permanently deletes ${acts} acts, ${chapters} chapters, ${scenes} scenes, Compendium entries, Chat history, and generation history. This cannot be undone.`,
+                    confirmLabel: "Delete Project",
+                    destructive: true,
+                  }))
+                )
+                  return;
                 await api(`/api/projects/${projectId}`, { method: "DELETE" });
                 window.location.assign("/");
               }}
@@ -176,7 +253,7 @@ export function ProjectPage() {
           <button
             type="button"
             className={tab === "manuscript" ? "active" : ""}
-            onClick={() => setTab("manuscript")}
+            onClick={() => void updateSearch({ tab: undefined })}
           >
             <BookOpenText size={16} /> Manuscript
           </button>
@@ -185,7 +262,7 @@ export function ProjectPage() {
             className={tab === "chat" ? "active" : ""}
             onClick={async () => {
               await editorRef.current?.flush();
-              setTab("chat");
+              await updateSearch({ tab: "chat" });
             }}
           >
             <MessageCircle size={16} /> Chat
@@ -195,7 +272,7 @@ export function ProjectPage() {
             className={tab === "ideation" ? "active" : ""}
             onClick={async () => {
               await editorRef.current?.flush();
-              setTab("ideation");
+              await updateSearch({ tab: "ideation" });
             }}
           >
             <Lightbulb size={16} /> Ideation
@@ -222,7 +299,7 @@ export function ProjectPage() {
             projectId={projectId}
             entries={compendium.data ?? []}
             selectedEntryId={selectedEntryId}
-            onSelect={setSelectedEntryId}
+            onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
           />
           <div className="manuscript-main">
             <div className="manuscript-viewbar">
@@ -230,7 +307,7 @@ export function ProjectPage() {
                 <button
                   type="button"
                   className={view === "write" ? "active" : ""}
-                  onClick={() => setView("write")}
+                  onClick={() => void updateSearch({ view: undefined })}
                 >
                   Write
                 </button>
@@ -239,7 +316,7 @@ export function ProjectPage() {
                   className={view === "outline" ? "active" : ""}
                   onClick={async () => {
                     await editorRef.current?.flush();
-                    setView("outline");
+                    await updateSearch({ view: "outline" });
                   }}
                 >
                   Outline
@@ -357,7 +434,7 @@ export function ProjectPage() {
                     )
                   }
                   onOpenEntry={(entryIds, direct) => {
-                    if (direct && entryIds.length === 1) setSelectedEntryId(entryIds[0] ?? null);
+                    if (direct && entryIds.length === 1) void updateSearch({ entry: entryIds[0] });
                     else setPreviewEntryIds(entryIds);
                   }}
                   onSelectScene={selectScene}
@@ -373,7 +450,7 @@ export function ProjectPage() {
               projectId={projectId}
               entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
               mentionCount={selectedEntryMentionCount}
-              onClose={() => setSelectedEntryId(null)}
+              onClose={() => void updateSearch({ entry: undefined })}
             />
           </div>
         </div>
@@ -387,7 +464,7 @@ export function ProjectPage() {
             projectId={projectId}
             entries={compendium.data ?? []}
             selectedEntryId={selectedEntryId}
-            onSelect={setSelectedEntryId}
+            onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
           />
           <div className="manuscript-main">
             <ChatPanel
@@ -397,12 +474,14 @@ export function ProjectPage() {
               baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
               models={models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]}
               onOpenEntry={setPreviewEntryIds}
+              threadId={search.thread ?? null}
+              onThreadChange={(thread) => void updateSearch({ thread: thread ?? undefined })}
             />
             <CompendiumEntryDrawer
               projectId={projectId}
               entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
               mentionCount={selectedEntryMentionCount}
-              onClose={() => setSelectedEntryId(null)}
+              onClose={() => void updateSearch({ entry: undefined })}
             />
           </div>
         </div>
@@ -445,9 +524,8 @@ export function ProjectPage() {
                       type="button"
                       className="button ghost"
                       onClick={() => {
-                        setSelectedEntryId(entry.id);
+                        void updateSearch({ entry: entry.id, tab: undefined });
                         setPreviewEntryIds([]);
-                        setTab("manuscript");
                       }}
                     >
                       Open entry

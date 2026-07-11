@@ -1,34 +1,37 @@
 import { Link } from "@tanstack/react-router";
 import { BookOpenText, Library, Settings, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
+import { DialogProvider } from "./DialogProvider.js";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <Link to="/" className="brand" aria-label="Asterism home">
-          <span className="brand-mark">
-            <Sparkles size={18} />
-          </span>
-          <span>Asterism</span>
-        </Link>
-        <nav className="global-nav" aria-label="Primary navigation">
-          <Link to="/" activeProps={{ className: "active" }}>
-            <Library size={17} /> Projects
+    <DialogProvider>
+      <div className="app-shell">
+        <header className="topbar">
+          <Link to="/" className="brand" aria-label="Asterism home">
+            <span className="brand-mark">
+              <Sparkles size={18} />
+            </span>
+            <span>Asterism</span>
           </Link>
-          <Link to="/prompts" activeProps={{ className: "active" }}>
-            <BookOpenText size={17} /> Prompts
-          </Link>
-          <Link to="/settings" activeProps={{ className: "active" }}>
-            <Settings size={17} /> Settings
-          </Link>
-        </nav>
-        <div className="profile-dot" title="Local Writer">
-          LW
-        </div>
-      </header>
-      <main>{children}</main>
-    </div>
+          <nav className="global-nav" aria-label="Primary navigation">
+            <Link to="/" activeProps={{ className: "active" }}>
+              <Library size={17} /> Projects
+            </Link>
+            <Link to="/prompts" activeProps={{ className: "active" }}>
+              <BookOpenText size={17} /> Prompts
+            </Link>
+            <Link to="/settings" activeProps={{ className: "active" }}>
+              <Settings size={17} /> Settings
+            </Link>
+          </nav>
+          <div className="profile-dot" title="Local Writer">
+            LW
+          </div>
+        </header>
+        <main>{children}</main>
+      </div>
+    </DialogProvider>
   );
 }
 

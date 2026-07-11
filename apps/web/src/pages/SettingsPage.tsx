@@ -4,6 +4,7 @@ import { KeyRound, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
+import { useAppDialog } from "../components/DialogProvider.js";
 import { ModelSelect } from "../components/ModelSelect.js";
 
 type Model = { id: string; name: string; contextLength: number };
@@ -11,6 +12,7 @@ type Invite = { id: string; email: string; expiresAt: string; acceptedAt: string
 
 export function SettingsPage() {
   const client = useQueryClient();
+  const dialog = useAppDialog();
   const settings = useQuery({
     queryKey: ["ai-settings"],
     queryFn: () => api<AiSettings>("/api/settings/ai"),
@@ -122,8 +124,15 @@ export function SettingsPage() {
                   type="button"
                   className="button danger"
                   aria-label="Remove personal OpenRouter key"
-                  onClick={() => {
-                    if (window.confirm("Remove your saved OpenRouter key?"))
+                  onClick={async () => {
+                    if (
+                      await dialog.confirm({
+                        title: "Remove saved OpenRouter key?",
+                        body: "Asterism will fall back to the server credential or fake provider configuration.",
+                        confirmLabel: "Remove key",
+                        destructive: true,
+                      })
+                    )
                       removeCredential.mutate();
                   }}
                 >

@@ -1,5 +1,5 @@
-import { createContext, useContext } from "react";
 import type { WorkflowKey } from "@asterism/contracts";
+import { createContext, useContext } from "react";
 
 export type GenerationOptions = {
   workflow: Extract<WorkflowKey, "prose.start" | "prose.continue" | "prose.toward_event">;

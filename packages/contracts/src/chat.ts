@@ -50,6 +50,7 @@ export const chatStreamEventSchema = z.discriminatedUnion("type", [
     type: z.literal("chat.started"),
     userMessage: chatMessageSchema,
     assistantMessage: chatMessageSchema,
+    replacedMessageId: idSchema.optional(),
   }),
   z.object({ type: z.literal("chat.delta"), messageId: idSchema, delta: z.string() }),
   z.object({

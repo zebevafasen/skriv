@@ -1,5 +1,9 @@
 # Private-beta operations
 
+## Continuous integration
+
+`.github/workflows/ci.yml` is the merge-quality baseline. Its quality job runs frozen installation, typecheck, Biome validation, unit tests, and the production build. Its E2E job starts clean PostgreSQL, applies every committed migration, and runs Playwright in Chromium. Configure both jobs as required branch-protection checks.
+
 ## Environment separation
 
 For personal use, deploy the repository as one Vercel project so the Vite frontend, Fastify API,

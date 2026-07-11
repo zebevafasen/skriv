@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.setTimeout(120_000);
+
 test("writes, outlines, summarizes, and edits a continuous manuscript", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
@@ -62,8 +64,8 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(page.getByRole("combobox", { name: "Viewing mode" })).toHaveValue(/scene:/);
     await page.getByRole("combobox", { name: "Viewing mode" }).selectOption("story:all");
     await expect(page.locator(".continuous-scene-block")).toHaveCount(2);
-    const secondSceneContent = page.locator(".continuous-scene-content").nth(1);
-    await secondSceneContent.click();
+    const secondSceneContent = page.locator(".continuous-scene-content").first();
+    await secondSceneContent.locator("p").first().click();
     await page.keyboard.type(" Evelyn entered the observatory.");
     await page.waitForTimeout(1_200);
 
@@ -73,7 +75,12 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await titleInput.fill("Evelyn");
     await page.getByPlaceholder("Add aliases, …").fill("Evie");
     await page.getByPlaceholder("Write a description…").fill("A determined cartographer.");
+    const savedEntry = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PATCH" && response.url().includes("/api/compendium/"),
+    );
     await page.getByRole("button", { name: "Save" }).click();
+    await savedEntry;
     await expect(page.getByRole("button", { name: /Evelyn/ })).toBeVisible();
     await page.getByRole("button", { name: "Close entry" }).click();
 
@@ -93,7 +100,38 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await tagInput.press("Enter");
     await expect(page.locator(".selected-tag", { hasText: customTag })).toBeVisible();
     await page.getByRole("button", { name: "Save ingredients" }).click();
+
+    await page.getByRole("button", { name: "Chat" }).click();
+    await expect(page).toHaveURL(/tab=chat/);
+    await page.getByRole("button", { name: "New thread" }).click();
+    await expect(page).toHaveURL(/thread=[0-9a-f-]+/);
+    const composer = page.getByPlaceholder("Ask anything about this project...");
+    await composer.fill("What changed in the observatory?");
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.locator(".chat-message.assistant").last()).toContainText(
+      "The room seemed to gather itself",
+      { timeout: 10_000 },
+    );
+    await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".chat-message.assistant").last()).toBeVisible();
+    await page.getByRole("button", { name: "Regenerate" }).click();
+    await expect(page.locator(".chat-message.assistant").last()).toContainText(
+      "The room seemed to gather itself",
+      { timeout: 10_000 },
+    );
+    await page.getByRole("button", { name: "Ideation" }).click();
+    await page.goBack();
+    await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
+
+    await page.getByTitle("Rename Project").click();
+    const renameDialog = page.getByRole("dialog", { name: "Rename Project" });
+    await renameDialog
+      .getByRole("textbox", { name: "Project title" })
+      .fill("Renamed Playwright Story");
+    await renameDialog.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("heading", { name: "Renamed Playwright Story" })).toBeVisible();
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });

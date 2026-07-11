@@ -8,6 +8,12 @@ import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 
 type CreatedProject = { project: Project; initialSceneId: string };
 
+export function projectArtworkVariant(projectId: string, variants = 5) {
+  let hash = 0x811c9dc5;
+  for (const character of projectId) hash = Math.imul(hash ^ character.charCodeAt(0), 0x01000193);
+  return (hash >>> 0) % variants;
+}
+
 export function LibraryPage() {
   const [query, setQuery] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -111,14 +117,14 @@ export function LibraryPage() {
         />
       ) : null}
       <section className="project-grid" aria-label="Projects">
-        {filtered.map((project, index) => (
+        {filtered.map((project) => (
           <Link
             key={project.id}
             to="/projects/$projectId"
             params={{ projectId: project.id }}
             className="project-card"
           >
-            <div className={`project-art art-${index % 5}`}>
+            <div className={`project-art art-${projectArtworkVariant(project.id)}`}>
               <Sparkles size={20} />
             </div>
             <div className="project-card-body">

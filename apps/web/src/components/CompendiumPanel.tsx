@@ -19,6 +19,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
+import { useAppDialog } from "./DialogProvider.js";
 
 const storyTypes = [
   { id: "story.character", label: "Character", icon: UserRound },
@@ -308,6 +309,7 @@ export function CompendiumEntryDrawer({
   mentionCount?: number;
   onClose: () => void;
 }) {
+  const dialog = useAppDialog();
   const client = useQueryClient();
   const [draft, setDraft] = useState<CompendiumEntry | null>(entry);
   const [tab, setTab] = useState<"details" | "tracking">("details");
@@ -393,8 +395,16 @@ export function CompendiumEntryDrawer({
               <button
                 type="button"
                 className="button ghost danger"
-                onClick={() => {
-                  if (!window.confirm(`Clear “${draft.name}”?`)) return;
+                onClick={async () => {
+                  if (
+                    !(await dialog.confirm({
+                      title: `Clear “${draft.name}”?`,
+                      body: "This removes the entry content while preserving the system entry.",
+                      confirmLabel: "Clear entry",
+                      destructive: true,
+                    }))
+                  )
+                    return;
                   const cleared = {
                     ...draft,
                     content:
@@ -419,8 +429,15 @@ export function CompendiumEntryDrawer({
                 type="button"
                 className="icon-button danger"
                 aria-label="Delete entry"
-                onClick={() => {
-                  if (window.confirm(`Delete “${draft.name}”? This cannot be undone.`))
+                onClick={async () => {
+                  if (
+                    await dialog.confirm({
+                      title: `Delete “${draft.name}”?`,
+                      body: "This permanently deletes the Compendium entry. This cannot be undone.",
+                      confirmLabel: "Delete entry",
+                      destructive: true,
+                    })
+                  )
                     remove.mutate(draft.id);
                 }}
               >

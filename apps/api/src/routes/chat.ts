@@ -8,7 +8,14 @@ import {
   sendChatMessageInputSchema,
   updateChatThreadInputSchema,
 } from "@asterism/contracts";
-import { discoverEntries, findMentions, normalizeEntry } from "@asterism/core";
+import {
+  approximateTokens,
+  discoverEntries,
+  findMentions,
+  normalizeEntry,
+  protectedProtocolMessage,
+  renderPrompt,
+} from "@asterism/core";
 import {
   acts,
   chapters,
@@ -20,12 +27,14 @@ import {
   usageEvents,
 } from "@asterism/db";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
+import { type ChatContextPiece, chatTokenBudget, selectChatContext } from "../chat-context.js";
 import type { AppContext } from "../context.js";
 import { conflict, notFound, parseWith } from "../http.js";
 import { ownsProject } from "../ownership.js";
-import { getSettings } from "./settings.js";
+import { resolvePrompt } from "./prompts.js";
+import { getModelContextLength, getSettings } from "./settings.js";
 
 const projectParams = z.object({ projectId: z.uuid() });
 const threadParams = z.object({ id: z.uuid() });
@@ -97,7 +106,7 @@ async function resolveManualContext(
     .where(eq(compendiumEntries.projectId, projectId));
   const selectedScenes = new Set<string>();
   const selectedEntries = new Set<string>();
-  const pieces: string[] = [];
+  const pieces: ChatContextPiece[] = [];
   for (const source of sources) {
     if (source.kind === "manuscript")
       sceneRows.forEach((row) => {
@@ -132,8 +141,11 @@ async function resolveManualContext(
         });
     if (source.kind === "compendium_entry") selectedEntries.add(source.id);
     if (source.kind === "outline")
-      pieces.push(
-        `[Full Outline]\n${actRows
+      pieces.push({
+        key: "outline:full",
+        priority: 850,
+        provenance: { reason: "explicit", source: "Full outline", depth: 0 },
+        text: `[Full Outline]\n${actRows
           .map(
             (act) =>
               `${act.title}\n${chapterRows
@@ -148,13 +160,23 @@ async function resolveManualContext(
                 .join("\n")}`,
           )
           .join("\n\n")}`,
-      );
+      });
   }
   for (const scene of sceneRows.filter((row) => selectedScenes.has(row.id)))
-    pieces.push(`[Scene: ${scene.title}]\n${scene.plainText}`);
+    pieces.push({
+      key: `scene:${scene.id}`,
+      priority: 900,
+      provenance: { reason: "explicit", source: `Scene: ${scene.title}`, depth: 0 },
+      text: `[Scene: ${scene.title}]\n${scene.plainText}`,
+    });
   for (const entry of entryRows.filter((row) => selectedEntries.has(row.id)))
-    pieces.push(`[Manually selected Compendium entry]\n${normalizeEntry(entryContract(entry))}`);
-  return { text: pieces.join("\n\n"), entryRows, manuallySelectedEntryIds: selectedEntries };
+    pieces.push({
+      key: `entry:${entry.id}`,
+      priority: 1_000,
+      provenance: { reason: "explicit", source: `Compendium: ${entry.name}`, depth: 0 },
+      text: `[Manually selected Compendium entry]\n${normalizeEntry(entryContract(entry))}`,
+    });
+  return { pieces, entryRows, manuallySelectedEntryIds: selectedEntries };
 }
 
 async function buildMessages(
@@ -175,20 +197,14 @@ async function buildMessages(
       : older;
     if (unsummarized.length > 0) {
       try {
+        const summaryPrompt = await resolvePrompt(context, userId, "chat.summarize_history");
         const result = await (await context.getAi(userId, settings.contextModel)).complete({
           model: settings.contextModel,
           maxOutputTokens: 2_000,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Update a concise factual conversation summary for future continuity. Preserve decisions, questions, corrections, and unresolved points.",
-            },
-            {
-              role: "user",
-              content: `Existing summary:\n${thread.rollingSummary || "None"}\n\nNew turns:\n${unsummarized.map((m) => `${m.role}: ${m.content}`).join("\n\n")}`,
-            },
-          ],
+          messages: renderPrompt(summaryPrompt, {
+            existing_summary: thread.rollingSummary || "None",
+            new_messages: unsummarized.map((m) => `${m.role}: ${m.content}`).join("\n\n"),
+          }),
         });
         thread.rollingSummary = result.text;
         thread.summarizedThroughMessageId = older.at(-1)?.id ?? null;
@@ -223,45 +239,136 @@ async function buildMessages(
     .filter((m) => m.role === "assistant")
     .map((m) => m.content)
     .join("\n");
+  const matchedUserIds = new Set(findMentions(userScan, entries).flatMap((m) => m.entryIds));
   const forcedIds = new Set(
-    findMentions(userScan, entries, { includeUntracked: true }).flatMap((m) => m.entryIds),
+    entries
+      .filter((entry) => entry.activationMode === "mention" && matchedUserIds.has(entry.id))
+      .map((entry) => entry.id),
   );
+  const canonicalText = manual.pieces.map((piece) => piece.text).join("\n\n");
   const automatic = discoverEntries({
     entries,
-    scanText: assistantScan,
-    includeSmartCandidates: settings.smartContextEnabled,
+    scanText: `${userScan}\n${canonicalText}`,
+    includeSmartCandidates: false,
     maxDepth: settings.recursionDepth,
   });
   const automaticIds = new Set(automatic.map((item) => item.entry.id));
-  const compendiumText = entries
+  const smartIds = new Set<string>();
+  if (settings.smartContextEnabled) {
+    const smartCandidates = entries.filter(
+      (entry) => entry.activationMode === "smart" && !manual.manuallySelectedEntryIds.has(entry.id),
+    );
+    if (smartCandidates.length) {
+      try {
+        const extractionPrompt = await resolvePrompt(context, userId, "context.extract");
+        const result = await (await context.getAi(userId, settings.contextModel)).complete({
+          model: settings.contextModel,
+          maxOutputTokens: 1_000,
+          messages: [
+            protectedProtocolMessage("context.extract"),
+            ...renderPrompt(extractionPrompt, {
+              request_context: `${userScan}\n${canonicalText}`,
+              candidate_fragments: smartCandidates
+                .map((entry) => `[fragment:${entry.id}] ${normalizeEntry(entry)}`)
+                .join("\n\n"),
+            }),
+          ],
+        });
+        const selected = z
+          .object({ selectedFragmentIds: z.array(z.string()) })
+          .parse(JSON.parse(result.text));
+        const eligible = new Set(smartCandidates.map((entry) => entry.id));
+        for (const selectedId of selected.selectedFragmentIds)
+          if (eligible.has(selectedId)) smartIds.add(selectedId);
+        await context.db.insert(usageEvents).values({
+          userId,
+          projectId: thread.projectId,
+          model: settings.contextModel,
+          role: "chat_utility",
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+        });
+      } catch {
+        /* Smart selection is optional; explicit and deterministic context still applies. */
+      }
+    }
+  }
+  const assistantMatches = new Set(findMentions(assistantScan, entries).flatMap((m) => m.entryIds));
+  const compendiumPieces: ChatContextPiece[] = entries
     .filter(
       (entry) =>
         !manual.manuallySelectedEntryIds.has(entry.id) &&
-        (forcedIds.has(entry.id) || automaticIds.has(entry.id)),
+        (forcedIds.has(entry.id) || automaticIds.has(entry.id) || smartIds.has(entry.id)),
     )
-    .map(
-      (entry) =>
-        `[${forcedIds.has(entry.id) ? "User-mentioned" : "Automatically activated"} Compendium entry]\n${normalizeEntry(entry)}`,
-    )
-    .join("\n\n");
-  let contextText = [manual.text, compendiumText].filter(Boolean).join("\n\n");
+    .map((entry) => {
+      const discovered = automatic.find((item) => item.entry.id === entry.id);
+      const userMentioned = forcedIds.has(entry.id);
+      const corroborated =
+        assistantMatches.has(entry.id) && (userMentioned || automaticIds.has(entry.id));
+      return {
+        key: `entry:${entry.id}`,
+        priority: (userMentioned ? 800 : 650) + (corroborated ? 10 : 0),
+        provenance: {
+          reason: userMentioned
+            ? "user_mention"
+            : smartIds.has(entry.id)
+              ? "smart"
+              : discovered?.activationSource === "always"
+                ? "always"
+                : "recursive",
+          source: userMentioned ? "Current or previous user message" : "Canonical selected context",
+          depth: discovered?.recursionDepth ?? 0,
+        },
+        text: `[${userMentioned ? "User-mentioned" : "Automatically activated"} Compendium entry]\n${normalizeEntry(entry)}`,
+      } satisfies ChatContextPiece;
+    });
+  const contextPieces = [...manual.pieces, ...compendiumPieces];
   let compressed = false;
   const warnings: string[] = [];
-  if (contextText.length > 48_000) {
+  const contextLength = await getModelContextLength(context, userId, thread.model);
+  const budget = chatTokenBudget(contextLength);
+  const responsePrompt = await resolvePrompt(context, userId, "chat.respond");
+  const summaryText = thread.rollingSummary.slice(0, Math.floor(budget.inputTokens * 0.2) * 4);
+  const promptWithoutHistory = renderPrompt(responsePrompt, {
+    project_context: "",
+    conversation_summary: summaryText,
+  });
+  const currentUserMessage = { role: "user" as const, content: newText };
+  const mandatoryTokens = [...promptWithoutHistory, currentUserMessage].reduce(
+    (sum, message) => sum + approximateTokens(message.content) + 8,
+    0,
+  );
+  let historyTokens = 0;
+  const recentMessages = recent
+    .slice()
+    .reverse()
+    .flatMap((message) => {
+      const cost = approximateTokens(message.content) + 8;
+      if (mandatoryTokens + historyTokens + cost > budget.inputTokens) return [];
+      historyTokens += cost;
+      return [{ role: message.role, content: message.content }];
+    })
+    .reverse();
+  const fixedMessages = [...promptWithoutHistory, ...recentMessages, currentUserMessage];
+  const fixedTokens = fixedMessages.reduce(
+    (sum, message) => sum + approximateTokens(message.content) + 8,
+    0,
+  );
+  const projectBudget = Math.max(0, budget.inputTokens - fixedTokens);
+  const oversizedThreshold = Math.max(1_000, Math.floor(projectBudget / 2));
+  const compressionPrompt = await resolvePrompt(context, userId, "chat.compress_context");
+  for (const piece of contextPieces) {
+    if (approximateTokens(piece.text) <= oversizedThreshold || projectBudget === 0) continue;
     try {
       const result = await (await context.getAi(userId, settings.contextModel)).complete({
         model: settings.contextModel,
-        maxOutputTokens: 6_000,
-        messages: [
-          {
-            role: "system",
-            content:
-              "Compress the supplied story context while preserving names, source labels, concrete facts, and relationships. Do not invent facts.",
-          },
-          { role: "user", content: contextText },
-        ],
+        maxOutputTokens: Math.min(2_000, oversizedThreshold),
+        messages: renderPrompt(compressionPrompt, {
+          project_context: piece.text,
+          target_budget: String(oversizedThreshold),
+        }),
       });
-      contextText = result.text;
+      piece.text = result.text;
       compressed = true;
       await context.db.insert(usageEvents).values({
         userId,
@@ -272,31 +379,135 @@ async function buildMessages(
         outputTokens: result.usage.outputTokens,
       });
     } catch {
-      contextText = contextText.slice(0, 48_000);
-      warnings.push("Some selected context was truncated because compression failed.");
+      piece.text = piece.text.slice(0, oversizedThreshold * 4);
+      warnings.push(
+        `Context from ${piece.provenance.source} was truncated after compression failed.`,
+      );
     }
   }
+  const selected = selectChatContext(contextPieces, projectBudget);
+  if (selected.dropped > 0)
+    warnings.push(
+      `${selected.dropped} lower-priority context source${selected.dropped === 1 ? " was" : "s were"} omitted to fit the selected model.`,
+    );
+  const contextText = selected.selected.map((piece) => piece.text).join("\n\n");
   const messages = [
-    {
-      role: "system" as const,
-      content:
-        "You are a project-grounded fiction assistant. Treat supplied project context as reference material, distinguish known facts from inference, and answer the user's request directly.",
-    },
-    ...(contextText
-      ? [{ role: "developer" as const, content: `Project context:\n${contextText}` }]
-      : []),
-    ...(thread.rollingSummary
-      ? [
-          {
-            role: "developer" as const,
-            content: `Earlier conversation summary:\n${thread.rollingSummary}`,
-          },
-        ]
-      : []),
-    ...recent.map((m) => ({ role: m.role, content: m.content })),
-    { role: "user" as const, content: newText },
+    ...renderPrompt(responsePrompt, {
+      project_context: contextText || "No project context was selected.",
+      conversation_summary: summaryText || "None",
+    }),
+    ...recentMessages,
+    currentUserMessage,
   ];
-  return { messages, compressed, warnings };
+  return { messages, compressed, warnings, maxOutputTokens: budget.outputTokens };
+}
+
+function requireRow<T>(row: T | undefined, message: string): T {
+  if (!row) throw new Error(message);
+  return row;
+}
+
+function sendChatStream(
+  context: AppContext,
+  reply: FastifyReply,
+  options: {
+    id: string;
+    userId: string;
+    thread: typeof chatThreads.$inferSelect;
+    history: (typeof chatMessages.$inferSelect)[];
+    content: string;
+    userMessage: typeof chatMessages.$inferSelect;
+    assistantMessage: typeof chatMessages.$inferSelect;
+    replacedMessageId?: string;
+  },
+) {
+  const controller = new AbortController();
+  active.set(options.id, controller);
+  reply.raw.once("close", () => controller.abort());
+  async function* stream() {
+    let text = "";
+    yield ndjson(
+      chatStreamEventSchema.parse({
+        type: "chat.started",
+        userMessage: messageResponse(options.userMessage),
+        assistantMessage: messageResponse(options.assistantMessage),
+        ...(options.replacedMessageId ? { replacedMessageId: options.replacedMessageId } : {}),
+      }),
+    );
+    try {
+      const built = await buildMessages(
+        context,
+        options.userId,
+        options.thread,
+        options.history,
+        options.content,
+      );
+      for await (const delta of (await context.getAi(options.userId, options.thread.model)).stream({
+        model: options.thread.model,
+        messages: built.messages,
+        maxOutputTokens: built.maxOutputTokens,
+        signal: controller.signal,
+      })) {
+        text += delta;
+        yield ndjson({ type: "chat.delta", messageId: options.assistantMessage.id, delta });
+      }
+      const outputTokens = approximateTokens(text);
+      const [updated] = await context.db
+        .update(chatMessages)
+        .set({ content: text, status: "completed", outputTokens, ...touchUpdatedAt })
+        .where(eq(chatMessages.id, options.assistantMessage.id))
+        .returning();
+      const done = requireRow(updated, "Completed Chat message could not be loaded.");
+      if (options.replacedMessageId)
+        await context.db.delete(chatMessages).where(eq(chatMessages.id, options.replacedMessageId));
+      await context.db
+        .update(chatThreads)
+        .set(touchUpdatedAt)
+        .where(eq(chatThreads.id, options.id));
+      await context.db.insert(usageEvents).values({
+        userId: options.userId,
+        projectId: options.thread.projectId,
+        model: options.thread.model,
+        role: "chat",
+        outputTokens,
+      });
+      yield ndjson(
+        chatStreamEventSchema.parse({
+          type: "chat.completed",
+          message: messageResponse(done),
+          compressed: built.compressed,
+          warnings: built.warnings,
+        }),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Chat failed.";
+      if (options.replacedMessageId) {
+        await context.db
+          .delete(chatMessages)
+          .where(eq(chatMessages.id, options.assistantMessage.id));
+      } else {
+        await context.db
+          .update(chatMessages)
+          .set({
+            content: text,
+            status: controller.signal.aborted ? "cancelled" : "failed",
+            ...(controller.signal.aborted ? {} : { failureMessage: message }),
+            ...touchUpdatedAt,
+          })
+          .where(eq(chatMessages.id, options.assistantMessage.id));
+      }
+      yield ndjson(
+        controller.signal.aborted
+          ? { type: "chat.cancelled", messageId: options.assistantMessage.id }
+          : { type: "chat.failed", messageId: options.assistantMessage.id, message },
+      );
+    } finally {
+      active.delete(options.id);
+    }
+  }
+  reply.header("Content-Type", "application/x-ndjson; charset=utf-8");
+  reply.header("Cache-Control", "no-cache, no-transform");
+  return reply.send(Readable.from(stream()));
 }
 
 export async function registerChatRoutes(app: FastifyInstance, context: AppContext) {
@@ -320,7 +531,9 @@ export async function registerChatRoutes(app: FastifyInstance, context: AppConte
       .insert(chatThreads)
       .values({ projectId, userId: request.userId, model: input.model })
       .returning();
-    return reply.code(201).send(threadResponse(row!));
+    return reply
+      .code(201)
+      .send(threadResponse(requireRow(row, "Created thread was not returned.")));
   });
   app.get("/api/chat/threads/:id", async (request, reply) => {
     const { id } = parseWith(threadParams, request.params);
@@ -343,7 +556,7 @@ export async function registerChatRoutes(app: FastifyInstance, context: AppConte
       .set({ ...input, ...touchUpdatedAt })
       .where(eq(chatThreads.id, id))
       .returning();
-    return threadResponse(row!);
+    return threadResponse(requireRow(row, "Updated thread was not returned."));
   });
   app.delete("/api/chat/threads/:id", async (request, reply) => {
     const { id } = parseWith(threadParams, request.params);
@@ -374,11 +587,11 @@ export async function registerChatRoutes(app: FastifyInstance, context: AppConte
         .from(chatMessages)
         .where(eq(chatMessages.threadId, id))
         .orderBy(asc(chatMessages.createdAt));
-      const [userMessage] = await context.db
+      const [insertedUser] = await context.db
         .insert(chatMessages)
         .values({ threadId: id, role: "user", content: input.content, status: "completed" })
         .returning();
-      const [assistantMessage] = await context.db
+      const [insertedAssistant] = await context.db
         .insert(chatMessages)
         .values({ threadId: id, role: "assistant", status: "streaming", model: thread.model })
         .returning();
@@ -387,96 +600,57 @@ export async function registerChatRoutes(app: FastifyInstance, context: AppConte
           .update(chatThreads)
           .set({ title: input.content.replace(/\s+/g, " ").slice(0, 80), ...touchUpdatedAt })
           .where(eq(chatThreads.id, id));
-      const controller = new AbortController();
-      active.set(id, controller);
-      const userId = request.userId;
-      async function* stream() {
-        let text = "";
-        yield ndjson(
-          chatStreamEventSchema.parse({
-            type: "chat.started",
-            userMessage: messageResponse(userMessage!),
-            assistantMessage: messageResponse(assistantMessage!),
-          }),
-        );
-        try {
-          const built = await buildMessages(context, userId, thread!, history, input.content);
-          for await (const delta of (await context.getAi(userId, thread!.model)).stream({
-            model: thread!.model,
-            messages: built.messages,
-            maxOutputTokens: 8_000,
-            signal: controller.signal,
-          })) {
-            text += delta;
-            yield ndjson({ type: "chat.delta", messageId: assistantMessage!.id, delta });
-          }
-          const outputTokens = Math.ceil(text.length / 4);
-          const [done] = await context.db
-            .update(chatMessages)
-            .set({ content: text, status: "completed", outputTokens, ...touchUpdatedAt })
-            .where(eq(chatMessages.id, assistantMessage!.id))
-            .returning();
-          await context.db.update(chatThreads).set(touchUpdatedAt).where(eq(chatThreads.id, id));
-          await context.db.insert(usageEvents).values({
-            userId,
-            projectId: thread!.projectId,
-            model: thread!.model,
-            role: "chat",
-            outputTokens,
-          });
-          yield ndjson(
-            chatStreamEventSchema.parse({
-              type: "chat.completed",
-              message: messageResponse(done!),
-              compressed: built.compressed,
-              warnings: built.warnings,
-            }),
-          );
-        } catch (error) {
-          if (controller.signal.aborted) {
-            await context.db
-              .update(chatMessages)
-              .set({ content: text, status: "cancelled", ...touchUpdatedAt })
-              .where(eq(chatMessages.id, assistantMessage!.id));
-            yield ndjson({ type: "chat.cancelled", messageId: assistantMessage!.id });
-          } else {
-            const message = error instanceof Error ? error.message : "Chat failed.";
-            await context.db
-              .update(chatMessages)
-              .set({ content: text, status: "failed", failureMessage: message, ...touchUpdatedAt })
-              .where(eq(chatMessages.id, assistantMessage!.id));
-            yield ndjson({ type: "chat.failed", messageId: assistantMessage!.id, message });
-          }
-        } finally {
-          active.delete(id);
-        }
-      }
-      reply.header("Content-Type", "application/x-ndjson; charset=utf-8");
-      reply.header("Cache-Control", "no-cache, no-transform");
-      return reply.send(Readable.from(stream()));
+      return sendChatStream(context, reply, {
+        id,
+        userId: request.userId,
+        thread,
+        history,
+        content: input.content,
+        userMessage: requireRow(insertedUser, "Created user message was not returned."),
+        assistantMessage: requireRow(
+          insertedAssistant,
+          "Created assistant message was not returned.",
+        ),
+      });
     },
   );
-  app.post("/api/chat/threads/:id/regenerate", async (request, reply) => {
-    const { id } = parseWith(threadParams, request.params);
-    const thread = await ownedThread(context, request.userId, id);
-    if (!thread) return notFound(reply, "Thread not found.");
-    const rows = await context.db
-      .select()
-      .from(chatMessages)
-      .where(eq(chatMessages.threadId, id))
-      .orderBy(desc(chatMessages.createdAt))
-      .limit(2);
-    const assistant = rows.find((m) => m.role === "assistant");
-    const userMessage = rows.find((m) => m.role === "user");
-    if (!assistant || !userMessage) return conflict(reply, "There is no response to regenerate.");
-    await context.db.delete(chatMessages).where(eq(chatMessages.id, assistant.id));
-    await context.db.delete(chatMessages).where(eq(chatMessages.id, userMessage.id));
-    const result = await app.inject({
-      method: "POST",
-      url: `/api/chat/threads/${id}/messages`,
-      payload: { content: userMessage.content },
-      headers: { cookie: request.headers.cookie ?? "" },
-    });
-    return reply.code(result.statusCode).headers(result.headers).send(result.rawPayload);
-  });
+  app.post(
+    "/api/chat/threads/:id/regenerate",
+    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const { id } = parseWith(threadParams, request.params);
+      const thread = await ownedThread(context, request.userId, id);
+      if (!thread) return notFound(reply, "Thread not found.");
+      if (active.has(id)) return conflict(reply, "A response is already streaming.");
+      const rows = await context.db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.threadId, id))
+        .orderBy(asc(chatMessages.createdAt));
+      const assistantIndex = rows.findLastIndex((message) => message.role === "assistant");
+      const assistant = rows[assistantIndex];
+      const userMessage = [...rows.slice(0, assistantIndex)]
+        .reverse()
+        .find((m) => m.role === "user");
+      if (!assistant || !userMessage) return conflict(reply, "There is no response to regenerate.");
+      const history = rows.slice(0, rows.indexOf(userMessage));
+      const [insertedAssistant] = await context.db
+        .insert(chatMessages)
+        .values({ threadId: id, role: "assistant", status: "streaming", model: thread.model })
+        .returning();
+      return sendChatStream(context, reply, {
+        id,
+        userId: request.userId,
+        thread,
+        history,
+        content: userMessage.content,
+        userMessage,
+        assistantMessage: requireRow(
+          insertedAssistant,
+          "Replacement assistant message was not returned.",
+        ),
+        replacedMessageId: assistant.id,
+      });
+    },
+  );
 }

@@ -39,6 +39,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
+import { useAppDialog } from "./DialogProvider.js";
 
 const labelColors: SceneLabelColor[] = [
   "amber",
@@ -473,6 +474,7 @@ export function OutlineGrid({
   onOpenScene: (sceneId: string) => void;
   onOpenEntry: (entryIds: string[]) => void;
 }) {
+  const dialog = useAppDialog();
   const client = useQueryClient();
   const [collapsedActs, setCollapsedActs] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<unknown>(null);
@@ -581,7 +583,9 @@ export function OutlineGrid({
     }
   };
   const rename = async (path: string, title: string, body: object = {}) => {
-    const next = window.prompt("Rename", title)?.trim();
+    const next = (
+      await dialog.prompt({ title: "Rename", label: "Title", initialValue: title })
+    )?.trim();
     if (!next || next === title) return;
     try {
       await api(path, { method: "PATCH", body: JSON.stringify({ ...body, title: next }) });
@@ -591,7 +595,15 @@ export function OutlineGrid({
     }
   };
   const remove = async (path: string, title: string) => {
-    if (!window.confirm(`Delete ${title} and all of its contents?`)) return;
+    if (
+      !(await dialog.confirm({
+        title: `Delete ${title}?`,
+        body: "This permanently deletes this item and all of its contents. This cannot be undone.",
+        confirmLabel: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
     try {
       await api(path, { method: "DELETE" });
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
@@ -737,7 +749,7 @@ export function OutlineGrid({
                         <button
                           type="button"
                           className="button ghost"
-                          onClick={() => void create(`/api/acts/${act.id}/chapters`, "")}
+                          onClick={() => void create(`/api/acts/${act.id}/chapters`, "New Chapter")}
                         >
                           <Plus size={13} /> Chapter
                         </button>
@@ -850,7 +862,7 @@ export function OutlineGrid({
                                       onClick={() =>
                                         void create(
                                           `/api/chapters/${chapter.id}/scenes`,
-                                          "",
+                                          "New Scene",
                                         )
                                       }
                                     >
@@ -872,7 +884,7 @@ export function OutlineGrid({
               <button
                 type="button"
                 className="button primary"
-                onClick={() => void create(`/api/projects/${projectId}/acts`, "")}
+                onClick={() => void create(`/api/projects/${projectId}/acts`, "New Act")}
               >
                 <Plus size={14} /> New Act
               </button>

@@ -8,6 +8,9 @@ export const workflowKeySchema = z.enum([
   "ideation.premise",
   "context.extract",
   "summary.scene",
+  "chat.respond",
+  "chat.summarize_history",
+  "chat.compress_context",
 ]);
 
 export const promptRoleSchema = z.enum(["system", "developer", "user", "assistant"]);
@@ -58,6 +61,9 @@ export const workflowVariables: Record<z.infer<typeof workflowKeySchema>, readon
   "ideation.premise": ["genres", "themes", "tags", "user_instructions"],
   "context.extract": ["request_context", "candidate_fragments"],
   "summary.scene": ["scene_title", "scene_prose"],
+  "chat.respond": ["project_context", "conversation_summary"],
+  "chat.summarize_history": ["existing_summary", "new_messages"],
+  "chat.compress_context": ["project_context", "target_budget"],
 };
 
 export type WorkflowKey = z.infer<typeof workflowKeySchema>;

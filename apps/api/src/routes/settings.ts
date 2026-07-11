@@ -29,6 +29,19 @@ const modelCache = new Map<
   }
 >();
 
+export async function getModels(context: AppContext, userId: string) {
+  const cached = modelCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.models;
+  const models = await (await context.getAi(userId)).listModels();
+  modelCache.set(userId, { expiresAt: Date.now() + 10 * 60 * 1_000, models });
+  return models;
+}
+
+export async function getModelContextLength(context: AppContext, userId: string, model: string) {
+  const descriptor = (await getModels(context, userId)).find((item) => item.id === model);
+  return descriptor?.contextLength ?? 32_768;
+}
+
 export async function getSettings(context: AppContext, userId: string) {
   const [row] = await context.db
     .select()
@@ -96,10 +109,6 @@ export async function registerSettingsRoutes(
   });
 
   app.get("/api/models", async (request) => {
-    const cached = modelCache.get(request.userId);
-    if (cached && cached.expiresAt > Date.now()) return cached.models;
-    const models = await (await context.getAi(request.userId)).listModels();
-    modelCache.set(request.userId, { expiresAt: Date.now() + 10 * 60 * 1_000, models });
-    return models;
+    return getModels(context, request.userId);
   });
 }
