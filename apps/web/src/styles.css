@@ -271,6 +271,10 @@ label small {
 .chat-empty {
   text-align: center;
 }
+.chat-home-error {
+  max-width: 700px;
+  margin: 0 auto 18px;
+}
 .chat-workspace {
   display: grid;
   grid-template-rows: auto minmax(320px, 1fr) auto;

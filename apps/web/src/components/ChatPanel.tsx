@@ -160,6 +160,8 @@ export function ChatPanel({
   const [draft, setDraft] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [warning, setWarning] = useState("");
+  const [homeError, setHomeError] = useState("");
+  const [creatingThread, setCreatingThread] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [contextSubmenu, setContextSubmenu] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -174,13 +176,25 @@ export function ChatPanel({
     enabled: Boolean(threadId),
   });
   const createThread = async () => {
-    const latestModel = localStorage.getItem("asterism-latest-model") ?? baseModel;
-    const created = await api<ChatThread>(`/api/projects/${projectId}/chat/threads`, {
-      method: "POST",
-      body: JSON.stringify({ model: latestModel }),
-    });
-    await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
-    setThreadId(created.id);
+    setHomeError("");
+    setCreatingThread(true);
+    try {
+      const latestModel = localStorage.getItem("asterism-latest-model") ?? baseModel;
+      const created = await api<ChatThread>(`/api/projects/${projectId}/chat/threads`, {
+        method: "POST",
+        body: JSON.stringify({ model: latestModel }),
+      });
+      await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
+      setThreadId(created.id);
+    } catch (error) {
+      setHomeError(
+        error instanceof Error
+          ? `${error.message} If this deployment was recently updated, apply the latest database migrations.`
+          : "The thread could not be created. Apply the latest database migrations and try again.",
+      );
+    } finally {
+      setCreatingThread(false);
+    }
   };
   const patchThread = async (
     input: Partial<Pick<ChatThread, "title" | "model" | "contextSources">>,
@@ -377,10 +391,21 @@ export function ChatPanel({
         <div className="chat-home-heading">
           <MessageCircle size={28} />
           <h2>Continue where you left off</h2>
-          <button className="button primary" type="button" onClick={createThread}>
-            <Plus size={15} /> New thread
+          <button
+            className="button primary"
+            type="button"
+            onClick={createThread}
+            disabled={creatingThread}
+          >
+            <Plus size={15} /> {creatingThread ? "Creating..." : "New thread"}
           </button>
         </div>
+        {(homeError || threads.error) && (
+          <div className="notice error chat-home-error">
+            {homeError ||
+              `${threads.error instanceof Error ? threads.error.message : "Chat threads could not be loaded."} If this deployment was recently updated, apply the latest database migrations.`}
+          </div>
+        )}
         {threads.data?.length ? (
           <div className="chat-thread-list">
             {threads.data.map((item) => (
@@ -397,7 +422,7 @@ export function ChatPanel({
         )}
       </section>
     );
-  if (!thread.data) return <div className="loading">Opening thread…</div>;
+  if (!thread.data) return <div className="loading">Opening thread...</div>;
   return (
     <section className="chat-workspace">
       <header className="chat-header">

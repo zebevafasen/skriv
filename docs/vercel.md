@@ -68,7 +68,7 @@ Run the committed migrations with the production environment without writing its
 the repository:
 
 ```bash
-pnpm dlx vercel@latest env run -e production -- pnpm db:migrate
+pnpm dlx vercel@latest -- env run -e production -- pnpm db:migrate
 ```
 
 Run this command before deploying any future release that contains a new file under
