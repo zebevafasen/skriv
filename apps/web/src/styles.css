@@ -1305,6 +1305,7 @@ label small {
   display: flex;
   align-items: end;
   justify-content: space-between;
+  position: relative;
 }
 
 .editor-header h2 {
@@ -2507,6 +2508,15 @@ label small {
   max-width: calc(var(--manuscript-page-width, 920px) + 220px);
 }
 
+.continuous-editor-column .editor-header {
+  max-width: calc(var(--manuscript-page-width, 920px) + 220px);
+  padding-right: calc(48px + 220px);
+}
+
+.manuscript-scope-header h2 {
+  color: var(--accent);
+}
+
 .continuous-editor-prose {
   min-height: 58vh;
   padding: 38px clamp(28px, 6vw, 72px) 90px;
@@ -2521,7 +2531,7 @@ label small {
   user-select: none;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 0;
 }
 
 .manuscript-structure-heading::before,
@@ -2553,6 +2563,10 @@ label small {
   height: 1px;
 }
 
+.manuscript-structure-heading > span:not(.title-input) {
+  padding: 0 14px;
+}
+
 .manuscript-structure-heading .title-input {
   background: transparent;
   border: none;
@@ -2565,11 +2579,19 @@ label small {
   padding: 0;
   margin: 0;
   width: auto;
-  min-width: 150px;
+  min-width: 0;
   text-align: left;
+  margin-left: 6px;
+}
+
+.manuscript-structure-heading .title-input:empty {
+  min-width: 0;
+  margin-left: 0;
 }
 
 .manuscript-structure-heading .title-input:focus {
+  min-width: 120px;
+  margin-left: 6px;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
 }
 

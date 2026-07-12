@@ -1118,37 +1118,13 @@ export const ManuscriptEditor = forwardRef<
   return (
     <div className="editor-column continuous-editor-column" style={editorStyle}>
       <div className="editor-header manuscript-scope-header">
-        <div>
-          <p className="eyebrow">{scope.kind === "scene" ? "Scene" : "Continuous manuscript"}</p>
+        <div style={{ width: "100%", textAlign: "center" }}>
           <h2>
             {scope.kind === "story"
               ? tree.project.title
               : ((activeScene && structureLabels.scenes.get(activeScene.id)?.label) ??
                 "Manuscript")}
           </h2>
-        </div>
-        <div className="editor-header-actions">
-          <button
-            type="button"
-            className="icon-button"
-            disabled={selectedIndex <= 0}
-            onClick={() => previousScene && onSelectScene(previousScene.id)}
-            aria-label="Previous Scene"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            disabled={selectedIndex < 0 || selectedIndex >= allScenes.length - 1}
-            onClick={() => nextScene && onSelectScene(nextScene.id)}
-            aria-label="Next Scene"
-          >
-            <ChevronRight size={16} />
-          </button>
-          <button type="button" className="button ghost" onClick={loadHistory}>
-            <History size={14} /> History
-          </button>
         </div>
       </div>
       <div className="editor-body">
@@ -1169,6 +1145,27 @@ export const ManuscriptEditor = forwardRef<
               onClick={() => editor?.chain().focus().redo().run()}
             >
               <Redo2 size={15} />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              disabled={selectedIndex <= 0}
+              onClick={() => previousScene && onSelectScene(previousScene.id)}
+              aria-label="Previous Scene"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              disabled={selectedIndex < 0 || selectedIndex >= allScenes.length - 1}
+              onClick={() => nextScene && onSelectScene(nextScene.id)}
+              aria-label="Next Scene"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button type="button" className="button ghost" onClick={loadHistory}>
+              <History size={14} /> History
             </button>
             <span />
             <div className="typography-control">
