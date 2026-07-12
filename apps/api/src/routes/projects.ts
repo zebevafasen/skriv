@@ -4,6 +4,8 @@ import {
   chapterSchema,
   createActInputSchema,
   createChapterInputSchema,
+  createManuscriptItemInputSchema,
+  createManuscriptItemResponseSchema,
   createProjectInputSchema,
   createSceneInputSchema,
   emptyTiptapDocument,
@@ -23,7 +25,7 @@ import {
   touchUpdatedAt,
   workspaceMembers,
 } from "@asterism/db";
-import { and, asc, desc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, max, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -115,19 +117,19 @@ export async function registerProjectRoutes(
       if (!project) throw new Error("Project creation failed.");
       const [act] = await tx
         .insert(acts)
-        .values({ projectId: project.id, title: "Act I", position: 0 })
+        .values({ projectId: project.id, title: "", position: 0 })
         .returning();
       if (!act) throw new Error("Act creation failed.");
       const [chapter] = await tx
         .insert(chapters)
-        .values({ actId: act.id, title: "Chapter 1", position: 0 })
+        .values({ actId: act.id, title: "", position: 0 })
         .returning();
       if (!chapter) throw new Error("Chapter creation failed.");
       const [scene] = await tx
         .insert(scenes)
         .values({
           chapterId: chapter.id,
-          title: "Opening Scene",
+          title: "",
           position: 0,
           document: emptyTiptapDocument,
           plainText: "",
@@ -274,6 +276,133 @@ export async function registerProjectRoutes(
       .returning();
     if (!scene) throw new Error("Scene creation failed.");
     return reply.code(201).send(sceneResponse(scene));
+  });
+
+  app.post("/api/projects/:id/manuscript-items", async (request, reply) => {
+    const { id } = parseWith(idParams, request.params);
+    if (!(await ownsProject(context, request.userId, id)))
+      return notFound(reply, "Project not found.");
+    const input = parseWith(createManuscriptItemInputSchema, request.body);
+
+    if (input.kind === "act" && input.afterActId) {
+      const after = await ownedAct(context, request.userId, input.afterActId);
+      if (!after || after.projectId !== id) return notFound(reply, "Previous Act not found.");
+    }
+    if (input.kind === "chapter") {
+      const parent = await ownedAct(context, request.userId, input.actId);
+      if (!parent || parent.projectId !== id) return notFound(reply, "Act not found.");
+      if (input.afterChapterId) {
+        const after = await ownedChapter(context, request.userId, input.afterChapterId);
+        if (!after || after.chapter.actId !== input.actId)
+          return notFound(reply, "Previous Chapter not found.");
+      }
+    }
+    if (input.kind === "scene") {
+      const parent = await ownedChapter(context, request.userId, input.chapterId);
+      if (!parent || parent.projectId !== id) return notFound(reply, "Chapter not found.");
+      if (input.afterSceneId) {
+        const after = await ownedScene(context, request.userId, input.afterSceneId);
+        if (!after || after.scene.chapterId !== input.chapterId)
+          return notFound(reply, "Previous Scene not found.");
+      }
+    }
+
+    const created = await context.db.transaction(async (tx) => {
+      if (input.kind === "act") {
+        const [after] = input.afterActId
+          ? await tx.select().from(acts).where(eq(acts.id, input.afterActId)).limit(1)
+          : [];
+        const position = after ? after.position + 1 : 0;
+        await tx
+          .update(acts)
+          .set({ position: sql`${acts.position} + 1`, ...touchUpdatedAt })
+          .where(and(eq(acts.projectId, id), gte(acts.position, position)));
+        const [act] = await tx
+          .insert(acts)
+          .values({ projectId: id, title: "", position })
+          .returning();
+        if (!act) throw new Error("Act creation failed.");
+        const [chapter] = await tx
+          .insert(chapters)
+          .values({ actId: act.id, title: "", position: 0 })
+          .returning();
+        if (!chapter) throw new Error("Chapter creation failed.");
+        const [scene] = await tx
+          .insert(scenes)
+          .values({
+            chapterId: chapter.id,
+            title: "",
+            position: 0,
+            document: emptyTiptapDocument,
+            plainText: "",
+            metadata: defaultSceneMetadata,
+          })
+          .returning();
+        if (!scene) throw new Error("Scene creation failed.");
+        return { kind: input.kind, actId: act.id, chapterId: chapter.id, sceneId: scene.id };
+      }
+
+      if (input.kind === "chapter") {
+        const [after] = input.afterChapterId
+          ? await tx.select().from(chapters).where(eq(chapters.id, input.afterChapterId)).limit(1)
+          : [];
+        const position = after ? after.position + 1 : 0;
+        await tx
+          .update(chapters)
+          .set({ position: sql`${chapters.position} + 1`, ...touchUpdatedAt })
+          .where(and(eq(chapters.actId, input.actId), gte(chapters.position, position)));
+        const [chapter] = await tx
+          .insert(chapters)
+          .values({ actId: input.actId, title: "", position })
+          .returning();
+        if (!chapter) throw new Error("Chapter creation failed.");
+        const [scene] = await tx
+          .insert(scenes)
+          .values({
+            chapterId: chapter.id,
+            title: "",
+            position: 0,
+            document: emptyTiptapDocument,
+            plainText: "",
+            metadata: defaultSceneMetadata,
+          })
+          .returning();
+        if (!scene) throw new Error("Scene creation failed.");
+        return { kind: input.kind, actId: null, chapterId: chapter.id, sceneId: scene.id };
+      }
+
+      const [after] = input.afterSceneId
+        ? await tx.select().from(scenes).where(eq(scenes.id, input.afterSceneId)).limit(1)
+        : [];
+      const position = after ? after.position + 1 : 0;
+      await tx
+        .update(scenes)
+        .set({ position: sql`${scenes.position} + 1`, ...touchUpdatedAt })
+        .where(and(eq(scenes.chapterId, input.chapterId), gte(scenes.position, position)));
+      const [scene] = await tx
+        .insert(scenes)
+        .values({
+          chapterId: input.chapterId,
+          title: "",
+          position,
+          document: emptyTiptapDocument,
+          plainText: "",
+          metadata: defaultSceneMetadata,
+        })
+        .returning();
+      if (!scene) throw new Error("Scene creation failed.");
+      return { kind: input.kind, actId: null, chapterId: null, sceneId: scene.id };
+    });
+
+    return reply.code(201).send(
+      createManuscriptItemResponseSchema.parse({
+        kind: created.kind,
+        createdActId: created.actId,
+        createdChapterId: created.chapterId,
+        createdSceneId: created.sceneId,
+        initialSceneId: created.sceneId,
+      }),
+    );
   });
 
   app.get("/api/scenes/:id", async (request, reply) => {

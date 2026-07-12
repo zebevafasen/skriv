@@ -1,4 +1,8 @@
 1. Expanded "New Project" screen. Should include the story Title (as it has now), Author (should be remebered across projects so that it reamins when pressing "New Project" in the future), Series (for when that feature is implemented) and story Language. Maybe a section where the user can include which "tag packs" (whenever that feature gets implemented) to import? Maybe an options to copy certain things from other existing stories (like Compenium entries, Outline layouts etc.). Maybe even a "preset Outline" feature where the user can choose a preset Outline (save the cat etc.) with Acts, Chapters and Scenes already laid out, tagged and described.
 2. Expanded Scene Beat in-line menu.
 3. Expanded tag packs feature, where preset tags exists inside packs for the user to import when they want them (for example, the "Fantasy" pack has Themes and Tags mostly related to that pack). Of course, the user is still free to type any tags they want yet. Maybe a better menu for viewing tags in the Ideation page, sorted by packs. Also allow the user to create and save custom packs.
-4. Complete redesign of the Ideation page, since that page feels old and outdated at this point.
+4. Complete redesign of the Ideation page, since that page feels old and outdated at this point. Maybe even add multiple modes? Wither premise generator using tags, and maybe a separate character and location generator using tags and optional Compendium entries?
+5. Better export feautre that supports multiple file types (JSON, md, docx etc.) with options to what to include in the export.
+6. Support for custom Compendium categories.
+7. Expanded Outline labels, with presets for easier organization.
+8. 

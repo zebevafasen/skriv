@@ -57,6 +57,13 @@
       "when": 1783818831137,
       "tag": "0007_editor_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783820131056,
+      "tag": "0008_project_notebook",
+      "breakpoints": true
     }
   ]
 }

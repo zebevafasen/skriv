@@ -1,11 +1,13 @@
 import type {
   CompendiumEntry,
+  CreateManuscriptItemInput,
+  CreateManuscriptItemResponse,
   ManuscriptTree,
   Scene,
   SceneLabelColor,
   SceneMetadata,
 } from "@asterism/contracts";
-import { findMentions } from "@asterism/core";
+import { findMentions, manuscriptLabels } from "@asterism/core";
 import {
   type CollisionDetection,
   closestCenter,
@@ -112,6 +114,7 @@ function SortableBox({
 
 function SceneCard({
   scene,
+  displayLabel,
   entries,
   labelSuggestions,
   onOpenScene,
@@ -122,6 +125,7 @@ function SceneCard({
   dragHandle,
 }: {
   scene: Scene;
+  displayLabel: string;
   entries: CompendiumEntry[];
   labelSuggestions: Array<{ text: string; color: SceneLabelColor }>;
   onOpenScene: (sceneId: string) => void;
@@ -226,12 +230,12 @@ function SceneCard({
     >
       <header>
         {dragHandle}
-        <strong>{scene.title}</strong>
+        <strong>{displayLabel}</strong>
         <span>{wordCount(scene.plainText)} words</span>
         <button
           type="button"
           className="icon-button"
-          aria-label={`Rename ${scene.title}`}
+          aria-label={`Rename ${displayLabel}`}
           onClick={onRename}
         >
           <MoreVertical size={14} />
@@ -239,14 +243,14 @@ function SceneCard({
         <button
           type="button"
           className="icon-button danger scene-card-delete"
-          aria-label={`Delete ${scene.title}`}
+          aria-label={`Delete ${displayLabel}`}
           onClick={onDelete}
         >
           <Trash2 size={12} />
         </button>
       </header>
       <textarea
-        aria-label={`${scene.title} summary`}
+        aria-label={`${displayLabel} summary`}
         value={metadata.summary}
         onChange={(event) => changeMetadata({ ...metadata, summary: event.target.value })}
         placeholder="Add summary…"
@@ -529,6 +533,7 @@ export function OutlineGrid({
     }
     return [...labels.values()];
   }, [tree]);
+  const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
   const hierarchyCollisionDetection = useCallback<CollisionDetection>(
     (args) => {
       const activeId = String(args.active.id);
@@ -574,19 +579,27 @@ export function OutlineGrid({
       setError(reorderError);
     }
   };
-  const create = async (path: string, title: string) => {
+  const create = async (input: CreateManuscriptItemInput) => {
     try {
-      await api(path, { method: "POST", body: JSON.stringify({ title }) });
+      const created = await api<CreateManuscriptItemResponse>(
+        `/api/projects/${projectId}/manuscript-items`,
+        { method: "POST", body: JSON.stringify(input) },
+      );
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
+      onOpenScene(created.initialSceneId);
     } catch (createError) {
       setError(createError);
     }
   };
   const rename = async (path: string, title: string, body: object = {}) => {
-    const next = (
-      await dialog.prompt({ title: "Rename", label: "Title", initialValue: title })
-    )?.trim();
-    if (!next || next === title) return;
+    const result = await dialog.prompt({
+      title: "Edit custom title",
+      label: "Optional title",
+      initialValue: title,
+    });
+    if (result === null) return;
+    const next = result.trim();
+    if (next === title) return;
     try {
       await api(path, { method: "PATCH", body: JSON.stringify({ ...body, title: next }) });
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
@@ -741,7 +754,7 @@ export function OutlineGrid({
                             className={collapsedActs.has(act.id) ? "collapsed" : ""}
                             size={15}
                           />
-                          <strong>{act.title}</strong>
+                          <strong>{structureLabels.acts.get(act.id)?.label}</strong>
                         </button>
                         <span>
                           {act.chapters.length} chapters · {actWords} words
@@ -749,7 +762,13 @@ export function OutlineGrid({
                         <button
                           type="button"
                           className="button ghost"
-                          onClick={() => void create(`/api/acts/${act.id}/chapters`, "New Chapter")}
+                          onClick={() =>
+                            void create({
+                              kind: "chapter",
+                              actId: act.id,
+                              afterChapterId: act.chapters.at(-1)?.id ?? null,
+                            })
+                          }
                         >
                           <Plus size={13} /> Chapter
                         </button>
@@ -757,15 +776,20 @@ export function OutlineGrid({
                           type="button"
                           className="icon-button"
                           onClick={() => void rename(`/api/acts/${act.id}`, act.title)}
-                          aria-label={`Rename ${act.title}`}
+                          aria-label={`Rename ${structureLabels.acts.get(act.id)?.label}`}
                         >
                           <MoreVertical size={14} />
                         </button>
                         <button
                           type="button"
                           className="icon-button danger"
-                          onClick={() => void remove(`/api/acts/${act.id}`, act.title)}
-                          aria-label={`Delete ${act.title}`}
+                          onClick={() =>
+                            void remove(
+                              `/api/acts/${act.id}`,
+                              structureLabels.acts.get(act.id)?.label ?? "Act",
+                            )
+                          }
+                          aria-label={`Delete ${structureLabels.acts.get(act.id)?.label}`}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -786,7 +810,9 @@ export function OutlineGrid({
                                   <>
                                     <header>
                                       {chapterHandle}
-                                      <strong>{chapter.title}</strong>
+                                      <strong>
+                                        {structureLabels.chapters.get(chapter.id)?.label}
+                                      </strong>
                                       <span>
                                         {chapter.scenes.reduce(
                                           (sum, scene) => sum + wordCount(scene.plainText),
@@ -800,7 +826,7 @@ export function OutlineGrid({
                                         onClick={() =>
                                           void rename(`/api/chapters/${chapter.id}`, chapter.title)
                                         }
-                                        aria-label={`Rename ${chapter.title}`}
+                                        aria-label={`Rename ${structureLabels.chapters.get(chapter.id)?.label}`}
                                       >
                                         <MoreVertical size={13} />
                                       </button>
@@ -808,9 +834,13 @@ export function OutlineGrid({
                                         type="button"
                                         className="icon-button danger"
                                         onClick={() =>
-                                          void remove(`/api/chapters/${chapter.id}`, chapter.title)
+                                          void remove(
+                                            `/api/chapters/${chapter.id}`,
+                                            structureLabels.chapters.get(chapter.id)?.label ??
+                                              "Chapter",
+                                          )
                                         }
-                                        aria-label={`Delete ${chapter.title}`}
+                                        aria-label={`Delete ${structureLabels.chapters.get(chapter.id)?.label}`}
                                       >
                                         <Trash2 size={12} />
                                       </button>
@@ -829,6 +859,10 @@ export function OutlineGrid({
                                             {(sceneHandle) => (
                                               <SceneCard
                                                 scene={scene}
+                                                displayLabel={
+                                                  structureLabels.scenes.get(scene.id)?.label ??
+                                                  "Scene"
+                                                }
                                                 entries={entries}
                                                 labelSuggestions={labelSuggestions}
                                                 onOpenScene={onOpenScene}
@@ -846,7 +880,8 @@ export function OutlineGrid({
                                                 onDelete={() =>
                                                   void remove(
                                                     `/api/scenes/${scene.id}`,
-                                                    scene.title,
+                                                    structureLabels.scenes.get(scene.id)?.label ??
+                                                      "Scene",
                                                   )
                                                 }
                                                 dragHandle={sceneHandle}
@@ -860,10 +895,11 @@ export function OutlineGrid({
                                       type="button"
                                       className="outline-add-scene"
                                       onClick={() =>
-                                        void create(
-                                          `/api/chapters/${chapter.id}/scenes`,
-                                          "New Scene",
-                                        )
+                                        void create({
+                                          kind: "scene",
+                                          chapterId: chapter.id,
+                                          afterSceneId: chapter.scenes.at(-1)?.id ?? null,
+                                        })
                                       }
                                     >
                                       <Plus size={13} /> New Scene
@@ -884,7 +920,9 @@ export function OutlineGrid({
               <button
                 type="button"
                 className="button primary"
-                onClick={() => void create(`/api/projects/${projectId}/acts`, "New Act")}
+                onClick={() =>
+                  void create({ kind: "act", afterActId: tree.acts.at(-1)?.id ?? null })
+                }
               >
                 <Plus size={14} /> New Act
               </button>

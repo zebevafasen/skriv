@@ -1,12 +1,37 @@
-import type { CompendiumEntry, PromptDefinition } from "@asterism/contracts";
+import type { CompendiumEntry, ManuscriptTree, PromptDefinition, Scene } from "@asterism/contracts";
 import { describe, expect, it } from "vitest";
 import {
   discoverEntries,
   findMentions,
+  manuscriptLabels,
   renderPrompt,
   segmentEntry,
   validatePromptDefinition,
 } from "./index.js";
+
+function labelScene(title: string): Scene {
+  return {
+    id: crypto.randomUUID(),
+    chapterId: crypto.randomUUID(),
+    title,
+    position: 0,
+    document: { type: "doc", content: [{ type: "paragraph" }] },
+    plainText: "",
+    version: 1,
+    metadata: {
+      summary: "",
+      povEntryId: null,
+      locationEntryId: null,
+      presentCharacterEntryIds: [],
+      goal: "",
+      notes: "",
+      status: "draft",
+      labels: [],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
 
 const entry = (
   overrides: Partial<CompendiumEntry> & Pick<CompendiumEntry, "id" | "name">,
@@ -71,6 +96,70 @@ describe("mention matching", () => {
   });
 });
 
+describe("manuscript labels", () => {
+  it("numbers Chapters and Scenes globally while preserving optional titles", () => {
+    const projectId = crypto.randomUUID();
+    const first = labelScene("");
+    const second = labelScene("The Return");
+    const tree: ManuscriptTree = {
+      project: {
+        id: projectId,
+        workspaceId: crypto.randomUUID(),
+        title: "Story",
+        settings: {
+          author: "",
+          series: "",
+          seriesIndex: "",
+          coverDataUrl: null,
+          tense: "Past",
+          language: "General English",
+          povType: "3rd Person (Limited)",
+          povCharacterEntryId: null,
+          notes: "",
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      acts: [
+        {
+          id: crypto.randomUUID(),
+          projectId,
+          title: "",
+          position: 0,
+          chapters: [
+            {
+              id: first.chapterId,
+              actId: crypto.randomUUID(),
+              title: "Beginning",
+              position: 0,
+              scenes: [first],
+            },
+          ],
+        },
+        {
+          id: crypto.randomUUID(),
+          projectId,
+          title: "Finale",
+          position: 1,
+          chapters: [
+            {
+              id: second.chapterId,
+              actId: crypto.randomUUID(),
+              title: "",
+              position: 0,
+              scenes: [second],
+            },
+          ],
+        },
+      ],
+    };
+    const labels = manuscriptLabels(tree);
+    expect(labels.chapters.get(second.chapterId)?.label).toBe("Chapter 2");
+    expect(labels.scenes.get(second.id)?.label).toBe("Scene 2: The Return");
+    expect(labels.acts.get(tree.acts[1]?.id ?? "")?.label).toBe("Act 2: Finale");
+  });
+});
+
 describe("context discovery", () => {
   it("discovers recursive references and excludes never-active entries", () => {
     const nora = entry({ id: crypto.randomUUID(), name: "Nora" });
@@ -117,15 +206,15 @@ describe("prompt registry primitives", () => {
     ownership: "builtin",
     ownerId: null,
     sourcePromptId: null,
-    messages: [{ role: "user", content: "Before: {{manuscript_before_cursor}}" }],
-    variables: ["manuscript_before_cursor"],
+    messages: [{ role: "user", content: "After: {{manuscript_after_cursor}}" }],
+    variables: ["manuscript_after_cursor"],
     createdAt: null,
     updatedAt: null,
   };
 
   it("renders controlled variables", () => {
-    expect(renderPrompt(prompt, { manuscript_before_cursor: "Hello" })[0]?.content).toBe(
-      "Before: Hello",
+    expect(renderPrompt(prompt, { manuscript_after_cursor: "Hello" })[0]?.content).toBe(
+      "After: Hello",
     );
   });
 

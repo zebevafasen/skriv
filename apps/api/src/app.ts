@@ -16,6 +16,7 @@ import { registerGenerationRoutes } from "./routes/generation.js";
 import { registerIdeationRoutes } from "./routes/ideation.js";
 import { registerImportRoutes } from "./routes/import.js";
 import { registerInviteRoutes } from "./routes/invites.js";
+import { registerNoteRoutes } from "./routes/notes.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
@@ -65,6 +66,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
     contentPackage: "asterism.base",
   }));
   await registerProjectRoutes(app, context);
+  await registerNoteRoutes(app, context);
   await registerCompendiumRoutes(app, context);
   await registerChatRoutes(app, context);
   await registerPromptRoutes(app, context);

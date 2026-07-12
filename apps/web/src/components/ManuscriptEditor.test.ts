@@ -73,6 +73,11 @@ describe("composite manuscript documents", () => {
     const blocks = document.content?.filter((node) => node.type === "sceneBlock") ?? [];
     expect(blocks.map((block) => block.attrs?.sceneId)).toEqual([first.id, second.id]);
     expect(blocks[1]?.content?.[0]?.content?.[0]?.text).toBe("Second");
+    expect(blocks.map((block) => block.attrs?.displayLabel)).toEqual([
+      "Scene 1: First",
+      "Scene 2: Second",
+    ]);
+    expect(blocks[1]?.attrs?.isLastInChapter).toBe(true);
   });
 
   it("normalizes inline AI replacements without creating block nodes", () => {

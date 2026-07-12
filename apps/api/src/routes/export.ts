@@ -1,5 +1,5 @@
-import { acts, chapters, compendiumEntries, projects, scenes } from "@asterism/db";
-import { asc, eq, inArray } from "drizzle-orm";
+import { acts, chapters, compendiumEntries, projectNotes, projects, scenes } from "@asterism/db";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -51,9 +51,14 @@ export async function registerExportRoutes(
       .select()
       .from(compendiumEntries)
       .where(eq(compendiumEntries.projectId, id));
+    const notes = await context.db
+      .select()
+      .from(projectNotes)
+      .where(eq(projectNotes.projectId, id))
+      .orderBy(desc(projectNotes.pinned), desc(projectNotes.updatedAt));
     reply.header("Content-Disposition", `attachment; filename="asterism-${id}.json"`);
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       exportedAt: new Date().toISOString(),
       project,
       manuscript: actRows.map((act) => ({
@@ -66,6 +71,7 @@ export async function registerExportRoutes(
           })),
       })),
       compendium: entries,
+      notes,
     };
   });
 }

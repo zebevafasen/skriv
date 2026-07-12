@@ -124,6 +124,19 @@ export const projects = pgTable("projects", {
   ...timestamps,
 });
 
+export const projectNotes = pgTable("project_notes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  document: jsonb("document").$type<TiptapNode>().notNull(),
+  plainText: text("plain_text").notNull().default(""),
+  pinned: boolean("pinned").notNull().default(false),
+  version: integer("version").notNull().default(1),
+  ...timestamps,
+});
+
 export const acts = pgTable("acts", {
   id: uuid("id").primaryKey().defaultRandom(),
   projectId: uuid("project_id")
@@ -417,6 +430,10 @@ export const usageEvents = pgTable("usage_events", {
 export const projectsRelations = relations(projects, ({ many }) => ({
   acts: many(acts),
   entries: many(compendiumEntries),
+  notes: many(projectNotes),
+}));
+export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
+  project: one(projects, { fields: [projectNotes.projectId], references: [projects.id] }),
 }));
 export const actsRelations = relations(acts, ({ one, many }) => ({
   project: one(projects, { fields: [acts.projectId], references: [projects.id] }),

@@ -1,4 +1,5 @@
-import { acts, chapters, compendiumEntries, projects, scenes } from "@asterism/db";
+import type { CompendiumContent, SceneMetadata, TiptapNode } from "@asterism/contracts";
+import { acts, chapters, compendiumEntries, projectNotes, projects, scenes } from "@asterism/db";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -9,6 +10,7 @@ const importSchema = z.object({
   schemaVersion: z.number(),
   project: z.object({
     title: z.string(),
+    settings: z.object({ notes: z.string().optional() }).optional(),
   }),
   manuscript: z.array(
     z.object({
@@ -47,6 +49,18 @@ const importSchema = z.object({
       singletonKey: z.string().nullable().optional(),
     }),
   ),
+  notes: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(300),
+        document: z.any(),
+        plainText: z.string().max(500_000),
+        pinned: z.boolean().optional(),
+        version: z.number().int().positive().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 export async function registerImportRoutes(
@@ -98,10 +112,10 @@ export async function registerImportRoutes(
                 chapterId: chapter.id,
                 title: sceneData.title,
                 position: sceneData.position,
-                document: sceneData.document as any,
+                document: sceneData.document as TiptapNode,
                 plainText: sceneData.plainText,
                 version: sceneData.version ?? 1,
-                metadata: sceneData.metadata as any,
+                metadata: sceneData.metadata as SceneMetadata,
               })
               .returning();
 
@@ -127,10 +141,38 @@ export async function registerImportRoutes(
             matchExclusions: entry.matchExclusions ?? [],
             activationMode: entry.activationMode ?? "mention",
             caseSensitive: entry.caseSensitive ?? false,
-            content: entry.content as any,
+            content: entry.content as CompendiumContent,
             singletonKey: entry.singletonKey,
           })),
         );
+      }
+
+      if (input.notes.length > 0) {
+        await tx.insert(projectNotes).values(
+          input.notes.map((note) => ({
+            projectId: project.id,
+            title: note.title,
+            document: note.document as TiptapNode,
+            plainText: note.plainText,
+            pinned: note.pinned ?? false,
+            version: note.version ?? 1,
+          })),
+        );
+      } else if (input.project.settings?.notes?.trim()) {
+        const legacyNotes = input.project.settings.notes.trim();
+        await tx.insert(projectNotes).values({
+          projectId: project.id,
+          title: "Project Notes",
+          document: {
+            type: "doc",
+            content: legacyNotes.split(/\r?\n/).map((line) => ({
+              type: "paragraph",
+              ...(line ? { content: [{ type: "text", text: line }] } : {}),
+            })),
+          },
+          plainText: legacyNotes,
+          pinned: true,
+        });
       }
 
       return { project, initialSceneId };

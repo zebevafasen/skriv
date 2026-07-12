@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  createManuscriptItemInputSchema,
+  createProjectNoteInputSchema,
   editorSettingsSchema,
   generationRequestSchema,
   promptDefinitionSchema,
   sceneMetadataSchema,
   selectionActionSchema,
+  updateProjectNoteInputSchema,
 } from "./index.js";
 
 describe("shared contracts", () => {
@@ -82,6 +85,30 @@ describe("shared contracts", () => {
       textAlign: "left",
     });
     expect(editorSettingsSchema.safeParse({ fontSize: 17 }).success).toBe(false);
+  });
+
+  it("provides safe project-note defaults and paired document updates", () => {
+    expect(createProjectNoteInputSchema.parse({})).toMatchObject({
+      title: "Untitled Note",
+      plainText: "",
+      pinned: false,
+    });
+    expect(
+      updateProjectNoteInputSchema.safeParse({
+        expectedVersion: 1,
+        document: { type: "doc", content: [{ type: "paragraph" }] },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("validates atomic manuscript structure requests", () => {
+    expect(
+      createManuscriptItemInputSchema.safeParse({
+        kind: "scene",
+        chapterId: crypto.randomUUID(),
+        afterSceneId: null,
+      }).success,
+    ).toBe(true);
   });
 
   it("accepts immutable built-in prompt definitions", () => {

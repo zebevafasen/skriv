@@ -1,5 +1,5 @@
 import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asterism/contracts";
-import { findMentions } from "@asterism/core";
+import { findMentions, manuscriptLabels } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
@@ -20,7 +20,8 @@ import { ChatPanel } from "../components/ChatPanel.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { IdeationPanel } from "../components/IdeationPanel.js";
-import { ManuscriptEditor,
+import {
+  ManuscriptEditor,
   type ManuscriptEditorHandle,
   type ManuscriptScope,
 } from "../components/ManuscriptEditor.js";
@@ -98,6 +99,10 @@ export function ProjectPage() {
   const models = useQuery({ queryKey: ["models"], queryFn: () => api<Model[]>("/api/models") });
   const allScenes = useMemo(
     () => tree.data?.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes)) ?? [],
+    [tree.data],
+  );
+  const structureLabels = useMemo(
+    () => (tree.data ? manuscriptLabels(tree.data) : null),
     [tree.data],
   );
   const selectedSceneId =
@@ -368,16 +373,22 @@ export function ProjectPage() {
                     >
                       {selectedSceneId ? (
                         <option value={`scene:${selectedSceneId}`}>
-                          Current Scene · {selectedLocation?.scene.title}
+                          Current Scene ·{" "}
+                          {selectedLocation?.scene.id
+                            ? structureLabels?.scenes.get(selectedLocation.scene.id)?.label
+                            : "Scene"}
                         </option>
                       ) : null}
                       <option value="story:all">Everything</option>
                       {tree.data.acts.map((act) => (
-                        <optgroup key={act.id} label={act.title}>
+                        <optgroup
+                          key={act.id}
+                          label={structureLabels?.acts.get(act.id)?.label ?? "Act"}
+                        >
                           <option value={`act:${act.id}`}>Full Act</option>
                           {act.chapters.map((chapter) => (
                             <option key={chapter.id} value={`chapter:${chapter.id}`}>
-                              {chapter.title}
+                              {structureLabels?.chapters.get(chapter.id)?.label}
                             </option>
                           ))}
                         </optgroup>
@@ -399,7 +410,7 @@ export function ProjectPage() {
                       >
                         {tree.data.acts.map((act) => (
                           <option key={act.id} value={act.id}>
-                            {act.title}
+                            {structureLabels?.acts.get(act.id)?.label}
                           </option>
                         ))}
                       </select>
@@ -415,7 +426,7 @@ export function ProjectPage() {
                       >
                         {selectedLocation.act.chapters.map((chapter) => (
                           <option key={chapter.id} value={chapter.id}>
-                            {chapter.title}
+                            {structureLabels?.chapters.get(chapter.id)?.label}
                           </option>
                         ))}
                       </select>
@@ -426,7 +437,7 @@ export function ProjectPage() {
                       >
                         {selectedLocation.chapter.scenes.map((scene) => (
                           <option key={scene.id} value={scene.id}>
-                            {scene.title}
+                            {structureLabels?.scenes.get(scene.id)?.label}
                           </option>
                         ))}
                       </select>
@@ -446,7 +457,7 @@ export function ProjectPage() {
                   onOpenEntry={setPreviewEntryIds}
                 />
               ) : view === "notes" ? (
-                <ProjectNotesPanel projectId={projectId} project={tree.data.project} />
+                <ProjectNotesPanel projectId={projectId} />
               ) : scope ? (
                 <ManuscriptEditor
                   ref={editorRef}

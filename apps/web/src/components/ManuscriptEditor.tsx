@@ -1,5 +1,7 @@
 import type {
   CompendiumEntry,
+  CreateManuscriptItemInput,
+  CreateManuscriptItemResponse,
   EditorSettings,
   GenerationRequest,
   GenerationStreamEvent,
@@ -7,7 +9,7 @@ import type {
   Scene,
   SelectionAction,
 } from "@asterism/contracts";
-import { findMentions } from "@asterism/core";
+import { findMentions, manuscriptLabels } from "@asterism/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Editor,
@@ -49,8 +51,10 @@ import {
 } from "lucide-react";
 import React, {
   type CSSProperties,
+  createContext,
   forwardRef,
   useCallback,
+  useContext,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -124,6 +128,16 @@ const selectionActions: Array<{ action: SelectionAction; label: string }> = [
   { action: "custom", label: "Custom" },
 ];
 
+const StructureActionsContext = createContext<{
+  create: (input: CreateManuscriptItemInput) => Promise<void>;
+} | null>(null);
+
+function useStructureActions() {
+  const value = useContext(StructureActionsContext);
+  if (!value) throw new Error("Structure actions require a provider.");
+  return value;
+}
+
 type SceneRevision = { id: string; version: number; reason: string; createdAt: string };
 
 const CustomItalic = Italic.extend({
@@ -171,7 +185,7 @@ const CompositeDocument = Node.create({
 });
 const ManuscriptHeadingView = (props: NodeViewProps) => {
   const isAct = props.node.attrs.level === "act";
-  const label = `${isAct ? "Act" : "Chapter"} ${Number(props.node.attrs.position) + 1}`;
+  const label = `${isAct ? "Act" : "Chapter"} ${Number(props.node.attrs.ordinal)}`;
   const queryClient = useQueryClient();
 
   const [localTitle, setLocalTitle] = useState(props.node.attrs.title);
@@ -194,119 +208,8 @@ const ManuscriptHeadingView = (props: NodeViewProps) => {
     }
   };
 
-  const createChapterBefore = async () => {
-    const pos = props.getPos();
-    if (pos === undefined) return;
-    const actId = findActIdBackward(props.editor, pos);
-    if (!actId) return;
-    const chapter = await api<{ id: string; position: number }>(`/api/acts/${actId}/chapters`, {
-      method: "POST",
-      body: JSON.stringify({ title: "" }),
-    });
-    const scene = await api<Scene>(`/api/chapters/${chapter.id}/scenes`, {
-      method: "POST",
-      body: JSON.stringify({ title: "" }),
-    });
-    await queryClient.invalidateQueries({ queryKey: ["project-tree"] });
-    props.editor
-      .chain()
-      .insertContentAt(pos, [
-        {
-          type: "manuscriptHeading",
-          attrs: { id: chapter.id, level: "chapter", title: "", position: chapter.position },
-        },
-        {
-          type: "sceneBlock",
-          attrs: { sceneId: scene.id, title: "", position: scene.position },
-          content: [{ type: "paragraph" }, { type: "paragraph" }, { type: "paragraph" }],
-        },
-      ])
-      .run();
-  };
-
-  const createActBefore = async () => {
-    const projectIdMatch = window.location.pathname.match(/\/projects\/([^/]+)/);
-    if (!projectIdMatch) return;
-    const act = await api<{ id: string; position: number }>(
-      `/api/projects/${projectIdMatch[1]}/acts`,
-      {
-        method: "POST",
-        body: JSON.stringify({ title: "" }),
-      },
-    );
-    const chapter = await api<{ id: string; position: number }>(`/api/acts/${act.id}/chapters`, {
-      method: "POST",
-      body: JSON.stringify({ title: "" }),
-    });
-    const scene = await api<Scene>(`/api/chapters/${chapter.id}/scenes`, {
-      method: "POST",
-      body: JSON.stringify({ title: "" }),
-    });
-    await queryClient.invalidateQueries({ queryKey: ["project-tree"] });
-    const pos = props.getPos();
-    if (pos === undefined) return;
-    props.editor
-      .chain()
-      .insertContentAt(pos, [
-        {
-          type: "manuscriptHeading",
-          attrs: { id: act.id, level: "act", title: "", position: act.position },
-        },
-        {
-          type: "manuscriptHeading",
-          attrs: { id: chapter.id, level: "chapter", title: "", position: chapter.position },
-        },
-        {
-          type: "sceneBlock",
-          attrs: { sceneId: scene.id, title: "", position: scene.position },
-          content: [{ type: "paragraph" }, { type: "paragraph" }, { type: "paragraph" }],
-        },
-      ])
-      .run();
-  };
-
-  const pos = props.getPos();
-  const isFirst = pos === 0;
-  const nodeBefore =
-    typeof pos === "number" && pos > 0 ? props.editor.state.doc.resolve(pos).nodeBefore : null;
-  const isDirectlyAfterAct =
-    nodeBefore?.type.name === "manuscriptHeading" && nodeBefore.attrs.level === "act";
-  const showDivider = !isFirst && !(props.node.attrs.level === "chapter" && isDirectlyAfterAct);
-
   return (
     <NodeViewWrapper as="div" className="manuscript-heading-wrapper">
-      {showDivider && (
-        <div
-          className={`nc-structure-divider ${isAct ? "nc-act-divider" : "nc-chapter-divider"}`}
-          contentEditable={false}
-        >
-          <div className="nc-scene-divider-diamond" />
-          <div className="nc-scene-divider-diamond" />
-          {isAct && <div className="nc-scene-divider-diamond" />}
-        </div>
-      )}
-      {!isFirst && (
-        <div className="inline-append-controls" contentEditable={false}>
-          {isAct && (
-            <button
-              type="button"
-              className="inline-append-button"
-              onClick={createActBefore}
-              title="New Act"
-            >
-              <Plus size={14} /> New Act
-            </button>
-          )}
-          <button
-            type="button"
-            className="inline-append-button"
-            onClick={createChapterBefore}
-            title="New Chapter"
-          >
-            <Plus size={14} /> New Chapter
-          </button>
-        </div>
-      )}
       {React.createElement(
         isAct ? "h2" : "h3",
         {
@@ -358,6 +261,7 @@ const ManuscriptHeading = Node.create({
       level: { default: "chapter" },
       title: { default: "" },
       position: { default: 0 },
+      ordinal: { default: 1 },
     };
   },
   parseHTML() {
@@ -368,7 +272,7 @@ const ManuscriptHeading = Node.create({
   },
   renderHTML({ node, HTMLAttributes }) {
     const isAct = node.attrs.level === "act";
-    const label = `${isAct ? "Act" : "Chapter"} ${Number(node.attrs.position) + 1}`;
+    const label = `${isAct ? "Act" : "Chapter"} ${Number(node.attrs.ordinal)}`;
     const text = node.attrs.title ? `${label}: ${node.attrs.title}` : label;
     return [
       isAct ? "h2" : "h3",
@@ -383,29 +287,7 @@ const ManuscriptHeading = Node.create({
 });
 
 const SceneBlockView = (props: NodeViewProps) => {
-  const queryClient = useQueryClient();
-
-  const createSceneAfter = async () => {
-    const pos = props.getPos();
-    if (pos === undefined) return;
-    const chapterId = findChapterIdBackward(props.editor, pos);
-    if (!chapterId) return;
-    const scene = await api<Scene>(`/api/chapters/${chapterId}/scenes`, {
-      method: "POST",
-      body: JSON.stringify({ title: "" }),
-    });
-    await queryClient.invalidateQueries({ queryKey: ["project-tree"] });
-    props.editor
-      .chain()
-      .insertContentAt(pos + props.node.nodeSize, [
-        {
-          type: "sceneBlock",
-          attrs: { sceneId: scene.id, title: "", position: scene.position },
-          content: [{ type: "paragraph" }, { type: "paragraph" }, { type: "paragraph" }],
-        },
-      ])
-      .run();
-  };
+  const { create } = useStructureActions();
 
   return (
     <NodeViewWrapper
@@ -413,8 +295,8 @@ const SceneBlockView = (props: NodeViewProps) => {
       className="continuous-scene-block"
       data-scene-id={props.node.attrs.sceneId}
     >
-      <div className="nc-scene-divider" contentEditable={false} title={props.node.attrs.title}>
-        <div className="nc-scene-divider-diamond" />
+      <div className="nc-scene-divider" contentEditable={false}>
+        <span>{props.node.attrs.displayLabel}</span>
       </div>
       <div className="continuous-scene-content">
         <NodeViewContent />
@@ -423,11 +305,41 @@ const SceneBlockView = (props: NodeViewProps) => {
         <button
           type="button"
           className="inline-append-button"
-          onClick={createSceneAfter}
+          onClick={() =>
+            void create({
+              kind: "scene",
+              chapterId: props.node.attrs.chapterId,
+              afterSceneId: props.node.attrs.sceneId,
+            })
+          }
           title="New Scene"
         >
           <Plus size={14} /> New Scene
         </button>
+        {props.node.attrs.isLastInChapter ? (
+          <button
+            type="button"
+            className="inline-append-button"
+            onClick={() =>
+              void create({
+                kind: "chapter",
+                actId: props.node.attrs.actId,
+                afterChapterId: props.node.attrs.chapterId,
+              })
+            }
+          >
+            <Plus size={14} /> New Chapter
+          </button>
+        ) : null}
+        {props.node.attrs.isLastInAct ? (
+          <button
+            type="button"
+            className="inline-append-button"
+            onClick={() => void create({ kind: "act", afterActId: props.node.attrs.actId })}
+          >
+            <Plus size={14} /> New Act
+          </button>
+        ) : null}
       </div>
     </NodeViewWrapper>
   );
@@ -445,6 +357,11 @@ const SceneBlock = Node.create({
       title: { default: "" },
       version: { default: 1 },
       position: { default: 0 },
+      displayLabel: { default: "Scene 1" },
+      actId: { default: "" },
+      chapterId: { default: "" },
+      isLastInChapter: { default: false },
+      isLastInAct: { default: false },
     };
   },
   parseHTML() {
@@ -462,35 +379,13 @@ const SceneBlock = Node.create({
       }),
       [
         "div",
-        { class: "nc-scene-divider", contenteditable: "false", title: node.attrs.title },
-        ["div", { class: "nc-scene-divider-diamond" }],
+        { class: "nc-scene-divider", contenteditable: "false" },
+        ["span", {}, node.attrs.displayLabel],
       ],
       ["div", { class: "continuous-scene-content" }, 0],
     ];
   },
 });
-
-function findChapterIdBackward(editor: Editor, pos: number): string | null {
-  let foundId: string | null = null;
-  editor.state.doc.nodesBetween(0, pos, (node) => {
-    if (node.type.name === "manuscriptHeading" && node.attrs.level === "chapter" && node.attrs.id) {
-      foundId = node.attrs.id;
-    }
-    return true; // continue traversing
-  });
-  return foundId;
-}
-
-function findActIdBackward(editor: Editor, pos: number): string | null {
-  let foundId: string | null = null;
-  editor.state.doc.nodesBetween(0, pos, (node) => {
-    if (node.type.name === "manuscriptHeading" && node.attrs.level === "act" && node.attrs.id) {
-      foundId = node.attrs.id;
-    }
-    return true;
-  });
-  return foundId;
-}
 
 function sceneIdAt(editor: Editor, position: number): string | null {
   return sceneIdAtDocument(editor.state.doc, position);
@@ -583,24 +478,68 @@ function scenesForScope(tree: ManuscriptTree, scope: ManuscriptScope): Scene[] {
 }
 
 export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope): JSONContent {
+  const labels = manuscriptLabels(tree);
+  const sceneBlock = (
+    scene: Scene,
+    actId: string,
+    chapterId: string,
+    isLastInChapter: boolean,
+    isLastInAct: boolean,
+  ): JSONContent => ({
+    type: "sceneBlock",
+    attrs: {
+      sceneId: scene.id,
+      title: scene.title,
+      version: scene.version,
+      position: scene.position,
+      displayLabel: labels.scenes.get(scene.id)?.label ?? "Scene",
+      actId,
+      chapterId,
+      isLastInChapter,
+      isLastInAct,
+    },
+    content: scene.document.content?.length
+      ? (scene.document.content as JSONContent[])
+      : [{ type: "paragraph" }],
+  });
   if (scope.kind === "scene") {
-    const scene = scenesForScope(tree, scope)[0];
+    let located:
+      | {
+          scene: Scene;
+          actId: string;
+          chapterId: string;
+          isLastInChapter: boolean;
+          isLastInAct: boolean;
+        }
+      | undefined;
+    for (const act of tree.acts) {
+      for (const chapter of act.chapters) {
+        const index = chapter.scenes.findIndex((scene) => scene.id === scope.id);
+        if (index >= 0) {
+          located = {
+            scene: chapter.scenes[index] as Scene,
+            actId: act.id,
+            chapterId: chapter.id,
+            isLastInChapter: index === chapter.scenes.length - 1,
+            isLastInAct:
+              index === chapter.scenes.length - 1 && act.chapters.at(-1)?.id === chapter.id,
+          };
+          break;
+        }
+      }
+      if (located) break;
+    }
     return {
       type: "doc",
-      content: scene
+      content: located
         ? [
-            {
-              type: "sceneBlock",
-              attrs: {
-                sceneId: scene.id,
-                title: scene.title,
-                version: scene.version,
-                position: scene.position,
-              },
-              content: scene.document.content?.length
-                ? (scene.document.content as JSONContent[])
-                : [{ type: "paragraph" }],
-            },
+            sceneBlock(
+              located.scene,
+              located.actId,
+              located.chapterId,
+              located.isLastInChapter,
+              located.isLastInAct,
+            ),
           ]
         : [],
     };
@@ -610,7 +549,13 @@ export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope):
     if (scope.kind !== "chapter") {
       content.push({
         type: "manuscriptHeading",
-        attrs: { id: act.id, level: "act", title: act.title, position: act.position },
+        attrs: {
+          id: act.id,
+          level: "act",
+          title: act.title,
+          position: act.position,
+          ordinal: labels.acts.get(act.id)?.ordinal ?? 1,
+        },
       });
     }
     for (const chapter of act.chapters.filter(
@@ -623,21 +568,19 @@ export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope):
           level: "chapter",
           title: chapter.title,
           position: chapter.position,
+          ordinal: labels.chapters.get(chapter.id)?.ordinal ?? 1,
         },
       });
-      for (const scene of chapter.scenes) {
-        content.push({
-          type: "sceneBlock",
-          attrs: {
-            sceneId: scene.id,
-            title: scene.title,
-            version: scene.version,
-            position: scene.position,
-          },
-          content: scene.document.content?.length
-            ? (scene.document.content as JSONContent[])
-            : [{ type: "paragraph" }],
-        });
+      for (const [sceneIndex, scene] of chapter.scenes.entries()) {
+        content.push(
+          sceneBlock(
+            scene,
+            act.id,
+            chapter.id,
+            sceneIndex === chapter.scenes.length - 1,
+            sceneIndex === chapter.scenes.length - 1 && act.chapters.at(-1)?.id === chapter.id,
+          ),
+        );
       }
     }
   }
@@ -1103,6 +1046,7 @@ export const ManuscriptEditor = forwardRef<
   };
 
   const allScenes = tree.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes));
+  const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
   const selectedIndex = allScenes.findIndex((scene) => scene.id === activeSceneId);
   const activeScene = allScenes[selectedIndex];
   const previousScene = selectedIndex > 0 ? allScenes[selectedIndex - 1] : undefined;
@@ -1150,6 +1094,26 @@ export const ManuscriptEditor = forwardRef<
       modelOverride: selectionPanel.modelOverride,
     });
   };
+  const createStructure = useCallback(
+    async (input: CreateManuscriptItemInput) => {
+      try {
+        if (editor) {
+          await Promise.all(
+            [...saveTimers.current.keys()].map((sceneId) => saveScene(editor, sceneId)),
+          );
+        }
+        const created = await api<CreateManuscriptItemResponse>(
+          `/api/projects/${tree.project.id}/manuscript-items`,
+          { method: "POST", body: JSON.stringify(input) },
+        );
+        await queryClient.invalidateQueries({ queryKey: ["project-tree", tree.project.id] });
+        onSelectScene(created.initialSceneId);
+      } catch (creationError) {
+        setError(creationError);
+      }
+    },
+    [editor, onSelectScene, queryClient, saveScene, tree.project.id],
+  );
 
   return (
     <div className="editor-column continuous-editor-column" style={editorStyle}>
@@ -1157,7 +1121,10 @@ export const ManuscriptEditor = forwardRef<
         <div>
           <p className="eyebrow">{scope.kind === "scene" ? "Scene" : "Continuous manuscript"}</p>
           <h2>
-            {scope.kind === "story" ? tree.project.title : (activeScene?.title ?? "Manuscript")}
+            {scope.kind === "story"
+              ? tree.project.title
+              : ((activeScene && structureLabels.scenes.get(activeScene.id)?.label) ??
+                "Manuscript")}
           </h2>
         </div>
         <div className="editor-header-actions">
@@ -1359,9 +1326,11 @@ export const ManuscriptEditor = forwardRef<
               <Sparkles size={15} /> AI /
             </button>
           </div>
-          <EditorActionsContext.Provider value={{ baseModel, models, startGeneration }}>
-            <EditorContent editor={editor} />
-          </EditorActionsContext.Provider>
+          <StructureActionsContext.Provider value={{ create: createStructure }}>
+            <EditorActionsContext.Provider value={{ baseModel, models, startGeneration }}>
+              <EditorContent editor={editor} />
+            </EditorActionsContext.Provider>
+          </StructureActionsContext.Provider>
         </div>
         <nav className="editor-side-nav">
           {tree.acts.map((act) => {
@@ -1371,10 +1340,7 @@ export const ManuscriptEditor = forwardRef<
             if (actScenes.length === 0) return null;
             return (
               <div key={act.id} className="nav-act">
-                <span className="nav-act-title">
-                  Act {act.position + 1}
-                  {act.title ? `: ${act.title}` : ""}
-                </span>
+                <span className="nav-act-title">{structureLabels.acts.get(act.id)?.label}</span>
                 {act.chapters.map((chapter) => {
                   const chapterScenes = visibleScenes.filter((s) =>
                     chapter.scenes.some((cs) => cs.id === s.id),
@@ -1383,8 +1349,7 @@ export const ManuscriptEditor = forwardRef<
                   return (
                     <div key={chapter.id} className="nav-chapter">
                       <span className="nav-chapter-title">
-                        Chapter {chapter.position + 1}
-                        {chapter.title ? `: ${chapter.title}` : ""}
+                        {structureLabels.chapters.get(chapter.id)?.label}
                       </span>
                       {chapter.scenes.map((scene) => {
                         if (!visibleScenes.some((s) => s.id === scene.id)) return null;
@@ -1401,7 +1366,7 @@ export const ManuscriptEditor = forwardRef<
                               }
                             }}
                           >
-                            {scene.title}
+                            {structureLabels.scenes.get(scene.id)?.label}
                           </button>
                         );
                       })}

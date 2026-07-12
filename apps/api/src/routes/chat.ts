@@ -12,6 +12,7 @@ import {
   approximateTokens,
   discoverEntries,
   findMentions,
+  formatManuscriptLabel,
   normalizeEntry,
   protectedProtocolMessage,
   renderPrompt,
@@ -85,21 +86,42 @@ async function resolveManualContext(
     .where(eq(acts.projectId, projectId))
     .orderBy(asc(acts.position));
   const actIds = actRows.map((row) => row.id);
-  const chapterRows = actIds.length
+  const chapterRowsRaw = actIds.length
     ? await context.db
         .select()
         .from(chapters)
         .where(inArray(chapters.actId, actIds))
         .orderBy(asc(chapters.position))
     : [];
+  const chapterRows = actRows.flatMap((act) =>
+    chapterRowsRaw.filter((chapter) => chapter.actId === act.id),
+  );
   const chapterIds = chapterRows.map((row) => row.id);
-  const sceneRows = chapterIds.length
+  const sceneRowsRaw = chapterIds.length
     ? await context.db
         .select()
         .from(scenes)
         .where(inArray(scenes.chapterId, chapterIds))
         .orderBy(asc(scenes.position))
     : [];
+  const sceneRows = chapterRows.flatMap((chapter) =>
+    sceneRowsRaw.filter((scene) => scene.chapterId === chapter.id),
+  );
+  const actLabels = new Map(
+    actRows.map((act, index) => [act.id, formatManuscriptLabel("Act", index + 1, act.title)]),
+  );
+  const chapterLabels = new Map(
+    chapterRows.map((chapter, index) => [
+      chapter.id,
+      formatManuscriptLabel("Chapter", index + 1, chapter.title),
+    ]),
+  );
+  const sceneLabels = new Map(
+    sceneRows.map((scene, index) => [
+      scene.id,
+      formatManuscriptLabel("Scene", index + 1, scene.title),
+    ]),
+  );
   const entryRows = (
     await context.db
       .select()
@@ -150,13 +172,13 @@ async function resolveManualContext(
         text: `[Full Outline]\n${actRows
           .map(
             (act) =>
-              `${act.title}\n${chapterRows
+              `${actLabels.get(act.id)}\n${chapterRows
                 .filter((c) => c.actId === act.id)
                 .map(
                   (c) =>
-                    `- ${c.title}\n${sceneRows
+                    `- ${chapterLabels.get(c.id)}\n${sceneRows
                       .filter((s) => s.chapterId === c.id)
-                      .map((s) => `  - ${s.title}: ${s.metadata.summary}`)
+                      .map((s) => `  - ${sceneLabels.get(s.id)}: ${s.metadata.summary}`)
                       .join("\n")}`,
                 )
                 .join("\n")}`,
@@ -168,8 +190,8 @@ async function resolveManualContext(
     pieces.push({
       key: `scene:${scene.id}`,
       priority: 900,
-      provenance: { reason: "explicit", source: `Scene: ${scene.title}`, depth: 0 },
-      text: `[Scene: ${scene.title}]\n${scene.plainText}`,
+      provenance: { reason: "explicit", source: sceneLabels.get(scene.id) ?? "Scene", depth: 0 },
+      text: `[${sceneLabels.get(scene.id) ?? "Scene"}]\n${scene.plainText}`,
     });
   for (const entry of entryRows.filter((row) => selectedEntries.has(row.id)))
     pieces.push({

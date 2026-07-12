@@ -2,6 +2,7 @@ export * from "./chat.js";
 export * from "./compendium.js";
 export * from "./generation.js";
 export * from "./manuscript.js";
+export * from "./notes.js";
 export * from "./packages.js";
 export * from "./primitives.js";
 export * from "./prompts.js";

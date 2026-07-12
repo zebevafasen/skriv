@@ -86,13 +86,15 @@ export const projectSettingsSchema = z.object({
   coverDataUrl: z.string().nullable().default(null),
   tense: z.enum(["Past", "Present"]).default("Past"),
   language: z.string().max(100).default("General English"),
-  povType: z.enum([
-    "1st Person",
-    "2nd Person",
-    "3rd Person",
-    "3rd Person (Limited)",
-    "3rd Person (Omniscient)",
-  ]).default("3rd Person (Limited)"),
+  povType: z
+    .enum([
+      "1st Person",
+      "2nd Person",
+      "3rd Person",
+      "3rd Person (Limited)",
+      "3rd Person (Omniscient)",
+    ])
+    .default("3rd Person (Limited)"),
   povCharacterEntryId: idSchema.nullable().default(null),
   notes: z.string().max(500_000).default(""),
 });
@@ -109,21 +111,21 @@ export const projectSchema = z.object({
 export const actSchema = z.object({
   id: idSchema,
   projectId: idSchema,
-  title: z.string().min(1).max(300),
+  title: z.string().max(300),
   position: z.number().int().nonnegative(),
 });
 
 export const chapterSchema = z.object({
   id: idSchema,
   actId: idSchema,
-  title: z.string().min(1).max(300),
+  title: z.string().max(300),
   position: z.number().int().nonnegative(),
 });
 
 export const sceneSchema = z.object({
   id: idSchema,
   chapterId: idSchema,
-  title: z.string().min(1).max(300),
+  title: z.string().max(300),
   position: z.number().int().nonnegative(),
   document: tiptapDocumentSchema,
   plainText: z.string(),
@@ -170,6 +172,28 @@ export const updateSceneInputSchema = z.object({
 
 export const reorderInputSchema = z.object({ orderedIds: z.array(idSchema).min(1) });
 
+export const createManuscriptItemInputSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("act"), afterActId: idSchema.nullable().default(null) }),
+  z.object({
+    kind: z.literal("chapter"),
+    actId: idSchema,
+    afterChapterId: idSchema.nullable().default(null),
+  }),
+  z.object({
+    kind: z.literal("scene"),
+    chapterId: idSchema,
+    afterSceneId: idSchema.nullable().default(null),
+  }),
+]);
+
+export const createManuscriptItemResponseSchema = z.object({
+  kind: z.enum(["act", "chapter", "scene"]),
+  createdActId: idSchema.nullable(),
+  createdChapterId: idSchema.nullable(),
+  createdSceneId: idSchema,
+  initialSceneId: idSchema,
+});
+
 export const generateSceneSummaryInputSchema = z.object({
   expectedVersion: z.number().int().positive(),
   modelOverride: z.string().min(1).nullable().optional(),
@@ -182,3 +206,5 @@ export type SceneMetadata = z.infer<typeof sceneMetadataSchema>;
 export type SceneLabel = z.infer<typeof sceneLabelSchema>;
 export type SceneLabelColor = z.infer<typeof sceneLabelColorSchema>;
 export type ManuscriptTree = z.infer<typeof manuscriptTreeSchema>;
+export type CreateManuscriptItemInput = z.infer<typeof createManuscriptItemInputSchema>;
+export type CreateManuscriptItemResponse = z.infer<typeof createManuscriptItemResponseSchema>;

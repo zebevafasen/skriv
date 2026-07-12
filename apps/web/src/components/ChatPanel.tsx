@@ -5,7 +5,7 @@ import type {
   CompendiumEntry,
   ManuscriptTree,
 } from "@asterism/contracts";
-import { findMentions } from "@asterism/core";
+import { findMentions, manuscriptLabels } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -301,6 +301,7 @@ export function ChatPanel({
     }
   };
   const sources = thread.data?.contextSources ?? [];
+  const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
   const sourceKeys = new Set(sources.map(sourceKey));
   const toggleSource = (source: ChatContextSource) => {
     setContextOpen(false);
@@ -316,14 +317,17 @@ export function ChatPanel({
       { label: "Full manuscript", source: { kind: "manuscript" } as ChatContextSource },
       { label: "Full outline", source: { kind: "outline" } as ChatContextSource },
       ...tree.acts.flatMap((act) => [
-        { label: `Act · ${act.title}`, source: { kind: "act", id: act.id } as ChatContextSource },
+        {
+          label: structureLabels.acts.get(act.id)?.label ?? "Act",
+          source: { kind: "act", id: act.id } as ChatContextSource,
+        },
         ...act.chapters.flatMap((chapter) => [
           {
-            label: `Chapter · ${chapter.title}`,
+            label: structureLabels.chapters.get(chapter.id)?.label ?? "Chapter",
             source: { kind: "chapter", id: chapter.id } as ChatContextSource,
           },
           ...chapter.scenes.map((scene) => ({
-            label: `Scene · ${scene.title}`,
+            label: structureLabels.scenes.get(scene.id)?.label ?? "Scene",
             source: { kind: "scene", id: scene.id } as ChatContextSource,
           })),
         ]),
@@ -338,7 +342,7 @@ export function ChatPanel({
         source: { kind: "compendium_entry", id: entry.id } as ChatContextSource,
       })),
     ],
-    [tree, entries],
+    [tree, entries, structureLabels],
   );
   const contextGroups = useMemo(
     () => [
@@ -346,7 +350,7 @@ export function ChatPanel({
         id: "acts",
         label: "Acts",
         items: tree.acts.map((act) => ({
-          label: act.title,
+          label: structureLabels.acts.get(act.id)?.label ?? "Act",
           group: "Story structure",
           detail: `${act.chapters.length} ${act.chapters.length === 1 ? "chapter" : "chapters"}`,
           source: { kind: "act", id: act.id } as ChatContextSource,
@@ -357,9 +361,9 @@ export function ChatPanel({
         label: "Chapters",
         items: tree.acts.flatMap((act) =>
           act.chapters.map((chapter) => ({
-            label: chapter.title,
-            group: act.title,
-            detail: act.title,
+            label: structureLabels.chapters.get(chapter.id)?.label ?? "Chapter",
+            group: structureLabels.acts.get(act.id)?.label ?? "Act",
+            detail: structureLabels.acts.get(act.id)?.label ?? "Act",
             source: { kind: "chapter", id: chapter.id } as ChatContextSource,
           })),
         ),
@@ -370,9 +374,9 @@ export function ChatPanel({
         items: tree.acts.flatMap((act) =>
           act.chapters.flatMap((chapter) =>
             chapter.scenes.map((scene) => ({
-              label: scene.title || "Untitled Scene",
-              group: chapter.title,
-              detail: chapter.title,
+              label: structureLabels.scenes.get(scene.id)?.label ?? "Scene",
+              group: structureLabels.chapters.get(chapter.id)?.label ?? "Chapter",
+              detail: structureLabels.chapters.get(chapter.id)?.label ?? "Chapter",
               source: { kind: "scene", id: scene.id } as ChatContextSource,
             })),
           ),
@@ -399,7 +403,7 @@ export function ChatPanel({
         })),
       },
     ],
-    [tree, entries],
+    [tree, entries, structureLabels],
   );
   const latestMessage = thread.data?.messages?.at(-1);
   useEffect(() => {

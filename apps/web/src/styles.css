@@ -1556,7 +1556,7 @@ label small {
 }
 
 .nc-scene-divider {
-  display: none; /* Hidden by default, only shown between scenes */
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
@@ -1564,6 +1564,18 @@ label small {
   margin: 40px 0;
   user-select: none;
   width: 100%;
+}
+
+.nc-scene-divider > span {
+  padding: 4px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-1);
+  font: 600 10px / 1.2 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .nc-scene-divider::before,
@@ -2507,6 +2519,16 @@ label small {
   font-family: var(--serif);
   text-align: center;
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.manuscript-structure-heading::before,
+.manuscript-structure-heading::after {
+  content: "";
+  flex: 1;
+  background: var(--border-soft);
 }
 
 .manuscript-structure-heading.act {
@@ -2514,10 +2536,21 @@ label small {
   font-weight: 500;
 }
 
+.manuscript-structure-heading.act::before,
+.manuscript-structure-heading.act::after {
+  height: 3px;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--border-soft) 55%, transparent);
+}
+
 .manuscript-structure-heading.chapter {
   font-size: 22px;
   font-weight: 500;
   margin-top: 26px;
+}
+
+.manuscript-structure-heading.chapter::before,
+.manuscript-structure-heading.chapter::after {
+  height: 1px;
 }
 
 .manuscript-structure-heading .title-input {
@@ -4080,6 +4113,10 @@ label small {
 }
 
 @media (max-width: 900px) {
+  .project-notebook {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
   .mobile-only-tab {
     display: flex !important;
   }
@@ -4305,6 +4342,238 @@ label small {
 }
 
 /* Inline Manuscript Controls */
+.project-notebook {
+  min-height: calc(100vh - 150px);
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  background: var(--surface-0);
+}
+
+@media (max-width: 640px) {
+  .project-notebook {
+    display: block;
+  }
+
+  .notebook-sidebar {
+    max-height: 260px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .notebook-editor,
+  .project-notebook {
+    min-height: auto;
+  }
+
+  .notebook-editor-header,
+  .notebook-prose {
+    padding-inline: 18px;
+  }
+}
+
+.notebook-sidebar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-1) 88%, #000);
+}
+
+.notebook-sidebar-heading {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+}
+
+.notebook-sidebar-heading h2 {
+  margin: 2px 0 0;
+  font: 500 22px var(--serif);
+}
+
+.notebook-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  color: var(--muted);
+  background: #12110f;
+}
+
+.notebook-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  background: transparent;
+}
+
+.notebook-note-list {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 16px;
+}
+
+.notebook-note-list > button {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
+  text-align: left;
+}
+
+.notebook-note-list > button:hover,
+.notebook-note-list > button.active {
+  color: var(--text);
+  background: #2b2925;
+}
+
+.notebook-note-list > button.active {
+  box-shadow: inset 2px 0 var(--accent);
+}
+
+.notebook-note-list > button span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notebook-note-list > button strong,
+.notebook-note-list > button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notebook-note-list > button small {
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.notebook-empty-list,
+.notebook-empty-editor {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 30px 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.notebook-main {
+  min-width: 0;
+}
+
+.notebook-editor {
+  max-width: 920px;
+  min-height: calc(100vh - 150px);
+  margin: 0 auto;
+  position: relative;
+}
+
+.notebook-editor-header {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px clamp(28px, 6vw, 72px);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.notebook-editor-header input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  background: transparent;
+  font: 500 28px var(--serif);
+}
+
+.notebook-conflict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px clamp(28px, 6vw, 72px);
+}
+
+.notebook-prose {
+  min-height: 60vh;
+  padding: 34px clamp(28px, 6vw, 72px) 90px;
+  outline: 0;
+  color: var(--text);
+  font: 18px / 1.75 var(--serif);
+}
+
+.notebook-prose p {
+  margin: 0 0 1em;
+}
+
+.notebook-prose h1,
+.notebook-prose h2,
+.notebook-prose h3 {
+  margin: 1.3em 0 0.55em;
+  line-height: 1.25;
+}
+
+.notebook-prose blockquote {
+  margin: 1.1em 0;
+  padding-left: 1em;
+  border-left: 3px solid var(--border-medium);
+  color: var(--muted);
+}
+
+.notebook-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--faint);
+  pointer-events: none;
+}
+
+.note-format-menu {
+  position: fixed;
+  z-index: 95;
+  transform: translateX(-50%);
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #55565d;
+  border-radius: 6px;
+  background: #3d3e44;
+  box-shadow: 0 12px 32px #000a;
+}
+
+.note-format-menu button {
+  min-width: 38px;
+  height: 31px;
+  border: 0;
+  border-right: 1px solid #56575e;
+  color: #dedee2;
+  background: transparent;
+}
+
+.note-format-menu button:last-child {
+  border-right: 0;
+}
+
+.note-format-menu button:hover,
+.note-format-menu button.active {
+  color: #fff;
+  background: #54555d;
+}
+
 .manuscript-heading-wrapper {
   position: relative;
 }
