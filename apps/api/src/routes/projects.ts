@@ -1,4 +1,4 @@
-import { basePackage, getOutlinePreset } from "@asterism/content";
+import { getOutlinePreset } from "@asterism/content";
 import {
   actSchema,
   type CompendiumContent,
@@ -22,10 +22,10 @@ import {
   compendiumCategories,
   compendiumEntries,
   projects,
+  projectTagPacks,
   sceneRevisions,
   scenes,
   touchUpdatedAt,
-  userDefinitions,
   workspaceMembers,
 } from "@asterism/db";
 import { and, asc, desc, eq, gte, inArray, max, sql } from "drizzle-orm";
@@ -121,48 +121,11 @@ export async function registerProjectRoutes(
         .code(400)
         .send({ error: { code: "BAD_REQUEST", message: "One or more tag packs were not found." } });
     }
-    const definitionIds = [
-      ...new Set(
-        selectedPacks.flatMap((pack) =>
-          pack ? [...pack.values.genres, ...pack.values.themes, ...pack.values.tags] : [],
-        ),
-      ),
+    const validSelectedPacks = [
+      ...new Map(
+        selectedPacks.filter((pack) => pack !== undefined).map((pack) => [pack.id, pack]),
+      ).values(),
     ];
-    const customDefinitionIds = definitionIds.filter((id) => z.uuid().safeParse(id).success);
-    const customDefinitions = customDefinitionIds.length
-      ? await context.db
-          .select()
-          .from(userDefinitions)
-          .where(
-            and(
-              eq(userDefinitions.userId, request.userId),
-              inArray(userDefinitions.id, customDefinitionIds),
-            ),
-          )
-      : [];
-    const definitions = new Map<string, { id: string; label: string }>(
-      [...basePackage.genres, ...basePackage.themes, ...basePackage.tags, ...customDefinitions].map(
-        (item) => [item.id, { id: item.id, label: item.label }],
-      ),
-    );
-    const valuesFor = (kind: "genres" | "themes" | "tags") => {
-      const values: Array<{ definitionId: string; label: string; locked: boolean }> = [];
-      for (const id of selectedPacks.flatMap((pack) => pack?.values[kind] ?? [])) {
-        const definition = definitions.get(id);
-        if (!definition)
-          throw Object.assign(new Error(`Tag-pack definition ${id} is unavailable.`), {
-            statusCode: 400,
-          });
-        if (
-          !values.some(
-            (value) => value.label.toLocaleLowerCase() === definition.label.toLocaleLowerCase(),
-          )
-        )
-          values.push({ definitionId: id, label: definition.label, locked: false });
-      }
-      return values;
-    };
-
     let copiedActs: Array<{ chapters: Array<{ sceneCount: number }> }> | null = null;
     if (input.outline.kind === "project") {
       if (!(await ownsProject(context, request.userId, input.outline.projectId)))
@@ -338,17 +301,22 @@ export async function registerProjectRoutes(
           name: entry.name,
           typeId: entry.typeId,
           activationMode: "always" as const,
-          content:
-            entry.key === "genres"
-              ? { kind: "selection" as const, values: valuesFor("genres") }
-              : entry.key === "themes"
-                ? { kind: "selection" as const, values: valuesFor("themes") }
-                : entry.key === "tags"
-                  ? { kind: "selection" as const, values: valuesFor("tags") }
-                  : entry.content,
+          content: entry.content,
           singletonKey: entry.key,
         })),
       );
+      if (validSelectedPacks.length) {
+        await tx.insert(projectTagPacks).values(
+          validSelectedPacks.map((pack) => ({
+            projectId: project.id,
+            sourcePackId: pack.id,
+            name: pack.name,
+            description: pack.description,
+            ownership: pack.ownership,
+            values: pack.values,
+          })),
+        );
+      }
       for (const entry of copiedEntries) {
         await tx.insert(compendiumEntries).values({
           projectId: project.id,

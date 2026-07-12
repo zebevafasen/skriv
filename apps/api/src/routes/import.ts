@@ -3,6 +3,7 @@ import {
   projectSettingsSchema,
   type SceneMetadata,
   type TiptapNode,
+  tagPackValuesSchema,
 } from "@asterism/contracts";
 import {
   acts,
@@ -11,6 +12,7 @@ import {
   compendiumEntries,
   projectNotes,
   projects,
+  projectTagPacks,
   scenes,
 } from "@asterism/db";
 import type { FastifyInstance } from "fastify";
@@ -85,6 +87,18 @@ const importSchema = z.object({
     )
     .optional()
     .default([]),
+  projectTagPacks: z
+    .array(
+      z.object({
+        sourcePackId: z.string().min(1),
+        name: z.string().trim().min(1).max(120),
+        description: z.string().max(1_000).optional().default(""),
+        ownership: z.enum(["builtin", "user"]),
+        values: tagPackValuesSchema,
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 export async function registerImportRoutes(
@@ -126,6 +140,19 @@ export async function registerImportRoutes(
             name: category.name,
             normalizedName: category.name.normalize("NFKC").toLocaleLowerCase(),
             position: category.position ?? 0,
+          })),
+        );
+      }
+
+      if (input.projectTagPacks.length) {
+        await tx.insert(projectTagPacks).values(
+          input.projectTagPacks.map((pack) => ({
+            projectId: project.id,
+            sourcePackId: pack.sourcePackId,
+            name: pack.name,
+            description: pack.description,
+            ownership: pack.ownership,
+            values: pack.values,
           })),
         );
       }

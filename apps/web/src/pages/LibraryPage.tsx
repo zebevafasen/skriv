@@ -13,6 +13,7 @@ import { ArrowRight, BookOpen, Plus, Search, Sparkles, Upload } from "lucide-rea
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
+import { TagPackPicker } from "../components/TagPackPicker.js";
 
 type CreatedProject = { project: Project; initialSceneId: string };
 
@@ -34,6 +35,8 @@ export function LibraryPage() {
   const [tagPackIds, setTagPackIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const defaultsInitialized = useRef(false);
+  const authorTouched = useRef(false);
   const client = useQueryClient();
   const navigate = useNavigate();
   const projects = useQuery({
@@ -65,24 +68,31 @@ export function LibraryPage() {
     enabled: Boolean(copyProjectId) && outlineChoice === "copy",
   });
   useEffect(() => {
-    if (!defaults.data) return;
-    setAuthor(defaults.data.author);
+    if (!defaults.data || defaultsInitialized.current) return;
+    defaultsInitialized.current = true;
+    if (!authorTouched.current) setAuthor(defaults.data.author);
     setLanguage(defaults.data.language);
   }, [defaults.data]);
-  useEffect(() => {
-    if (!defaults.data || (author === defaults.data.author && language === defaults.data.language))
+  const persistDefaults = async (
+    nextAuthor = author,
+    nextLanguage: ProjectDefaults["language"] = language,
+  ) => {
+    if (
+      defaults.data &&
+      nextAuthor === defaults.data.author &&
+      nextLanguage === defaults.data.language
+    )
       return;
-    const timer = window.setTimeout(() => {
-      void api("/api/project-defaults", {
-        method: "PUT",
-        body: JSON.stringify({ author, language }),
-      }).then(() => client.invalidateQueries({ queryKey: ["project-defaults"] }));
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [author, language, defaults.data, client]);
+    const saved = await api<ProjectDefaults>("/api/project-defaults", {
+      method: "PUT",
+      body: JSON.stringify({ author: nextAuthor, language: nextLanguage }),
+    });
+    client.setQueryData(["project-defaults"], saved);
+  };
   const createProject = useMutation({
-    mutationFn: () =>
-      api<CreatedProject>("/api/projects", {
+    mutationFn: async () => {
+      await persistDefaults();
+      return api<CreatedProject>("/api/projects", {
         method: "POST",
         body: JSON.stringify({
           title: newTitle.trim(),
@@ -100,7 +110,8 @@ export function LibraryPage() {
               ? { sourceProjectId: copyProjectId, entryIds: copyEntryIds }
               : null,
         }),
-      }),
+      });
+    },
     onSuccess: async ({ project }) => {
       await client.invalidateQueries({ queryKey: ["projects"] });
       await navigate({ to: "/projects/$projectId", params: { projectId: project.id } });
@@ -255,7 +266,11 @@ export function LibraryPage() {
                 <span>Author / pen name</span>
                 <input
                   value={author}
-                  onChange={(event) => setAuthor(event.target.value)}
+                  onChange={(event) => {
+                    authorTouched.current = true;
+                    setAuthor(event.target.value);
+                  }}
+                  onBlur={() => void persistDefaults()}
                   placeholder="Your name"
                 />
               </label>
@@ -269,9 +284,11 @@ export function LibraryPage() {
                 <span>Story language</span>
                 <select
                   value={language}
-                  onChange={(event) =>
-                    setLanguage(event.target.value as ProjectDefaults["language"])
-                  }
+                  onChange={(event) => {
+                    const next = event.target.value as ProjectDefaults["language"];
+                    setLanguage(next);
+                    void persistDefaults(author, next);
+                  }}
                 >
                   {storyLanguages.map((item) => (
                     <option key={item}>{item}</option>
@@ -313,27 +330,15 @@ export function LibraryPage() {
                 </section>
                 <section>
                   <h3>Tag packs</h3>
-                  <div className="setup-check-list">
-                    {tagPacks.data?.map((pack) => (
-                      <label key={pack.id}>
-                        <input
-                          type="checkbox"
-                          checked={tagPackIds.includes(pack.id)}
-                          onChange={() =>
-                            setTagPackIds((current) =>
-                              current.includes(pack.id)
-                                ? current.filter((id) => id !== pack.id)
-                                : [...current, pack.id],
-                            )
-                          }
-                        />
-                        <span>
-                          <strong>{pack.name}</strong>
-                          <small>{pack.description}</small>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+                  <TagPackPicker
+                    packs={tagPacks.data ?? []}
+                    selectedIds={new Set(tagPackIds)}
+                    onToggle={(pack, selected) =>
+                      setTagPackIds((current) =>
+                        selected ? current.filter((id) => id !== pack.id) : [...current, pack.id],
+                      )
+                    }
+                  />
                 </section>
                 <section>
                   <h3>Copy from another project</h3>

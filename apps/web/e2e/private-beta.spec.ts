@@ -94,7 +94,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(page.locator(".outline-compendium-chips", { hasText: "Evelyn" })).toBeVisible();
 
     await page.getByRole("button", { name: "Ideation" }).click();
-    const customTag = `Clockwork ${Date.now()}`;
+    const customTag = "E2E Custom Tag";
     const tagInput = page.getByPlaceholder("Type or choose tags…");
     await tagInput.fill(customTag);
     await tagInput.press("Enter");

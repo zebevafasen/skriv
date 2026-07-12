@@ -6,6 +6,7 @@ import {
   compendiumEntries,
   projectNotes,
   projects,
+  projectTagPacks,
   scenes,
 } from "@asterism/db";
 import { AlignmentType, Document, HeadingLevel, Packer, PageBreak, Paragraph, TextRun } from "docx";
@@ -81,12 +82,16 @@ async function loadProject(context: AppContext, id: string) {
     .from(projectNotes)
     .where(eq(projectNotes.projectId, id))
     .orderBy(desc(projectNotes.pinned), desc(projectNotes.updatedAt));
-  return { project, actRows, chapterRows, sceneRows, entries, categories, notes };
+  const importedTagPacks = await context.db
+    .select()
+    .from(projectTagPacks)
+    .where(eq(projectTagPacks.projectId, id));
+  return { project, actRows, chapterRows, sceneRows, entries, categories, notes, importedTagPacks };
 }
 
 function jsonPayload(rows: NonNullable<ExportRows>) {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     exportedAt: new Date().toISOString(),
     project: rows.project,
     manuscript: rows.actRows.map((act) => ({
@@ -101,6 +106,7 @@ function jsonPayload(rows: NonNullable<ExportRows>) {
     compendiumCategories: rows.categories,
     compendium: rows.entries,
     notes: rows.notes,
+    projectTagPacks: rows.importedTagPacks,
   };
 }
 

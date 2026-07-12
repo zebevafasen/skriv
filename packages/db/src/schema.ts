@@ -150,6 +150,22 @@ export const tagPacks = pgTable(
   (table) => [uniqueIndex("tag_packs_user_name_idx").on(table.userId, table.normalizedName)],
 );
 
+export const projectTagPacks = pgTable(
+  "project_tag_packs",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    sourcePackId: text("source_pack_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    ownership: text("ownership", { enum: ["builtin", "user"] }).notNull(),
+    values: jsonb("values").$type<TagPackValues>().notNull(),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.sourcePackId] })],
+);
+
 export const compendiumCategories = pgTable(
   "compendium_categories",
   {
@@ -475,6 +491,10 @@ export const projectsRelations = relations(projects, ({ many }) => ({
   entries: many(compendiumEntries),
   notes: many(projectNotes),
   categories: many(compendiumCategories),
+  tagPacks: many(projectTagPacks),
+}));
+export const projectTagPacksRelations = relations(projectTagPacks, ({ one }) => ({
+  project: one(projects, { fields: [projectTagPacks.projectId], references: [projects.id] }),
 }));
 export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
   project: one(projects, { fields: [projectNotes.projectId], references: [projects.id] }),

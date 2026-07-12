@@ -1,6 +1,7 @@
 import { Readable } from "node:stream";
 import {
   type ChatContextSource,
+  type CompendiumEntry,
   chatStreamEventSchema,
   chatThreadSchema,
   compendiumEntrySchema,
@@ -14,7 +15,6 @@ import {
   findMentions,
   formatManuscriptLabel,
   normalizeEntry,
-  protectedProtocolMessage,
   renderPrompt,
 } from "@asterism/core";
 import {
@@ -73,6 +73,21 @@ function entryContract(row: typeof compendiumEntries.$inferSelect) {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   });
+}
+
+export function mentionActivatedEntryIds(
+  entries: Array<Pick<CompendiumEntry, "id" | "activationMode">>,
+  matchedIds: ReadonlySet<string>,
+) {
+  return new Set(
+    entries
+      .filter(
+        (entry) =>
+          (entry.activationMode === "mention" || entry.activationMode === "smart") &&
+          matchedIds.has(entry.id),
+      )
+      .map((entry) => entry.id),
+  );
 }
 
 async function resolveManualContext(
@@ -264,11 +279,7 @@ async function buildMessages(
     .map((m) => m.content)
     .join("\n");
   const matchedUserIds = new Set(findMentions(userScan, entries).flatMap((m) => m.entryIds));
-  const forcedIds = new Set(
-    entries
-      .filter((entry) => entry.activationMode === "mention" && matchedUserIds.has(entry.id))
-      .map((entry) => entry.id),
-  );
+  const forcedIds = mentionActivatedEntryIds(entries, matchedUserIds);
   const canonicalText = manual.pieces.map((piece) => piece.text).join("\n\n");
   const automatic = discoverEntries({
     entries,
@@ -277,52 +288,12 @@ async function buildMessages(
     maxDepth: settings.recursionDepth,
   });
   const automaticIds = new Set(automatic.map((item) => item.entry.id));
-  const smartIds = new Set<string>();
-  if (settings.smartContextEnabled) {
-    const smartCandidates = entries.filter(
-      (entry) => entry.activationMode === "smart" && !manual.manuallySelectedEntryIds.has(entry.id),
-    );
-    if (smartCandidates.length) {
-      try {
-        const extractionPrompt = await resolvePrompt(context, userId, "context.extract");
-        const result = await (await context.getAi(userId, settings.contextModel)).complete({
-          model: settings.contextModel,
-          maxOutputTokens: 1_000,
-          messages: [
-            protectedProtocolMessage("context.extract"),
-            ...renderPrompt(extractionPrompt, {
-              request_context: `${userScan}\n${canonicalText}`,
-              candidate_fragments: smartCandidates
-                .map((entry) => `[fragment:${entry.id}] ${normalizeEntry(entry)}`)
-                .join("\n\n"),
-            }),
-          ],
-        });
-        const selected = z
-          .object({ selectedFragmentIds: z.array(z.string()) })
-          .parse(JSON.parse(result.text));
-        const eligible = new Set(smartCandidates.map((entry) => entry.id));
-        for (const selectedId of selected.selectedFragmentIds)
-          if (eligible.has(selectedId)) smartIds.add(selectedId);
-        await context.db.insert(usageEvents).values({
-          userId,
-          projectId: thread.projectId,
-          model: settings.contextModel,
-          role: "chat_utility",
-          inputTokens: result.usage.inputTokens,
-          outputTokens: result.usage.outputTokens,
-        });
-      } catch {
-        /* Smart selection is optional; explicit and deterministic context still applies. */
-      }
-    }
-  }
   const assistantMatches = new Set(findMentions(assistantScan, entries).flatMap((m) => m.entryIds));
   const compendiumPieces: ChatContextPiece[] = entries
     .filter(
       (entry) =>
         !manual.manuallySelectedEntryIds.has(entry.id) &&
-        (forcedIds.has(entry.id) || automaticIds.has(entry.id) || smartIds.has(entry.id)),
+        (forcedIds.has(entry.id) || automaticIds.has(entry.id)),
     )
     .map((entry) => {
       const discovered = automatic.find((item) => item.entry.id === entry.id);
@@ -335,11 +306,9 @@ async function buildMessages(
         provenance: {
           reason: userMentioned
             ? "user_mention"
-            : smartIds.has(entry.id)
-              ? "smart"
-              : discovered?.activationSource === "always"
-                ? "always"
-                : "recursive",
+            : discovered?.activationSource === "always"
+              ? "always"
+              : "recursive",
           source: userMentioned ? "Current or previous user message" : "Canonical selected context",
           depth: discovered?.recursionDepth ?? 0,
         },

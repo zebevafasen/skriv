@@ -1,7 +1,7 @@
 import { type CompendiumEntry, type Project, storyLanguages } from "@asterism/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { Archive, Book, Download, Image as ImageIcon, Info, Trash2, Users } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { useAppDialog } from "./DialogProvider.js";
 
@@ -19,6 +19,15 @@ export function ProjectSettingsPanel({
   );
   const dialog = useAppDialog();
   const client = useQueryClient();
+  const [authorDraft, setAuthorDraft] = useState(project.settings.author);
+  const authorFocused = useRef(false);
+  const authorProjectId = useRef(project.id);
+
+  useEffect(() => {
+    const projectChanged = authorProjectId.current !== project.id;
+    authorProjectId.current = project.id;
+    if (projectChanged || !authorFocused.current) setAuthorDraft(project.settings.author);
+  }, [project.id, project.settings.author]);
 
   const updateSetting = useCallback(
     async (field: string, value: unknown) => {
@@ -108,8 +117,16 @@ export function ProjectSettingsPanel({
                   <span className="input-label">Author / Pen name</span>
                   <input
                     type="text"
-                    defaultValue={project.settings.author}
-                    onBlur={(e) => updateSetting("author", e.target.value)}
+                    value={authorDraft}
+                    onFocus={() => {
+                      authorFocused.current = true;
+                    }}
+                    onChange={(event) => setAuthorDraft(event.target.value)}
+                    onBlur={async () => {
+                      authorFocused.current = false;
+                      if (authorDraft !== project.settings.author)
+                        await updateSetting("author", authorDraft);
+                    }}
                   />
                 </label>
                 <div className="settings-row-group">

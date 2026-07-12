@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { idSchema, timestampSchema } from "./primitives.js";
 import { tagPackValuesSchema } from "./packages.js";
+import { idSchema, timestampSchema } from "./primitives.js";
 
 export const storyLanguageSchema = z.enum([
   "General English",
@@ -35,6 +35,11 @@ export const tagPackSchema = z.object({
   updatedAt: timestampSchema.nullable(),
 });
 
+export const projectTagPackSchema = tagPackSchema.extend({
+  sourcePackId: z.string().min(1),
+  importedAt: timestampSchema,
+});
+
 export const createTagPackInputSchema = tagPackSchema
   .pick({ name: true, description: true, values: true })
   .partial({ description: true });
@@ -58,5 +63,6 @@ export const manuscriptExportOptionsSchema = z.object({
 
 export type ProjectDefaults = z.infer<typeof projectDefaultsSchema>;
 export type TagPack = z.infer<typeof tagPackSchema>;
+export type ProjectTagPack = z.infer<typeof projectTagPackSchema>;
 export type OutlineSource = z.infer<typeof outlineSourceSchema>;
 export type ManuscriptExportOptions = z.infer<typeof manuscriptExportOptionsSchema>;

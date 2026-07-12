@@ -2,15 +2,16 @@ import { basePackage } from "@asterism/content";
 import {
   createTagPackInputSchema,
   projectDefaultsSchema,
+  projectTagPackSchema,
   tagPackSchema,
   updateTagPackInputSchema,
 } from "@asterism/contracts";
 import {
   compendiumEntries,
   projectDefaults,
+  projectTagPacks,
   tagPacks,
   touchUpdatedAt,
-  userDefinitions,
 } from "@asterism/db";
 import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -61,62 +62,58 @@ export async function importTagPacksIntoProject(
   projectId: string,
   packIds: string[],
 ) {
-  if (!packIds.length) return;
+  if (!packIds.length) return [];
   const available = await getTagPacks(context, userId);
   const selected = packIds.map((id) => available.find((pack) => pack.id === id));
   if (selected.some((pack) => !pack))
     throw Object.assign(new Error("Tag pack not found."), { statusCode: 400 });
-  const byId = new Map<string, { id: string; label: string }>(
-    [...basePackage.genres, ...basePackage.themes, ...basePackage.tags].map((item) => [
-      item.id,
-      { id: item.id, label: item.label },
-    ]),
-  );
-  const requestedIds = [
-    ...new Set(
-      selected.flatMap((pack) =>
-        pack ? [...pack.values.genres, ...pack.values.themes, ...pack.values.tags] : [],
-      ),
-    ),
-  ];
-  const customIds = requestedIds.filter((id) => z.uuid().safeParse(id).success);
-  const customRows = customIds.length
-    ? await context.db
-        .select()
-        .from(userDefinitions)
-        .where(and(eq(userDefinitions.userId, userId), inArray(userDefinitions.id, customIds)))
-    : [];
-  customRows.forEach((item) => {
-    byId.set(item.id, { id: item.id, label: item.label });
-  });
-
-  const singletonRows = await context.db
+  const validSelected = selected.filter((pack) => pack !== undefined);
+  await context.db
+    .insert(projectTagPacks)
+    .values(
+      validSelected.map((pack) => ({
+        projectId,
+        sourcePackId: pack.id,
+        name: pack.name,
+        description: pack.description,
+        ownership: pack.ownership,
+        values: pack.values,
+      })),
+    )
+    .onConflictDoNothing();
+  return context.db
     .select()
-    .from(compendiumEntries)
-    .where(eq(compendiumEntries.projectId, projectId));
-  for (const kind of ["genres", "themes", "tags"] as const) {
-    const entry = singletonRows.find((row) => row.singletonKey === kind);
-    if (entry?.content.kind !== "selection") continue;
-    const additions = selected
-      .flatMap((pack) => pack?.values[kind] ?? [])
-      .map((id) => {
-        const definition = byId.get(id);
-        if (!definition)
-          throw Object.assign(new Error(`Tag-pack definition ${id} is unavailable.`), {
-            statusCode: 400,
-          });
-        return { definitionId: id, label: definition.label, locked: false };
-      });
-    const merged = [...entry.content.values];
-    for (const value of additions) {
-      if (!merged.some((current) => normalize(current.label) === normalize(value.label)))
-        merged.push(value);
-    }
-    await context.db
-      .update(compendiumEntries)
-      .set({ content: { kind: "selection", values: merged }, ...touchUpdatedAt })
-      .where(eq(compendiumEntries.id, entry.id));
-  }
+    .from(projectTagPacks)
+    .where(
+      and(eq(projectTagPacks.projectId, projectId), inArray(projectTagPacks.sourcePackId, packIds)),
+    );
+}
+
+function projectPackResponse(row: typeof projectTagPacks.$inferSelect) {
+  return projectTagPackSchema.parse({
+    id: row.sourcePackId,
+    sourcePackId: row.sourcePackId,
+    name: row.name,
+    description: row.description,
+    ownership: row.ownership,
+    values: row.values,
+    createdAt: null,
+    updatedAt: null,
+    importedAt: row.importedAt.toISOString(),
+  });
+}
+
+export function removePackOnlyValues<T extends { definitionId: string | null }>(
+  values: T[],
+  removedIds: ReadonlySet<string>,
+  remainingIds: ReadonlySet<string>,
+) {
+  return values.filter(
+    (value) =>
+      !value.definitionId ||
+      !removedIds.has(value.definitionId) ||
+      remainingIds.has(value.definitionId),
+  );
 }
 
 export async function registerSetupRoutes(app: FastifyInstance, context: AppContext) {
@@ -148,6 +145,17 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
   });
 
   app.get("/api/tag-packs", async (request) => getTagPacks(context, request.userId));
+
+  app.get("/api/projects/:projectId/tag-packs", async (request, reply) => {
+    const { projectId } = parseWith(z.object({ projectId: z.uuid() }), request.params);
+    if (!(await ownsProject(context, request.userId, projectId)))
+      return notFound(reply, "Project not found.");
+    const rows = await context.db
+      .select()
+      .from(projectTagPacks)
+      .where(eq(projectTagPacks.projectId, projectId));
+    return rows.map(projectPackResponse);
+  });
 
   app.post("/api/tag-packs", async (request, reply) => {
     const input = parseWith(createTagPackInputSchema, request.body);
@@ -200,7 +208,52 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     const { projectId, packId } = parseWith(projectPackParams, request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
-    await importTagPacksIntoProject(context, request.userId, projectId, [packId]);
+    const [row] = await importTagPacksIntoProject(context, request.userId, projectId, [packId]);
+    if (!row) throw new Error("Tag pack import failed.");
+    return reply.code(201).send(projectPackResponse(row));
+  });
+
+  app.delete("/api/projects/:projectId/tag-packs/:packId", async (request, reply) => {
+    const { projectId, packId } = parseWith(projectPackParams, request.params);
+    if (!(await ownsProject(context, request.userId, projectId)))
+      return notFound(reply, "Project not found.");
+    const removed = await context.db.transaction(async (tx) => {
+      const [snapshot] = await tx
+        .delete(projectTagPacks)
+        .where(
+          and(eq(projectTagPacks.projectId, projectId), eq(projectTagPacks.sourcePackId, packId)),
+        )
+        .returning();
+      if (!snapshot) return false;
+      const remaining = await tx
+        .select()
+        .from(projectTagPacks)
+        .where(eq(projectTagPacks.projectId, projectId));
+      for (const kind of ["genres", "themes", "tags"] as const) {
+        const removedIds = new Set(snapshot.values[kind]);
+        const remainingIds = new Set(remaining.flatMap((pack) => pack.values[kind]));
+        if (![...removedIds].some((id) => !remainingIds.has(id))) continue;
+        const rows = await tx
+          .select()
+          .from(compendiumEntries)
+          .where(eq(compendiumEntries.projectId, projectId));
+        const entry = rows.find((row) => row.singletonKey === kind);
+        if (entry?.content.kind !== "selection") continue;
+        await tx
+          .update(compendiumEntries)
+          .set({
+            content: {
+              kind: "selection",
+              values: removePackOnlyValues(entry.content.values, removedIds, remainingIds),
+            },
+            revision: entry.revision + 1,
+            ...touchUpdatedAt,
+          })
+          .where(eq(compendiumEntries.id, entry.id));
+      }
+      return true;
+    });
+    if (!removed) return notFound(reply, "Imported tag pack not found.");
     return reply.code(204).send();
   });
 }

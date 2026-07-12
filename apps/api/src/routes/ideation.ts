@@ -24,43 +24,29 @@ import { resolvePrompt } from "./prompts.js";
 import { getSettings } from "./settings.js";
 
 const projectParams = z.object({ projectId: z.uuid() });
+const ingredientValueSchema = z.object({
+  definitionId: z.string().nullable(),
+  label: z.string().min(1),
+  locked: z.boolean().default(false),
+});
 const metadataUpdateSchema = z.object({
   premise: z.string().max(50_000).optional(),
-  genres: z
-    .array(
-      z.object({
-        definitionId: z.string().nullable(),
-        label: z.string().min(1),
-        locked: z.boolean().default(false),
-      }),
-    )
-    .optional(),
-  themes: z
-    .array(
-      z.object({
-        definitionId: z.string().nullable(),
-        label: z.string().min(1),
-        locked: z.boolean().default(false),
-      }),
-    )
-    .optional(),
-  tags: z
-    .array(
-      z.object({
-        definitionId: z.string().nullable(),
-        label: z.string().min(1),
-        locked: z.boolean().default(false),
-      }),
-    )
-    .optional(),
+  genres: z.array(ingredientValueSchema).optional(),
+  themes: z.array(ingredientValueSchema).optional(),
+  tags: z.array(ingredientValueSchema).optional(),
 });
-const premiseRequestSchema = z.object({
+const draftIngredientsSchema = z.object({
+  genres: z.array(ingredientValueSchema).optional(),
+  themes: z.array(ingredientValueSchema).optional(),
+  tags: z.array(ingredientValueSchema).optional(),
+});
+const premiseRequestSchema = draftIngredientsSchema.extend({
   mode: z.literal("premise").optional().default("premise"),
   instructions: z.string().max(20_000).default(""),
   modelOverride: z.string().nullable().default(null),
   count: z.number().int().min(1).max(5).default(3),
 });
-const entityRequestSchema = z.object({
+const entityRequestSchema = draftIngredientsSchema.extend({
   mode: z.literal("entity"),
   typeId: compendiumTypeIdSchema.refine(
     (value) => !value.startsWith("project."),
@@ -199,7 +185,9 @@ export async function registerIdeationRoutes(
       return notFound(reply, "Project not found.");
     const input = parseWith(generateRequestSchema, request.body ?? {});
     const entries = await metadataEntries(context, projectId);
-    const labels = (key: string) => {
+    const labels = (key: "genres" | "themes" | "tags") => {
+      const draft = input[key];
+      if (draft) return draft.map((value) => value.label).join(", ");
       const content = entries.get(key)?.content;
       return content?.kind === "selection"
         ? content.values.map((value) => value.label).join(", ")

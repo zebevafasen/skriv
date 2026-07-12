@@ -5,10 +5,10 @@ import {
   Box,
   ChevronDown,
   Cog,
+  Folder,
   ImagePlus,
   Landmark,
   MapPin,
-  Pencil,
   Plus,
   Save,
   Search,
@@ -17,7 +17,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
@@ -57,6 +57,9 @@ function StoryTypeMenu({
 }) {
   return (
     <div className="new-entry-menu" role="menu" aria-label="Choose entry type">
+      <span className="new-entry-menu-label" role="presentation">
+        System categories
+      </span>
       {storyTypes.map((type) => {
         const Icon = type.icon;
         return (
@@ -71,17 +74,25 @@ function StoryTypeMenu({
           </button>
         );
       })}
-      {categories.map((category) => (
-        <button
-          type="button"
-          role="menuitem"
-          key={category.id}
-          disabled={disabled}
-          onClick={() => onSelect(`custom.${category.id}`)}
-        >
-          <BookMarked size={16} /> {category.name}
-        </button>
-      ))}
+      {categories.length ? (
+        <>
+          <hr className="new-entry-menu-divider" />
+          <span className="new-entry-menu-label" role="presentation">
+            Custom categories
+          </span>
+          {categories.map((category) => (
+            <button
+              type="button"
+              role="menuitem"
+              key={category.id}
+              disabled={disabled}
+              onClick={() => onSelect(`custom.${category.id}`)}
+            >
+              <Folder size={16} /> {category.name}
+            </button>
+          ))}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -98,13 +109,18 @@ export function CompendiumPanel({
   onSelect: (id: string | null) => void;
 }) {
   const client = useQueryClient();
-  const dialog = useAppDialog();
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
     queryFn: () => api<CompendiumCategory[]>(`/api/projects/${projectId}/compendium-categories`),
   });
   const [search, setSearch] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryDrafts, setCategoryDrafts] = useState<Record<string, string>>({});
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
+  const categoryDialogRef = useRef<HTMLElement>(null);
+  const categoryInputRef = useRef<HTMLInputElement>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     if (!createMenuOpen) return;
@@ -114,6 +130,15 @@ export function CompendiumPanel({
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [createMenuOpen]);
+  useEffect(() => {
+    if (!categoryManagerOpen) return;
+    setCategoryDrafts(
+      Object.fromEntries((categories.data ?? []).map((category) => [category.id, category.name])),
+    );
+  }, [categoryManagerOpen, categories.data]);
+  useEffect(() => {
+    if (categoryManagerOpen) requestAnimationFrame(() => categoryInputRef.current?.focus());
+  }, [categoryManagerOpen]);
   const createEntry = useMutation({
     mutationFn: (typeId: string) => {
       const type = storyTypes.find((candidate) => candidate.id === typeId);
@@ -227,50 +252,48 @@ export function CompendiumPanel({
             </button>
           ) : null}
         </label>
-        <div className="new-entry-control">
+        <div className="compendium-toolbar-actions">
+          <div className="new-entry-control">
+            <button
+              type="button"
+              className="icon-button new-entry-button"
+              title="New entry"
+              aria-label="New entry"
+              aria-expanded={createMenuOpen}
+              aria-haspopup="menu"
+              aria-controls="new-entry-type-menu"
+              onClick={() => setCreateMenuOpen((value) => !value)}
+            >
+              <Plus size={16} />
+            </button>
+            {createMenuOpen ? (
+              <>
+                <button
+                  type="button"
+                  className="new-entry-backdrop"
+                  aria-label="Close entry type menu"
+                  onClick={() => setCreateMenuOpen(false)}
+                />
+                <div id="new-entry-type-menu">
+                  <StoryTypeMenu
+                    categories={categories.data ?? []}
+                    disabled={createEntry.isPending}
+                    onSelect={(typeId) => createEntry.mutate(typeId)}
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
           <button
             type="button"
-            className="button ghost new-entry-button"
-            aria-expanded={createMenuOpen}
-            aria-haspopup="menu"
-            aria-controls="new-entry-type-menu"
-            onClick={() => setCreateMenuOpen((value) => !value)}
+            className="icon-button"
+            title="Manage custom categories"
+            aria-label="Manage custom categories"
+            onClick={() => setCategoryManagerOpen(true)}
           >
-            <Plus size={15} /> New Entry
+            <Cog size={15} />
           </button>
-          {createMenuOpen ? (
-            <>
-              <button
-                type="button"
-                className="new-entry-backdrop"
-                aria-label="Close entry type menu"
-                onClick={() => setCreateMenuOpen(false)}
-              />
-              <div id="new-entry-type-menu">
-                <StoryTypeMenu
-                  categories={categories.data ?? []}
-                  disabled={createEntry.isPending}
-                  onSelect={(typeId) => createEntry.mutate(typeId)}
-                />
-              </div>
-            </>
-          ) : null}
         </div>
-        <button
-          type="button"
-          className="icon-button"
-          title="Create custom category"
-          onClick={async () => {
-            const name = await dialog.prompt({
-              title: "New Compendium category",
-              label: "Category name",
-              initialValue: "",
-            });
-            if (name?.trim()) createCategory.mutate(name.trim());
-          }}
-        >
-          <Plus size={15} />
-        </button>
       </div>
       {createEntry.error || createCategory.error || deleteCategory.error || renameCategory.error ? (
         <ErrorNotice
@@ -307,54 +330,16 @@ export function CompendiumPanel({
                   </span>
                   <ChevronDown className={collapsed ? "collapsed" : ""} size={13} />
                 </button>
-                {(categories.data ?? []).some((category) => category.name === label) ? (
-                  <div className="button-row">
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`Rename ${label} category`}
-                      onClick={async () => {
-                        const category = categories.data?.find((item) => item.name === label);
-                        if (!category) return;
-                        const name = await dialog.prompt({
-                          title: "Rename Compendium category",
-                          label: "Category name",
-                          initialValue: category.name,
-                        });
-                        if (name?.trim())
-                          renameCategory.mutate({ id: category.id, name: name.trim() });
-                      }}
-                    >
-                      <Pencil size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button danger"
-                      aria-label={`Delete ${label} category`}
-                      onClick={async () => {
-                        const category = categories.data?.find((item) => item.name === label);
-                        if (
-                          category &&
-                          (await dialog.confirm({
-                            title: `Delete “${label}”?`,
-                            body: "Entries in this category will be moved to Other.",
-                            confirmLabel: "Delete category",
-                            destructive: true,
-                          }))
-                        )
-                          deleteCategory.mutate(category.id);
-                      }}
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ) : null}
               </header>
               {!collapsed
                 ? groupedEntries.map((entry) => {
                     const EntryTypeIcon =
                       storyTypes.find((type) => type.id === entry.typeId)?.icon ??
-                      (entry.typeId.startsWith("project.") ? Cog : BookMarked);
+                      (entry.typeId.startsWith("project.")
+                        ? Cog
+                        : entry.typeId.startsWith("custom.")
+                          ? Folder
+                          : BookMarked);
                     return (
                       <button
                         type="button"
@@ -388,6 +373,156 @@ export function CompendiumPanel({
           );
         })}
       </div>
+      {categoryManagerOpen ? (
+        <div className="modal-backdrop category-manager-backdrop">
+          <button
+            type="button"
+            className="category-manager-dismiss"
+            aria-label="Close category manager"
+            onClick={() => setCategoryManagerOpen(false)}
+          />
+          <section
+            ref={categoryDialogRef}
+            className="modal category-manager-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="category-manager-title"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setCategoryManagerOpen(false);
+                return;
+              }
+              if (event.key !== "Tab") return;
+              const controls = [
+                ...(categoryDialogRef.current?.querySelectorAll<HTMLElement>(
+                  "button:not([disabled]), input:not([disabled])",
+                ) ?? []),
+              ];
+              if (!controls.length) return;
+              const index = controls.indexOf(document.activeElement as HTMLElement);
+              const next = event.shiftKey
+                ? index <= 0
+                  ? controls.length - 1
+                  : index - 1
+                : (index + 1) % controls.length;
+              event.preventDefault();
+              controls[next]?.focus();
+            }}
+          >
+            <p className="eyebrow">Compendium</p>
+            <h2 id="category-manager-title">Manage categories</h2>
+            <form
+              className="category-create-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!newCategoryName.trim()) return;
+                createCategory.mutate(newCategoryName.trim(), {
+                  onSuccess: () => setNewCategoryName(""),
+                });
+              }}
+            >
+              <input
+                ref={categoryInputRef}
+                value={newCategoryName}
+                onChange={(event) => setNewCategoryName(event.target.value)}
+                placeholder="New category name"
+                aria-label="New category name"
+              />
+              <button
+                type="submit"
+                className="button primary"
+                disabled={!newCategoryName.trim() || createCategory.isPending}
+              >
+                <Plus size={14} /> Add
+              </button>
+            </form>
+            <div className="category-manager-list">
+              {(categories.data ?? []).length ? (
+                (categories.data ?? []).map((category) => (
+                  <div className="category-manager-row" key={category.id}>
+                    <input
+                      value={categoryDrafts[category.id] ?? category.name}
+                      onChange={(event) =>
+                        setCategoryDrafts((current) => ({
+                          ...current,
+                          [category.id]: event.target.value,
+                        }))
+                      }
+                      aria-label={`Category name for ${category.name}`}
+                    />
+                    <button
+                      type="button"
+                      className="icon-button"
+                      title={`Save ${category.name}`}
+                      disabled={
+                        !(categoryDrafts[category.id] ?? "").trim() ||
+                        (categoryDrafts[category.id] ?? category.name).trim() === category.name ||
+                        renameCategory.isPending
+                      }
+                      onClick={() =>
+                        renameCategory.mutate({
+                          id: category.id,
+                          name: (categoryDrafts[category.id] ?? category.name).trim(),
+                        })
+                      }
+                    >
+                      <Save size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button danger"
+                      title={`Delete ${category.name}`}
+                      onClick={() => setDeleteCategoryId(category.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="category-manager-empty">No custom categories yet.</p>
+              )}
+            </div>
+            {deleteCategoryId ? (
+              <div className="category-delete-confirm" role="alertdialog" aria-modal="true">
+                <p>
+                  Delete “{categories.data?.find((item) => item.id === deleteCategoryId)?.name}”?
+                  Entries in this category will be moved to Other.
+                </p>
+                <div className="button-row">
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setDeleteCategoryId(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button danger"
+                    disabled={deleteCategory.isPending}
+                    onClick={() =>
+                      deleteCategory.mutate(deleteCategoryId, {
+                        onSuccess: () => setDeleteCategoryId(null),
+                      })
+                    }
+                  >
+                    Delete category
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="button ghost"
+                onClick={() => setCategoryManagerOpen(false)}
+              >
+                Done
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </aside>
   );
 }
