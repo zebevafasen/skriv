@@ -45,7 +45,7 @@ export const editorTextAlignSchema = z.enum(["left", "justify", "center", "right
 
 export const editorSettingsSchema = z.object({
   fontFamily: editorFontFamilySchema.default("literary"),
-  fontSize: editorFontSizeSchema.default(20),
+  fontSize: editorFontSizeSchema.default(18),
   lineHeight: editorLineHeightSchema.default(1.85),
   paragraphSpacing: editorParagraphSpacingSchema.default(1.15),
   firstLineIndent: editorFirstLineIndentSchema.default(0),

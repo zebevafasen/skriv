@@ -5949,7 +5949,8 @@ label small {
     overflow: visible;
     padding: 0 max(5px, env(safe-area-inset-right)) 0 max(5px, env(safe-area-inset-left));
     border-bottom-color: #332f29;
-    background: #171512f7;
+    background: #171512;
+    backdrop-filter: none;
   }
 
   .editor-toolbar button {

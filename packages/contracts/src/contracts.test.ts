@@ -77,7 +77,7 @@ describe("shared contracts", () => {
   it("provides bounded editor typography defaults", () => {
     expect(editorSettingsSchema.parse({})).toEqual({
       fontFamily: "literary",
-      fontSize: 20,
+      fontSize: 18,
       lineHeight: 1.85,
       paragraphSpacing: 1.15,
       firstLineIndent: 0,

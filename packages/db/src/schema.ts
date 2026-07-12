@@ -269,7 +269,7 @@ export const editorSettings = pgTable("editor_settings", {
     .$type<EditorSettings["fontFamily"]>()
     .notNull()
     .default("literary"),
-  fontSize: integer("font_size").notNull().default(20),
+  fontSize: integer("font_size").notNull().default(18),
   lineHeight: real("line_height").notNull().default(1.85),
   paragraphSpacing: real("paragraph_spacing").notNull().default(1.15),
   firstLineIndent: real("first_line_indent").notNull().default(0),

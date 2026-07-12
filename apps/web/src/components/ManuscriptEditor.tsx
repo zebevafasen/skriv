@@ -126,7 +126,7 @@ type SelectionPanel = SelectionMenu & {
 
 const editorSettingsDefaults: EditorSettings = {
   fontFamily: "literary",
-  fontSize: 20,
+  fontSize: 18,
   lineHeight: 1.85,
   paragraphSpacing: 1.15,
   firstLineIndent: 0,
@@ -685,6 +685,7 @@ export const ManuscriptEditor = forwardRef<
   const cursorRef = useRef(1);
   const abortRef = useRef<AbortController | null>(null);
   const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typographyControlRef = useRef<HTMLDivElement>(null);
   const mobileNavigatorCloseRef = useRef<HTMLButtonElement>(null);
   const mobileToolsCloseRef = useRef<HTMLButtonElement>(null);
   const settingsQuery = useQuery({
@@ -861,6 +862,15 @@ export const ManuscriptEditor = forwardRef<
   useEffect(() => {
     if (mobileToolsOpen) requestAnimationFrame(() => mobileToolsCloseRef.current?.focus());
   }, [mobileToolsOpen]);
+  useEffect(() => {
+    if (!typographyOpen) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (!typographyControlRef.current?.contains(event.target as globalThis.Node))
+        setTypographyOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress, true);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePress, true);
+  }, [typographyOpen]);
   useEffect(() => {
     const closeOverlays = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || activeRef.current) return;
@@ -1220,7 +1230,7 @@ export const ManuscriptEditor = forwardRef<
               <History size={14} /> History
             </button>
             <span className="editor-toolbar-spacer" />
-            <div className="typography-control desktop-editor-tool">
+            <div ref={typographyControlRef} className="typography-control desktop-editor-tool">
               <button
                 type="button"
                 className={typographyOpen ? "active" : ""}

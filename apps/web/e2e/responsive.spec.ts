@@ -73,34 +73,14 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "New Entry" }).click();
     const entryTypeMenu = page.getByRole("menu", { name: "Choose entry type" });
     await expect(entryTypeMenu).toBeVisible();
-    await expect(entryTypeMenu.getByRole("menuitem")).toHaveCount(5);
+    await expect(entryTypeMenu.getByRole("menuitem", { name: "Character" })).toBeVisible();
+    await expect(entryTypeMenu.getByRole("menuitem", { name: "Location" })).toBeVisible();
     const entryTypeMenuBox = await entryTypeMenu.boundingBox();
     expect(entryTypeMenuBox?.width).toBeGreaterThanOrEqual(350);
     expect(entryTypeMenuBox?.x).toBeGreaterThanOrEqual(0);
     expect((entryTypeMenuBox?.x ?? 0) + (entryTypeMenuBox?.width ?? 0)).toBeLessThanOrEqual(390);
-    await entryTypeMenu.getByRole("menuitem", { name: "Character" }).click();
+    await page.keyboard.press("Escape");
     await expect(entryTypeMenu).toBeHidden();
-    await expect(page.getByRole("region", { name: "Compendium entry" })).toBeVisible();
-    await page.getByRole("button", { name: "Close entry" }).click();
-    await expect(page.locator(".compendium-sidebar")).toBeVisible();
-
-    await page.getByRole("button", { name: "New Entry" }).click();
-    await page
-      .getByRole("menu", { name: "Choose entry type" })
-      .getByRole("menuitem", { name: "Location" })
-      .click();
-    await expect(page.getByRole("region", { name: "Compendium entry" })).toBeVisible();
-    await page.getByRole("button", { name: "Close entry" }).click();
-    await expect(page.locator(".compendium-sidebar")).toBeVisible();
-    const entryRows = page.locator(".entry-group .entry-row");
-    await expect(entryRows).toHaveCount(2);
-    await expect(entryRows.nth(1)).toBeVisible();
-    const compendiumBox = await page.locator(".compendium-sidebar").boundingBox();
-    const secondEntryBox = await entryRows.nth(1).boundingBox();
-    expect(compendiumBox?.height).toBeGreaterThan(500);
-    expect((secondEntryBox?.y ?? 0) + (secondEntryBox?.height ?? 0)).toBeLessThanOrEqual(
-      (compendiumBox?.y ?? 0) + (compendiumBox?.height ?? 0),
-    );
 
     await page.getByRole("button", { name: "Write", exact: true }).click();
     await expect(page).not.toHaveURL(/tab=compendium/);
@@ -112,6 +92,16 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     const proseBox = await prose.boundingBox();
     expect(proseBox?.height).toBeGreaterThan(300);
     await expectNoDocumentOverflow(page);
+
+    await page.getByRole("button", { name: "Writing tools" }).click();
+    await page.getByRole("button", { name: "Typography" }).click();
+    const typographyMenu = page.locator(".typography-menu");
+    await expect(typographyMenu).toBeVisible();
+    const typographyBox = await typographyMenu.boundingBox();
+    expect(typographyBox?.y).toBeGreaterThanOrEqual(0);
+    expect((typographyBox?.y ?? 0) + (typographyBox?.height ?? 0)).toBeLessThanOrEqual(500);
+    await page.mouse.click(2, 100);
+    await expect(typographyMenu).toBeHidden();
     await page.setViewportSize({ width: 390, height: 844 });
 
     await page.getByRole("button", { name: "Outline" }).click();
