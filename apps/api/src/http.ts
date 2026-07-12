@@ -22,3 +22,7 @@ export function notFound(reply: FastifyReply, message = "Resource not found.") {
 export function conflict(reply: FastifyReply, message: string, details?: unknown) {
   return reply.code(409).send({ error: { code: "CONFLICT", message, details } });
 }
+
+export function serializeNdjson(value: unknown): string {
+  return `${JSON.stringify(value)}\n`;
+}

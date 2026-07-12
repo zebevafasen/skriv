@@ -28,7 +28,7 @@ import { and, asc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
-import { conflict, notFound, parseWith } from "../http.js";
+import { conflict, notFound, parseWith, serializeNdjson } from "../http.js";
 import { ownedScene } from "../ownership.js";
 import { resolvePrompt } from "./prompts.js";
 import { getSettings } from "./settings.js";
@@ -43,10 +43,6 @@ const contextCache = new Map<
     value: { fragments: z.infer<typeof contextFragmentSchema>[]; fallback: boolean };
   }
 >();
-
-function ndjson(event: unknown): string {
-  return `${JSON.stringify(event)}\n`;
-}
 
 async function assembleContext(
   context: AppContext,
@@ -344,7 +340,7 @@ export async function registerGenerationRoutes(
           model,
           promptId: prompt.id,
         });
-        yield ndjson(started);
+        yield serializeNdjson(started);
         try {
           const maxOutputTokens =
             input.targetLength === null
@@ -362,7 +358,7 @@ export async function registerGenerationRoutes(
             signal: controller.signal,
           })) {
             candidateText += delta;
-            yield ndjson(
+            yield serializeNdjson(
               generationStreamEventSchema.parse({
                 type: "generation.delta",
                 generationId: generationRecord.id,
@@ -384,7 +380,7 @@ export async function registerGenerationRoutes(
             role: "writing",
             outputTokens,
           });
-          yield ndjson(
+          yield serializeNdjson(
             generationStreamEventSchema.parse({
               type: "generation.completed",
               generationId: generationRecord.id,
@@ -401,7 +397,7 @@ export async function registerGenerationRoutes(
               .update(generations)
               .set({ status: "cancelled", ...touchUpdatedAt })
               .where(eq(generations.id, generationRecord.id));
-            yield ndjson(
+            yield serializeNdjson(
               generationStreamEventSchema.parse({
                 type: "generation.cancelled",
                 generationId: generationRecord.id,
@@ -414,7 +410,7 @@ export async function registerGenerationRoutes(
               .update(generations)
               .set({ status: "failed", failureMessage: message, ...touchUpdatedAt })
               .where(eq(generations.id, generationRecord.id));
-            yield ndjson(
+            yield serializeNdjson(
               generationStreamEventSchema.parse({
                 type: "generation.failed",
                 generationId: generationRecord.id,

@@ -23,9 +23,6 @@ type ExportRows = Awaited<ReturnType<typeof loadProject>>;
 type Run = { text: string; bold?: boolean; italic?: boolean };
 type SceneProjection = { title: string; blocks: Run[][] };
 
-function _timestamp(value: Date) {
-  return value.toISOString();
-}
 function safeFilename(title: string) {
   return (
     title

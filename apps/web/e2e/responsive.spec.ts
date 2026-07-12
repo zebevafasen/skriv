@@ -54,6 +54,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
 
   try {
     await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to Projects" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Project workspace" })).toBeVisible();
     await expect(page.locator(".topbar")).toBeHidden();
     await expect(page.locator(".project-bar")).toBeHidden();
@@ -73,14 +74,29 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "New Entry" }).click();
     const entryTypeMenu = page.getByRole("menu", { name: "Choose entry type" });
     await expect(entryTypeMenu).toBeVisible();
+    await expect(entryTypeMenu.getByText("Choose a category")).toBeVisible();
     await expect(entryTypeMenu.getByRole("menuitem", { name: "Character" })).toBeVisible();
     await expect(entryTypeMenu.getByRole("menuitem", { name: "Location" })).toBeVisible();
     const entryTypeMenuBox = await entryTypeMenu.boundingBox();
     expect(entryTypeMenuBox?.width).toBeGreaterThanOrEqual(350);
     expect(entryTypeMenuBox?.x).toBeGreaterThanOrEqual(0);
     expect((entryTypeMenuBox?.x ?? 0) + (entryTypeMenuBox?.width ?? 0)).toBeLessThanOrEqual(390);
-    await page.keyboard.press("Escape");
-    await expect(entryTypeMenu).toBeHidden();
+    expect(entryTypeMenuBox?.y).toBeGreaterThanOrEqual(0);
+    expect((entryTypeMenuBox?.y ?? 0) + (entryTypeMenuBox?.height ?? 0)).toBeLessThanOrEqual(844);
+    await entryTypeMenu.getByRole("menuitem", { name: "Character" }).click();
+    const drawerToolbar = page.locator(".drawer-toolbar");
+    await expect(drawerToolbar).toBeVisible();
+    const toolbarActionBoxes = await Promise.all(
+      [
+        page.getByRole("button", { name: "Delete entry" }),
+        page.getByRole("button", { name: "Save", exact: true }),
+        page.getByRole("button", { name: "Close entry" }),
+      ].map((control) => control.boundingBox()),
+    );
+    const toolbarTop = toolbarActionBoxes[0]?.y ?? 0;
+    for (const box of toolbarActionBoxes)
+      expect(Math.abs((box?.y ?? 0) - toolbarTop)).toBeLessThan(4);
+    await page.getByRole("button", { name: "Close entry" }).click();
 
     await page.getByRole("button", { name: "Write", exact: true }).click();
     await expect(page).not.toHaveURL(/tab=compendium/);
@@ -105,7 +121,15 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.setViewportSize({ width: 390, height: 844 });
 
     await page.getByRole("button", { name: "Outline" }).click();
-    await expect(page.locator(".outline-scene-card").first()).toBeVisible();
+    const firstOutlineCard = page.locator(".outline-scene-card").first();
+    await expect(firstOutlineCard).toBeVisible();
+    const sceneActionBoxes = await Promise.all(
+      [
+        firstOutlineCard.getByRole("button", { name: /Rename Scene/ }),
+        firstOutlineCard.getByRole("button", { name: /Delete Scene/ }),
+      ].map((control) => control.boundingBox()),
+    );
+    expect(Math.abs((sceneActionBoxes[0]?.y ?? 0) - (sceneActionBoxes[1]?.y ?? 0))).toBeLessThan(4);
     await expectNoDocumentOverflow(page);
 
     await page.getByRole("button", { name: "Ideation" }).click();
@@ -118,6 +142,19 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "Project settings" }).click();
     await expect(page.locator(".project-settings-panel")).toBeVisible();
     await expectNoDocumentOverflow(page);
+
+    await page.getByRole("button", { name: "More" }).click();
+    await page.getByRole("link", { name: "Projects", exact: true }).click();
+    await expect(page).toHaveURL("/");
+    await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
+    await page.evaluate(() => {
+      const spacer = document.createElement("div");
+      spacer.style.height = "1200px";
+      spacer.setAttribute("aria-hidden", "true");
+      document.querySelector(".library-page")?.append(spacer);
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   } finally {
     await page.request.delete(`/api/projects/${projectId}`);
   }

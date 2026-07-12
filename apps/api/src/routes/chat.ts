@@ -32,7 +32,7 @@ import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";
 import { type ChatContextPiece, chatTokenBudget, selectChatContext } from "../chat-context.js";
 import type { AppContext } from "../context.js";
-import { conflict, notFound, parseWith } from "../http.js";
+import { conflict, notFound, parseWith, serializeNdjson } from "../http.js";
 import { ownsProject } from "../ownership.js";
 import { resolvePrompt } from "./prompts.js";
 import { getModelContextLength, getSettings } from "./settings.js";
@@ -40,7 +40,6 @@ import { getModelContextLength, getSettings } from "./settings.js";
 const projectParams = z.object({ projectId: z.uuid() });
 const threadParams = z.object({ id: z.uuid() });
 const active = new Map<string, AbortController>();
-const ndjson = (value: unknown) => `${JSON.stringify(value)}\n`;
 const messageResponse = (row: typeof chatMessages.$inferSelect) => ({
   ...row,
   createdAt: row.createdAt.toISOString(),
@@ -419,7 +418,7 @@ function sendChatStream(
   reply.raw.once("close", () => controller.abort());
   async function* stream() {
     let text = "";
-    yield ndjson(
+    yield serializeNdjson(
       chatStreamEventSchema.parse({
         type: "chat.started",
         userMessage: messageResponse(options.userMessage),
@@ -442,7 +441,11 @@ function sendChatStream(
         signal: controller.signal,
       })) {
         text += delta;
-        yield ndjson({ type: "chat.delta", messageId: options.assistantMessage.id, delta });
+        yield serializeNdjson({
+          type: "chat.delta",
+          messageId: options.assistantMessage.id,
+          delta,
+        });
       }
       const outputTokens = approximateTokens(text);
       const [updated] = await context.db
@@ -464,7 +467,7 @@ function sendChatStream(
         role: "chat",
         outputTokens,
       });
-      yield ndjson(
+      yield serializeNdjson(
         chatStreamEventSchema.parse({
           type: "chat.completed",
           message: messageResponse(done),
@@ -489,7 +492,7 @@ function sendChatStream(
           })
           .where(eq(chatMessages.id, options.assistantMessage.id));
       }
-      yield ndjson(
+      yield serializeNdjson(
         controller.signal.aborted
           ? { type: "chat.cancelled", messageId: options.assistantMessage.id }
           : { type: "chat.failed", messageId: options.assistantMessage.id, message },

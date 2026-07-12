@@ -70,15 +70,18 @@ import {
   setMentionDecorations,
 } from "../editor/AsterismDecorations.js";
 import { generatedProseContent } from "../editor/generatedProse.js";
+import {
+  compositeDocument,
+  type ManuscriptScope,
+  scenesForScope,
+  selectionReplacementContent,
+} from "../editor/manuscriptDocument.js";
+import { trapFocusWithin } from "../utils/focus.js";
+import { updateSceneInTree } from "../utils/manuscript.js";
 import { ErrorNotice } from "./AppShell.js";
 import { EditorActionsContext, type GenerationOptions } from "./editor/EditorActionsContext.js";
 import { SceneBeat } from "./editor/sceneBeat.js";
 import { ModelSelect } from "./ModelSelect.js";
-export type ManuscriptScope =
-  | { kind: "scene"; id: string }
-  | { kind: "story" }
-  | { kind: "act"; id: string }
-  | { kind: "chapter"; id: string };
 
 type ActiveGeneration = {
   id: string | null;
@@ -90,24 +93,6 @@ type ActiveGeneration = {
   selection: { from: number; to: number } | null;
   contextFallback: boolean;
 };
-
-function trapSheetFocus(event: React.KeyboardEvent<HTMLElement>) {
-  if (event.key !== "Tab") return;
-  const controls = [
-    ...event.currentTarget.querySelectorAll<HTMLElement>(
-      "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
-    ),
-  ];
-  if (!controls.length) return;
-  const index = controls.indexOf(document.activeElement as HTMLElement);
-  const next = event.shiftKey
-    ? index <= 0
-      ? controls.length - 1
-      : index - 1
-    : (index + 1) % controls.length;
-  event.preventDefault();
-  controls[next]?.focus();
-}
 
 type SelectionMenu = {
   from: number;
@@ -482,131 +467,6 @@ const LockedSceneBoundaries = Extension.create({
   },
 });
 
-function scenesForScope(tree: ManuscriptTree, scope: ManuscriptScope): Scene[] {
-  if (scope.kind === "scene") {
-    return tree.acts
-      .flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes))
-      .filter((scene) => scene.id === scope.id);
-  }
-  return tree.acts
-    .filter((act) => scope.kind !== "act" || act.id === scope.id)
-    .flatMap((act) =>
-      act.chapters
-        .filter((chapter) => scope.kind !== "chapter" || chapter.id === scope.id)
-        .flatMap((chapter) => chapter.scenes),
-    );
-}
-
-export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope): JSONContent {
-  const labels = manuscriptLabels(tree);
-  const sceneBlock = (
-    scene: Scene,
-    actId: string,
-    chapterId: string,
-    isLastInChapter: boolean,
-    isLastInAct: boolean,
-  ): JSONContent => ({
-    type: "sceneBlock",
-    attrs: {
-      sceneId: scene.id,
-      title: scene.title,
-      version: scene.version,
-      position: scene.position,
-      displayLabel: labels.scenes.get(scene.id)?.label ?? "Scene",
-      actId,
-      chapterId,
-      isLastInChapter,
-      isLastInAct,
-    },
-    content: scene.document.content?.length
-      ? (scene.document.content as JSONContent[])
-      : [{ type: "paragraph" }],
-  });
-  if (scope.kind === "scene") {
-    let located:
-      | {
-          scene: Scene;
-          actId: string;
-          chapterId: string;
-          isLastInChapter: boolean;
-          isLastInAct: boolean;
-        }
-      | undefined;
-    for (const act of tree.acts) {
-      for (const chapter of act.chapters) {
-        const index = chapter.scenes.findIndex((scene) => scene.id === scope.id);
-        if (index >= 0) {
-          located = {
-            scene: chapter.scenes[index] as Scene,
-            actId: act.id,
-            chapterId: chapter.id,
-            isLastInChapter: index === chapter.scenes.length - 1,
-            isLastInAct:
-              index === chapter.scenes.length - 1 && act.chapters.at(-1)?.id === chapter.id,
-          };
-          break;
-        }
-      }
-      if (located) break;
-    }
-    return {
-      type: "doc",
-      content: located
-        ? [
-            sceneBlock(
-              located.scene,
-              located.actId,
-              located.chapterId,
-              located.isLastInChapter,
-              located.isLastInAct,
-            ),
-          ]
-        : [],
-    };
-  }
-  const content: JSONContent[] = [];
-  for (const act of tree.acts.filter((item) => scope.kind !== "act" || item.id === scope.id)) {
-    if (scope.kind !== "chapter") {
-      content.push({
-        type: "manuscriptHeading",
-        attrs: {
-          id: act.id,
-          level: "act",
-          title: act.title,
-          position: act.position,
-          ordinal: labels.acts.get(act.id)?.ordinal ?? 1,
-        },
-      });
-    }
-    for (const chapter of act.chapters.filter(
-      (item) => scope.kind !== "chapter" || item.id === scope.id,
-    )) {
-      content.push({
-        type: "manuscriptHeading",
-        attrs: {
-          id: chapter.id,
-          level: "chapter",
-          title: chapter.title,
-          position: chapter.position,
-          ordinal: labels.chapters.get(chapter.id)?.ordinal ?? 1,
-        },
-      });
-      for (const [sceneIndex, scene] of chapter.scenes.entries()) {
-        content.push(
-          sceneBlock(
-            scene,
-            act.id,
-            chapter.id,
-            sceneIndex === chapter.scenes.length - 1,
-            sceneIndex === chapter.scenes.length - 1 && act.chapters.at(-1)?.id === chapter.id,
-          ),
-        );
-      }
-    }
-  }
-  return { type: "doc", content };
-}
-
 function extractScene(editor: Editor, sceneId: string) {
   const found = sceneNode(editor, sceneId);
   if (!found) return null;
@@ -617,10 +477,6 @@ function extractScene(editor: Editor, sceneId: string) {
     contentStart: found.pos + 1,
     contentEnd: found.pos + found.node.nodeSize - 1,
   };
-}
-
-export function selectionReplacementContent(text: string, inline: boolean) {
-  return inline ? text.trim().replace(/\s*\n+\s*/g, " ") : generatedProseContent(text);
 }
 
 function refreshMentionDecorations(editor: Editor, entries: CompendiumEntry[]) {
@@ -1460,7 +1316,7 @@ export const ManuscriptEditor = forwardRef<
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-manuscript-navigator-title"
-            onKeyDown={trapSheetFocus}
+            onKeyDown={trapFocusWithin}
           >
             <div className="mobile-sheet-handle" />
             <header>
@@ -1546,7 +1402,7 @@ export const ManuscriptEditor = forwardRef<
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-writing-tools-title"
-            onKeyDown={trapSheetFocus}
+            onKeyDown={trapFocusWithin}
           >
             <div className="mobile-sheet-handle" />
             <header>
@@ -1831,7 +1687,7 @@ export const ManuscriptEditor = forwardRef<
               versionRefs.current.set(sceneId, remote.version);
               documentRefs.current.set(sceneId, JSON.stringify(remote.document));
               onSaved(remote);
-              editor.commands.setContent(compositeDocument(updateTreeScene(tree, remote), scope));
+              editor.commands.setContent(compositeDocument(updateSceneInTree(tree, remote), scope));
               setConflicts((current) => {
                 const next = new Set(current);
                 next.delete(sceneId);
@@ -1922,7 +1778,7 @@ export const ManuscriptEditor = forwardRef<
                       documentRefs.current.set(restored.id, JSON.stringify(restored.document));
                       onSaved(restored);
                       editor?.commands.setContent(
-                        compositeDocument(updateTreeScene(tree, restored), scope),
+                        compositeDocument(updateSceneInTree(tree, restored), scope),
                       );
                       setHistoryOpen(false);
                     }}
@@ -1938,16 +1794,3 @@ export const ManuscriptEditor = forwardRef<
     </div>
   );
 });
-
-function updateTreeScene(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
-  return {
-    ...tree,
-    acts: tree.acts.map((act) => ({
-      ...act,
-      chapters: act.chapters.map((chapter) => ({
-        ...chapter,
-        scenes: chapter.scenes.map((scene) => (scene.id === updated.id ? updated : scene)),
-      })),
-    })),
-  };
-}

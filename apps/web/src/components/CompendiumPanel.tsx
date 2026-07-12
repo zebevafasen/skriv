@@ -48,15 +48,30 @@ function entrySummary(entry: CompendiumEntry): string {
 
 function StoryTypeMenu({
   onSelect,
+  onDismiss,
   disabled,
   categories = [],
 }: {
   onSelect: (typeId: string) => void;
+  onDismiss?: () => void;
   disabled?: boolean;
   categories?: CompendiumCategory[];
 }) {
   return (
     <div className="new-entry-menu" role="menu" aria-label="Choose entry type">
+      <div className="new-entry-menu-header">
+        <strong>Choose a category</strong>
+        {onDismiss ? (
+          <button
+            type="button"
+            className="new-entry-menu-close"
+            aria-label="Close entry type menu"
+            onClick={onDismiss}
+          >
+            <X size={17} />
+          </button>
+        ) : null}
+      </div>
       <span className="new-entry-menu-label" role="presentation">
         System categories
       </span>
@@ -278,6 +293,7 @@ export function CompendiumPanel({
                   <StoryTypeMenu
                     categories={categories.data ?? []}
                     disabled={createEntry.isPending}
+                    onDismiss={() => setCreateMenuOpen(false)}
                     onSelect={(typeId) => createEntry.mutate(typeId)}
                   />
                 </div>
@@ -745,6 +761,7 @@ export function CompendiumEntryDrawer({
               {typeMenuOpen ? (
                 <StoryTypeMenu
                   categories={categories.data ?? []}
+                  onDismiss={() => setTypeMenuOpen(false)}
                   onSelect={(typeId) => {
                     setDraft({ ...draft, typeId });
                     setTypeMenuOpen(false);

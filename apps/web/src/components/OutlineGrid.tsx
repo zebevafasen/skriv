@@ -40,6 +40,7 @@ import {
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
+import { updateSceneInTree } from "../utils/manuscript.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
 
@@ -64,19 +65,6 @@ const labelColors: SceneLabelColor[] = [
 
 function wordCount(text: string): number {
   return text.trim() ? text.trim().split(/\s+/u).length : 0;
-}
-
-function updateScene(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
-  return {
-    ...tree,
-    acts: tree.acts.map((act) => ({
-      ...act,
-      chapters: act.chapters.map((chapter) => ({
-        ...chapter,
-        scenes: chapter.scenes.map((scene) => (scene.id === updated.id ? updated : scene)),
-      })),
-    })),
-  };
 }
 
 function SortableBox({
@@ -890,7 +878,7 @@ export function OutlineGrid({
                                                     onOpenScene={onOpenScene}
                                                     onOpenEntry={onOpenEntry}
                                                     onUpdated={(updated) =>
-                                                      setTree(updateScene(tree, updated))
+                                                      setTree(updateSceneInTree(tree, updated))
                                                     }
                                                     onRename={() =>
                                                       void rename(

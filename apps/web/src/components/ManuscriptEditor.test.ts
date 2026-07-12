@@ -1,6 +1,6 @@
 import type { ManuscriptTree, Scene } from "@asterism/contracts";
 import { describe, expect, it } from "vitest";
-import { compositeDocument, selectionReplacementContent } from "./ManuscriptEditor.js";
+import { compositeDocument, selectionReplacementContent } from "../editor/manuscriptDocument.js";
 
 const scene = (id: string, title: string, position: number): Scene => ({
   id,

@@ -1,12 +1,13 @@
-import type { AiSettings, CompendiumEntry, ManuscriptTree, Scene } from "@asterism/contracts";
+import type { AiSettings, CompendiumEntry, ManuscriptTree } from "@asterism/contracts";
 import { findMentions, manuscriptLabels } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   BookMarked,
   BookOpenText,
   Download,
   FileText,
+  Library,
   Lightbulb,
   MessageCircle,
   MoreHorizontal,
@@ -17,7 +18,9 @@ import {
   X,
 } from "lucide-react";
 import {
-  type KeyboardEvent as ReactKeyboardEvent,
+  lazy,
+  type ReactNode,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -26,53 +29,47 @@ import {
 } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
-import { ChatPanel } from "../components/ChatPanel.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { ExportDialog } from "../components/ExportDialog.js";
-import { IdeationPanel } from "../components/IdeationPanel.js";
-import {
-  ManuscriptEditor,
-  type ManuscriptEditorHandle,
-  type ManuscriptScope,
-} from "../components/ManuscriptEditor.js";
-import { OutlineGrid } from "../components/OutlineGrid.js";
-import { ProjectNotesPanel } from "../components/ProjectNotesPanel.js";
-import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel.js";
+import type { ManuscriptEditorHandle } from "../components/ManuscriptEditor.js";
+import type { ManuscriptScope } from "../editor/manuscriptDocument.js";
+import { trapFocusWithin } from "../utils/focus.js";
+import { updateSceneInTree } from "../utils/manuscript.js";
+
+const ChatPanel = lazy(() =>
+  import("../components/ChatPanel.js").then((module) => ({ default: module.ChatPanel })),
+);
+const IdeationPanel = lazy(() =>
+  import("../components/IdeationPanel.js").then((module) => ({ default: module.IdeationPanel })),
+);
+const ManuscriptEditor = lazy(() =>
+  import("../components/ManuscriptEditor.js").then((module) => ({
+    default: module.ManuscriptEditor,
+  })),
+);
+const OutlineGrid = lazy(() =>
+  import("../components/OutlineGrid.js").then((module) => ({ default: module.OutlineGrid })),
+);
+const ProjectNotesPanel = lazy(() =>
+  import("../components/ProjectNotesPanel.js").then((module) => ({
+    default: module.ProjectNotesPanel,
+  })),
+);
+const ProjectSettingsPanel = lazy(() =>
+  import("../components/ProjectSettingsPanel.js").then((module) => ({
+    default: module.ProjectSettingsPanel,
+  })),
+);
 
 type Tab = "manuscript" | "compendium" | "ideation" | "chat" | "settings";
 type ManuscriptView = "write" | "outline" | "notes";
 type Model = { id: string; name: string };
 
-function trapSheetFocus(event: ReactKeyboardEvent<HTMLElement>) {
-  if (event.key !== "Tab") return;
-  const controls = [
-    ...event.currentTarget.querySelectorAll<HTMLElement>(
-      "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
-    ),
-  ];
-  if (!controls.length) return;
-  const index = controls.indexOf(document.activeElement as HTMLElement);
-  const next = event.shiftKey
-    ? index <= 0
-      ? controls.length - 1
-      : index - 1
-    : (index + 1) % controls.length;
-  event.preventDefault();
-  controls[next]?.focus();
-}
-
-function updateScene(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
-  return {
-    ...tree,
-    acts: tree.acts.map((act) => ({
-      ...act,
-      chapters: act.chapters.map((chapter) => ({
-        ...chapter,
-        scenes: chapter.scenes.map((scene) => (scene.id === updated.id ? updated : scene)),
-      })),
-    })),
-  };
+function DeferredWorkspace({ name, children }: { name: string; children: ReactNode }) {
+  return (
+    <Suspense fallback={<div className="loading-state">Loading {name}…</div>}>{children}</Suspense>
+  );
 }
 
 function scopeValue(scope: ManuscriptScope): string {
@@ -104,7 +101,6 @@ export function ProjectPage() {
   const selectedEntryId = search.entry ?? null;
 
   useEffect(() => {
-    document.body.classList.add("project-route-active");
     const viewport = window.visualViewport;
     const updateViewport = () => {
       document.documentElement.style.setProperty(
@@ -121,7 +117,6 @@ export function ProjectPage() {
     viewport?.addEventListener("scroll", updateViewport);
     window.addEventListener("resize", updateViewport);
     return () => {
-      document.body.classList.remove("project-route-active");
       document.documentElement.style.removeProperty("--visual-viewport-height");
       document.documentElement.style.removeProperty("--visual-viewport-offset-top");
       viewport?.removeEventListener("resize", updateViewport);
@@ -281,6 +276,9 @@ export function ProjectPage() {
   return (
     <div className="project-workspace">
       <nav className="mobile-project-nav" aria-label="Project workspace">
+        <Link to="/" className="mobile-project-home" aria-label="Back to Projects">
+          <Library size={16} /> Projects
+        </Link>
         <button
           type="button"
           className={tab === "manuscript" && view === "write" ? "active" : ""}
@@ -603,38 +601,45 @@ export function ProjectPage() {
 
             <div className="manuscript-view-content">
               {view === "outline" ? (
-                <OutlineGrid
-                  projectId={projectId}
-                  tree={tree.data}
-                  entries={compendium.data ?? []}
-                  onOpenScene={selectScene}
-                  onOpenEntry={setPreviewEntryIds}
-                />
+                <DeferredWorkspace name="outline">
+                  <OutlineGrid
+                    projectId={projectId}
+                    tree={tree.data}
+                    entries={compendium.data ?? []}
+                    onOpenScene={selectScene}
+                    onOpenEntry={setPreviewEntryIds}
+                  />
+                </DeferredWorkspace>
               ) : view === "notes" ? (
-                <ProjectNotesPanel projectId={projectId} />
+                <DeferredWorkspace name="notes">
+                  <ProjectNotesPanel projectId={projectId} />
+                </DeferredWorkspace>
               ) : scope ? (
-                <ManuscriptEditor
-                  ref={editorRef}
-                  key={scopeValue(scope)}
-                  tree={tree.data}
-                  scope={scope}
-                  entries={compendium.data ?? []}
-                  baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
-                  models={
-                    models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]
-                  }
-                  onSaved={(updated) =>
-                    client.setQueryData<ManuscriptTree>(["project-tree", projectId], (current) =>
-                      current ? updateScene(current, updated) : current,
-                    )
-                  }
-                  onOpenEntry={(entryIds, direct) => {
-                    if (direct && entryIds.length === 1) void updateSearch({ entry: entryIds[0] });
-                    else setPreviewEntryIds(entryIds);
-                  }}
-                  onSelectScope={(nextScope) => void changeScope(nextScope)}
-                  onSelectScene={selectScene}
-                />
+                <DeferredWorkspace name="editor">
+                  <ManuscriptEditor
+                    ref={editorRef}
+                    key={scopeValue(scope)}
+                    tree={tree.data}
+                    scope={scope}
+                    entries={compendium.data ?? []}
+                    baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
+                    models={
+                      models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]
+                    }
+                    onSaved={(updated) =>
+                      client.setQueryData<ManuscriptTree>(["project-tree", projectId], (current) =>
+                        current ? updateSceneInTree(current, updated) : current,
+                      )
+                    }
+                    onOpenEntry={(entryIds, direct) => {
+                      if (direct && entryIds.length === 1)
+                        void updateSearch({ entry: entryIds[0] });
+                      else setPreviewEntryIds(entryIds);
+                    }}
+                    onSelectScope={(nextScope) => void changeScope(nextScope)}
+                    onSelectScene={selectScene}
+                  />
+                </DeferredWorkspace>
               ) : (
                 <div className="empty-editor">
                   <h2>Create a Scene to begin</h2>
@@ -651,7 +656,11 @@ export function ProjectPage() {
           </div>
         </div>
       ) : null}
-      {tab === "ideation" ? <IdeationPanel projectId={projectId} /> : null}
+      {tab === "ideation" ? (
+        <DeferredWorkspace name="ideation">
+          <IdeationPanel projectId={projectId} />
+        </DeferredWorkspace>
+      ) : null}
       {tab === "chat" ? (
         <div
           className={`manuscript-layout chat-layout ${compendiumOpen ? "compendium-open" : ""} ${selectedEntryId ? "entry-open" : ""}`}
@@ -663,16 +672,18 @@ export function ProjectPage() {
             onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
           />
           <div className="manuscript-main">
-            <ChatPanel
-              projectId={projectId}
-              tree={tree.data}
-              entries={compendium.data ?? []}
-              baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
-              models={models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]}
-              onOpenEntry={setPreviewEntryIds}
-              threadId={search.thread ?? null}
-              onThreadChange={(thread) => void updateSearch({ thread: thread ?? undefined })}
-            />
+            <DeferredWorkspace name="chat">
+              <ChatPanel
+                projectId={projectId}
+                tree={tree.data}
+                entries={compendium.data ?? []}
+                baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
+                models={models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]}
+                onOpenEntry={setPreviewEntryIds}
+                threadId={search.thread ?? null}
+                onThreadChange={(thread) => void updateSearch({ thread: thread ?? undefined })}
+              />
+            </DeferredWorkspace>
             <CompendiumEntryDrawer
               projectId={projectId}
               entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
@@ -683,11 +694,13 @@ export function ProjectPage() {
         </div>
       ) : null}
       {tab === "settings" ? (
-        <ProjectSettingsPanel
-          projectId={projectId}
-          project={tree.data.project}
-          entries={compendium.data ?? []}
-        />
+        <DeferredWorkspace name="project settings">
+          <ProjectSettingsPanel
+            projectId={projectId}
+            project={tree.data.project}
+            entries={compendium.data ?? []}
+          />
+        </DeferredWorkspace>
       ) : null}
 
       {moreOpen ? (
@@ -703,7 +716,7 @@ export function ProjectPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-project-menu-title"
-            onKeyDown={trapSheetFocus}
+            onKeyDown={trapFocusWithin}
           >
             <div className="mobile-sheet-handle" />
             <header>
