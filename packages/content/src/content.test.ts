@@ -6,7 +6,7 @@ describe("base content package", () => {
     expect(validateBuiltinContent().id).toBe("asterism.base");
     expect(basePackage.genres).toHaveLength(35);
     expect(basePackage.themes).toHaveLength(41);
-    expect(basePackage.tags).toHaveLength(269);
+    expect(basePackage.tags).toHaveLength(806);
     expect(basePackage.genres.map((genre) => genre.id)).not.toContain("genre.cozy_fantasy");
     expect(basePackage.genres.map((genre) => genre.id)).not.toContain("genre.romantic_comedy");
     expect(basePackage.tags.map((tag) => tag.id)).not.toEqual(
@@ -29,6 +29,8 @@ describe("base content package", () => {
       "Supernatural",
       "Solarpunk",
       "Literary",
+      "Erotica",
+      "Crime & Noir",
       "All",
     ]);
     expect(getBuiltinPrompt("prose.continue").ownership).toBe("builtin");
