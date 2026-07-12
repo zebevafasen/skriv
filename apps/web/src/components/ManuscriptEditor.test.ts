@@ -1,6 +1,6 @@
 import type { ManuscriptTree, Scene } from "@asterism/contracts";
 import { describe, expect, it } from "vitest";
-import { compositeDocument } from "./ManuscriptEditor.js";
+import { compositeDocument, selectionReplacementContent } from "./ManuscriptEditor.js";
 
 const scene = (id: string, title: string, position: number): Scene => ({
   id,
@@ -73,5 +73,18 @@ describe("composite manuscript documents", () => {
     const blocks = document.content?.filter((node) => node.type === "sceneBlock") ?? [];
     expect(blocks.map((block) => block.attrs?.sceneId)).toEqual([first.id, second.id]);
     expect(blocks[1]?.content?.[0]?.content?.[0]?.text).toBe("Second");
+  });
+
+  it("normalizes inline AI replacements without creating block nodes", () => {
+    expect(selectionReplacementContent(" First line\nsecond line ", true)).toBe(
+      "First line second line",
+    );
+  });
+
+  it("parses multi-paragraph AI replacements into Tiptap blocks", () => {
+    expect(selectionReplacementContent("First paragraph.\n\nSecond paragraph.", false)).toEqual([
+      { type: "paragraph", content: [{ type: "text", text: "First paragraph." }] },
+      { type: "paragraph", content: [{ type: "text", text: "Second paragraph." }] },
+    ]);
   });
 });

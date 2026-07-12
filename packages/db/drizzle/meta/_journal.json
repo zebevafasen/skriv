@@ -50,6 +50,13 @@
       "when": 1783803600000,
       "tag": "0006_remove_project_instructions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783818831137,
+      "tag": "0007_editor_settings",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,10 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 export type EditorMention = { from: number; to: number; entryIds: string[] };
 type DecorationState = {
-  candidate: { position: number; text: string } | null;
+  candidate:
+    | { kind: "insertion"; position: number; text: string }
+    | { kind: "replacement"; from: number; to: number; text: string }
+    | null;
   mentions: EditorMention[];
 };
 const key = new PluginKey<DecorationState>("asterismDecorations");
@@ -20,10 +23,16 @@ export const AsterismDecorations = Extension.create({
           apply(transaction, previous) {
             const metadata = transaction.getMeta(key) as Partial<DecorationState> | undefined;
             const mappedCandidate = previous.candidate
-              ? {
-                  ...previous.candidate,
-                  position: transaction.mapping.map(previous.candidate.position),
-                }
+              ? previous.candidate.kind === "insertion"
+                ? {
+                    ...previous.candidate,
+                    position: transaction.mapping.map(previous.candidate.position),
+                  }
+                : {
+                    ...previous.candidate,
+                    from: transaction.mapping.map(previous.candidate.from),
+                    to: transaction.mapping.map(previous.candidate.to),
+                  }
               : null;
             return {
               candidate:
@@ -53,9 +62,17 @@ export const AsterismDecorations = Extension.create({
             );
             if (pluginState.candidate) {
               const candidate = pluginState.candidate;
+              const position = candidate.kind === "insertion" ? candidate.position : candidate.from;
+              if (candidate.kind === "replacement") {
+                decorations.push(
+                  Decoration.inline(candidate.from, candidate.to, {
+                    class: "temporary-generation-source",
+                  }),
+                );
+              }
               decorations.push(
                 Decoration.widget(
-                  Math.min(candidate.position, state.doc.content.size),
+                  Math.min(position, state.doc.content.size),
                   () => {
                     const wrapper = document.createElement("span");
                     wrapper.className = "temporary-generation";

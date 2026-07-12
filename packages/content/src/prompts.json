@@ -129,6 +129,44 @@
     "updatedAt": null
   },
   {
+    "id": "builtin.prose.revise_selection.default",
+    "name": "Default Revise Selection",
+    "workflow": "prose.revise_selection",
+    "version": 1,
+    "description": "Revises selected manuscript prose while preserving surrounding continuity.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are an expert fiction editor. Revise only the supplied selected prose. Preserve its established facts, voice, tense, language, point of view, character intent, and compatibility with the surrounding manuscript. Return replacement prose only, with no explanation, quotation marks, labels, or markdown fences."
+      },
+      {
+        "role": "user",
+        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}\n\nClosest canonical style-reference prose:\n{{style_reference_prose}}\n\nProject writing rules:\n- Write in {{story_tense}} tense.\n- Language: {{story_language}}\n- Point of view: {{story_pov}}\n- Point-of-view character: {{pov_character}}\n\nProse immediately before the selection:\n{{manuscript_before_selection}}\n\nSelected prose to replace:\n{{selected_text}}\n\nProse immediately after the selection:\n{{manuscript_after_selection}}\n\nRevision action: {{selection_action}}\nAdditional instructions: {{user_instructions}}\nLength guidance: {{target_length}}\n\nReturn only the revised replacement prose."
+      }
+    ],
+    "variables": [
+      "context_package",
+      "current_scene_summary",
+      "prior_scene_summaries",
+      "style_reference_prose",
+      "manuscript_before_selection",
+      "selected_text",
+      "manuscript_after_selection",
+      "selection_action",
+      "user_instructions",
+      "target_length",
+      "story_tense",
+      "story_language",
+      "story_pov",
+      "pov_character"
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
     "id": "builtin.ideation.premise.default",
     "name": "Default Premise Generation",
     "workflow": "ideation.premise",

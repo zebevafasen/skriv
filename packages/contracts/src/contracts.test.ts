@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { generationRequestSchema, promptDefinitionSchema, sceneMetadataSchema } from "./index.js";
+import {
+  editorSettingsSchema,
+  generationRequestSchema,
+  promptDefinitionSchema,
+  sceneMetadataSchema,
+  selectionActionSchema,
+} from "./index.js";
 
 describe("shared contracts", () => {
   it("requires an event for toward-event generation", () => {
@@ -28,6 +34,54 @@ describe("shared contracts", () => {
       lengthUnit: "words",
     });
     expect(result.success).toBe(true);
+  });
+
+  it("validates every selection revision action", () => {
+    for (const selectionAction of selectionActionSchema.options) {
+      const result = generationRequestSchema.safeParse({
+        sceneId: crypto.randomUUID(),
+        sceneVersion: 1,
+        workflow: "prose.revise_selection",
+        selectionAction,
+        selectedText: "The rain crossed the glass.",
+        cursorPosition: 5,
+        manuscriptBeforeCursor: "Before.",
+        manuscriptAfterCursor: "After.",
+        instructions: selectionAction === "custom" ? "Make it ominous." : "",
+        targetLength: 6,
+        lengthUnit: "words",
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("requires instructions for custom selection revisions", () => {
+    const result = generationRequestSchema.safeParse({
+      sceneId: crypto.randomUUID(),
+      sceneVersion: 1,
+      workflow: "prose.revise_selection",
+      selectionAction: "custom",
+      selectedText: "A sentence.",
+      cursorPosition: 0,
+      manuscriptBeforeCursor: "",
+      manuscriptAfterCursor: "",
+      targetLength: null,
+      lengthUnit: "words",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("provides bounded editor typography defaults", () => {
+    expect(editorSettingsSchema.parse({})).toEqual({
+      fontFamily: "literary",
+      fontSize: 20,
+      lineHeight: 1.85,
+      paragraphSpacing: 1.15,
+      firstLineIndent: 0,
+      pageWidth: 920,
+      textAlign: "left",
+    });
+    expect(editorSettingsSchema.safeParse({ fontSize: 17 }).success).toBe(false);
   });
 
   it("accepts immutable built-in prompt definitions", () => {

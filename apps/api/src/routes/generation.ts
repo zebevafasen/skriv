@@ -72,7 +72,14 @@ async function assembleContext(
     );
   const before = input.manuscriptBeforeCursor.slice(-12_000);
   const after = input.manuscriptAfterCursor.slice(0, 2_000);
-  const scanText = [before, after, scene.metadata.summary, input.instructions, input.eventTarget]
+  const scanText = [
+    before,
+    "selectedText" in input ? input.selectedText : "",
+    after,
+    scene.metadata.summary,
+    input.instructions,
+    input.eventTarget,
+  ]
     .filter(Boolean)
     .join("\n");
   const discovered = discoverEntries({
@@ -259,6 +266,17 @@ export async function registerGenerationRoutes(
         input.targetLength === null
           ? "as much prose as the scene needs; there is no requested word or paragraph limit"
           : `${input.targetLength} ${input.lengthUnit}`;
+      const selectionAction =
+        input.workflow === "prose.revise_selection"
+          ? {
+              expand: "Expand the selection with meaningful detail while preserving its purpose.",
+              shorten: "Shorten the selection without losing essential information or voice.",
+              rephrase:
+                "Rephrase the selection while preserving its meaning and approximate length.",
+              polish: "Polish clarity, rhythm, grammar, and style without changing its meaning.",
+              custom: "Follow the additional revision instructions exactly.",
+            }[input.selectionAction]
+          : "";
 
       let povCharacterName: string | null = null;
       if (ownedRecord.project.settings.povCharacterEntryId) {
@@ -280,6 +298,10 @@ export async function registerGenerationRoutes(
             input.manuscriptBeforeCursor.trim().slice(-STYLE_REFERENCE_LIMIT) ||
             planningContext.previousProse,
           manuscript_after_cursor: input.manuscriptAfterCursor.slice(0, 2_000),
+          manuscript_before_selection: input.manuscriptBeforeCursor.slice(-2_000),
+          selected_text: input.workflow === "prose.revise_selection" ? input.selectedText : "",
+          manuscript_after_selection: input.manuscriptAfterCursor.slice(0, 2_000),
+          selection_action: selectionAction,
           event_target: input.eventTarget,
           user_instructions: input.instructions,
           target_length: targetLength,

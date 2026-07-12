@@ -1,6 +1,7 @@
 import type {
   ChatContextSource,
   CompendiumContent,
+  EditorSettings,
   ProjectSettings,
   PromptMessage,
   SceneMetadata,
@@ -15,6 +16,7 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -115,7 +117,10 @@ export const projects = pgTable("projects", {
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  settings: jsonb("settings").$type<ProjectSettings>().notNull().default({} as any),
+  settings: jsonb("settings")
+    .$type<ProjectSettings>()
+    .notNull()
+    .default({} as any),
   ...timestamps,
 });
 
@@ -240,6 +245,26 @@ export const aiSettings = pgTable("ai_settings", {
   contextModel: text("context_model").notNull().default("asterism/fake-context"),
   smartContextEnabled: boolean("smart_context_enabled").notNull().default(true),
   recursionDepth: integer("recursion_depth").notNull().default(2),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const editorSettings = pgTable("editor_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  fontFamily: text("font_family", { enum: ["literary", "classic", "sans"] })
+    .$type<EditorSettings["fontFamily"]>()
+    .notNull()
+    .default("literary"),
+  fontSize: integer("font_size").notNull().default(20),
+  lineHeight: real("line_height").notNull().default(1.85),
+  paragraphSpacing: real("paragraph_spacing").notNull().default(1.15),
+  firstLineIndent: real("first_line_indent").notNull().default(0),
+  pageWidth: integer("page_width").notNull().default(920),
+  textAlign: text("text_align", { enum: ["left", "justify", "center", "right"] })
+    .$type<EditorSettings["textAlign"]>()
+    .notNull()
+    .default("left"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

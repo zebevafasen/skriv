@@ -1,16 +1,26 @@
 import type {
   CompendiumEntry,
+  EditorSettings,
   GenerationRequest,
   GenerationStreamEvent,
   ManuscriptTree,
   Scene,
+  SelectionAction,
 } from "@asterism/contracts";
 import { findMentions } from "@asterism/core";
-import { useQueryClient } from "@tanstack/react-query";
-import { type Editor, Extension, type JSONContent, mergeAttributes, Node, markInputRule, markPasteRule } from "@tiptap/core";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type Editor,
+  Extension,
+  type JSONContent,
+  markInputRule,
+  markPasteRule,
+  mergeAttributes,
+  Node,
+} from "@tiptap/core";
 import Italic from "@tiptap/extension-italic";
-import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
 import {
@@ -29,13 +39,16 @@ import {
   Clipboard,
   History,
   Plus,
+  Redo2,
   RefreshCw,
   RotateCcw,
   Sparkles,
   Trash2,
+  Undo2,
   X,
 } from "lucide-react";
 import React, {
+  type CSSProperties,
   forwardRef,
   useCallback,
   useEffect,
@@ -54,6 +67,7 @@ import { generatedProseContent } from "../editor/generatedProse.js";
 import { ErrorNotice } from "./AppShell.js";
 import { EditorActionsContext, type GenerationOptions } from "./editor/EditorActionsContext.js";
 import { SceneBeat } from "./editor/sceneBeat.js";
+import { ModelSelect } from "./ModelSelect.js";
 export type ManuscriptScope =
   | { kind: "scene"; id: string }
   | { kind: "story" }
@@ -67,8 +81,48 @@ type ActiveGeneration = {
   text: string;
   status: "streaming" | "complete" | "failed";
   options: GenerationOptions;
+  selection: { from: number; to: number } | null;
   contextFallback: boolean;
 };
+
+type SelectionMenu = {
+  from: number;
+  to: number;
+  sceneId: string;
+  text: string;
+  top: number;
+  left: number;
+};
+
+type SelectionPanel = SelectionMenu & {
+  action: SelectionAction;
+  instructions: string;
+  modelOverride: string | null;
+};
+
+const editorSettingsDefaults: EditorSettings = {
+  fontFamily: "literary",
+  fontSize: 20,
+  lineHeight: 1.85,
+  paragraphSpacing: 1.15,
+  firstLineIndent: 0,
+  pageWidth: 920,
+  textAlign: "left",
+};
+
+const editorFontStacks: Record<EditorSettings["fontFamily"], string> = {
+  literary: "var(--serif)",
+  classic: 'Georgia, "Times New Roman", serif',
+  sans: "var(--sans)",
+};
+
+const selectionActions: Array<{ action: SelectionAction; label: string }> = [
+  { action: "expand", label: "Expand" },
+  { action: "rephrase", label: "Rephrase" },
+  { action: "shorten", label: "Shorten" },
+  { action: "polish", label: "Polish" },
+  { action: "custom", label: "Custom" },
+];
 
 type SceneRevision = { id: string; version: number; reason: string; createdAt: string };
 
@@ -145,7 +199,7 @@ const ManuscriptHeadingView = (props: NodeViewProps) => {
     if (pos === undefined) return;
     const actId = findActIdBackward(props.editor, pos);
     if (!actId) return;
-    const chapter = await api<any>(`/api/acts/${actId}/chapters`, {
+    const chapter = await api<{ id: string; position: number }>(`/api/acts/${actId}/chapters`, {
       method: "POST",
       body: JSON.stringify({ title: "" }),
     });
@@ -173,11 +227,14 @@ const ManuscriptHeadingView = (props: NodeViewProps) => {
   const createActBefore = async () => {
     const projectIdMatch = window.location.pathname.match(/\/projects\/([^/]+)/);
     if (!projectIdMatch) return;
-    const act = await api<any>(`/api/projects/${projectIdMatch[1]}/acts`, {
-      method: "POST",
-      body: JSON.stringify({ title: "" }),
-    });
-    const chapter = await api<any>(`/api/acts/${act.id}/chapters`, {
+    const act = await api<{ id: string; position: number }>(
+      `/api/projects/${projectIdMatch[1]}/acts`,
+      {
+        method: "POST",
+        body: JSON.stringify({ title: "" }),
+      },
+    );
+    const chapter = await api<{ id: string; position: number }>(`/api/acts/${act.id}/chapters`, {
       method: "POST",
       body: JSON.stringify({ title: "" }),
     });
@@ -599,6 +656,10 @@ function extractScene(editor: Editor, sceneId: string) {
   };
 }
 
+export function selectionReplacementContent(text: string, inline: boolean) {
+  return inline ? text.trim().replace(/\s*\n+\s*/g, " ") : generatedProseContent(text);
+}
+
 function refreshMentionDecorations(editor: Editor, entries: CompendiumEntry[]) {
   const mentions: Array<{ from: number; to: number; entryIds: string[] }> = [];
   editor.state.doc.descendants((node, position) => {
@@ -632,9 +693,13 @@ export const ManuscriptEditor = forwardRef<
   { tree, scope, entries, baseModel, models, onSaved, onOpenEntry, onSelectScene },
   ref,
 ) {
+  const queryClient = useQueryClient();
   const visibleScenes = useMemo(() => scenesForScope(tree, scope), [tree, scope]);
   const scopeKey = `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [typographyOpen, setTypographyOpen] = useState(false);
+  const [editorSettings, setEditorSettings] = useState<EditorSettings>(editorSettingsDefaults);
+  const [selectionMenu, setSelectionMenu] = useState<SelectionMenu | null>(null);
+  const [selectionPanel, setSelectionPanel] = useState<SelectionPanel | null>(null);
   const [active, setActive] = useState<ActiveGeneration | null>(null);
   const [activeSceneId, setActiveSceneId] = useState(visibleScenes[0]?.id ?? "");
   const [error, setError] = useState<unknown>(null);
@@ -653,6 +718,21 @@ export const ManuscriptEditor = forwardRef<
   const entriesRef = useRef(entries);
   const cursorRef = useRef(1);
   const abortRef = useRef<AbortController | null>(null);
+  const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsQuery = useQuery({
+    queryKey: ["editor-settings"],
+    queryFn: () => api<EditorSettings>("/api/settings/editor"),
+  });
+  const settingsMutation = useMutation({
+    mutationFn: (value: EditorSettings) =>
+      api<EditorSettings>("/api/settings/editor", {
+        method: "PATCH",
+        body: JSON.stringify(value),
+      }),
+    onSuccess: (value) => {
+      queryClient.setQueryData(["editor-settings"], value);
+    },
+  });
 
   const saveScene = useCallback(async (editor: Editor, sceneId: string) => {
     const extracted = extractScene(editor, sceneId);
@@ -687,11 +767,8 @@ export const ManuscriptEditor = forwardRef<
       extensions: [
         StarterKit.configure({
           document: false,
-          heading: false,
+          heading: { levels: [1, 2, 3] },
           codeBlock: false,
-          blockquote: false,
-          bulletList: false,
-          orderedList: false,
           italic: false,
         }),
         CustomItalic,
@@ -744,6 +821,31 @@ export const ManuscriptEditor = forwardRef<
         cursorRef.current = current.state.selection.from;
         const sceneId = sceneIdAt(current, cursorRef.current);
         if (sceneId) setActiveSceneId(sceneId);
+        const { from, to, empty } = current.state.selection;
+        const toSceneId = empty ? null : sceneIdAt(current, Math.max(from, to - 1));
+        if (empty || !sceneId || sceneId !== toSceneId || activeRef.current) {
+          setSelectionMenu(null);
+          return;
+        }
+        const text = current.state.doc.textBetween(from, to, "\n\n").trim();
+        if (!text) {
+          setSelectionMenu(null);
+          return;
+        }
+        const start = current.view.coordsAtPos(from);
+        const end = current.view.coordsAtPos(to);
+        const horizontalMargin = Math.min(290, window.innerWidth / 2);
+        setSelectionMenu({
+          from,
+          to,
+          sceneId,
+          text,
+          top: Math.max(12, Math.min(start.top, end.top) - 92),
+          left: Math.max(
+            horizontalMargin,
+            Math.min((start.left + end.right) / 2, window.innerWidth - horizontalMargin),
+          ),
+        });
       },
       onUpdate({ editor: current, transaction }) {
         if (transaction.getMeta("remote-scene") || activeRef.current) return;
@@ -783,10 +885,32 @@ export const ManuscriptEditor = forwardRef<
     refreshMentionDecorations(editor, entries);
   }, [editor, entries]);
   useEffect(() => {
+    if (settingsQuery.data) setEditorSettings(settingsQuery.data);
+  }, [settingsQuery.data]);
+  useEffect(() => {
+    const closeOverlays = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || activeRef.current) return;
+      setTypographyOpen(false);
+      setSelectionMenu(null);
+      setSelectionPanel(null);
+    };
+    document.addEventListener("keydown", closeOverlays);
+    return () => document.removeEventListener("keydown", closeOverlays);
+  }, []);
+  useEffect(() => {
     if (!editor) return;
     setCandidateDecoration(
       editor,
-      active ? { position: active.position, text: active.text } : null,
+      active
+        ? active.selection
+          ? {
+              kind: "replacement",
+              from: active.selection.from,
+              to: active.selection.to,
+              text: active.text,
+            }
+          : { kind: "insertion", position: active.position, text: active.text }
+        : null,
     );
     editor.setEditable(!active);
   }, [active, editor]);
@@ -794,6 +918,7 @@ export const ManuscriptEditor = forwardRef<
     () => () => {
       for (const timer of saveTimers.current.values()) clearTimeout(timer);
       if (mentionTimer.current) clearTimeout(mentionTimer.current);
+      if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current);
       if (editor) {
         for (const sceneId of saveTimers.current.keys()) void saveScene(editor, sceneId);
       }
@@ -816,7 +941,11 @@ export const ManuscriptEditor = forwardRef<
   const startGeneration = useCallback(
     async (options: GenerationOptions, positionOverride?: number) => {
       if (!editor) return;
-      const position = positionOverride ?? cursorRef.current;
+      const position =
+        positionOverride ??
+        (options.workflow === "prose.revise_selection" ? options.selectionFrom : cursorRef.current);
+      const selectionEnd =
+        options.workflow === "prose.revise_selection" ? options.selectionTo : position;
       const sceneId = sceneIdAt(editor, position);
       if (!sceneId) return;
       await saveScene(editor, sceneId);
@@ -824,7 +953,8 @@ export const ManuscriptEditor = forwardRef<
       const scene = visibleScenes.find((candidate) => candidate.id === sceneId);
       if (!extracted || !scene) return;
       const localPosition = Math.max(1, position - extracted.contentStart + 1);
-      setMenuOpen(false);
+      setSelectionMenu(null);
+      setSelectionPanel(null);
       setError(null);
       const controller = new AbortController();
       abortRef.current = controller;
@@ -835,19 +965,26 @@ export const ManuscriptEditor = forwardRef<
         text: "",
         status: "streaming",
         options,
+        selection:
+          options.workflow === "prose.revise_selection"
+            ? { from: options.selectionFrom, to: options.selectionTo }
+            : null,
         contextFallback: false,
       });
-      const request: GenerationRequest = {
+      const requestBase = {
         sceneId,
         sceneVersion: versionRefs.current.get(sceneId) ?? scene.version,
-        workflow: options.workflow,
         cursorPosition: localPosition,
         manuscriptBeforeCursor: editor.state.doc.textBetween(
           extracted.contentStart,
           position,
           "\n\n",
         ),
-        manuscriptAfterCursor: editor.state.doc.textBetween(position, extracted.contentEnd, "\n\n"),
+        manuscriptAfterCursor: editor.state.doc.textBetween(
+          selectionEnd,
+          extracted.contentEnd,
+          "\n\n",
+        ),
         instructions: options.instructions,
         eventTarget: options.eventTarget,
         targetLength: options.targetLength,
@@ -855,6 +992,15 @@ export const ManuscriptEditor = forwardRef<
         modelOverride: options.modelOverride,
         promptOverrideId: null,
       };
+      const request: GenerationRequest =
+        options.workflow === "prose.revise_selection"
+          ? {
+              ...requestBase,
+              workflow: options.workflow,
+              selectionAction: options.selectionAction,
+              selectedText: options.selectedText,
+            }
+          : { ...requestBase, workflow: options.workflow };
       try {
         await streamGeneration(
           request,
@@ -892,7 +1038,23 @@ export const ManuscriptEditor = forwardRef<
   const accept = async () => {
     if (!editor || !active?.id) return;
     const original = editor.getJSON();
-    editor.commands.insertContentAt(active.position, generatedProseContent(active.text));
+    if (active.selection) {
+      const from = editor.state.doc.resolve(active.selection.from);
+      const to = editor.state.doc.resolve(active.selection.to);
+      if (from.sameParent(to) && from.parent.isTextblock) {
+        editor.commands.insertContentAt(
+          active.selection,
+          selectionReplacementContent(active.text, true),
+        );
+      } else {
+        editor.commands.insertContentAt(
+          active.selection,
+          selectionReplacementContent(active.text, false),
+        );
+      }
+    } else {
+      editor.commands.insertContentAt(active.position, generatedProseContent(active.text));
+    }
     const extracted = extractScene(editor, active.sceneId);
     if (!extracted) return;
     try {
@@ -908,6 +1070,8 @@ export const ManuscriptEditor = forwardRef<
       documentRefs.current.set(updated.id, JSON.stringify(updated.document));
       onSaved(updated);
       setActive(null);
+      setSelectionMenu(null);
+      setSelectionPanel(null);
     } catch (acceptError) {
       editor.commands.setContent(original);
       setError(acceptError);
@@ -917,12 +1081,16 @@ export const ManuscriptEditor = forwardRef<
     if (active?.id)
       await api(`/api/generations/${active.id}/reject`, { method: "POST" }).catch(setError);
     setActive(null);
+    setSelectionMenu(null);
+    setSelectionPanel(null);
   };
   const cancel = async () => {
     abortRef.current?.abort();
     if (active?.id)
       await api(`/api/generations/${active.id}/cancel`, { method: "POST" }).catch(() => undefined);
     setActive(null);
+    setSelectionMenu(null);
+    setSelectionPanel(null);
   };
   const loadHistory = async () => {
     if (!activeSceneId) return;
@@ -934,16 +1102,57 @@ export const ManuscriptEditor = forwardRef<
     }
   };
 
-  const queryClient = useQueryClient();
-
   const allScenes = tree.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes));
   const selectedIndex = allScenes.findIndex((scene) => scene.id === activeSceneId);
   const activeScene = allScenes[selectedIndex];
   const previousScene = selectedIndex > 0 ? allScenes[selectedIndex - 1] : undefined;
   const nextScene = selectedIndex >= 0 ? allScenes[selectedIndex + 1] : undefined;
+  const selectedWordCount = selectionMenu?.text.split(/\s+/).length ?? 0;
+  const editorStyle = {
+    "--manuscript-font-family": editorFontStacks[editorSettings.fontFamily],
+    "--manuscript-font-size": `${editorSettings.fontSize}px`,
+    "--manuscript-line-height": String(editorSettings.lineHeight),
+    "--manuscript-paragraph-spacing": `${editorSettings.paragraphSpacing}em`,
+    "--manuscript-first-line-indent": `${editorSettings.firstLineIndent}em`,
+    "--manuscript-page-width": `${editorSettings.pageWidth}px`,
+    "--manuscript-text-align": editorSettings.textAlign,
+  } as CSSProperties;
+  const updateEditorSetting = <Key extends keyof EditorSettings>(
+    key: Key,
+    value: EditorSettings[Key],
+  ) => {
+    const next = { ...editorSettings, [key]: value };
+    setEditorSettings(next);
+    if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current);
+    settingsSaveTimer.current = setTimeout(() => settingsMutation.mutate(next), 350);
+  };
+  const generateSelectionRevision = () => {
+    if (!selectionPanel) return;
+    const wordCount = Math.max(1, selectionPanel.text.trim().split(/\s+/).length);
+    const targetLength =
+      selectionPanel.action === "expand"
+        ? Math.ceil(wordCount * 1.5)
+        : selectionPanel.action === "shorten"
+          ? Math.max(1, Math.ceil(wordCount * 0.6))
+          : selectionPanel.action === "custom"
+            ? null
+            : wordCount;
+    void startGeneration({
+      workflow: "prose.revise_selection",
+      selectionAction: selectionPanel.action,
+      selectedText: selectionPanel.text,
+      selectionFrom: selectionPanel.from,
+      selectionTo: selectionPanel.to,
+      instructions: selectionPanel.instructions,
+      eventTarget: "",
+      targetLength,
+      lengthUnit: "words",
+      modelOverride: selectionPanel.modelOverride,
+    });
+  };
 
   return (
-    <div className="editor-column continuous-editor-column">
+    <div className="editor-column continuous-editor-column" style={editorStyle}>
       <div className="editor-header manuscript-scope-header">
         <div>
           <p className="eyebrow">{scope.kind === "scene" ? "Scene" : "Continuous manuscript"}</p>
@@ -978,13 +1187,166 @@ export const ManuscriptEditor = forwardRef<
       <div className="editor-body">
         <div className="editor-frame continuous-editor-frame">
           <div className="editor-toolbar">
-            <button type="button" onClick={() => editor?.chain().focus().toggleBold().run()}>
-              B
+            <button
+              type="button"
+              aria-label="Undo"
+              disabled={!editor?.can().chain().focus().undo().run()}
+              onClick={() => editor?.chain().focus().undo().run()}
+            >
+              <Undo2 size={15} />
             </button>
-            <button type="button" onClick={() => editor?.chain().focus().toggleItalic().run()}>
-              <em>I</em>
+            <button
+              type="button"
+              aria-label="Redo"
+              disabled={!editor?.can().chain().focus().redo().run()}
+              onClick={() => editor?.chain().focus().redo().run()}
+            >
+              <Redo2 size={15} />
             </button>
             <span />
+            <div className="typography-control">
+              <button
+                type="button"
+                className={typographyOpen ? "active" : ""}
+                aria-label="Typography settings"
+                aria-expanded={typographyOpen}
+                onClick={() => setTypographyOpen((value) => !value)}
+              >
+                Aa
+              </button>
+              {typographyOpen ? (
+                <div className="typography-menu">
+                  <div className="typography-menu-heading">
+                    <strong>Typography</strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current);
+                        setEditorSettings(editorSettingsDefaults);
+                        settingsMutation.mutate(editorSettingsDefaults);
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <label>
+                    Font
+                    <select
+                      value={editorSettings.fontFamily}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "fontFamily",
+                          event.target.value as EditorSettings["fontFamily"],
+                        )
+                      }
+                    >
+                      <option value="literary">Literary serif</option>
+                      <option value="classic">Classic serif</option>
+                      <option value="sans">Readable sans-serif</option>
+                    </select>
+                  </label>
+                  <label>
+                    Font size
+                    <select
+                      value={editorSettings.fontSize}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "fontSize",
+                          Number(event.target.value) as EditorSettings["fontSize"],
+                        )
+                      }
+                    >
+                      {[16, 18, 20, 22, 24].map((value) => (
+                        <option key={value} value={value}>{`${value}px`}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Line spacing
+                    <select
+                      value={editorSettings.lineHeight}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "lineHeight",
+                          Number(event.target.value) as EditorSettings["lineHeight"],
+                        )
+                      }
+                    >
+                      {[1.4, 1.6, 1.85, 2].map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Paragraph spacing
+                    <select
+                      value={editorSettings.paragraphSpacing}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "paragraphSpacing",
+                          Number(event.target.value) as EditorSettings["paragraphSpacing"],
+                        )
+                      }
+                    >
+                      {[0.5, 0.85, 1.15, 1.5].map((value) => (
+                        <option key={value} value={value}>{`${value}em`}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    First-line indent
+                    <select
+                      value={editorSettings.firstLineIndent}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "firstLineIndent",
+                          Number(event.target.value) as EditorSettings["firstLineIndent"],
+                        )
+                      }
+                    >
+                      {[0, 1, 1.5, 2].map((value) => (
+                        <option key={value} value={value}>{`${value}em`}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Page width
+                    <select
+                      value={editorSettings.pageWidth}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "pageWidth",
+                          Number(event.target.value) as EditorSettings["pageWidth"],
+                        )
+                      }
+                    >
+                      {[640, 760, 920, 1080].map((value) => (
+                        <option key={value} value={value}>{`${value}px`}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Alignment
+                    <select
+                      value={editorSettings.textAlign}
+                      onChange={(event) =>
+                        updateEditorSetting(
+                          "textAlign",
+                          event.target.value as EditorSettings["textAlign"],
+                        )
+                      }
+                    >
+                      <option value="left">Left</option>
+                      <option value="justify">Justified</option>
+                      <option value="center">Centered</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </label>
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className="ai-command"
@@ -1051,6 +1413,209 @@ export const ManuscriptEditor = forwardRef<
           })}
         </nav>
       </div>
+      {selectionMenu && !selectionPanel && !active ? (
+        <div
+          className="selection-action-menu"
+          role="toolbar"
+          aria-label="Revise selected text"
+          style={{ top: selectionMenu.top, left: selectionMenu.left }}
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          <div className="selection-format-row">
+            <span className="selection-word-count">
+              {selectedWordCount} {selectedWordCount === 1 ? "word" : "words"}
+            </span>
+            <span className="selection-menu-divider" />
+            <button
+              type="button"
+              className={editor?.isActive("bold") ? "active" : ""}
+              aria-label="Bold"
+              title="Bold (**text**)"
+              onClick={() => editor?.chain().focus().toggleBold().run()}
+            >
+              <strong>B</strong>
+            </button>
+            <button
+              type="button"
+              className={editor?.isActive("italic") ? "active" : ""}
+              aria-label="Italic"
+              title="Italic (*text*)"
+              onClick={() => editor?.chain().focus().toggleItalic().run()}
+            >
+              <em>I</em>
+            </button>
+            <button
+              type="button"
+              className={editor?.isActive("underline") ? "active" : ""}
+              aria-label="Underline"
+              title="Underline (_text_)"
+              onClick={() => editor?.chain().focus().toggleUnderline().run()}
+            >
+              <u>U</u>
+            </button>
+            <select
+              aria-label="Text style"
+              title="Heading style (#, ##, ###)"
+              value={
+                editor?.isActive("heading", { level: 1 })
+                  ? "1"
+                  : editor?.isActive("heading", { level: 2 })
+                    ? "2"
+                    : editor?.isActive("heading", { level: 3 })
+                      ? "3"
+                      : "0"
+              }
+              onMouseDown={(event) => event.stopPropagation()}
+              onChange={(event) => {
+                const level = Number(event.target.value);
+                if (level === 0) editor?.chain().focus().setParagraph().run();
+                else
+                  editor
+                    ?.chain()
+                    .focus()
+                    .toggleHeading({ level: level as 1 | 2 | 3 })
+                    .run();
+              }}
+            >
+              <option value="0">P</option>
+              <option value="1">H1</option>
+              <option value="2">H2</option>
+              <option value="3">H3</option>
+            </select>
+            <button
+              type="button"
+              className={editor?.isActive("bulletList") ? "active" : ""}
+              aria-label="Bulleted list"
+              title="Bulleted list (- item)"
+              onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            >
+              UL
+            </button>
+            <button
+              type="button"
+              className={editor?.isActive("orderedList") ? "active" : ""}
+              aria-label="Numbered list"
+              title="Numbered list (1. item)"
+              onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+            >
+              1.
+            </button>
+            <button
+              type="button"
+              className={editor?.isActive("blockquote") ? "active" : ""}
+              aria-label="Blockquote"
+              title="Blockquote (> text)"
+              onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+            >
+              &quot;
+            </button>
+            <button
+              type="button"
+              aria-label="Clear formatting"
+              title="Clear formatting"
+              onClick={() => editor?.chain().focus().unsetAllMarks().clearNodes().run()}
+            >
+              Tx
+            </button>
+          </div>
+          <div className="selection-ai-row">
+            {selectionActions.map(({ action, label }) => (
+              <button
+                key={action}
+                type="button"
+                onClick={() => {
+                  setSelectionPanel({
+                    ...selectionMenu,
+                    action,
+                    instructions: "",
+                    modelOverride: null,
+                  });
+                  setSelectionMenu(null);
+                }}
+              >
+                <Sparkles size={12} /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {selectionPanel && !active ? (
+        <section
+          className="selection-revision-panel"
+          aria-label="Revise selected text"
+          style={{ top: Math.max(12, selectionPanel.top), left: selectionPanel.left }}
+        >
+          <div className="selection-revision-heading">
+            <strong>Revise selection</strong>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Close selection revision"
+              onClick={() => setSelectionPanel(null)}
+            >
+              <X size={15} />
+            </button>
+          </div>
+          <label>
+            Action
+            <select
+              value={selectionPanel.action}
+              onChange={(event) =>
+                setSelectionPanel({
+                  ...selectionPanel,
+                  action: event.target.value as SelectionAction,
+                })
+              }
+            >
+              {selectionActions.map(({ action, label }) => (
+                <option key={action} value={action}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Extra instructions
+            <textarea
+              value={selectionPanel.instructions}
+              placeholder={
+                selectionPanel.action === "custom"
+                  ? "Describe the revision you want..."
+                  : "Optional guidance..."
+              }
+              onChange={(event) =>
+                setSelectionPanel({ ...selectionPanel, instructions: event.target.value })
+              }
+            />
+          </label>
+          <div className="selection-model-field">
+            <span>Model</span>
+            <ModelSelect
+              value={selectionPanel.modelOverride ?? baseModel}
+              onChange={(value) =>
+                setSelectionPanel({
+                  ...selectionPanel,
+                  modelOverride: value === baseModel ? null : value,
+                })
+              }
+              models={models}
+            />
+          </div>
+          <div className="selection-revision-actions">
+            <button type="button" className="button ghost" onClick={() => setSelectionPanel(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="button primary"
+              disabled={selectionPanel.action === "custom" && !selectionPanel.instructions.trim()}
+              onClick={generateSelectionRevision}
+            >
+              <Sparkles size={14} /> Generate
+            </button>
+          </div>
+        </section>
+      ) : null}
       {conflicts.size ? (
         <div className="scene-conflict-banner">
           <span>A Scene changed elsewhere. Local prose has been preserved.</span>
@@ -1128,7 +1693,9 @@ export const ManuscriptEditor = forwardRef<
           </div>
         </div>
       ) : null}
-      {error ? <ErrorNotice error={error} /> : null}
+      {error || settingsQuery.error || settingsMutation.error ? (
+        <ErrorNotice error={error ?? settingsQuery.error ?? settingsMutation.error} />
+      ) : null}
       {historyOpen ? (
         <div className="modal-backdrop">
           <section className="modal revision-modal" aria-label="Scene history">

@@ -8,6 +8,52 @@ export const aiSettingsSchema = z.object({
 });
 
 export const updateAiSettingsInputSchema = aiSettingsSchema.partial();
+
+export const editorFontFamilySchema = z.enum(["literary", "classic", "sans"]);
+export const editorFontSizeSchema = z.union([
+  z.literal(16),
+  z.literal(18),
+  z.literal(20),
+  z.literal(22),
+  z.literal(24),
+]);
+export const editorLineHeightSchema = z.union([
+  z.literal(1.4),
+  z.literal(1.6),
+  z.literal(1.85),
+  z.literal(2),
+]);
+export const editorParagraphSpacingSchema = z.union([
+  z.literal(0.5),
+  z.literal(0.85),
+  z.literal(1.15),
+  z.literal(1.5),
+]);
+export const editorFirstLineIndentSchema = z.union([
+  z.literal(0),
+  z.literal(1),
+  z.literal(1.5),
+  z.literal(2),
+]);
+export const editorPageWidthSchema = z.union([
+  z.literal(640),
+  z.literal(760),
+  z.literal(920),
+  z.literal(1080),
+]);
+export const editorTextAlignSchema = z.enum(["left", "justify", "center", "right"]);
+
+export const editorSettingsSchema = z.object({
+  fontFamily: editorFontFamilySchema.default("literary"),
+  fontSize: editorFontSizeSchema.default(20),
+  lineHeight: editorLineHeightSchema.default(1.85),
+  paragraphSpacing: editorParagraphSpacingSchema.default(1.15),
+  firstLineIndent: editorFirstLineIndentSchema.default(0),
+  pageWidth: editorPageWidthSchema.default(920),
+  textAlign: editorTextAlignSchema.default("left"),
+});
+
+export const updateEditorSettingsInputSchema = editorSettingsSchema.partial();
 export const openRouterCredentialStatusSchema = z.object({
   configured: z.boolean(),
   source: z.enum(["user", "server", "none"]),
@@ -17,4 +63,5 @@ export const updateOpenRouterCredentialSchema = z.object({
   apiKey: z.string().trim().min(10).max(500),
 });
 export type AiSettings = z.infer<typeof aiSettingsSchema>;
+export type EditorSettings = z.infer<typeof editorSettingsSchema>;
 export type OpenRouterCredentialStatus = z.infer<typeof openRouterCredentialStatusSchema>;

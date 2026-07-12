@@ -1,7 +1,7 @@
-import type { WorkflowKey } from "@asterism/contracts";
+import type { SelectionAction, WorkflowKey } from "@asterism/contracts";
 import { createContext, useContext } from "react";
 
-export type GenerationOptions = {
+export type InsertionGenerationOptions = {
   workflow: Extract<WorkflowKey, "prose.start" | "prose.continue" | "prose.toward_event">;
   instructions: string;
   eventTarget: string;
@@ -9,6 +9,21 @@ export type GenerationOptions = {
   lengthUnit: "words" | "paragraphs";
   modelOverride: string | null;
 };
+
+export type SelectionGenerationOptions = {
+  workflow: "prose.revise_selection";
+  selectionAction: SelectionAction;
+  selectedText: string;
+  selectionFrom: number;
+  selectionTo: number;
+  instructions: string;
+  eventTarget: "";
+  targetLength: number | null;
+  lengthUnit: "words";
+  modelOverride: string | null;
+};
+
+export type GenerationOptions = InsertionGenerationOptions | SelectionGenerationOptions;
 
 export type EditorActionsContextType = {
   baseModel: string;

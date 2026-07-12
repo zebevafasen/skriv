@@ -1,10 +1,12 @@
 import {
   aiSettingsSchema,
+  editorSettingsSchema,
   openRouterCredentialStatusSchema,
   updateAiSettingsInputSchema,
+  updateEditorSettingsInputSchema,
   updateOpenRouterCredentialSchema,
 } from "@asterism/contracts";
-import { aiSettings } from "@asterism/db";
+import { aiSettings, editorSettings } from "@asterism/db";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context.js";
@@ -21,6 +23,7 @@ const defaults = aiSettingsSchema.parse({
   smartContextEnabled: true,
   recursionDepth: 2,
 });
+const editorDefaults = editorSettingsSchema.parse({});
 const modelCache = new Map<
   string,
   {
@@ -51,6 +54,15 @@ export async function getSettings(context: AppContext, userId: string) {
   return row ? aiSettingsSchema.parse(row) : defaults;
 }
 
+export async function getEditorSettings(context: AppContext, userId: string) {
+  const [row] = await context.db
+    .select()
+    .from(editorSettings)
+    .where(eq(editorSettings.userId, userId))
+    .limit(1);
+  return row ? editorSettingsSchema.parse(row) : editorDefaults;
+}
+
 export async function registerSettingsRoutes(
   app: FastifyInstance,
   context: AppContext,
@@ -65,6 +77,22 @@ export async function registerSettingsRoutes(
       .insert(aiSettings)
       .values({ userId: request.userId, ...next })
       .onConflictDoUpdate({ target: aiSettings.userId, set: { ...next, updatedAt: new Date() } });
+    return next;
+  });
+
+  app.get("/api/settings/editor", async (request) => getEditorSettings(context, request.userId));
+
+  app.patch("/api/settings/editor", async (request) => {
+    const input = parseWith(updateEditorSettingsInputSchema, request.body);
+    const current = await getEditorSettings(context, request.userId);
+    const next = editorSettingsSchema.parse({ ...current, ...input });
+    await context.db
+      .insert(editorSettings)
+      .values({ userId: request.userId, ...next })
+      .onConflictDoUpdate({
+        target: editorSettings.userId,
+        set: { ...next, updatedAt: new Date() },
+      });
     return next;
   });
 
