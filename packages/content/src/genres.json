@@ -118,5 +118,60 @@
     "id": "genre.literary_fiction",
     "label": "Literary Fiction",
     "description": "Literary fiction is fiction that is intended to be artistically significant. It is often characterized by its focus on character development, emotional conflict, and social commentary. Literary fiction is often contrasted with genre fiction, which is written to appeal to a specific audience and is often characterized by its focus on plot and action."
+  },
+  {
+    "id": "genre.action",
+    "label": "Action",
+    "description": "Stories driven by physical conflict, daring feats, and kinetic set pieces."
+  },
+  {
+    "id": "genre.fairy_tale",
+    "label": "Fairy Tale",
+    "description": "Wonder-filled stories built from folklore, enchantment, transformation, and archetypal conflict."
+  },
+  {
+    "id": "genre.fable",
+    "label": "Fable",
+    "description": "Brief, symbolic stories that use imagined characters or situations to explore a moral idea."
+  },
+  {
+    "id": "genre.noir",
+    "label": "Noir",
+    "description": "Atmospheric crime stories shaped by moral ambiguity, corruption, and fatalistic pressure."
+  },
+  {
+    "id": "genre.psychological",
+    "label": "Psychological",
+    "description": "Stories centered on perception, inner conflict, memory, and the unstable workings of the mind."
+  },
+  {
+    "id": "genre.satire",
+    "label": "Satire",
+    "description": "Stories that use wit, irony, or exaggeration to expose folly and criticize institutions or behavior."
+  },
+  {
+    "id": "genre.speculative",
+    "label": "Speculative Fiction",
+    "description": "Imaginative stories that ask how life, society, or identity might change under different conditions."
+  },
+  {
+    "id": "genre.western",
+    "label": "Western",
+    "description": "Stories of law, survival, and changing societies on a frontier or in a frontier-inspired setting."
+  },
+  {
+    "id": "genre.wuxia",
+    "label": "Wuxia",
+    "description": "Martial-arts adventure stories about wandering heroes, honor, mastery, and justice."
+  },
+  {
+    "id": "genre.xianxia",
+    "label": "Xianxia",
+    "description": "Chinese-inspired fantasy about cultivation, immortality, spiritual power, and transcendent adventure."
+  },
+  {
+    "id": "genre.children",
+    "label": "Children's Fiction",
+    "description": "Stories written for children, with age-appropriate stakes, language, and imaginative scope."
   }
 ]

@@ -25,5 +25,175 @@
     "id": "theme.freedom",
     "label": "Freedom",
     "description": "Liberation, agency, and constraint."
+  },
+  {
+    "id": "theme.ambition",
+    "label": "Ambition",
+    "description": "The desire to rise, achieve, create, or be remembered."
+  },
+  {
+    "id": "theme.belonging",
+    "label": "Belonging",
+    "description": "The need to be accepted and to find a place among others."
+  },
+  {
+    "id": "theme.betrayal",
+    "label": "Betrayal",
+    "description": "The wound created when trust, loyalty, or an oath is broken."
+  },
+  {
+    "id": "theme.coming_of_age",
+    "label": "Coming of Age",
+    "description": "The passage from one stage of life into greater self-knowledge and responsibility."
+  },
+  {
+    "id": "theme.community",
+    "label": "Community",
+    "description": "The work of building, protecting, or transforming a shared way of life."
+  },
+  {
+    "id": "theme.duty",
+    "label": "Duty",
+    "description": "Obligation to a person, role, tradition, institution, or ideal."
+  },
+  {
+    "id": "theme.faith",
+    "label": "Faith",
+    "description": "Belief, doubt, devotion, and the search for meaning beyond certainty."
+  },
+  {
+    "id": "theme.free_will",
+    "label": "Free Will",
+    "description": "The struggle between choice, destiny, conditioning, and responsibility."
+  },
+  {
+    "id": "theme.friendship",
+    "label": "Friendship",
+    "description": "Loyalty, affection, and mutual care between people who choose one another."
+  },
+  {
+    "id": "theme.hope",
+    "label": "Hope",
+    "description": "The decision to imagine or pursue a better future despite evidence of loss."
+  },
+  {
+    "id": "theme.justice",
+    "label": "Justice",
+    "description": "The pursuit of fairness, accountability, and a righting of wrongs."
+  },
+  {
+    "id": "theme.legacy",
+    "label": "Legacy",
+    "description": "What people inherit from the past and what they leave for those who follow."
+  },
+  {
+    "id": "theme.love",
+    "label": "Love",
+    "description": "The bonds of affection, devotion, desire, and care that shape a life."
+  },
+  {
+    "id": "theme.memory",
+    "label": "Memory",
+    "description": "How remembering, forgetting, and revising the past shape identity."
+  },
+  {
+    "id": "theme.mortality",
+    "label": "Mortality",
+    "description": "The limits of life and the choices made in the presence of death."
+  },
+  {
+    "id": "theme.nature",
+    "label": "Nature",
+    "description": "Human relationships with the living world and forces beyond human control."
+  },
+  {
+    "id": "theme.obsession",
+    "label": "Obsession",
+    "description": "Desire that narrows attention until it becomes consuming or destructive."
+  },
+  {
+    "id": "theme.power",
+    "label": "Power",
+    "description": "Who gets to decide, who must obey, and how authority changes people."
+  },
+  {
+    "id": "theme.prejudice",
+    "label": "Prejudice",
+    "description": "The personal and social damage caused by inherited bias and exclusion."
+  },
+  {
+    "id": "theme.redemption",
+    "label": "Redemption",
+    "description": "The difficult attempt to repair harm and become worthy of trust again."
+  },
+  {
+    "id": "theme.responsibility",
+    "label": "Responsibility",
+    "description": "The consequences of having power, knowledge, privilege, or people who depend on you."
+  },
+  {
+    "id": "theme.survival",
+    "label": "Survival",
+    "description": "The instinct and ingenuity required to endure danger, scarcity, or oppression."
+  },
+  {
+    "id": "theme.technology",
+    "label": "Technology",
+    "description": "How tools and systems reshape human relationships, values, and possibilities."
+  },
+  {
+    "id": "theme.transformation",
+    "label": "Transformation",
+    "description": "Physical, emotional, social, or spiritual change that makes a person unrecognizable."
+  },
+  {
+    "id": "theme.trauma",
+    "label": "Trauma",
+    "description": "The lasting effects of harm and the work of living with or healing from it."
+  },
+  {
+    "id": "theme.truth",
+    "label": "Truth",
+    "description": "The cost of uncovering reality and deciding what to do with it."
+  },
+  {
+    "id": "theme.trust",
+    "label": "Trust",
+    "description": "The vulnerability of relying on another person and the labor of earning confidence."
+  },
+  {
+    "id": "theme.environmental_stewardship",
+    "label": "Environmental Stewardship",
+    "description": "The responsibility to care for ecosystems and the beings that depend on them."
+  },
+  {
+    "id": "theme.class",
+    "label": "Class",
+    "description": "The influence of wealth, status, labor, and social mobility on human lives."
+  },
+  {
+    "id": "theme.displacement",
+    "label": "Displacement",
+    "description": "The loss of home and the struggle to make a life somewhere new."
+  },
+  {
+    "id": "theme.isolation",
+    "label": "Isolation",
+    "description": "Separation from community, intimacy, or the possibility of being understood."
+  },
+  {
+    "id": "theme.knowledge",
+    "label": "Knowledge",
+    "description": "The pursuit of understanding and the danger of learning what should remain hidden."
+  },
+  {
+    "id": "theme.religion",
+    "label": "Religion",
+    "description": "Institutions, rituals, doctrines, and personal beliefs that give a world meaning."
+  },
+  {
+    "id": "theme.reconciliation",
+    "label": "Reconciliation",
+    "description": "The difficult process of making peace with another person, a community, or the past."
   }
 ]

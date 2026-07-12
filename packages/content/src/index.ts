@@ -6,7 +6,47 @@ import tagPacks from "./tag-packs.json" with { type: "json" };
 import tags from "./tags.json" with { type: "json" };
 import themes from "./themes.json" with { type: "json" };
 
-export const basePackage: ContentPackage = contentPackageSchema.parse({
+const catalogKeys = ["genres", "themes", "tags"] as const;
+
+function validateContentReferences(content: ContentPackage): ContentPackage {
+  const catalogIds = Object.fromEntries(
+    catalogKeys.map((key) => [key, new Set(content[key].map((item) => item.id))]),
+  ) as Record<(typeof catalogKeys)[number], Set<string>>;
+
+  for (const key of catalogKeys) {
+    if (catalogIds[key].size !== content[key].length) {
+      throw new Error(`Duplicate ${key} definition id in ${content.id}.`);
+    }
+  }
+
+  const themeLabels = new Set(content.themes.map((theme) => theme.label.toLocaleLowerCase()));
+  const overlappingTag = content.tags.find((tag) => themeLabels.has(tag.label.toLocaleLowerCase()));
+  if (overlappingTag) {
+    throw new Error(`Theme/tag label overlap in ${content.id}: ${overlappingTag.label}.`);
+  }
+
+  const packIds = new Set<string>();
+  for (const pack of content.tagPacks) {
+    if (packIds.has(pack.id)) throw new Error(`Duplicate tag pack id in ${content.id}: ${pack.id}.`);
+    packIds.add(pack.id);
+
+    for (const key of catalogKeys) {
+      const values = pack.values[key];
+      if (new Set(values).size !== values.length) {
+        throw new Error(`Duplicate ${key} reference in tag pack ${pack.id}.`);
+      }
+      for (const value of values) {
+        if (!catalogIds[key].has(value)) {
+          throw new Error(`Unknown ${key} reference in tag pack ${pack.id}: ${value}.`);
+        }
+      }
+    }
+  }
+
+  return content;
+}
+
+export const basePackage: ContentPackage = validateContentReferences(contentPackageSchema.parse({
   ...packageMetadata,
   genres,
   themes,
@@ -25,7 +65,7 @@ export const basePackage: ContentPackage = contentPackageSchema.parse({
     },
   ],
   prompts,
-});
+}));
 
 export function getBuiltinPrompt(workflow: WorkflowKey) {
   const prompt = basePackage.prompts.find((candidate) => candidate.workflow === workflow);
@@ -34,7 +74,7 @@ export function getBuiltinPrompt(workflow: WorkflowKey) {
 }
 
 export function validateBuiltinContent(): ContentPackage {
-  return contentPackageSchema.parse(basePackage);
+  return validateContentReferences(contentPackageSchema.parse(basePackage));
 }
 
 export * from "./outline-presets.js";

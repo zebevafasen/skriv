@@ -62,7 +62,38 @@
         "tag.dialogue_light",
         "tag.no_dialogue",
         "tag.grounded",
-        "tag.realistic"
+        "tag.realistic",
+        "tag.dragons",
+        "tag.witches",
+        "tag.fae",
+        "tag.prophecy",
+        "tag.mentor_student",
+        "tag.enemies_to_lovers",
+        "tag.portals",
+        "tag.time_travel",
+        "tag.atmospheric",
+        "tag.whimsical",
+        "tag.lyrical",
+        "tag.fast_paced",
+        "tag.uplifting",
+        "tag.bittersweet",
+        "tag.tragic",
+        "tag.unlikely_allies",
+        "tag.child_protagonist",
+        "tag.nonhuman_protagonist",
+        "tag.castle",
+        "tag.haunted_house",
+        "tag.boarding_school",
+        "tag.marketplace",
+        "tag.mythology",
+        "tag.necromancy",
+        "tag.progression_fantasy",
+        "tag.lit_rpg",
+        "tag.gore",
+        "tag.death",
+        "tag.resistance",
+        "tag.exile",
+        "tag.reconstruction"
       ]
     }
   },
@@ -87,7 +118,6 @@
         "tag.male_protagonist",
         "tag.female_protagonist",
         "tag.steampunk",
-        "tag.cyberpunk",
         "tag.post_apocalyptic",
         "tag.post_collapse",
         "tag.near_future",
@@ -133,7 +163,24 @@
         "tag.mutants",
         "tag.pirates",
         "tag.civil_war",
-        "tag.war"
+        "tag.space_station",
+        "tag.generation_ship",
+        "tag.orbital",
+        "tag.first_contact",
+        "tag.alien_invasion",
+        "tag.sentient_ship",
+        "tag.biopunk",
+        "tag.nanotechnology",
+        "tag.surveillance_state",
+        "tag.virtual_reality",
+        "tag.time_loop",
+        "tag.artificial_world",
+        "tag.resource_scarcity",
+        "tag.ecological_collapse",
+        "tag.clones",
+        "tag.memory_manipulation",
+        "tag.resistance",
+        "tag.exile"
       ]
     }
   },
@@ -154,8 +201,28 @@
       ],
       "tags": [
         "tag.slow_burn",
-        "tag.intimacy",
-        "tag.modern_day"
+        "tag.intimate",
+        "tag.modern_day",
+        "tag.enemies_to_lovers",
+        "tag.friends_to_lovers",
+        "tag.second_chance_romance",
+        "tag.love_triangle",
+        "tag.arranged_marriage",
+        "tag.marriage_of_convenience",
+        "tag.rivals",
+        "tag.dual_protagonists",
+        "tag.queer_protagonist",
+        "tag.dialogue_heavy",
+        "tag.emotionally_intense",
+        "tag.hopeful",
+        "tag.bittersweet",
+        "tag.festival",
+        "tag.workplace",
+        "tag.university",
+        "tag.small_town",
+        "tag.coastal",
+        "tag.low_stakes",
+        "tag.cozy"
       ]
     }
   },
@@ -174,7 +241,164 @@
       ],
       "tags": [
         "tag.unreliable_narrator",
-        "tag.isolated_village"
+        "tag.isolated_village",
+        "tag.investigation",
+        "tag.locked_room",
+        "tag.puzzle_box",
+        "tag.conspiracy",
+        "tag.secrets",
+        "tag.mistaken_identity",
+        "tag.cold_case",
+        "tag.whodunit",
+        "tag.dark_comedy",
+        "tag.murder",
+        "tag.dual_timeline",
+        "tag.nonlinear",
+        "tag.flashbacks",
+        "tag.cat_and_mouse",
+        "tag.ticking_clock",
+        "tag.undercover",
+        "tag.atmospheric",
+        "tag.darkly_comic",
+        "tag.manor",
+        "tag.haunted_house",
+        "tag.small_town",
+        "tag.courtroom"
+      ]
+    }
+  },
+  {
+    "id": "pack.horror",
+    "name": "Horror",
+    "description": "Dread, violation, isolation, and forces that refuse to be understood.",
+    "values": {
+      "genres": ["genre.horror", "genre.supernatural", "genre.psychological"],
+      "themes": ["theme.mortality", "theme.isolation", "theme.trauma", "theme.knowledge"],
+      "tags": [
+        "tag.gothic", "tag.eldritch", "tag.body_horror", "tag.folk_horror", "tag.haunted_house",
+        "tag.ghosts", "tag.vampires", "tag.werewolves", "tag.witches", "tag.demons", "tag.necromancy",
+        "tag.unreliable_reality", "tag.dream_world", "tag.isolated", "tag.single_location",
+        "tag.atmospheric", "tag.bleak", "tag.gore", "tag.death"
+      ]
+    }
+  },
+  {
+    "id": "pack.historical",
+    "name": "Historical",
+    "description": "Stories grounded in a past era, its institutions, and its lived contradictions.",
+    "values": {
+      "genres": ["genre.historical_fiction", "genre.drama", "genre.literary_fiction"],
+      "themes": ["theme.legacy", "theme.class", "theme.duty", "theme.displacement", "theme.freedom"],
+      "tags": [
+        "tag.ancient", "tag.medieval", "tag.victorian", "tag.colonial", "tag.wartime", "tag.western",
+        "tag.military", "tag.military_fiction", "tag.naval", "tag.empire", "tag.rebellion", "tag.civil_war", "tag.occupation",
+        "tag.resistance", "tag.exile", "tag.diaspora", "tag.political_intrigue", "tag.court_intrigue",
+        "tag.dual_timeline", "tag.atmospheric"
+      ]
+    }
+  },
+  {
+    "id": "pack.cozy",
+    "name": "Cozy",
+    "description": "Comfort, local problems, small communities, and satisfying emotional resolutions.",
+    "values": {
+      "genres": ["genre.fantasy", "genre.mystery", "genre.slice_of_life"],
+      "themes": ["theme.belonging", "theme.community", "theme.friendship", "theme.hope"],
+      "tags": [
+        "tag.cozy", "tag.low_stakes", "tag.small_town", "tag.rural", "tag.isolated_village",
+        "tag.investigation", "tag.whodunit", "tag.marketplace", "tag.festival",
+        "tag.animal_focus", "tag.dialogue_heavy", "tag.humorous", "tag.whimsical", "tag.uplifting", "tag.hopeful"
+      ]
+    }
+  },
+  {
+    "id": "pack.thriller",
+    "name": "Thriller",
+    "description": "Urgency, pursuit, hidden motives, and escalating danger.",
+    "values": {
+      "genres": ["genre.thriller", "genre.action", "genre.supernatural"],
+      "themes": ["theme.truth", "theme.survival", "theme.betrayal", "theme.responsibility"],
+      "tags": [
+        "tag.high_stakes", "tag.fast_paced", "tag.ticking_clock", "tag.countdown",
+        "tag.cat_and_mouse", "tag.escape", "tag.rescue_mission", "tag.undercover", "tag.conspiracy",
+        "tag.investigation", "tag.secret_identity", "tag.mistaken_identity", "tag.murder", "tag.cold_case",
+        "tag.violence", "tag.death", "tag.urban", "tag.megacity", "tag.single_location"
+      ]
+    }
+  },
+  {
+    "id": "pack.space",
+    "name": "Spacefaring",
+    "description": "Life beyond Earth, impossible distances, and communities built in the void.",
+    "values": {
+      "genres": ["genre.science_fiction", "genre.space_opera"],
+      "themes": ["theme.identity", "theme.freedom", "theme.legacy", "theme.environmental_stewardship", "theme.belonging"],
+      "tags": [
+        "tag.spacefaring", "tag.space_station", "tag.generation_ship", "tag.orbital", "tag.megastructure",
+        "tag.low_gravity", "tag.zero_gravity", "tag.far_future", "tag.frontier", "tag.exploration",
+        "tag.first_contact", "tag.alien_invasion", "tag.sentient_ship", "tag.artificial_intelligence",
+        "tag.advanced_technology", "tag.hard_sci_fi", "tag.soft_sci_fi", "tag.faster_than_light",
+        "tag.colony", "tag.resource_scarcity", "tag.climate_fiction", "tag.high_stakes"
+      ]
+    }
+  },
+  {
+    "id": "pack.western",
+    "name": "Western",
+    "description": "Frontier justice, harsh landscapes, and communities deciding what comes next.",
+    "values": {
+      "genres": ["genre.western", "genre.adventure", "genre.crime"],
+      "themes": ["theme.justice", "theme.freedom", "theme.community", "theme.power"],
+      "tags": [
+        "tag.western", "tag.frontier", "tag.frontier_settlement", "tag.rural", "tag.wilderness", "tag.desert",
+        "tag.mountain", "tag.mercenaries", "tag.military", "tag.rebellion", "tag.occupation", "tag.violence",
+        "tag.gunpowder", "tag.high_stakes", "tag.morally_gray", "tag.antihero", "tag.road_trip"
+      ]
+    }
+  },
+  {
+    "id": "pack.supernatural",
+    "name": "Supernatural",
+    "description": "Ordinary lives interrupted by powers, beings, and rules beyond the natural world.",
+    "values": {
+      "genres": ["genre.supernatural", "genre.paranormal", "genre.urban_fantasy"],
+      "themes": ["theme.identity", "theme.mortality", "theme.faith", "theme.transformation"],
+      "tags": [
+        "tag.modern_day", "tag.urban", "tag.supernatural_abilities", "tag.psychic_abilities", "tag.telepathy",
+        "tag.vampires", "tag.werewolves", "tag.ghosts", "tag.witches", "tag.wizards", "tag.fae", "tag.demons",
+        "tag.angels", "tag.shapeshifters", "tag.reincarnation", "tag.immortality", "tag.secret_identity",
+        "tag.gifted_individual", "tag.female_protagonist", "tag.male_protagonist", "tag.high_stakes"
+      ]
+    }
+  },
+  {
+    "id": "pack.solarpunk",
+    "name": "Solarpunk",
+    "description": "Repair, mutual aid, resilient technology, and hopeful futures worth building.",
+    "values": {
+      "genres": ["genre.speculative"],
+      "themes": ["theme.environmental_stewardship", "theme.community", "theme.hope", "theme.responsibility", "theme.technology"],
+      "tags": [
+        "tag.near_future", "tag.post_collapse", "tag.ecological_collapse", "tag.reconstruction", "tag.resource_scarcity",
+        "tag.climate_fiction",
+        "tag.advanced_technology", "tag.solarpunk", "tag.artificial_intelligence", "tag.gene_editing", "tag.urban",
+        "tag.rural", "tag.floating_city", "tag.resistance", "tag.hopeful", "tag.uplifting",
+        "tag.ensemble_cast"
+      ]
+    }
+  },
+  {
+    "id": "pack.literary",
+    "name": "Literary",
+    "description": "Character, language, memory, and social observation at the center of the work.",
+    "values": {
+      "genres": ["genre.literary_fiction", "genre.drama"],
+      "themes": ["theme.identity", "theme.memory", "theme.mortality", "theme.belonging", "theme.truth", "theme.class"],
+      "tags": [
+        "tag.realistic", "tag.grounded", "tag.intimate", "tag.lyrical", "tag.atmospheric", "tag.stream_of_consciousness",
+        "tag.epistolary", "tag.dual_timeline", "tag.nonlinear", "tag.magical_realism", "tag.flashbacks", "tag.dialogue_heavy",
+        "tag.emotionally_intense", "tag.bittersweet", "tag.tragic", "tag.rural", "tag.small_town", "tag.workplace",
+        "tag.exile", "tag.diaspora"
       ]
     }
   }

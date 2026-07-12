@@ -4,12 +4,31 @@ import { basePackage, getBuiltinPrompt, outlinePresets, validateBuiltinContent }
 describe("base content package", () => {
   it("validates and contains every implemented workflow", () => {
     expect(validateBuiltinContent().id).toBe("asterism.base");
+    expect(basePackage.genres).toHaveLength(35);
+    expect(basePackage.themes).toHaveLength(41);
+    expect(basePackage.tags).toHaveLength(269);
+    expect(basePackage.genres.map((genre) => genre.id)).not.toContain("genre.cozy_fantasy");
+    expect(basePackage.genres.map((genre) => genre.id)).not.toContain("genre.romantic_comedy");
+    expect(basePackage.tags.map((tag) => tag.id)).not.toEqual(
+      expect.arrayContaining(["tag.second_person", "tag.multiple_pov", "tag.tense"]),
+    );
+    const themeLabels = new Set(basePackage.themes.map((theme) => theme.label.toLocaleLowerCase()));
+    expect(basePackage.tags.some((tag) => themeLabels.has(tag.label.toLocaleLowerCase()))).toBe(false);
     expect(basePackage.prompts).toHaveLength(11);
     expect(basePackage.tagPacks.map((pack) => pack.name)).toEqual([
       "Fantasy",
       "Science Fiction",
       "Romance",
       "Mystery",
+      "Horror",
+      "Historical",
+      "Cozy",
+      "Thriller",
+      "Spacefaring",
+      "Western",
+      "Supernatural",
+      "Solarpunk",
+      "Literary",
       "All",
     ]);
     expect(getBuiltinPrompt("prose.continue").ownership).toBe("builtin");
