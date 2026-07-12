@@ -1,5 +1,18 @@
-import type { CompendiumContent, SceneMetadata, TiptapNode } from "@asterism/contracts";
-import { acts, chapters, compendiumEntries, projectNotes, projects, scenes } from "@asterism/db";
+import {
+  type CompendiumContent,
+  projectSettingsSchema,
+  type SceneMetadata,
+  type TiptapNode,
+} from "@asterism/contracts";
+import {
+  acts,
+  chapters,
+  compendiumCategories,
+  compendiumEntries,
+  projectNotes,
+  projects,
+  scenes,
+} from "@asterism/db";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -10,7 +23,7 @@ const importSchema = z.object({
   schemaVersion: z.number(),
   project: z.object({
     title: z.string(),
-    settings: z.object({ notes: z.string().optional() }).optional(),
+    settings: z.record(z.string(), z.unknown()).optional(),
   }),
   manuscript: z.array(
     z.object({
@@ -36,6 +49,7 @@ const importSchema = z.object({
   ),
   compendium: z.array(
     z.object({
+      id: z.uuid().optional(),
       name: z.string(),
       typeId: z.string(),
       aliases: z.array(z.string()).optional(),
@@ -49,6 +63,16 @@ const importSchema = z.object({
       singletonKey: z.string().nullable().optional(),
     }),
   ),
+  compendiumCategories: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        name: z.string().trim().min(1).max(120),
+        position: z.number().int().nonnegative().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
   notes: z
     .array(
       z.object({
@@ -67,17 +91,44 @@ export async function registerImportRoutes(
   app: FastifyInstance,
   context: AppContext,
 ): Promise<void> {
-  app.post("/api/projects/import", async (request, reply) => {
+  app.post("/api/projects/import", { bodyLimit: 50 * 1024 * 1024 }, async (request, reply) => {
     const input = parseWith(importSchema, request.body);
     const workspaceId = await ownedWorkspaceId(context, request.userId);
 
     const result = await context.db.transaction(async (tx) => {
+      const entryIdMap = new Map(
+        input.compendium.flatMap((entry) =>
+          entry.id ? [[entry.id, crypto.randomUUID()] as const] : [],
+        ),
+      );
+      const categoryIdMap = new Map(
+        input.compendiumCategories.map((category) => [category.id, crypto.randomUUID()] as const),
+      );
+      const parsedSettings = projectSettingsSchema.parse(input.project.settings ?? {});
+      const settings = {
+        ...parsedSettings,
+        povCharacterEntryId: parsedSettings.povCharacterEntryId
+          ? (entryIdMap.get(parsedSettings.povCharacterEntryId) ?? null)
+          : null,
+      };
       const [project] = await tx
         .insert(projects)
-        .values({ workspaceId, title: input.project.title })
+        .values({ workspaceId, title: input.project.title, settings })
         .returning();
 
       if (!project) throw new Error("Project creation failed.");
+
+      if (input.compendiumCategories.length) {
+        await tx.insert(compendiumCategories).values(
+          input.compendiumCategories.map((category) => ({
+            id: categoryIdMap.get(category.id),
+            projectId: project.id,
+            name: category.name,
+            normalizedName: category.name.normalize("NFKC").toLocaleLowerCase(),
+            position: category.position ?? 0,
+          })),
+        );
+      }
 
       let initialSceneId: string | null = null;
 
@@ -115,7 +166,24 @@ export async function registerImportRoutes(
                 document: sceneData.document as TiptapNode,
                 plainText: sceneData.plainText,
                 version: sceneData.version ?? 1,
-                metadata: sceneData.metadata as SceneMetadata,
+                metadata: (() => {
+                  const metadata = sceneData.metadata as SceneMetadata;
+                  return {
+                    ...metadata,
+                    povEntryId: metadata.povEntryId
+                      ? (entryIdMap.get(metadata.povEntryId) ?? null)
+                      : null,
+                    locationEntryId: metadata.locationEntryId
+                      ? (entryIdMap.get(metadata.locationEntryId) ?? null)
+                      : null,
+                    presentCharacterEntryIds: (metadata.presentCharacterEntryIds ?? []).flatMap(
+                      (id) => {
+                        const mapped = entryIdMap.get(id);
+                        return mapped ? [mapped] : [];
+                      },
+                    ),
+                  };
+                })(),
               })
               .returning();
 
@@ -131,9 +199,12 @@ export async function registerImportRoutes(
       if (input.compendium.length > 0) {
         await tx.insert(compendiumEntries).values(
           input.compendium.map((entry) => ({
+            ...(entry.id && entryIdMap.get(entry.id) ? { id: entryIdMap.get(entry.id) } : {}),
             projectId: project.id,
             name: entry.name,
-            typeId: entry.typeId,
+            typeId: entry.typeId.startsWith("custom.")
+              ? `custom.${categoryIdMap.get(entry.typeId.slice(7)) ?? entry.typeId.slice(7)}`
+              : entry.typeId,
             aliases: entry.aliases ?? [],
             labels: entry.labels ?? [],
             imageDataUrl: entry.imageDataUrl,
@@ -158,7 +229,10 @@ export async function registerImportRoutes(
             version: note.version ?? 1,
           })),
         );
-      } else if (input.project.settings?.notes?.trim()) {
+      } else if (
+        typeof input.project.settings?.notes === "string" &&
+        input.project.settings.notes.trim()
+      ) {
         const legacyNotes = input.project.settings.notes.trim();
         await tx.insert(projectNotes).values({
           projectId: project.id,

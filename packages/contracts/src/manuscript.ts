@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { idSchema, timestampSchema } from "./primitives.js";
+import { outlineSourceSchema, storyLanguageSchema } from "./setup.js";
 
 export type TiptapNode = {
   type?: string | undefined;
@@ -85,7 +86,7 @@ export const projectSettingsSchema = z.object({
   seriesIndex: z.string().max(50).default(""),
   coverDataUrl: z.string().nullable().default(null),
   tense: z.enum(["Past", "Present"]).default("Past"),
-  language: z.string().max(100).default("General English"),
+  language: storyLanguageSchema.default("General English"),
   povType: z
     .enum([
       "1st Person",
@@ -144,7 +145,17 @@ export const manuscriptTreeSchema = z.object({
   ),
 });
 
-export const createProjectInputSchema = z.object({ title: z.string().trim().max(300) });
+export const createProjectInputSchema = z.object({
+  title: z.string().trim().min(1).max(300),
+  author: z.string().max(100).default(""),
+  language: storyLanguageSchema.default("General English"),
+  tagPackIds: z.array(z.string().min(1)).max(50).default([]),
+  outline: outlineSourceSchema.default({ kind: "blank" }),
+  compendiumCopy: z
+    .object({ sourceProjectId: idSchema, entryIds: z.array(idSchema).max(1_000) })
+    .nullable()
+    .default(null),
+});
 
 export const updateProjectInputSchema = z.object({
   title: z.string().trim().max(300).optional(),

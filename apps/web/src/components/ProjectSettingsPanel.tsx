@@ -1,14 +1,6 @@
-import type { CompendiumEntry, Project } from "@asterism/contracts";
+import { type CompendiumEntry, type Project, storyLanguages } from "@asterism/contracts";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Archive,
-  Book,
-  Download,
-  Image as ImageIcon,
-  Info,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Archive, Book, Download, Image as ImageIcon, Info, Trash2, Users } from "lucide-react";
 import { useCallback, useState } from "react";
 import { api } from "../api.js";
 import { useAppDialog } from "./DialogProvider.js";
@@ -22,19 +14,22 @@ export function ProjectSettingsPanel({
   project: Project;
   entries: CompendiumEntry[];
 }) {
-  const [activeTab, setActiveTab] = useState<
-    "metadata" | "writing" | "collaboration" | "export"
-  >("metadata");
+  const [activeTab, setActiveTab] = useState<"metadata" | "writing" | "collaboration" | "export">(
+    "metadata",
+  );
   const dialog = useAppDialog();
   const client = useQueryClient();
 
-  const updateSetting = async (field: string, value: unknown) => {
-    await api(`/api/projects/${projectId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ settings: { [field]: value } }),
-    });
-    await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
-  };
+  const updateSetting = useCallback(
+    async (field: string, value: unknown) => {
+      await api(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ settings: { [field]: value } }),
+      });
+      await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
+    },
+    [client, projectId],
+  );
 
   const updateTitle = async (title: string) => {
     if (title === project.title) return;
@@ -56,7 +51,7 @@ export function ProjectSettingsPanel({
       };
       reader.readAsDataURL(file);
     },
-    [projectId]
+    [updateSetting],
   );
 
   return (
@@ -99,8 +94,7 @@ export function ProjectSettingsPanel({
               <section className="settings-card">
                 <h3>METADATA</h3>
                 <p className="card-description">
-                  This is the metadata of your novel, used for organizing your
-                  novel collection.
+                  This is the metadata of your novel, used for organizing your novel collection.
                 </p>
                 <label className="settings-input-group">
                   <span className="input-label">Novel Title</span>
@@ -128,9 +122,7 @@ export function ProjectSettingsPanel({
                       >
                         <option value="">Select</option>
                         {project.settings.series && (
-                          <option value={project.settings.series}>
-                            {project.settings.series}
-                          </option>
+                          <option value={project.settings.series}>{project.settings.series}</option>
                         )}
                       </select>
                       <button
@@ -157,9 +149,7 @@ export function ProjectSettingsPanel({
                       type="text"
                       defaultValue={project.settings.seriesIndex}
                       placeholder="e.g. Book 1"
-                      onBlur={(e) =>
-                        updateSetting("seriesIndex", e.target.value)
-                      }
+                      onBlur={(e) => updateSetting("seriesIndex", e.target.value)}
                     />
                   </label>
                 </div>
@@ -168,8 +158,8 @@ export function ProjectSettingsPanel({
               <section className="settings-card danger-zone">
                 <h3>DANGER ZONE</h3>
                 <p className="card-description">
-                  Some actions in this section cannot be undone and may have
-                  unintended consequences.
+                  Some actions in this section cannot be undone and may have unintended
+                  consequences.
                 </p>
                 <div className="danger-actions">
                   <button type="button" className="button ghost" disabled>
@@ -204,18 +194,13 @@ export function ProjectSettingsPanel({
               <section className="settings-card cover-card">
                 <h3>COVER</h3>
                 <p className="card-description">
-                  This is the cover of your novel. It will be displayed on the
-                  novel collection page.
+                  This is the cover of your novel. It will be displayed on the novel collection
+                  page.
                 </p>
                 <div className="cover-upload-header">
                   <label className="button ghost file-upload-btn">
                     Upload your cover
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverUpload}
-                      hidden
-                    />
+                    <input type="file" accept="image/*" onChange={handleCoverUpload} hidden />
                   </label>
                   <span className="hint">or drag and drop on the area</span>
                 </div>
@@ -243,8 +228,8 @@ export function ProjectSettingsPanel({
               <section className="settings-card">
                 <h3>LABELS/MARKERS</h3>
                 <p className="card-description">
-                  Use these to organize your scenes by status, subplot, etc. You
-                  can also prefix them with a group (e.g. "Status: Draft").
+                  Use these to organize your scenes by status, subplot, etc. You can also prefix
+                  them with a group (e.g. "Status: Draft").
                 </p>
                 <div className="labels-placeholder">
                   <div className="labels-actions">
@@ -262,8 +247,12 @@ export function ProjectSettingsPanel({
                     <span className="preset-title">Presets</span>
                     <p className="hint">We have some presets for you to get started:</p>
                     <div className="preset-buttons">
-                      <button type="button" className="button ghost" disabled>Scene status</button>
-                      <button type="button" className="button ghost" disabled>Temporal setting</button>
+                      <button type="button" className="button ghost" disabled>
+                        Scene status
+                      </button>
+                      <button type="button" className="button ghost" disabled>
+                        Temporal setting
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -273,30 +262,26 @@ export function ProjectSettingsPanel({
             <div className="settings-col">
               <section className="settings-card prose-card">
                 <h3>PROSE</h3>
-                
+
                 <div className="settings-field">
                   <div className="field-header">
                     <h4>Tense</h4>
                   </div>
                   <p className="card-description">
-                    This is the tense of your novel. It will be passed on to the
-                    AI for prose generation.
+                    This is the tense of your novel. It will be passed on to the AI for prose
+                    generation.
                   </p>
                   <div className="settings-toggle-group">
                     <button
                       type="button"
-                      className={
-                        project.settings.tense === "Past" ? "active" : ""
-                      }
+                      className={project.settings.tense === "Past" ? "active" : ""}
                       onClick={() => updateSetting("tense", "Past")}
                     >
                       Past
                     </button>
                     <button
                       type="button"
-                      className={
-                        project.settings.tense === "Present" ? "active" : ""
-                      }
+                      className={project.settings.tense === "Present" ? "active" : ""}
                       onClick={() => updateSetting("tense", "Present")}
                     >
                       Present
@@ -309,17 +294,19 @@ export function ProjectSettingsPanel({
                     <h4>Language</h4>
                   </div>
                   <p className="card-description">
-                    This is the language of your novel. It will be used for
-                    spell checking and hyphenation.
+                    This is the language of your novel. It will be used for spell checking and
+                    hyphenation.
                   </p>
                   <select
                     value={project.settings.language}
                     onChange={(e) => updateSetting("language", e.target.value)}
                     className="full-width"
                   >
-                    <option value="General English">General English</option>
-                    <option value="British English">British English</option>
-                    <option value="American English">American English</option>
+                    {storyLanguages.map((language) => (
+                      <option value={language} key={language}>
+                        {language}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -328,8 +315,8 @@ export function ProjectSettingsPanel({
                     <h4>Point of View</h4>
                   </div>
                   <p className="card-description">
-                    This is the general point of view of your novel. It will be
-                    passed on to the AI for prose generation.
+                    This is the general point of view of your novel. It will be passed on to the AI
+                    for prose generation.
                   </p>
                   <div className="pov-grid">
                     <span className="pov-label">Type</span>
@@ -344,9 +331,7 @@ export function ProjectSettingsPanel({
                         <button
                           key={type}
                           type="button"
-                          className={
-                            project.settings.povType === type ? "active" : ""
-                          }
+                          className={project.settings.povType === type ? "active" : ""}
                           onClick={() => updateSetting("povType", type)}
                         >
                           {type}

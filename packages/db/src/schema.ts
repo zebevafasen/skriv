@@ -5,6 +5,7 @@ import type {
   ProjectSettings,
   PromptMessage,
   SceneMetadata,
+  TagPackValues,
   TiptapNode,
   WorkflowKey,
 } from "@asterism/contracts";
@@ -123,6 +124,48 @@ export const projects = pgTable("projects", {
     .default({} as any),
   ...timestamps,
 });
+
+export const projectDefaults = pgTable("project_defaults", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  author: text("author").notNull().default(""),
+  language: text("language").notNull().default("General English"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const tagPacks = pgTable(
+  "tag_packs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    description: text("description").notNull().default(""),
+    values: jsonb("values").$type<TagPackValues>().notNull(),
+    ...timestamps,
+  },
+  (table) => [uniqueIndex("tag_packs_user_name_idx").on(table.userId, table.normalizedName)],
+);
+
+export const compendiumCategories = pgTable(
+  "compendium_categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    position: integer("position").notNull().default(0),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("compendium_categories_project_name_idx").on(table.projectId, table.normalizedName),
+  ],
+);
 
 export const projectNotes = pgTable("project_notes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -431,6 +474,7 @@ export const projectsRelations = relations(projects, ({ many }) => ({
   acts: many(acts),
   entries: many(compendiumEntries),
   notes: many(projectNotes),
+  categories: many(compendiumCategories),
 }));
 export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
   project: one(projects, { fields: [projectNotes.projectId], references: [projects.id] }),

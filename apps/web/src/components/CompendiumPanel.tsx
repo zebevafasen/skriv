@@ -1,5 +1,5 @@
-import type { CompendiumEntry } from "@asterism/contracts";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { CompendiumCategory, CompendiumEntry } from "@asterism/contracts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookMarked,
   Box,
@@ -8,6 +8,7 @@ import {
   ImagePlus,
   Landmark,
   MapPin,
+  Pencil,
   Plus,
   Save,
   Search,
@@ -48,9 +49,11 @@ function entrySummary(entry: CompendiumEntry): string {
 function StoryTypeMenu({
   onSelect,
   disabled,
+  categories = [],
 }: {
-  onSelect: (typeId: (typeof storyTypes)[number]["id"]) => void;
+  onSelect: (typeId: string) => void;
   disabled?: boolean;
+  categories?: CompendiumCategory[];
 }) {
   return (
     <div className="new-entry-menu" role="menu" aria-label="Choose entry type">
@@ -68,6 +71,17 @@ function StoryTypeMenu({
           </button>
         );
       })}
+      {categories.map((category) => (
+        <button
+          type="button"
+          role="menuitem"
+          key={category.id}
+          disabled={disabled}
+          onClick={() => onSelect(`custom.${category.id}`)}
+        >
+          <BookMarked size={16} /> {category.name}
+        </button>
+      ))}
     </div>
   );
 }
@@ -84,6 +98,11 @@ export function CompendiumPanel({
   onSelect: (id: string | null) => void;
 }) {
   const client = useQueryClient();
+  const dialog = useAppDialog();
+  const categories = useQuery({
+    queryKey: ["compendium-categories", projectId],
+    queryFn: () => api<CompendiumCategory[]>(`/api/projects/${projectId}/compendium-categories`),
+  });
   const [search, setSearch] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
@@ -96,12 +115,13 @@ export function CompendiumPanel({
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [createMenuOpen]);
   const createEntry = useMutation({
-    mutationFn: (typeId: (typeof storyTypes)[number]["id"]) => {
+    mutationFn: (typeId: string) => {
       const type = storyTypes.find((candidate) => candidate.id === typeId);
+      const custom = categories.data?.find((category) => `custom.${category.id}` === typeId);
       return api<CompendiumEntry>(`/api/projects/${projectId}/compendium`, {
         method: "POST",
         body: JSON.stringify({
-          name: `Untitled ${type?.label ?? "Entry"}`,
+          name: `Untitled ${type?.label ?? custom?.name ?? "Entry"}`,
           typeId,
           aliases: [],
           labels: [],
@@ -120,12 +140,42 @@ export function CompendiumPanel({
       onSelect(entry.id);
     },
   });
+  const createCategory = useMutation({
+    mutationFn: (name: string) =>
+      api<CompendiumCategory>(`/api/projects/${projectId}/compendium-categories`, {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["compendium-categories", projectId] }),
+  });
+  const deleteCategory = useMutation({
+    mutationFn: (id: string) => api(`/api/compendium-categories/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["compendium-categories", projectId] }),
+        client.invalidateQueries({ queryKey: ["compendium", projectId] }),
+      ]);
+    },
+  });
+  const renameCategory = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      api(`/api/compendium-categories/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["compendium-categories", projectId] }),
+  });
   const groups = useMemo(() => {
-    const labels = new Map<string, string>(storyTypes.map((type) => [type.id, type.label]));
+    const labels = new Map<string, string>([
+      ...storyTypes.map((type) => [type.id, type.label] as [string, string]),
+      ...(categories.data ?? []).map(
+        (category) => [`custom.${category.id}`, category.name] as [string, string],
+      ),
+    ]);
     const grouped = new Map<string, CompendiumEntry[]>();
     const query = search.trim().toLocaleLowerCase();
     for (const entry of entries.filter((item) => {
-      if (item.singleton && !["project.genres", "project.themes", "project.tags"].includes(item.typeId)) {
+      if (
+        item.singleton &&
+        !["project.genres", "project.themes", "project.tags"].includes(item.typeId)
+      ) {
         const isEmpty =
           item.content.kind === "selection"
             ? item.content.values.length === 0
@@ -145,14 +195,16 @@ export function CompendiumPanel({
     }
     const groupOrder = new Map<string, number>([
       ...storyTypes.map((type, index) => [type.label, index] as const),
-      ["Other", storyTypes.length] as const,
-      ["Project metadata", storyTypes.length + 1] as const,
+      ...(categories.data ?? []).map(
+        (category, index) => [category.name, storyTypes.length + index] as const,
+      ),
+      ["Project metadata", storyTypes.length + (categories.data?.length ?? 0)] as const,
     ]);
     return [...grouped.entries()].sort(
       ([left], [right]) =>
         (groupOrder.get(left) ?? storyTypes.length) - (groupOrder.get(right) ?? storyTypes.length),
     );
-  }, [entries, search]);
+  }, [entries, search, categories.data]);
 
   return (
     <aside className="entry-list compendium-sidebar">
@@ -196,6 +248,7 @@ export function CompendiumPanel({
               />
               <div id="new-entry-type-menu">
                 <StoryTypeMenu
+                  categories={categories.data ?? []}
                   disabled={createEntry.isPending}
                   onSelect={(typeId) => createEntry.mutate(typeId)}
                 />
@@ -203,8 +256,32 @@ export function CompendiumPanel({
             </>
           ) : null}
         </div>
+        <button
+          type="button"
+          className="icon-button"
+          title="Create custom category"
+          onClick={async () => {
+            const name = await dialog.prompt({
+              title: "New Compendium category",
+              label: "Category name",
+              initialValue: "",
+            });
+            if (name?.trim()) createCategory.mutate(name.trim());
+          }}
+        >
+          <Plus size={15} />
+        </button>
       </div>
-      {createEntry.error ? <ErrorNotice error={createEntry.error} /> : null}
+      {createEntry.error || createCategory.error || deleteCategory.error || renameCategory.error ? (
+        <ErrorNotice
+          error={
+            createEntry.error ??
+            createCategory.error ??
+            deleteCategory.error ??
+            renameCategory.error
+          }
+        />
+      ) : null}
       <div className="entry-groups">
         {groups.map(([label, groupedEntries]) => {
           const collapsed = collapsedGroups.has(label) && !search.trim();
@@ -230,6 +307,48 @@ export function CompendiumPanel({
                   </span>
                   <ChevronDown className={collapsed ? "collapsed" : ""} size={13} />
                 </button>
+                {(categories.data ?? []).some((category) => category.name === label) ? (
+                  <div className="button-row">
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Rename ${label} category`}
+                      onClick={async () => {
+                        const category = categories.data?.find((item) => item.name === label);
+                        if (!category) return;
+                        const name = await dialog.prompt({
+                          title: "Rename Compendium category",
+                          label: "Category name",
+                          initialValue: category.name,
+                        });
+                        if (name?.trim())
+                          renameCategory.mutate({ id: category.id, name: name.trim() });
+                      }}
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-button danger"
+                      aria-label={`Delete ${label} category`}
+                      onClick={async () => {
+                        const category = categories.data?.find((item) => item.name === label);
+                        if (
+                          category &&
+                          (await dialog.confirm({
+                            title: `Delete “${label}”?`,
+                            body: "Entries in this category will be moved to Other.",
+                            confirmLabel: "Delete category",
+                            destructive: true,
+                          }))
+                        )
+                          deleteCategory.mutate(category.id);
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ) : null}
               </header>
               {!collapsed
                 ? groupedEntries.map((entry) => {
@@ -313,6 +432,10 @@ export function CompendiumEntryDrawer({
 }) {
   const dialog = useAppDialog();
   const client = useQueryClient();
+  const categories = useQuery({
+    queryKey: ["compendium-categories", projectId],
+    queryFn: () => api<CompendiumCategory[]>(`/api/projects/${projectId}/compendium-categories`),
+  });
   const [draft, setDraft] = useState<CompendiumEntry | null>(entry);
   const [tab, setTab] = useState<"details" | "tracking">("details");
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
@@ -364,6 +487,7 @@ export function CompendiumEntryDrawer({
 
   if (!draft) return null;
   const currentType = storyTypes.find((type) => type.id === draft.typeId);
+  const customType = categories.data?.find((category) => `custom.${category.id}` === draft.typeId);
   const CurrentTypeIcon = currentType?.icon ?? BookMarked;
   const presets = currentType ? suggestedLabels[currentType.id] : [];
   const filteredPresets = presets.filter(
@@ -479,11 +603,13 @@ export function CompendiumEntryDrawer({
                 aria-expanded={typeMenuOpen}
                 onClick={() => setTypeMenuOpen((value) => !value)}
               >
-                <CurrentTypeIcon size={15} /> {currentType?.label ?? "Project metadata"}
+                <CurrentTypeIcon size={15} />{" "}
+                {currentType?.label ?? customType?.name ?? "Project metadata"}
                 {!draft.singleton ? <ChevronDown size={14} /> : null}
               </button>
               {typeMenuOpen ? (
                 <StoryTypeMenu
+                  categories={categories.data ?? []}
                   onSelect={(typeId) => {
                     setDraft({ ...draft, typeId });
                     setTypeMenuOpen(false);
@@ -682,7 +808,7 @@ export function CompendiumEntryDrawer({
                             if (
                               label &&
                               !selectionContent.values.some(
-                                (v) => v.label.toLocaleLowerCase() === label.toLocaleLowerCase()
+                                (v) => v.label.toLocaleLowerCase() === label.toLocaleLowerCase(),
                               )
                             ) {
                               setDraft({

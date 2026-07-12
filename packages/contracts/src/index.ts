@@ -7,3 +7,4 @@ export * from "./packages.js";
 export * from "./primitives.js";
 export * from "./prompts.js";
 export * from "./settings.js";
+export * from "./setup.js";

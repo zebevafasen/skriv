@@ -1,16 +1,43 @@
 import { describe, expect, it } from "vitest";
 import {
+  compendiumTypeIdSchema,
   createManuscriptItemInputSchema,
+  createProjectInputSchema,
   createProjectNoteInputSchema,
   editorSettingsSchema,
   generationRequestSchema,
+  manuscriptExportOptionsSchema,
   promptDefinitionSchema,
   sceneMetadataSchema,
   selectionActionSchema,
+  tagPackSchema,
   updateProjectNoteInputSchema,
 } from "./index.js";
 
 describe("shared contracts", () => {
+  it("validates advanced project setup and export options", () => {
+    expect(
+      createProjectInputSchema.parse({
+        title: "Story",
+        outline: { kind: "preset", presetId: "three-act" },
+      }),
+    ).toMatchObject({ language: "General English", tagPackIds: [] });
+    expect(manuscriptExportOptionsSchema.parse({ format: "docx" })).toMatchObject({
+      titlePage: true,
+      includeEmptyScenes: false,
+    });
+    expect(compendiumTypeIdSchema.safeParse(`custom.${crypto.randomUUID()}`).success).toBe(true);
+    expect(
+      tagPackSchema.safeParse({
+        id: "pack.fantasy",
+        name: "Fantasy",
+        ownership: "builtin",
+        values: { genres: [], themes: [], tags: [] },
+        createdAt: null,
+        updatedAt: null,
+      }).success,
+    ).toBe(true);
+  });
   it("requires an event for toward-event generation", () => {
     const result = generationRequestSchema.safeParse({
       sceneId: crypto.randomUUID(),

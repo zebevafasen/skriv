@@ -1,9 +1,16 @@
-import type { AiSettings, ContentPackage } from "@asterism/contracts";
+import type {
+  AiSettings,
+  CompendiumCategory,
+  CompendiumEntry,
+  ContentPackage,
+  TagPack,
+} from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dice5, Lock, Sparkles, X } from "lucide-react";
+import { BookMarked, Dice5, Lock, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
+import { useAppDialog } from "./DialogProvider.js";
 import { ModelSelect } from "./ModelSelect.js";
 
 type Value = { definitionId: string | null; label: string; locked: boolean };
@@ -20,6 +27,7 @@ type Collection = {
   values: Array<{ definitionId: string | null; label: string }>;
 };
 type CustomDefinition = { id: string; kind: "genre" | "theme" | "tag"; label: string };
+type EntityAlternative = { id: string; name: string; description: string };
 type Definitions = {
   package: ContentPackage;
   enabled: boolean;
@@ -29,6 +37,7 @@ type Definitions = {
 
 export function IdeationPanel({ projectId }: { projectId: string }) {
   const client = useQueryClient();
+  const dialog = useAppDialog();
   const definitions = useQuery({
     queryKey: ["ideation-definitions"],
     queryFn: () => api<Definitions>("/api/ideation/definitions"),
@@ -45,6 +54,19 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     queryKey: ["models"],
     queryFn: () => api<Array<{ id: string; name: string }>>("/api/models"),
   });
+  const packs = useQuery({
+    queryKey: ["tag-packs"],
+    queryFn: () => api<TagPack[]>("/api/tag-packs"),
+  });
+  const categories = useQuery({
+    queryKey: ["compendium-categories", projectId],
+    queryFn: () => api<CompendiumCategory[]>(`/api/projects/${projectId}/compendium-categories`),
+  });
+  const compendium = useQuery({
+    queryKey: ["compendium", projectId],
+    queryFn: () => api<CompendiumEntry[]>(`/api/projects/${projectId}/compendium`),
+  });
+  const [mode, setMode] = useState<"premise" | "entity">("premise");
   const [genres, setGenres] = useState<Value[]>([]);
   const [themes, setThemes] = useState<Value[]>([]);
   const [tags, setTags] = useState<Value[]>([]);
@@ -53,6 +75,10 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
   const [alternatives, setAlternatives] = useState<string[]>([]);
   const [model, setModel] = useState("");
   const [collectionName, setCollectionName] = useState("");
+  const [entityTypeId, setEntityTypeId] = useState("story.character");
+  const [entityContextIds, setEntityContextIds] = useState<string[]>([]);
+  const [entitySearch, setEntitySearch] = useState("");
+  const [entityAlternatives, setEntityAlternatives] = useState<EntityAlternative[]>([]);
   useEffect(() => {
     if (metadata.data) {
       setGenres(metadata.data.genres?.values ?? []);
@@ -96,17 +122,87 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
   });
   const createCollection = useMutation({
     mutationFn: () =>
-      api("/api/ideation/collections", {
+      api("/api/tag-packs", {
         method: "POST",
         body: JSON.stringify({
           name: collectionName,
-          kind: "tag",
-          values: tags.map(({ definitionId, label }) => ({ definitionId, label })),
+          description: "Custom ideation pack",
+          values: {
+            genres: genres.flatMap((value) => (value.definitionId ? [value.definitionId] : [])),
+            themes: themes.flatMap((value) => (value.definitionId ? [value.definitionId] : [])),
+            tags: tags.flatMap((value) => (value.definitionId ? [value.definitionId] : [])),
+          },
         }),
       }),
     onSuccess: async () => {
       setCollectionName("");
-      await client.invalidateQueries({ queryKey: ["ideation-definitions"] });
+      await client.invalidateQueries({ queryKey: ["tag-packs"] });
+    },
+  });
+  const importPack = useMutation({
+    mutationFn: (packId: string) =>
+      api(`/api/projects/${projectId}/tag-packs/${packId}/import`, { method: "POST" }),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["ideation", projectId] });
+    },
+  });
+  const updatePack = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: object }) =>
+      api(`/api/tag-packs/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["tag-packs"] }),
+  });
+  const deletePack = useMutation({
+    mutationFn: (id: string) => api(`/api/tag-packs/${id}`, { method: "DELETE" }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["tag-packs"] }),
+  });
+  const currentPackValues = () => ({
+    genres: genres.flatMap((value) => (value.definitionId ? [value.definitionId] : [])),
+    themes: themes.flatMap((value) => (value.definitionId ? [value.definitionId] : [])),
+    tags: tags.flatMap((value) => (value.definitionId ? [value.definitionId] : [])),
+  });
+  const generateEntity = useMutation({
+    mutationFn: () =>
+      api<{ alternatives: Array<{ name: string; description: string }> }>(
+        `/api/projects/${projectId}/ideation/generate`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            mode: "entity",
+            typeId: entityTypeId,
+            contextEntryIds: entityContextIds,
+            instructions,
+            count: 3,
+            modelOverride: model && model !== settings.data?.baseModel ? model : null,
+          }),
+        },
+      ),
+    onSuccess: (result) =>
+      setEntityAlternatives(
+        result.alternatives.map((alternative) => ({ ...alternative, id: crypto.randomUUID() })),
+      ),
+  });
+  const createEntity = useMutation({
+    mutationFn: (alternative: { name: string; description: string }) =>
+      api<CompendiumEntry>(`/api/projects/${projectId}/compendium`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: alternative.name,
+          typeId: entityTypeId,
+          content: {
+            kind: "rich_text",
+            plainText: alternative.description,
+            document: {
+              type: "doc",
+              content: alternative.description.split(/\r?\n/).map((line) => ({
+                type: "paragraph",
+                ...(line ? { content: [{ type: "text", text: line }] } : {}),
+              })),
+            },
+          },
+        }),
+      }),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["compendium", projectId] });
     },
   });
   const createDefinition = async (kind: CustomDefinition["kind"], label: string) => {
@@ -154,6 +250,22 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           </button>
         </div>
       </div>
+      <nav className="ideation-mode-tabs" aria-label="Ideation mode">
+        <button
+          type="button"
+          className={mode === "premise" ? "active" : ""}
+          onClick={() => setMode("premise")}
+        >
+          <Sparkles size={15} /> Premise
+        </button>
+        <button
+          type="button"
+          className={mode === "entity" ? "active" : ""}
+          onClick={() => setMode("entity")}
+        >
+          <BookMarked size={15} /> Entity
+        </button>
+      </nav>
       {definitions.error || metadata.error ? (
         <ErrorNotice error={definitions.error ?? metadata.error} />
       ) : null}
@@ -213,95 +325,273 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
             <div className="loading">Loading ingredients…</div>
           )}
           <section className="ingredient-group">
-            <h3>Reusable tag collections</h3>
-            <div className="chip-cloud">
-              {definitions.data?.collections.map((collection) => (
-                <button
-                  type="button"
-                  key={collection.id}
-                  className="chip"
-                  onClick={() =>
-                    setTags((current) => [
-                      ...current,
-                      ...collection.values
-                        .filter((value) => !current.some((item) => item.label === value.label))
-                        .map((value) => ({ ...value, locked: false })),
-                    ])
-                  }
-                >
-                  {collection.name}
-                </button>
+            <h3>Tag packs</h3>
+            <div className="tag-pack-groups">
+              {(["builtin", "user"] as const).map((ownership) => (
+                <div key={ownership}>
+                  <span className="field-label">
+                    {ownership === "builtin" ? "Built-in packs" : "Custom packs"}
+                  </span>
+                  {(packs.data ?? [])
+                    .filter((pack) => pack.ownership === ownership)
+                    .map((pack) => (
+                      <div className="tag-pack-row" key={pack.id}>
+                        <button
+                          type="button"
+                          className="chip"
+                          disabled={importPack.isPending}
+                          onClick={() => importPack.mutate(pack.id)}
+                        >
+                          {pack.name}
+                        </button>
+                        {ownership === "user" ? (
+                          <div className="button-row">
+                            <button
+                              type="button"
+                              className="icon-button"
+                              title="Replace pack with current ingredients"
+                              onClick={() =>
+                                updatePack.mutate({
+                                  id: pack.id,
+                                  payload: { values: currentPackValues() },
+                                })
+                              }
+                            >
+                              ↻
+                            </button>
+                            <button
+                              type="button"
+                              className="icon-button"
+                              title="Rename pack"
+                              onClick={async () => {
+                                const name = await dialog.prompt({
+                                  title: "Rename tag pack",
+                                  label: "Pack name",
+                                  initialValue: pack.name,
+                                });
+                                if (name?.trim())
+                                  updatePack.mutate({
+                                    id: pack.id,
+                                    payload: { name: name.trim() },
+                                  });
+                              }}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              className="icon-button danger"
+                              title="Delete pack"
+                              onClick={async () => {
+                                if (
+                                  await dialog.confirm({
+                                    title: `Delete “${pack.name}”?`,
+                                    body: "Projects that already imported this pack will not change.",
+                                    confirmLabel: "Delete pack",
+                                    destructive: true,
+                                  })
+                                )
+                                  deletePack.mutate(pack.id);
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                </div>
               ))}
             </div>
             <div className="collection-form">
               <input
                 value={collectionName}
                 onChange={(event) => setCollectionName(event.target.value)}
-                placeholder="Favorite tropes"
+                placeholder="My story ingredients"
               />
               <button
                 type="button"
                 className="button ghost"
-                disabled={!collectionName || tags.length === 0}
+                disabled={
+                  !collectionName ||
+                  (genres.length === 0 && themes.length === 0 && tags.length === 0)
+                }
                 onClick={() => createCollection.mutate()}
               >
-                Save current tags
+                Save current ingredients as pack
               </button>
             </div>
           </section>
         </div>
-        <div className="premise-workbench">
-          <div className="form-field">
-            <span>Premise model</span>
-            <ModelSelect
-              value={model}
-              onChange={(value) => {
-                setModel(value);
-                localStorage.setItem("asterism-latest-model", value);
+        {mode === "premise" ? (
+          <div className="premise-workbench">
+            <div className="form-field">
+              <span>Premise model</span>
+              <ModelSelect
+                value={model}
+                onChange={(value) => {
+                  setModel(value);
+                  localStorage.setItem("asterism-latest-model", value);
+                }}
+                models={models.data ?? []}
+              />
+            </div>
+            <label>
+              Project instructions
+              <textarea
+                value={instructions}
+                onChange={(event) => setInstructions(event.target.value)}
+                placeholder="Adult gothic tone; avoid chosen-one narratives."
+              />
+            </label>
+            <button
+              type="button"
+              className="button primary full"
+              disabled={generate.isPending}
+              onClick={() => {
+                persistIngredients();
+                generate.mutate();
               }}
-              models={models.data ?? []}
-            />
+            >
+              <Sparkles size={16} />{" "}
+              {generate.isPending ? "Generating…" : "Generate premise alternatives"}
+            </button>
+            {generate.error ? <ErrorNotice error={generate.error} /> : null}
+            <div className="alternative-list">
+              {alternatives.map((alternative) => (
+                <button type="button" key={alternative} onClick={() => setPremise(alternative)}>
+                  {alternative}
+                </button>
+              ))}
+            </div>
+            <label className="content-field">
+              Active premise
+              <textarea
+                value={premise}
+                onChange={(event) => setPremise(event.target.value)}
+                placeholder="Your project premise will live here…"
+              />
+            </label>
+            <button type="button" className="button ghost" onClick={() => save.mutate({ premise })}>
+              Save premise
+            </button>
           </div>
-          <label>
-            Project instructions
-            <textarea
-              value={instructions}
-              onChange={(event) => setInstructions(event.target.value)}
-              placeholder="Adult gothic tone; avoid chosen-one narratives."
-            />
-          </label>
-          <button
-            type="button"
-            className="button primary full"
-            disabled={generate.isPending}
-            onClick={() => {
-              persistIngredients();
-              generate.mutate();
-            }}
-          >
-            <Sparkles size={16} />{" "}
-            {generate.isPending ? "Generating…" : "Generate premise alternatives"}
-          </button>
-          {generate.error ? <ErrorNotice error={generate.error} /> : null}
-          <div className="alternative-list">
-            {alternatives.map((alternative) => (
-              <button type="button" key={alternative} onClick={() => setPremise(alternative)}>
-                {alternative}
-              </button>
-            ))}
+        ) : (
+          <div className="premise-workbench entity-workbench">
+            <label className="form-field">
+              <span>Entity category</span>
+              <select
+                value={entityTypeId}
+                onChange={(event) => setEntityTypeId(event.target.value)}
+              >
+                <option value="story.character">Character</option>
+                <option value="story.location">Location</option>
+                <option value="story.object">Object / Item</option>
+                <option value="story.faction">Faction</option>
+                <option value="story.lore">Lore</option>
+                <option value="story.other">Other</option>
+                {categories.data?.map((category) => (
+                  <option value={`custom.${category.id}`} key={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="field-label">Optional Compendium context</span>
+              <input
+                value={entitySearch}
+                onChange={(event) => setEntitySearch(event.target.value)}
+                placeholder="Search entries…"
+              />
+            </label>
+            <div className="entity-context-list">
+              {(compendium.data ?? [])
+                .filter(
+                  (entry) =>
+                    !entry.singleton &&
+                    entry.name.toLocaleLowerCase().includes(entitySearch.toLocaleLowerCase()),
+                )
+                .map((entry) => (
+                  <label key={entry.id}>
+                    <input
+                      type="checkbox"
+                      checked={entityContextIds.includes(entry.id)}
+                      onChange={() =>
+                        setEntityContextIds((current) =>
+                          current.includes(entry.id)
+                            ? current.filter((id) => id !== entry.id)
+                            : [...current, entry.id],
+                        )
+                      }
+                    />{" "}
+                    {entry.name}
+                  </label>
+                ))}
+            </div>
+            <label>
+              Instructions
+              <textarea
+                value={instructions}
+                onChange={(event) => setInstructions(event.target.value)}
+                placeholder="What should this entity contribute to the story?"
+              />
+            </label>
+            <div className="form-field">
+              <span>Entity model</span>
+              <ModelSelect value={model} onChange={setModel} models={models.data ?? []} />
+            </div>
+            <button
+              type="button"
+              className="button primary full"
+              disabled={generateEntity.isPending}
+              onClick={() => {
+                persistIngredients();
+                generateEntity.mutate();
+              }}
+            >
+              <Sparkles size={16} />{" "}
+              {generateEntity.isPending ? "Generating…" : "Generate entity alternatives"}
+            </button>
+            {generateEntity.error || createEntity.error ? (
+              <ErrorNotice error={generateEntity.error ?? createEntity.error} />
+            ) : null}
+            <div className="entity-alternatives">
+              {entityAlternatives.map((alternative, index) => (
+                <article key={alternative.id}>
+                  <input
+                    value={alternative.name}
+                    onChange={(event) =>
+                      setEntityAlternatives((current) =>
+                        current.map((item, itemIndex) =>
+                          itemIndex === index ? { ...item, name: event.target.value } : item,
+                        ),
+                      )
+                    }
+                  />
+                  <textarea
+                    value={alternative.description}
+                    onChange={(event) =>
+                      setEntityAlternatives((current) =>
+                        current.map((item, itemIndex) =>
+                          itemIndex === index ? { ...item, description: event.target.value } : item,
+                        ),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="button ghost"
+                    disabled={!alternative.name.trim() || createEntity.isPending}
+                    onClick={() => createEntity.mutate(alternative)}
+                  >
+                    Create Compendium entry
+                  </button>
+                </article>
+              ))}
+            </div>
           </div>
-          <label className="content-field">
-            Active premise
-            <textarea
-              value={premise}
-              onChange={(event) => setPremise(event.target.value)}
-              placeholder="Your project premise will live here…"
-            />
-          </label>
-          <button type="button" className="button ghost" onClick={() => save.mutate({ premise })}>
-            Save premise
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

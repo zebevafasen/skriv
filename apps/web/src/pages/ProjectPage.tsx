@@ -29,6 +29,7 @@ import { ErrorNotice } from "../components/AppShell.js";
 import { ChatPanel } from "../components/ChatPanel.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
+import { ExportDialog } from "../components/ExportDialog.js";
 import { IdeationPanel } from "../components/IdeationPanel.js";
 import {
   ManuscriptEditor,
@@ -93,6 +94,7 @@ export function ProjectPage() {
   const dialog = useAppDialog();
   const tab: Tab = search.tab ?? "manuscript";
   const [moreOpen, setMoreOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
   const [compendiumOpen, setCompendiumOpen] = useState(
     () => !window.matchMedia("(max-width: 900px)").matches,
@@ -406,9 +408,13 @@ export function ProjectPage() {
             </button>
           </div>
         </div>
-        <a className="button ghost project-export" href={`/api/projects/${projectId}/export`}>
+        <button
+          type="button"
+          className="button ghost project-export"
+          onClick={() => setExportOpen(true)}
+        >
           <Download size={15} /> Export
-        </a>
+        </button>
         <nav className="project-tabs">
           <button
             type="button"
@@ -737,9 +743,15 @@ export function ProjectPage() {
               >
                 <Pencil size={17} /> Rename project
               </button>
-              <a href={`/api/projects/${projectId}/export`}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  setExportOpen(true);
+                }}
+              >
                 <Download size={17} /> Export manuscript
-              </a>
+              </button>
               <button
                 type="button"
                 onClick={async () => {
@@ -784,6 +796,10 @@ export function ProjectPage() {
             </button>
           </section>
         </div>
+      ) : null}
+
+      {exportOpen ? (
+        <ExportDialog projectId={projectId} onClose={() => setExportOpen(false)} />
       ) : null}
 
       {previewEntryIds.length > 0 ? (

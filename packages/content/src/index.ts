@@ -2,6 +2,7 @@ import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@as
 import genres from "./genres.json" with { type: "json" };
 import packageMetadata from "./manifest.json" with { type: "json" };
 import prompts from "./prompts.json" with { type: "json" };
+import tagPacks from "./tag-packs.json" with { type: "json" };
 import tags from "./tags.json" with { type: "json" };
 import themes from "./themes.json" with { type: "json" };
 
@@ -10,6 +11,7 @@ export const basePackage: ContentPackage = contentPackageSchema.parse({
   genres,
   themes,
   tags,
+  tagPacks,
   prompts,
 });
 
@@ -22,3 +24,5 @@ export function getBuiltinPrompt(workflow: WorkflowKey) {
 export function validateBuiltinContent(): ContentPackage {
   return contentPackageSchema.parse(basePackage);
 }
+
+export * from "./outline-presets.js";

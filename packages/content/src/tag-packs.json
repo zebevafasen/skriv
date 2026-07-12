@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pack.fantasy",
+    "name": "Fantasy",
+    "description": "Magic, quests, invented worlds, and mythic conflict.",
+    "values": {
+      "genres": ["genre.fantasy"],
+      "themes": ["theme.sacrifice", "theme.found_family", "theme.corruption"],
+      "tags": ["tag.magic_system", "tag.high_fantasy", "tag.medieval", "tag.grimdark"]
+    }
+  },
+  {
+    "id": "pack.science_fiction",
+    "name": "Science Fiction",
+    "description": "Speculative technology, futures, and social change.",
+    "values": {
+      "genres": ["genre.science_fiction"],
+      "themes": ["theme.identity", "theme.freedom", "theme.corruption"],
+      "tags": ["tag.forbidden_technology", "tag.cyberpunk", "tag.human_centric"]
+    }
+  },
+  {
+    "id": "pack.romance",
+    "name": "Romance",
+    "description": "Intimacy, emotional obstacles, and relationship arcs.",
+    "values": {
+      "genres": ["genre.romance"],
+      "themes": ["theme.identity", "theme.sacrifice", "theme.found_family"],
+      "tags": ["tag.slow_burn"]
+    }
+  },
+  {
+    "id": "pack.mystery",
+    "name": "Mystery",
+    "description": "Questions, clues, secrets, and discovery.",
+    "values": {
+      "genres": ["genre.mystery"],
+      "themes": ["theme.revenge", "theme.corruption", "theme.identity"],
+      "tags": ["tag.unreliable_narrator", "tag.isolated_village"]
+    }
+  }
+]

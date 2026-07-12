@@ -36,7 +36,7 @@ for (const viewport of viewports) {
 
     await page.goto("/");
     await page.getByRole("button", { name: "Create story" }).click();
-    await expect(page.getByRole("heading", { name: "Name your story" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create your story" })).toBeVisible();
     await expectNoDocumentOverflow(page);
     await page.getByRole("button", { name: "Cancel" }).click();
   });

@@ -3,7 +3,13 @@ import {
   createCompendiumEntryInputSchema,
   updateCompendiumEntryInputSchema,
 } from "@asterism/contracts";
-import { compendiumEntries, projects, touchUpdatedAt, workspaceMembers } from "@asterism/db";
+import {
+  compendiumCategories,
+  compendiumEntries,
+  projects,
+  touchUpdatedAt,
+  workspaceMembers,
+} from "@asterism/db";
 import { and, asc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -34,6 +40,19 @@ async function ownedEntry(context: AppContext, userId: string, entryId: string) 
   return row?.entry ?? null;
 }
 
+async function validType(context: AppContext, projectId: string, typeId: string) {
+  if (!typeId.startsWith("custom.")) return true;
+  const categoryId = typeId.slice("custom.".length);
+  const [row] = await context.db
+    .select({ id: compendiumCategories.id })
+    .from(compendiumCategories)
+    .where(
+      and(eq(compendiumCategories.id, categoryId), eq(compendiumCategories.projectId, projectId)),
+    )
+    .limit(1);
+  return Boolean(row);
+}
+
 export async function registerCompendiumRoutes(
   app: FastifyInstance,
   context: AppContext,
@@ -62,6 +81,11 @@ export async function registerCompendiumRoutes(
           message: "Project metadata types are managed singleton entries.",
         },
       });
+    }
+    if (!(await validType(context, projectId, input.typeId))) {
+      return reply
+        .code(400)
+        .send({ error: { code: "BAD_REQUEST", message: "Custom category not found." } });
     }
     const [created] = await context.db
       .insert(compendiumEntries)
@@ -104,6 +128,11 @@ export async function registerCompendiumRoutes(
       return reply.code(400).send({
         error: { code: "BAD_REQUEST", message: "Singleton metadata types cannot be changed." },
       });
+    }
+    if (input.typeId && !(await validType(context, entry.projectId, input.typeId))) {
+      return reply
+        .code(400)
+        .send({ error: { code: "BAD_REQUEST", message: "Custom category not found." } });
     }
     const [updated] = await context.db
       .update(compendiumEntries)

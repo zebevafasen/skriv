@@ -303,5 +303,28 @@
     "variables": ["project_context", "target_budget"],
     "createdAt": null,
     "updatedAt": null
+  },
+  {
+    "id": "builtin.ideation.entity.default",
+    "name": "Default Entity Ideation",
+    "workflow": "ideation.entity",
+    "version": 1,
+    "description": "Creates three editable story-entity alternatives grounded in project ingredients and selected context.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a fiction development partner. Create exactly three distinct {{category}} concepts. Return one concept per line as Name | Description. Keep each description concise, concrete, and compatible with the supplied story context."
+      },
+      {
+        "role": "user",
+        "content": "Genres: {{genres}}\nThemes: {{themes}}\nTags: {{tags}}\n\nSelected canonical context:\n{{selected_context}}\n\nAdditional instructions:\n{{user_instructions}}"
+      }
+    ],
+    "variables": ["category", "genres", "themes", "tags", "selected_context", "user_instructions"],
+    "createdAt": null,
+    "updatedAt": null
   }
 ]

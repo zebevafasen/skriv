@@ -9,6 +9,7 @@ import Fastify from "fastify";
 import { createAuth, ensureDevelopmentUser, registerAuth } from "./auth.js";
 import type { AppContext } from "./context.js";
 import { createProviderResolver } from "./credentials.js";
+import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerCompendiumRoutes } from "./routes/compendium.js";
 import { registerExportRoutes } from "./routes/export.js";
@@ -20,6 +21,7 @@ import { registerNoteRoutes } from "./routes/notes.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerPromptRoutes } from "./routes/prompts.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
+import { registerSetupRoutes } from "./routes/setup.js";
 import { registerSummaryRoutes } from "./routes/summaries.js";
 
 export async function buildApp(env: ServerEnv = loadServerEnv()) {
@@ -68,9 +70,11 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   await registerProjectRoutes(app, context);
   await registerNoteRoutes(app, context);
   await registerCompendiumRoutes(app, context);
+  await registerCategoryRoutes(app, context);
   await registerChatRoutes(app, context);
   await registerPromptRoutes(app, context);
   await registerSettingsRoutes(app, context);
+  await registerSetupRoutes(app, context);
   await registerGenerationRoutes(app, context);
   await registerSummaryRoutes(app, context);
   await registerIdeationRoutes(app, context);

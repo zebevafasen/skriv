@@ -1,8 +1,16 @@
-import type { Project } from "@asterism/contracts";
+import {
+  type CompendiumCategory,
+  type CompendiumEntry,
+  type ManuscriptTree,
+  type Project,
+  type ProjectDefaults,
+  storyLanguages,
+  type TagPack,
+} from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Plus, Search, Sparkles, Upload } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 
@@ -17,6 +25,13 @@ export function projectArtworkVariant(projectId: string, variants = 5) {
 export function LibraryPage() {
   const [query, setQuery] = useState("");
   const [newTitle, setNewTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [language, setLanguage] = useState<ProjectDefaults["language"]>("General English");
+  const [advanced, setAdvanced] = useState(false);
+  const [outlineChoice, setOutlineChoice] = useState("blank");
+  const [copyProjectId, setCopyProjectId] = useState("");
+  const [copyEntryIds, setCopyEntryIds] = useState<string[]>([]);
+  const [tagPackIds, setTagPackIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const client = useQueryClient();
@@ -25,9 +40,67 @@ export function LibraryPage() {
     queryKey: ["projects"],
     queryFn: () => api<Project[]>("/api/projects"),
   });
+  const defaults = useQuery({
+    queryKey: ["project-defaults"],
+    queryFn: () => api<ProjectDefaults>("/api/project-defaults"),
+  });
+  const tagPacks = useQuery({
+    queryKey: ["tag-packs"],
+    queryFn: () => api<TagPack[]>("/api/tag-packs"),
+  });
+  const sourceEntries = useQuery({
+    queryKey: ["compendium", copyProjectId],
+    queryFn: () => api<CompendiumEntry[]>(`/api/projects/${copyProjectId}/compendium`),
+    enabled: Boolean(copyProjectId),
+  });
+  const sourceCategories = useQuery({
+    queryKey: ["compendium-categories", copyProjectId],
+    queryFn: () =>
+      api<CompendiumCategory[]>(`/api/projects/${copyProjectId}/compendium-categories`),
+    enabled: Boolean(copyProjectId),
+  });
+  const sourceTree = useQuery({
+    queryKey: ["project-tree", copyProjectId],
+    queryFn: () => api<ManuscriptTree>(`/api/projects/${copyProjectId}/tree`),
+    enabled: Boolean(copyProjectId) && outlineChoice === "copy",
+  });
+  useEffect(() => {
+    if (!defaults.data) return;
+    setAuthor(defaults.data.author);
+    setLanguage(defaults.data.language);
+  }, [defaults.data]);
+  useEffect(() => {
+    if (!defaults.data || (author === defaults.data.author && language === defaults.data.language))
+      return;
+    const timer = window.setTimeout(() => {
+      void api("/api/project-defaults", {
+        method: "PUT",
+        body: JSON.stringify({ author, language }),
+      }).then(() => client.invalidateQueries({ queryKey: ["project-defaults"] }));
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [author, language, defaults.data, client]);
   const createProject = useMutation({
-    mutationFn: (title: string) =>
-      api<CreatedProject>("/api/projects", { method: "POST", body: JSON.stringify({ title }) }),
+    mutationFn: () =>
+      api<CreatedProject>("/api/projects", {
+        method: "POST",
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          author,
+          language,
+          tagPackIds,
+          outline:
+            outlineChoice === "copy"
+              ? { kind: "project", projectId: copyProjectId }
+              : outlineChoice === "blank"
+                ? { kind: "blank" }
+                : { kind: "preset", presetId: outlineChoice },
+          compendiumCopy:
+            copyProjectId && copyEntryIds.length
+              ? { sourceProjectId: copyProjectId, entryIds: copyEntryIds }
+              : null,
+        }),
+      }),
     onSuccess: async ({ project }) => {
       await client.invalidateQueries({ queryKey: ["projects"] });
       await navigate({ to: "/projects/$projectId", params: { projectId: project.id } });
@@ -71,6 +144,23 @@ export function LibraryPage() {
       ),
     [projects.data, query],
   );
+  const copyableEntries = (sourceEntries.data ?? []).filter((entry) => !entry.singleton);
+  const customCategoryNames = new Map(
+    (sourceCategories.data ?? []).map((category) => [`custom.${category.id}`, category.name]),
+  );
+  const standardNames: Record<string, string> = {
+    "story.character": "Characters",
+    "story.location": "Locations",
+    "story.object": "Objects",
+    "story.faction": "Factions",
+    "story.lore": "Lore",
+    "story.other": "Other",
+  };
+  const entryGroups = [...new Set(copyableEntries.map((entry) => entry.typeId))].map((typeId) => ({
+    typeId,
+    name: standardNames[typeId] ?? customCategoryNames.get(typeId) ?? "Custom",
+    entries: copyableEntries.filter((entry) => entry.typeId === typeId),
+  }));
 
   return (
     <div className="page library-page">
@@ -146,16 +236,189 @@ export function LibraryPage() {
             onMouseDown={(event) => event.stopPropagation()}
             onSubmit={(event) => {
               event.preventDefault();
-              if (newTitle.trim()) createProject.mutate(newTitle.trim());
+              if (newTitle.trim() && (outlineChoice !== "copy" || copyProjectId))
+                createProject.mutate();
             }}
           >
             <p className="eyebrow">New project</p>
-            <h2>Name your story</h2>
-            <input
-              value={newTitle}
-              onChange={(event) => setNewTitle(event.target.value)}
-              placeholder="The Last Ember"
-            />
+            <h2>Create your story</h2>
+            <div className="new-project-fields">
+              <label>
+                <span>Title</span>
+                <input
+                  value={newTitle}
+                  onChange={(event) => setNewTitle(event.target.value)}
+                  placeholder="The Last Ember"
+                />
+              </label>
+              <label>
+                <span>Author / pen name</span>
+                <input
+                  value={author}
+                  onChange={(event) => setAuthor(event.target.value)}
+                  placeholder="Your name"
+                />
+              </label>
+              <label>
+                <span>Series</span>
+                <select disabled>
+                  <option>Coming soon</option>
+                </select>
+              </label>
+              <label>
+                <span>Story language</span>
+                <select
+                  value={language}
+                  onChange={(event) =>
+                    setLanguage(event.target.value as ProjectDefaults["language"])
+                  }
+                >
+                  {storyLanguages.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              className="button ghost advanced-toggle"
+              onClick={() => setAdvanced((value) => !value)}
+            >
+              {advanced ? "Hide advanced setup" : "Show advanced setup"}
+            </button>
+            {advanced ? (
+              <div className="new-project-advanced">
+                <section>
+                  <h3>Outline layout</h3>
+                  <select
+                    value={outlineChoice}
+                    onChange={(event) => setOutlineChoice(event.target.value)}
+                  >
+                    <option value="blank">Blank</option>
+                    <option value="three-act">Three-Act Structure</option>
+                    <option value="save-the-cat">Save the Cat</option>
+                    <option value="copy">Copy layout from a project</option>
+                  </select>
+                  {outlineChoice === "copy" && copyProjectId && sourceTree.data ? (
+                    <p className="hint">
+                      Copies {sourceTree.data.acts.length} Acts and{" "}
+                      {
+                        sourceTree.data.acts
+                          .flatMap((act) => act.chapters)
+                          .flatMap((chapter) => chapter.scenes).length
+                      }{" "}
+                      empty Scenes.
+                    </p>
+                  ) : null}
+                </section>
+                <section>
+                  <h3>Tag packs</h3>
+                  <div className="setup-check-list">
+                    {tagPacks.data?.map((pack) => (
+                      <label key={pack.id}>
+                        <input
+                          type="checkbox"
+                          checked={tagPackIds.includes(pack.id)}
+                          onChange={() =>
+                            setTagPackIds((current) =>
+                              current.includes(pack.id)
+                                ? current.filter((id) => id !== pack.id)
+                                : [...current, pack.id],
+                            )
+                          }
+                        />
+                        <span>
+                          <strong>{pack.name}</strong>
+                          <small>{pack.description}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+                <section>
+                  <h3>Copy from another project</h3>
+                  <select
+                    value={copyProjectId}
+                    onChange={(event) => {
+                      setCopyProjectId(event.target.value);
+                      setCopyEntryIds([]);
+                    }}
+                  >
+                    <option value="">Choose a project…</option>
+                    {projects.data?.map((project) => (
+                      <option value={project.id} key={project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                  </select>
+                  {copyProjectId ? (
+                    <div className="compendium-copy-list">
+                      <label className="copy-all">
+                        <input
+                          type="checkbox"
+                          checked={
+                            copyableEntries.length > 0 &&
+                            copyEntryIds.length === copyableEntries.length
+                          }
+                          onChange={() =>
+                            setCopyEntryIds(
+                              copyEntryIds.length === copyableEntries.length
+                                ? []
+                                : copyableEntries.map((entry) => entry.id),
+                            )
+                          }
+                        />{" "}
+                        All Compendium entries
+                      </label>
+                      {entryGroups.map((group) => (
+                        <div key={group.typeId}>
+                          <label className="copy-category">
+                            <input
+                              type="checkbox"
+                              checked={
+                                group.entries.length > 0 &&
+                                group.entries.every((entry) => copyEntryIds.includes(entry.id))
+                              }
+                              onChange={() =>
+                                setCopyEntryIds((current) =>
+                                  group.entries.every((entry) => current.includes(entry.id))
+                                    ? current.filter(
+                                        (id) => !group.entries.some((entry) => entry.id === id),
+                                      )
+                                    : [
+                                        ...new Set([
+                                          ...current,
+                                          ...group.entries.map((entry) => entry.id),
+                                        ]),
+                                      ],
+                                )
+                              }
+                            />{" "}
+                            {group.name}
+                          </label>
+                          {group.entries.map((entry) => (
+                            <label key={entry.id}>
+                              <input
+                                type="checkbox"
+                                checked={copyEntryIds.includes(entry.id)}
+                                onChange={() =>
+                                  setCopyEntryIds((current) =>
+                                    current.includes(entry.id)
+                                      ? current.filter((id) => id !== entry.id)
+                                      : [...current, entry.id],
+                                  )
+                                }
+                              />{" "}
+                              {entry.name}
+                            </label>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+              </div>
+            ) : null}
             {createProject.error ? <ErrorNotice error={createProject.error} /> : null}
             <div className="modal-actions">
               <button type="button" className="button ghost" onClick={() => setCreating(false)}>
@@ -164,7 +427,11 @@ export function LibraryPage() {
               <button
                 type="submit"
                 className="button primary"
-                disabled={!newTitle.trim() || createProject.isPending}
+                disabled={
+                  !newTitle.trim() ||
+                  createProject.isPending ||
+                  (outlineChoice === "copy" && !copyProjectId)
+                }
               >
                 Create project
               </button>

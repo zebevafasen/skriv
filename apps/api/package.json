@@ -21,8 +21,10 @@
     "@fastify/rate-limit": "11.1.0",
     "@fastify/sensible": "6.0.4",
     "better-auth": "1.6.23",
+    "docx": "^9.7.1",
     "drizzle-orm": "0.45.2",
     "fastify": "5.10.0",
+    "pdf-lib": "^1.17.1",
     "pg": "8.22.0",
     "zod": "4.4.3"
   },

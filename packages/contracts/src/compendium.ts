@@ -4,7 +4,7 @@ import { idSchema, timestampSchema } from "./primitives.js";
 
 export const activationModeSchema = z.enum(["mention", "always", "never", "smart"]);
 
-export const compendiumTypeIdSchema = z.enum([
+export const standardCompendiumTypeIdSchema = z.enum([
   "story.character",
   "story.location",
   "story.object",
@@ -17,6 +17,27 @@ export const compendiumTypeIdSchema = z.enum([
   "project.tags",
   "project.instructions",
 ]);
+
+export const customCompendiumTypeIdSchema = z.string().regex(/^custom\.[0-9a-f-]{36}$/i);
+export const compendiumTypeIdSchema = z.union([
+  standardCompendiumTypeIdSchema,
+  customCompendiumTypeIdSchema,
+]);
+
+export const compendiumCategorySchema = z.object({
+  id: idSchema,
+  projectId: idSchema,
+  name: z.string().trim().min(1).max(120),
+  position: z.number().int().nonnegative(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+});
+
+export const createCompendiumCategoryInputSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+});
+
+export const updateCompendiumCategoryInputSchema = createCompendiumCategoryInputSchema;
 
 const selectedValueSchema = z.object({
   definitionId: z.string().nullable().default(null),
@@ -96,3 +117,5 @@ export const contextFragmentSchema = z.object({
 export type CompendiumEntry = z.infer<typeof compendiumEntrySchema>;
 export type CompendiumContent = z.infer<typeof compendiumContentSchema>;
 export type ContextFragment = z.infer<typeof contextFragmentSchema>;
+export type CompendiumCategory = z.infer<typeof compendiumCategorySchema>;
+export type CompendiumTypeId = z.infer<typeof compendiumTypeIdSchema>;

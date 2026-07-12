@@ -2,6 +2,7 @@ import type {
   ChatContextSource,
   ChatMessage,
   ChatThread,
+  CompendiumCategory,
   CompendiumEntry,
   ManuscriptTree,
 } from "@asterism/contracts";
@@ -27,6 +28,7 @@ import {
   Fragment,
   isValidElement,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -162,6 +164,10 @@ export function ChatPanel({
   onThreadChange: (id: string | null) => void;
 }) {
   const client = useQueryClient();
+  const categories = useQuery({
+    queryKey: ["compendium-categories", projectId],
+    queryFn: () => api<CompendiumCategory[]>(`/api/projects/${projectId}/compendium-categories`),
+  });
   const dialog = useAppDialog();
   const [draft, setDraft] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -302,6 +308,12 @@ export function ChatPanel({
   };
   const sources = thread.data?.contextSources ?? [];
   const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
+  const typeLabel = useCallback(
+    (typeId: string) =>
+      categories.data?.find((category) => `custom.${category.id}` === typeId)?.name ??
+      entryTypeLabel(typeId),
+    [categories.data],
+  );
   const sourceKeys = new Set(sources.map(sourceKey));
   const toggleSource = (source: ChatContextSource) => {
     setContextOpen(false);
@@ -334,7 +346,7 @@ export function ChatPanel({
       ]),
       { label: "All Compendium entries", source: { kind: "compendium_all" } as ChatContextSource },
       ...[...new Set(entries.map((e) => e.typeId))].map((typeId) => ({
-        label: `Entries · ${typeId.replace("story.", "")}`,
+        label: `Entries · ${typeLabel(typeId)}`,
         source: { kind: "compendium_type", typeId } as ChatContextSource,
       })),
       ...entries.map((entry) => ({
@@ -342,7 +354,7 @@ export function ChatPanel({
         source: { kind: "compendium_entry", id: entry.id } as ChatContextSource,
       })),
     ],
-    [tree, entries, structureLabels],
+    [tree, entries, structureLabels, typeLabel],
   );
   const contextGroups = useMemo(
     () => [
@@ -387,8 +399,8 @@ export function ChatPanel({
         label: "Compendium Entries",
         items: entries.map((entry) => ({
           label: entry.name,
-          group: entryTypeLabel(entry.typeId),
-          detail: entry.typeId.replace("story.", ""),
+          group: typeLabel(entry.typeId),
+          detail: typeLabel(entry.typeId),
           source: { kind: "compendium_entry", id: entry.id } as ChatContextSource,
         })),
       },
@@ -396,14 +408,14 @@ export function ChatPanel({
         id: "types",
         label: "Entries by Type",
         items: [...new Set(entries.map((entry) => entry.typeId))].map((typeId) => ({
-          label: typeId.replace("story.", ""),
+          label: typeLabel(typeId),
           group: "Entry types",
           detail: `${entries.filter((entry) => entry.typeId === typeId).length} entries`,
           source: { kind: "compendium_type", typeId } as ChatContextSource,
         })),
       },
     ],
-    [tree, entries, structureLabels],
+    [tree, entries, structureLabels, typeLabel],
   );
   const latestMessage = thread.data?.messages?.at(-1);
   useEffect(() => {

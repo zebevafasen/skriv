@@ -1,3 +1,4 @@
+import { basePackage, getOutlinePreset } from "@asterism/content";
 import {
   actSchema,
   type CompendiumContent,
@@ -18,11 +19,13 @@ import {
 import {
   acts,
   chapters,
+  compendiumCategories,
   compendiumEntries,
   projects,
   sceneRevisions,
   scenes,
   touchUpdatedAt,
+  userDefinitions,
   workspaceMembers,
 } from "@asterism/db";
 import { and, asc, desc, eq, gte, inArray, max, sql } from "drizzle-orm";
@@ -31,6 +34,7 @@ import { z } from "zod";
 import type { AppContext } from "../context.js";
 import { conflict, notFound, parseWith } from "../http.js";
 import { ownedAct, ownedChapter, ownedScene, ownedWorkspaceId, ownsProject } from "../ownership.js";
+import { getTagPacks } from "./setup.js";
 
 const idParams = z.object({ id: z.uuid() });
 const childParams = z.object({ id: z.uuid(), childId: z.uuid().optional() });
@@ -109,45 +113,260 @@ export async function registerProjectRoutes(
   app.post("/api/projects", async (request, reply) => {
     const input = parseWith(createProjectInputSchema, request.body);
     const workspaceId = await ownedWorkspaceId(context, request.userId);
+
+    const packs = await getTagPacks(context, request.userId);
+    const selectedPacks = input.tagPackIds.map((id) => packs.find((pack) => pack.id === id));
+    if (selectedPacks.some((pack) => !pack)) {
+      return reply
+        .code(400)
+        .send({ error: { code: "BAD_REQUEST", message: "One or more tag packs were not found." } });
+    }
+    const definitionIds = [
+      ...new Set(
+        selectedPacks.flatMap((pack) =>
+          pack ? [...pack.values.genres, ...pack.values.themes, ...pack.values.tags] : [],
+        ),
+      ),
+    ];
+    const customDefinitionIds = definitionIds.filter((id) => z.uuid().safeParse(id).success);
+    const customDefinitions = customDefinitionIds.length
+      ? await context.db
+          .select()
+          .from(userDefinitions)
+          .where(
+            and(
+              eq(userDefinitions.userId, request.userId),
+              inArray(userDefinitions.id, customDefinitionIds),
+            ),
+          )
+      : [];
+    const definitions = new Map<string, { id: string; label: string }>(
+      [...basePackage.genres, ...basePackage.themes, ...basePackage.tags, ...customDefinitions].map(
+        (item) => [item.id, { id: item.id, label: item.label }],
+      ),
+    );
+    const valuesFor = (kind: "genres" | "themes" | "tags") => {
+      const values: Array<{ definitionId: string; label: string; locked: boolean }> = [];
+      for (const id of selectedPacks.flatMap((pack) => pack?.values[kind] ?? [])) {
+        const definition = definitions.get(id);
+        if (!definition)
+          throw Object.assign(new Error(`Tag-pack definition ${id} is unavailable.`), {
+            statusCode: 400,
+          });
+        if (
+          !values.some(
+            (value) => value.label.toLocaleLowerCase() === definition.label.toLocaleLowerCase(),
+          )
+        )
+          values.push({ definitionId: id, label: definition.label, locked: false });
+      }
+      return values;
+    };
+
+    let copiedActs: Array<{ chapters: Array<{ sceneCount: number }> }> | null = null;
+    if (input.outline.kind === "project") {
+      if (!(await ownsProject(context, request.userId, input.outline.projectId)))
+        return notFound(reply, "Outline source project not found.");
+      const sourceActs = await context.db
+        .select()
+        .from(acts)
+        .where(eq(acts.projectId, input.outline.projectId))
+        .orderBy(asc(acts.position));
+      const sourceChapters = sourceActs.length
+        ? await context.db
+            .select()
+            .from(chapters)
+            .where(
+              inArray(
+                chapters.actId,
+                sourceActs.map((act) => act.id),
+              ),
+            )
+            .orderBy(asc(chapters.position))
+        : [];
+      const sourceScenes = sourceChapters.length
+        ? await context.db
+            .select()
+            .from(scenes)
+            .where(
+              inArray(
+                scenes.chapterId,
+                sourceChapters.map((chapter) => chapter.id),
+              ),
+            )
+            .orderBy(asc(scenes.position))
+        : [];
+      copiedActs = sourceActs.map((act) => ({
+        chapters: sourceChapters
+          .filter((chapter) => chapter.actId === act.id)
+          .map((chapter) => ({
+            sceneCount: sourceScenes.filter((scene) => scene.chapterId === chapter.id).length,
+          })),
+      }));
+    }
+
+    let copiedEntries: Array<typeof compendiumEntries.$inferSelect> = [];
+    let copiedCategories: Array<typeof compendiumCategories.$inferSelect> = [];
+    if (input.compendiumCopy) {
+      if (!(await ownsProject(context, request.userId, input.compendiumCopy.sourceProjectId)))
+        return notFound(reply, "Compendium source project not found.");
+      copiedEntries = input.compendiumCopy.entryIds.length
+        ? await context.db
+            .select()
+            .from(compendiumEntries)
+            .where(
+              and(
+                eq(compendiumEntries.projectId, input.compendiumCopy.sourceProjectId),
+                inArray(compendiumEntries.id, input.compendiumCopy.entryIds),
+              ),
+            )
+        : [];
+      if (
+        copiedEntries.length !== new Set(input.compendiumCopy.entryIds).size ||
+        copiedEntries.some((entry) => entry.singletonKey)
+      ) {
+        return reply.code(400).send({
+          error: {
+            code: "BAD_REQUEST",
+            message: "One or more selected Compendium entries cannot be copied.",
+          },
+        });
+      }
+      const customIds = [
+        ...new Set(
+          copiedEntries
+            .filter((entry) => entry.typeId.startsWith("custom."))
+            .map((entry) => entry.typeId.slice(7)),
+        ),
+      ];
+      copiedCategories = customIds.length
+        ? await context.db
+            .select()
+            .from(compendiumCategories)
+            .where(
+              and(
+                eq(compendiumCategories.projectId, input.compendiumCopy.sourceProjectId),
+                inArray(compendiumCategories.id, customIds),
+              ),
+            )
+        : [];
+      if (copiedCategories.length !== customIds.length)
+        return reply.code(400).send({
+          error: {
+            code: "BAD_REQUEST",
+            message: "A selected entry has an invalid custom category.",
+          },
+        });
+    }
+
     const result = await context.db.transaction(async (tx) => {
       const [project] = await tx
         .insert(projects)
-        .values({ workspaceId, title: input.title, settings: projectSettingsSchema.parse({}) })
-        .returning();
-      if (!project) throw new Error("Project creation failed.");
-      const [act] = await tx
-        .insert(acts)
-        .values({ projectId: project.id, title: "", position: 0 })
-        .returning();
-      if (!act) throw new Error("Act creation failed.");
-      const [chapter] = await tx
-        .insert(chapters)
-        .values({ actId: act.id, title: "", position: 0 })
-        .returning();
-      if (!chapter) throw new Error("Chapter creation failed.");
-      const [scene] = await tx
-        .insert(scenes)
         .values({
-          chapterId: chapter.id,
-          title: "",
-          position: 0,
-          document: emptyTiptapDocument,
-          plainText: "",
-          metadata: defaultSceneMetadata,
+          workspaceId,
+          title: input.title,
+          settings: projectSettingsSchema.parse({ author: input.author, language: input.language }),
         })
         .returning();
-      if (!scene) throw new Error("Scene creation failed.");
+      if (!project) throw new Error("Project creation failed.");
+      const categoryMap = new Map<string, string>();
+      for (const category of copiedCategories) {
+        const [created] = await tx
+          .insert(compendiumCategories)
+          .values({
+            projectId: project.id,
+            name: category.name,
+            normalizedName: category.normalizedName,
+            position: category.position,
+          })
+          .returning();
+        if (!created) throw new Error("Compendium category copy failed.");
+        categoryMap.set(category.id, created.id);
+      }
+
+      type SeedAct = {
+        title: string;
+        chapters: Array<{ title: string; scenes: Array<{ title: string; summary: string }> }>;
+      };
+      let seed: SeedAct[];
+      if (input.outline.kind === "preset") seed = getOutlinePreset(input.outline.presetId).acts;
+      else if (input.outline.kind === "project")
+        seed = (copiedActs ?? []).map((act) => ({
+          title: "",
+          chapters: act.chapters.map((chapter) => ({
+            title: "",
+            scenes: Array.from({ length: chapter.sceneCount }, () => ({ title: "", summary: "" })),
+          })),
+        }));
+      else seed = [{ title: "", chapters: [{ title: "", scenes: [{ title: "", summary: "" }] }] }];
+      if (!seed.some((act) => act.chapters.some((chapter) => chapter.scenes.length)))
+        seed = [{ title: "", chapters: [{ title: "", scenes: [{ title: "", summary: "" }] }] }];
+
+      let initialSceneId: string | null = null;
+      for (const [actPosition, actSeed] of seed.entries()) {
+        const [act] = await tx
+          .insert(acts)
+          .values({ projectId: project.id, title: actSeed.title, position: actPosition })
+          .returning();
+        if (!act) throw new Error("Act creation failed.");
+        for (const [chapterPosition, chapterSeed] of actSeed.chapters.entries()) {
+          const [chapter] = await tx
+            .insert(chapters)
+            .values({ actId: act.id, title: chapterSeed.title, position: chapterPosition })
+            .returning();
+          if (!chapter) throw new Error("Chapter creation failed.");
+          for (const [scenePosition, sceneSeed] of chapterSeed.scenes.entries()) {
+            const [scene] = await tx
+              .insert(scenes)
+              .values({
+                chapterId: chapter.id,
+                title: sceneSeed.title,
+                position: scenePosition,
+                document: emptyTiptapDocument,
+                plainText: "",
+                metadata: sceneMetadataSchema.parse({ summary: sceneSeed.summary }),
+              })
+              .returning();
+            if (!scene) throw new Error("Scene creation failed.");
+            initialSceneId ??= scene.id;
+          }
+        }
+      }
       await tx.insert(compendiumEntries).values(
         singletonEntries.map((entry) => ({
           projectId: project.id,
           name: entry.name,
           typeId: entry.typeId,
           activationMode: "always" as const,
-          content: entry.content,
+          content:
+            entry.key === "genres"
+              ? { kind: "selection" as const, values: valuesFor("genres") }
+              : entry.key === "themes"
+                ? { kind: "selection" as const, values: valuesFor("themes") }
+                : entry.key === "tags"
+                  ? { kind: "selection" as const, values: valuesFor("tags") }
+                  : entry.content,
           singletonKey: entry.key,
         })),
       );
-      return { project, act, chapter, scene };
+      for (const entry of copiedEntries) {
+        await tx.insert(compendiumEntries).values({
+          projectId: project.id,
+          name: entry.name,
+          typeId: entry.typeId.startsWith("custom.")
+            ? `custom.${categoryMap.get(entry.typeId.slice(7))}`
+            : entry.typeId,
+          aliases: entry.aliases,
+          labels: entry.labels,
+          imageDataUrl: entry.imageDataUrl,
+          trackingEnabled: entry.trackingEnabled,
+          matchExclusions: entry.matchExclusions,
+          activationMode: entry.activationMode,
+          caseSensitive: entry.caseSensitive,
+          content: entry.content,
+        });
+      }
+      return { project, initialSceneId };
     });
     return reply.code(201).send({
       project: {
@@ -155,7 +374,7 @@ export async function registerProjectRoutes(
         createdAt: timestamp(result.project.createdAt),
         updatedAt: timestamp(result.project.updatedAt),
       },
-      initialSceneId: result.scene.id,
+      initialSceneId: result.initialSceneId,
     });
   });
 

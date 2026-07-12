@@ -1,7 +1,12 @@
 import { basePackage } from "@asterism/content";
-import { compendiumContentSchema, workflowKeySchema } from "@asterism/contracts";
+import {
+  compendiumContentSchema,
+  compendiumTypeIdSchema,
+  workflowKeySchema,
+} from "@asterism/contracts";
 import { protectedProtocolMessage, renderPrompt } from "@asterism/core";
 import {
+  compendiumCategories,
   compendiumEntries,
   packageSettings,
   touchUpdatedAt,
@@ -9,7 +14,7 @@ import {
   userCollections,
   userDefinitions,
 } from "@asterism/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -50,10 +55,23 @@ const metadataUpdateSchema = z.object({
     .optional(),
 });
 const premiseRequestSchema = z.object({
+  mode: z.literal("premise").optional().default("premise"),
   instructions: z.string().max(20_000).default(""),
   modelOverride: z.string().nullable().default(null),
   count: z.number().int().min(1).max(5).default(3),
 });
+const entityRequestSchema = z.object({
+  mode: z.literal("entity"),
+  typeId: compendiumTypeIdSchema.refine(
+    (value) => !value.startsWith("project."),
+    "Choose a story category.",
+  ),
+  contextEntryIds: z.array(z.uuid()).max(100).default([]),
+  instructions: z.string().max(20_000).default(""),
+  modelOverride: z.string().nullable().default(null),
+  count: z.number().int().min(1).max(5).default(3),
+});
+const generateRequestSchema = z.union([entityRequestSchema, premiseRequestSchema]);
 const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
   kind: z.enum(["genre", "theme", "tag"]),
@@ -179,7 +197,7 @@ export async function registerIdeationRoutes(
     const { projectId } = parseWith(projectParams, request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
-    const input = parseWith(premiseRequestSchema, request.body ?? {});
+    const input = parseWith(generateRequestSchema, request.body ?? {});
     const entries = await metadataEntries(context, projectId);
     const labels = (key: string) => {
       const content = entries.get(key)?.content;
@@ -188,6 +206,95 @@ export async function registerIdeationRoutes(
         : "";
     };
     const settings = await getSettings(context, request.userId);
+    if (input.mode === "entity") {
+      let category = input.typeId.replace("story.", "");
+      if (input.typeId.startsWith("custom.")) {
+        const categoryId = input.typeId.slice(7);
+        const [custom] = await context.db
+          .select()
+          .from(compendiumCategories)
+          .where(
+            and(
+              eq(compendiumCategories.id, categoryId),
+              eq(compendiumCategories.projectId, projectId),
+            ),
+          )
+          .limit(1);
+        if (!custom)
+          return reply
+            .code(400)
+            .send({ error: { code: "BAD_REQUEST", message: "Custom category not found." } });
+        category = custom.name;
+      }
+      const selectedEntries = input.contextEntryIds.length
+        ? await context.db
+            .select()
+            .from(compendiumEntries)
+            .where(
+              and(
+                eq(compendiumEntries.projectId, projectId),
+                inArray(compendiumEntries.id, input.contextEntryIds),
+              ),
+            )
+        : [];
+      if (selectedEntries.length !== new Set(input.contextEntryIds).size)
+        return reply.code(400).send({
+          error: { code: "BAD_REQUEST", message: "One or more context entries were not found." },
+        });
+      const contextText = selectedEntries
+        .map((entry) => {
+          const body =
+            entry.content.kind === "text"
+              ? entry.content.text
+              : entry.content.kind === "rich_text"
+                ? entry.content.plainText
+                : entry.content.values.map((value) => value.label).join(", ");
+          return `${entry.name}: ${body}`;
+        })
+        .join("\n\n");
+      const prompt = await resolvePrompt(
+        context,
+        request.userId,
+        workflowKeySchema.enum["ideation.entity"],
+      );
+      const model = input.modelOverride ?? settings.baseModel;
+      const alternatives: Array<{ name: string; description: string }> = [];
+      for (let index = 0; index < input.count; index += 1) {
+        const result = await (await context.getAi(request.userId, model)).complete({
+          model,
+          maxOutputTokens: 1_000,
+          messages: [
+            protectedProtocolMessage("ideation.entity"),
+            ...renderPrompt(prompt, {
+              category,
+              genres: labels("genres"),
+              themes: labels("themes"),
+              tags: labels("tags"),
+              selected_context: contextText || "None selected.",
+              user_instructions: input.instructions,
+            }),
+          ],
+        });
+        const [namePart, ...descriptionParts] = result.text.split("|");
+        alternatives.push({
+          name: descriptionParts.length
+            ? namePart?.trim() || `Untitled ${category}`
+            : `Untitled ${category}`,
+          description: descriptionParts.length
+            ? descriptionParts.join("|").trim()
+            : result.text.trim(),
+        });
+        await context.db.insert(usageEvents).values({
+          userId: request.userId,
+          projectId,
+          model,
+          role: "ideation",
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+        });
+      }
+      return { alternatives, model, promptId: prompt.id };
+    }
     const prompt = await resolvePrompt(
       context,
       request.userId,
