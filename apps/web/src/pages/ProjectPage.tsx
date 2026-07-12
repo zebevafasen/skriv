@@ -6,14 +6,24 @@ import {
   BookMarked,
   BookOpenText,
   Download,
+  FileText,
   Lightbulb,
   MessageCircle,
+  MoreHorizontal,
   Pencil,
   Settings,
+  StickyNote,
   Trash2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { ChatPanel } from "../components/ChatPanel.js";
@@ -29,9 +39,27 @@ import { OutlineGrid } from "../components/OutlineGrid.js";
 import { ProjectNotesPanel } from "../components/ProjectNotesPanel.js";
 import { ProjectSettingsPanel } from "../components/ProjectSettingsPanel.js";
 
-type Tab = "manuscript" | "ideation" | "chat" | "settings";
+type Tab = "manuscript" | "compendium" | "ideation" | "chat" | "settings";
 type ManuscriptView = "write" | "outline" | "notes";
 type Model = { id: string; name: string };
+
+function trapSheetFocus(event: ReactKeyboardEvent<HTMLElement>) {
+  if (event.key !== "Tab") return;
+  const controls = [
+    ...event.currentTarget.querySelectorAll<HTMLElement>(
+      "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+    ),
+  ];
+  if (!controls.length) return;
+  const index = controls.indexOf(document.activeElement as HTMLElement);
+  const next = event.shiftKey
+    ? index <= 0
+      ? controls.length - 1
+      : index - 1
+    : (index + 1) % controls.length;
+  event.preventDefault();
+  controls[next]?.focus();
+}
 
 function updateScene(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
   return {
@@ -64,6 +92,8 @@ export function ProjectPage() {
   const client = useQueryClient();
   const dialog = useAppDialog();
   const tab: Tab = search.tab ?? "manuscript";
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreCloseRef = useRef<HTMLButtonElement>(null);
   const [compendiumOpen, setCompendiumOpen] = useState(
     () => !window.matchMedia("(max-width: 900px)").matches,
   );
@@ -72,13 +102,53 @@ export function ProjectPage() {
   const selectedEntryId = search.entry ?? null;
 
   useEffect(() => {
+    document.body.classList.add("project-route-active");
+    const viewport = window.visualViewport;
+    const updateViewport = () => {
+      document.documentElement.style.setProperty(
+        "--visual-viewport-height",
+        `${viewport?.height ?? window.innerHeight}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--visual-viewport-offset-top",
+        `${viewport?.offsetTop ?? 0}px`,
+      );
+    };
+    updateViewport();
+    viewport?.addEventListener("resize", updateViewport);
+    viewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    return () => {
+      document.body.classList.remove("project-route-active");
+      document.documentElement.style.removeProperty("--visual-viewport-height");
+      document.documentElement.style.removeProperty("--visual-viewport-offset-top");
+      viewport?.removeEventListener("resize", updateViewport);
+      viewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    requestAnimationFrame(() => moreCloseRef.current?.focus());
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoreOpen(false);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [moreOpen]);
+
+  useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 900px)");
     const handleViewportChange = (event: MediaQueryListEvent) => setCompendiumOpen(!event.matches);
     mobileQuery.addEventListener("change", handleViewportChange);
     return () => mobileQuery.removeEventListener("change", handleViewportChange);
   }, []);
   useEffect(() => {
-    if (tab === "chat" && window.matchMedia("(max-width: 900px)").matches) {
+    if (
+      (tab === "chat" || tab === "compendium") &&
+      window.matchMedia("(max-width: 900px)").matches
+    ) {
       setCompendiumOpen(false);
     }
   }, [tab]);
@@ -208,6 +278,84 @@ export function ProjectPage() {
 
   return (
     <div className="project-workspace">
+      <nav className="mobile-project-nav" aria-label="Project workspace">
+        <button
+          type="button"
+          className={tab === "manuscript" && view === "write" ? "active" : ""}
+          aria-current={tab === "manuscript" && view === "write" ? "page" : undefined}
+          onClick={async () => {
+            await editorRef.current?.flush();
+            await updateSearch({ tab: undefined, view: undefined });
+          }}
+        >
+          <BookOpenText size={16} /> Write
+        </button>
+        <button
+          type="button"
+          className={tab === "manuscript" && view === "outline" ? "active" : ""}
+          aria-current={tab === "manuscript" && view === "outline" ? "page" : undefined}
+          onClick={async () => {
+            await editorRef.current?.flush();
+            await updateSearch({ tab: undefined, view: "outline" });
+          }}
+        >
+          <FileText size={16} /> Outline
+        </button>
+        <button
+          type="button"
+          className={tab === "manuscript" && view === "notes" ? "active" : ""}
+          aria-current={tab === "manuscript" && view === "notes" ? "page" : undefined}
+          onClick={async () => {
+            await editorRef.current?.flush();
+            await updateSearch({ tab: undefined, view: "notes" });
+          }}
+        >
+          <StickyNote size={16} /> Notes
+        </button>
+        <button
+          type="button"
+          className={tab === "compendium" ? "active" : ""}
+          aria-current={tab === "compendium" ? "page" : undefined}
+          onClick={async () => {
+            await editorRef.current?.flush();
+            await updateSearch({ tab: "compendium", view: undefined });
+          }}
+        >
+          <BookMarked size={16} /> Compendium
+        </button>
+        <button
+          type="button"
+          className={tab === "chat" ? "active" : ""}
+          aria-current={tab === "chat" ? "page" : undefined}
+          onClick={async () => {
+            await editorRef.current?.flush();
+            await updateSearch({ tab: "chat", view: undefined });
+          }}
+        >
+          <MessageCircle size={16} /> Chat
+        </button>
+        <button
+          type="button"
+          className={tab === "ideation" ? "active" : ""}
+          aria-current={tab === "ideation" ? "page" : undefined}
+          onClick={async () => {
+            await editorRef.current?.flush();
+            await updateSearch({ tab: "ideation", view: undefined });
+          }}
+        >
+          <Lightbulb size={16} /> Ideation
+        </button>
+        <button
+          type="button"
+          className={tab === "settings" || moreOpen ? "active" : ""}
+          aria-expanded={moreOpen}
+          aria-haspopup="dialog"
+          onClick={() => setMoreOpen(true)}
+        >
+          <MoreHorizontal size={17} /> More
+        </button>
+      </nav>
+
       <div className="project-bar">
         <div className="project-title-row">
           <p className="eyebrow">Project</p>
@@ -314,9 +462,9 @@ export function ProjectPage() {
         </nav>
       </div>
 
-      {tab === "manuscript" ? (
+      {tab === "manuscript" || tab === "compendium" ? (
         <div
-          className={`manuscript-layout ${compendiumOpen ? "compendium-open" : ""} ${selectedEntryId ? "entry-open" : ""}`}
+          className={`manuscript-layout ${compendiumOpen || tab === "compendium" ? "compendium-open" : ""} ${tab === "compendium" ? "mobile-compendium-view" : ""} ${selectedEntryId ? "entry-open" : ""}`}
         >
           <CompendiumPanel
             projectId={projectId}
@@ -478,6 +626,7 @@ export function ProjectPage() {
                     if (direct && entryIds.length === 1) void updateSearch({ entry: entryIds[0] });
                     else setPreviewEntryIds(entryIds);
                   }}
+                  onSelectScope={(nextScope) => void changeScope(nextScope)}
                   onSelectScene={selectScene}
                 />
               ) : (
@@ -533,6 +682,108 @@ export function ProjectPage() {
           project={tree.data.project}
           entries={compendium.data ?? []}
         />
+      ) : null}
+
+      {moreOpen ? (
+        <div className="mobile-sheet-backdrop">
+          <button
+            type="button"
+            className="mobile-sheet-dismiss"
+            aria-label="Close project menu"
+            onClick={() => setMoreOpen(false)}
+          />
+          <section
+            className="mobile-sheet mobile-project-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-project-menu-title"
+            onKeyDown={trapSheetFocus}
+          >
+            <div className="mobile-sheet-handle" />
+            <header>
+              <div>
+                <p className="eyebrow">Project</p>
+                <h2 id="mobile-project-menu-title">{tree.data.project.title}</h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                ref={moreCloseRef}
+                aria-label="Close project menu"
+                onClick={() => setMoreOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <div className="mobile-project-menu-grid">
+              <button
+                type="button"
+                onClick={async () => {
+                  setMoreOpen(false);
+                  const title = (
+                    await dialog.prompt({
+                      title: "Rename Project",
+                      label: "Project title",
+                      initialValue: tree.data.project.title,
+                    })
+                  )?.trim();
+                  if (!title || title === tree.data.project.title) return;
+                  await api(`/api/projects/${projectId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ title }),
+                  });
+                  await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
+                }}
+              >
+                <Pencil size={17} /> Rename project
+              </button>
+              <a href={`/api/projects/${projectId}/export`}>
+                <Download size={17} /> Export manuscript
+              </a>
+              <button
+                type="button"
+                onClick={async () => {
+                  setMoreOpen(false);
+                  await editorRef.current?.flush();
+                  await updateSearch({ tab: "settings", view: undefined });
+                }}
+              >
+                <Settings size={17} /> Project settings
+              </button>
+              <a href="/">
+                <BookOpenText size={17} /> Projects
+              </a>
+              <a href="/prompts">
+                <FileText size={17} /> Prompts
+              </a>
+              <a href="/settings">
+                <Settings size={17} /> App settings
+              </a>
+            </div>
+            <button
+              type="button"
+              className="mobile-project-delete"
+              onClick={async () => {
+                setMoreOpen(false);
+                const acts = tree.data.acts.length;
+                const chapters = tree.data.acts.reduce((sum, act) => sum + act.chapters.length, 0);
+                if (
+                  !(await dialog.confirm({
+                    title: `Delete “${tree.data.project.title}”?`,
+                    body: `This permanently deletes ${acts} acts, ${chapters} chapters, ${allScenes.length} scenes, Compendium entries, Chat history, and generation history. This cannot be undone.`,
+                    confirmLabel: "Delete Project",
+                    destructive: true,
+                  }))
+                )
+                  return;
+                await api(`/api/projects/${projectId}`, { method: "DELETE" });
+                window.location.assign("/");
+              }}
+            >
+              <Trash2 size={17} /> Delete project
+            </button>
+          </section>
+        </div>
       ) : null}
 
       {previewEntryIds.length > 0 ? (

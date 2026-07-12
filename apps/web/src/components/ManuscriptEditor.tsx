@@ -40,6 +40,8 @@ import {
   ChevronRight,
   Clipboard,
   History,
+  ListTree,
+  MoreHorizontal,
   Plus,
   Redo2,
   RefreshCw,
@@ -88,6 +90,24 @@ type ActiveGeneration = {
   selection: { from: number; to: number } | null;
   contextFallback: boolean;
 };
+
+function trapSheetFocus(event: React.KeyboardEvent<HTMLElement>) {
+  if (event.key !== "Tab") return;
+  const controls = [
+    ...event.currentTarget.querySelectorAll<HTMLElement>(
+      "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+    ),
+  ];
+  if (!controls.length) return;
+  const index = controls.indexOf(document.activeElement as HTMLElement);
+  const next = event.shiftKey
+    ? index <= 0
+      ? controls.length - 1
+      : index - 1
+    : (index + 1) % controls.length;
+  event.preventDefault();
+  controls[next]?.focus();
+}
 
 type SelectionMenu = {
   from: number;
@@ -630,16 +650,19 @@ export const ManuscriptEditor = forwardRef<
     models: Array<{ id: string; name: string }>;
     onSaved: (scene: Scene) => void;
     onOpenEntry: (entryIds: string[], direct: boolean) => void;
+    onSelectScope: (scope: ManuscriptScope) => void;
     onSelectScene: (sceneId: string) => void;
   }
 >(function ManuscriptEditor(
-  { tree, scope, entries, baseModel, models, onSaved, onOpenEntry, onSelectScene },
+  { tree, scope, entries, baseModel, models, onSaved, onOpenEntry, onSelectScope, onSelectScene },
   ref,
 ) {
   const queryClient = useQueryClient();
   const visibleScenes = useMemo(() => scenesForScope(tree, scope), [tree, scope]);
   const scopeKey = `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
   const [typographyOpen, setTypographyOpen] = useState(false);
+  const [mobileNavigatorOpen, setMobileNavigatorOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [editorSettings, setEditorSettings] = useState<EditorSettings>(editorSettingsDefaults);
   const [selectionMenu, setSelectionMenu] = useState<SelectionMenu | null>(null);
   const [selectionPanel, setSelectionPanel] = useState<SelectionPanel | null>(null);
@@ -662,6 +685,8 @@ export const ManuscriptEditor = forwardRef<
   const cursorRef = useRef(1);
   const abortRef = useRef<AbortController | null>(null);
   const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mobileNavigatorCloseRef = useRef<HTMLButtonElement>(null);
+  const mobileToolsCloseRef = useRef<HTMLButtonElement>(null);
   const settingsQuery = useQuery({
     queryKey: ["editor-settings"],
     queryFn: () => api<EditorSettings>("/api/settings/editor"),
@@ -831,9 +856,17 @@ export const ManuscriptEditor = forwardRef<
     if (settingsQuery.data) setEditorSettings(settingsQuery.data);
   }, [settingsQuery.data]);
   useEffect(() => {
+    if (mobileNavigatorOpen) requestAnimationFrame(() => mobileNavigatorCloseRef.current?.focus());
+  }, [mobileNavigatorOpen]);
+  useEffect(() => {
+    if (mobileToolsOpen) requestAnimationFrame(() => mobileToolsCloseRef.current?.focus());
+  }, [mobileToolsOpen]);
+  useEffect(() => {
     const closeOverlays = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || activeRef.current) return;
       setTypographyOpen(false);
+      setMobileNavigatorOpen(false);
+      setMobileToolsOpen(false);
       setSelectionMenu(null);
       setSelectionPanel(null);
     };
@@ -1132,6 +1165,21 @@ export const ManuscriptEditor = forwardRef<
           <div className="editor-toolbar">
             <button
               type="button"
+              className="mobile-editor-context"
+              aria-haspopup="dialog"
+              aria-expanded={mobileNavigatorOpen}
+              onClick={() => setMobileNavigatorOpen(true)}
+            >
+              <ListTree size={16} />
+              <span>
+                {scope.kind === "story"
+                  ? "Everything"
+                  : ((activeScene && structureLabels.scenes.get(activeScene.id)?.label) ??
+                    "Manuscript")}
+              </span>
+            </button>
+            <button
+              type="button"
               aria-label="Undo"
               disabled={!editor?.can().chain().focus().undo().run()}
               onClick={() => editor?.chain().focus().undo().run()}
@@ -1148,7 +1196,7 @@ export const ManuscriptEditor = forwardRef<
             </button>
             <button
               type="button"
-              className="icon-button"
+              className="icon-button desktop-editor-tool"
               disabled={selectedIndex <= 0}
               onClick={() => previousScene && onSelectScene(previousScene.id)}
               aria-label="Previous Scene"
@@ -1157,18 +1205,22 @@ export const ManuscriptEditor = forwardRef<
             </button>
             <button
               type="button"
-              className="icon-button"
+              className="icon-button desktop-editor-tool"
               disabled={selectedIndex < 0 || selectedIndex >= allScenes.length - 1}
               onClick={() => nextScene && onSelectScene(nextScene.id)}
               aria-label="Next Scene"
             >
               <ChevronRight size={16} />
             </button>
-            <button type="button" className="button ghost" onClick={loadHistory}>
+            <button
+              type="button"
+              className="button ghost desktop-editor-tool"
+              onClick={loadHistory}
+            >
               <History size={14} /> History
             </button>
-            <span />
-            <div className="typography-control">
+            <span className="editor-toolbar-spacer" />
+            <div className="typography-control desktop-editor-tool">
               <button
                 type="button"
                 className={typographyOpen ? "active" : ""}
@@ -1313,6 +1365,16 @@ export const ManuscriptEditor = forwardRef<
             </div>
             <button
               type="button"
+              className="mobile-editor-tools"
+              aria-label="Writing tools"
+              aria-haspopup="dialog"
+              aria-expanded={mobileToolsOpen}
+              onClick={() => setMobileToolsOpen(true)}
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            <button
+              type="button"
               className="ai-command"
               onClick={() => {
                 const latestModel = localStorage.getItem("asterism-latest-model");
@@ -1375,6 +1437,163 @@ export const ManuscriptEditor = forwardRef<
           })}
         </nav>
       </div>
+      {mobileNavigatorOpen ? (
+        <div className="mobile-sheet-backdrop">
+          <button
+            type="button"
+            className="mobile-sheet-dismiss"
+            aria-label="Close manuscript navigator"
+            onClick={() => setMobileNavigatorOpen(false)}
+          />
+          <section
+            className="mobile-sheet mobile-manuscript-navigator"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-manuscript-navigator-title"
+            onKeyDown={trapSheetFocus}
+          >
+            <div className="mobile-sheet-handle" />
+            <header>
+              <h2 id="mobile-manuscript-navigator-title">Manuscript navigator</h2>
+              <button
+                type="button"
+                className="icon-button"
+                ref={mobileNavigatorCloseRef}
+                aria-label="Close manuscript navigator"
+                onClick={() => setMobileNavigatorOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <button
+              type="button"
+              className={scope.kind === "story" ? "active" : ""}
+              onClick={() => {
+                setMobileNavigatorOpen(false);
+                onSelectScope({ kind: "story" });
+              }}
+            >
+              Everything
+            </button>
+            <div className="mobile-manuscript-tree">
+              {tree.acts.map((act) => (
+                <section className="mobile-nav-act" key={act.id}>
+                  <button
+                    type="button"
+                    className={scope.kind === "act" && scope.id === act.id ? "active" : ""}
+                    onClick={() => {
+                      setMobileNavigatorOpen(false);
+                      onSelectScope({ kind: "act", id: act.id });
+                    }}
+                  >
+                    {structureLabels.acts.get(act.id)?.label}
+                  </button>
+                  {act.chapters.map((chapter) => (
+                    <div className="mobile-nav-chapter" key={chapter.id}>
+                      <button
+                        type="button"
+                        className={
+                          scope.kind === "chapter" && scope.id === chapter.id ? "active" : ""
+                        }
+                        onClick={() => {
+                          setMobileNavigatorOpen(false);
+                          onSelectScope({ kind: "chapter", id: chapter.id });
+                        }}
+                      >
+                        {structureLabels.chapters.get(chapter.id)?.label}
+                      </button>
+                      {chapter.scenes.map((scene) => (
+                        <button
+                          key={scene.id}
+                          type="button"
+                          className={activeSceneId === scene.id ? "active scene" : "scene"}
+                          onClick={() => {
+                            setMobileNavigatorOpen(false);
+                            onSelectScene(scene.id);
+                          }}
+                        >
+                          {structureLabels.scenes.get(scene.id)?.label}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </section>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
+      {mobileToolsOpen ? (
+        <div className="mobile-sheet-backdrop">
+          <button
+            type="button"
+            className="mobile-sheet-dismiss"
+            aria-label="Close writing tools"
+            onClick={() => setMobileToolsOpen(false)}
+          />
+          <section
+            className="mobile-sheet mobile-writing-tools"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-writing-tools-title"
+            onKeyDown={trapSheetFocus}
+          >
+            <div className="mobile-sheet-handle" />
+            <header>
+              <h2 id="mobile-writing-tools-title">Writing tools</h2>
+              <button
+                type="button"
+                className="icon-button"
+                ref={mobileToolsCloseRef}
+                aria-label="Close writing tools"
+                onClick={() => setMobileToolsOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </header>
+            <div className="mobile-writing-tool-grid">
+              <button
+                type="button"
+                disabled={!previousScene}
+                onClick={() => {
+                  setMobileToolsOpen(false);
+                  if (previousScene) onSelectScene(previousScene.id);
+                }}
+              >
+                <ChevronLeft size={17} /> Previous scene
+              </button>
+              <button
+                type="button"
+                disabled={!nextScene}
+                onClick={() => {
+                  setMobileToolsOpen(false);
+                  if (nextScene) onSelectScene(nextScene.id);
+                }}
+              >
+                Next scene <ChevronRight size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileToolsOpen(false);
+                  void loadHistory();
+                }}
+              >
+                <History size={17} /> Scene history
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileToolsOpen(false);
+                  setTypographyOpen(true);
+                }}
+              >
+                Aa Typography
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {selectionMenu && !selectionPanel && !active ? (
         <div
           className="selection-action-menu"

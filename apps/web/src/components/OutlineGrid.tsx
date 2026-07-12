@@ -481,6 +481,7 @@ export function OutlineGrid({
   const dialog = useAppDialog();
   const client = useQueryClient();
   const [collapsedActs, setCollapsedActs] = useState<Set<string>>(() => new Set());
+  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<unknown>(null);
   const hierarchyKeyboardCoordinates = useCallback<KeyboardCoordinateGetter>(
     (event, args) => {
@@ -810,9 +811,28 @@ export function OutlineGrid({
                                   <>
                                     <header>
                                       {chapterHandle}
-                                      <strong>
-                                        {structureLabels.chapters.get(chapter.id)?.label}
-                                      </strong>
+                                      <button
+                                        type="button"
+                                        className="outline-chapter-collapse"
+                                        onClick={() =>
+                                          setCollapsedChapters((current) => {
+                                            const next = new Set(current);
+                                            if (next.has(chapter.id)) next.delete(chapter.id);
+                                            else next.add(chapter.id);
+                                            return next;
+                                          })
+                                        }
+                                      >
+                                        <ChevronDown
+                                          className={
+                                            collapsedChapters.has(chapter.id) ? "collapsed" : ""
+                                          }
+                                          size={14}
+                                        />
+                                        <strong>
+                                          {structureLabels.chapters.get(chapter.id)?.label}
+                                        </strong>
+                                      </button>
                                       <span>
                                         {chapter.scenes.reduce(
                                           (sum, scene) => sum + wordCount(scene.plainText),
@@ -845,65 +865,69 @@ export function OutlineGrid({
                                         <Trash2 size={12} />
                                       </button>
                                     </header>
-                                    <SortableContext
-                                      items={chapter.scenes.map((scene) => scene.id)}
-                                      strategy={verticalListSortingStrategy}
-                                    >
-                                      <div className="outline-scenes">
-                                        {chapter.scenes.map((scene) => (
-                                          <SortableBox
-                                            id={scene.id}
-                                            className="outline-scene-sortable"
-                                            key={scene.id}
-                                          >
-                                            {(sceneHandle) => (
-                                              <SceneCard
-                                                scene={scene}
-                                                displayLabel={
-                                                  structureLabels.scenes.get(scene.id)?.label ??
-                                                  "Scene"
-                                                }
-                                                entries={entries}
-                                                labelSuggestions={labelSuggestions}
-                                                onOpenScene={onOpenScene}
-                                                onOpenEntry={onOpenEntry}
-                                                onUpdated={(updated) =>
-                                                  setTree(updateScene(tree, updated))
-                                                }
-                                                onRename={() =>
-                                                  void rename(
-                                                    `/api/scenes/${scene.id}`,
-                                                    scene.title,
-                                                    { expectedVersion: scene.version },
-                                                  )
-                                                }
-                                                onDelete={() =>
-                                                  void remove(
-                                                    `/api/scenes/${scene.id}`,
-                                                    structureLabels.scenes.get(scene.id)?.label ??
-                                                      "Scene",
-                                                  )
-                                                }
-                                                dragHandle={sceneHandle}
-                                              />
-                                            )}
-                                          </SortableBox>
-                                        ))}
-                                      </div>
-                                    </SortableContext>
-                                    <button
-                                      type="button"
-                                      className="outline-add-scene"
-                                      onClick={() =>
-                                        void create({
-                                          kind: "scene",
-                                          chapterId: chapter.id,
-                                          afterSceneId: chapter.scenes.at(-1)?.id ?? null,
-                                        })
-                                      }
-                                    >
-                                      <Plus size={13} /> New Scene
-                                    </button>
+                                    {!collapsedChapters.has(chapter.id) ? (
+                                      <>
+                                        <SortableContext
+                                          items={chapter.scenes.map((scene) => scene.id)}
+                                          strategy={verticalListSortingStrategy}
+                                        >
+                                          <div className="outline-scenes">
+                                            {chapter.scenes.map((scene) => (
+                                              <SortableBox
+                                                id={scene.id}
+                                                className="outline-scene-sortable"
+                                                key={scene.id}
+                                              >
+                                                {(sceneHandle) => (
+                                                  <SceneCard
+                                                    scene={scene}
+                                                    displayLabel={
+                                                      structureLabels.scenes.get(scene.id)?.label ??
+                                                      "Scene"
+                                                    }
+                                                    entries={entries}
+                                                    labelSuggestions={labelSuggestions}
+                                                    onOpenScene={onOpenScene}
+                                                    onOpenEntry={onOpenEntry}
+                                                    onUpdated={(updated) =>
+                                                      setTree(updateScene(tree, updated))
+                                                    }
+                                                    onRename={() =>
+                                                      void rename(
+                                                        `/api/scenes/${scene.id}`,
+                                                        scene.title,
+                                                        { expectedVersion: scene.version },
+                                                      )
+                                                    }
+                                                    onDelete={() =>
+                                                      void remove(
+                                                        `/api/scenes/${scene.id}`,
+                                                        structureLabels.scenes.get(scene.id)
+                                                          ?.label ?? "Scene",
+                                                      )
+                                                    }
+                                                    dragHandle={sceneHandle}
+                                                  />
+                                                )}
+                                              </SortableBox>
+                                            ))}
+                                          </div>
+                                        </SortableContext>
+                                        <button
+                                          type="button"
+                                          className="outline-add-scene"
+                                          onClick={() =>
+                                            void create({
+                                              kind: "scene",
+                                              chapterId: chapter.id,
+                                              afterSceneId: chapter.scenes.at(-1)?.id ?? null,
+                                            })
+                                          }
+                                        >
+                                          <Plus size={13} /> New Scene
+                                        </button>
+                                      </>
+                                    ) : null}
                                   </>
                                 )}
                               </SortableBox>

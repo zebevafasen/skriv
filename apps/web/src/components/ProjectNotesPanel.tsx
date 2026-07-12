@@ -5,7 +5,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Pin, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
@@ -23,10 +23,12 @@ function sortNotes(notes: ProjectNote[]) {
 
 function NoteEditor({
   note,
+  onBack,
   onSaved,
   onDeleted,
 }: {
   note: ProjectNote;
+  onBack: () => void;
   onSaved: (note: ProjectNote) => void;
   onDeleted: () => void;
 }) {
@@ -118,6 +120,14 @@ function NoteEditor({
   return (
     <section className="notebook-editor">
       <header className="notebook-editor-header">
+        <button
+          type="button"
+          className="icon-button mobile-note-back"
+          aria-label="Back to notes"
+          onClick={onBack}
+        >
+          <ArrowLeft size={17} />
+        </button>
         <input
           aria-label="Note title"
           value={title}
@@ -274,7 +284,8 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
   });
 
   useEffect(() => {
-    if (!selectedId && notes.data?.[0]) setSelectedId(notes.data[0].id);
+    if (!selectedId && notes.data?.[0] && !window.matchMedia("(max-width: 700px)").matches)
+      setSelectedId(notes.data[0].id);
   }, [notes.data, selectedId]);
 
   const filtered = useMemo(() => {
@@ -294,7 +305,7 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
   };
 
   return (
-    <div className="project-notebook">
+    <div className={`project-notebook ${selected ? "note-selected" : ""}`}>
       <aside className="notebook-sidebar">
         <div className="notebook-sidebar-heading">
           <div>
@@ -351,6 +362,7 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
           <NoteEditor
             key={selected.id}
             note={selected}
+            onBack={() => setSelectedId(null)}
             onSaved={updateCache}
             onDeleted={() => {
               client.setQueryData<ProjectNote[]>(["project-notes", projectId], (current = []) =>

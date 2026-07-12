@@ -3,6 +3,8 @@ import { expect, type Page, test } from "@playwright/test";
 const viewports = [
   { name: "narrow phone", width: 320, height: 700 },
   { name: "phone", width: 390, height: 844 },
+  { name: "large phone", width: 700, height: 900 },
+  { name: "small tablet", width: 701, height: 900 },
   { name: "tablet", width: 768, height: 1024 },
 ] as const;
 
@@ -52,13 +54,18 @@ test("mobile workspace exposes every primary workflow without page overflow", as
 
   try {
     await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Project workspace" })).toBeVisible();
+    await expect(page.locator(".topbar")).toBeHidden();
+    await expect(page.locator(".project-bar")).toBeHidden();
+    await expect(page.locator(".manuscript-viewbar")).toBeHidden();
     await expect(page.locator(".compendium-sidebar")).toBeHidden();
     await expect(page.locator(".editor-side-nav")).toBeHidden();
     const editorFrameBox = await page.locator(".continuous-editor-frame").boundingBox();
     expect(editorFrameBox?.width).toBeGreaterThanOrEqual(380);
     await expectNoDocumentOverflow(page);
 
-    await page.getByRole("button", { name: "Show compendium" }).click();
+    await page.getByRole("button", { name: "Compendium", exact: true }).click();
+    await expect(page).toHaveURL(/tab=compendium/);
     await expect(page.locator(".compendium-sidebar")).toBeVisible();
     await expect(page.locator(".manuscript-main")).toBeHidden();
     await expectNoDocumentOverflow(page);
@@ -95,7 +102,18 @@ test("mobile workspace exposes every primary workflow without page overflow", as
       (compendiumBox?.y ?? 0) + (compendiumBox?.height ?? 0),
     );
 
-    await page.getByRole("button", { name: "Show manuscript" }).click();
+    await page.getByRole("button", { name: "Write", exact: true }).click();
+    await expect(page).not.toHaveURL(/tab=compendium/);
+
+    const prose = page.locator(".continuous-editor-prose");
+    await prose.click();
+    await page.setViewportSize({ width: 390, height: 500 });
+    await expect(page.locator(".editor-toolbar")).toBeVisible();
+    const proseBox = await prose.boundingBox();
+    expect(proseBox?.height).toBeGreaterThan(300);
+    await expectNoDocumentOverflow(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+
     await page.getByRole("button", { name: "Outline" }).click();
     await expect(page.locator(".outline-scene-card").first()).toBeVisible();
     await expectNoDocumentOverflow(page);
@@ -103,6 +121,12 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "Ideation" }).click();
     await expect(page.locator(".ideation-panel")).toBeVisible();
     await expect(page.getByRole("button", { name: "Save ingredients" })).toBeVisible();
+    await expectNoDocumentOverflow(page);
+
+    await page.getByRole("button", { name: "More" }).click();
+    await expect(page.locator(".mobile-project-menu")).toBeVisible();
+    await page.getByRole("button", { name: "Project settings" }).click();
+    await expect(page.locator(".project-settings-panel")).toBeVisible();
     await expectNoDocumentOverflow(page);
   } finally {
     await page.request.delete(`/api/projects/${projectId}`);
