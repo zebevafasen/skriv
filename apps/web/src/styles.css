@@ -78,6 +78,12 @@ select:focus {
   box-shadow: 0 0 0 3px #e8a74316;
 }
 
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  flex: 0 0 auto;
+}
+
 textarea {
   min-height: 90px;
   resize: vertical;
