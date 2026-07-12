@@ -1,4 +1,4 @@
-import type { SelectionAction, WorkflowKey } from "@asterism/contracts";
+import type { CompendiumEntry, SelectionAction, WorkflowKey } from "@asterism/contracts";
 import { createContext, useContext } from "react";
 
 export type InsertionGenerationOptions = {
@@ -27,6 +27,7 @@ export type GenerationOptions = InsertionGenerationOptions | SelectionGeneration
 
 export type EditorActionsContextType = {
   baseModel: string;
+  entries: CompendiumEntry[];
   models: Array<{ id: string; name: string }>;
   startGeneration: (options: GenerationOptions, position?: number) => void;
 };

@@ -651,11 +651,51 @@ label small {
   cursor: pointer;
   font-size: 11px;
 }
-.chat-input-layer {
+.mention-textarea {
   position: relative;
+  width: 100%;
+}
+.mention-textarea-highlights {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #12110f;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+.mention-textarea-highlights mark {
+  color: inherit;
+  background: transparent;
+  text-decoration: underline dotted var(--accent-bright) 1.5px;
+  text-underline-offset: 3px;
+}
+.mention-textarea textarea {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+  -webkit-text-fill-color: transparent;
+}
+.mention-textarea textarea::placeholder {
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
+}
+.mention-textarea textarea::selection {
+  background: #76614488;
+}
+.chat-input-layer {
   min-height: 58px;
 }
-.chat-input-highlights,
+.chat-input-layer .mention-textarea-highlights,
 .chat-input-layer textarea {
   margin: 0;
   padding: 6px 9px;
@@ -668,32 +708,12 @@ label small {
   white-space: pre-wrap;
   overflow-wrap: break-word;
 }
-.chat-input-highlights {
-  position: absolute;
-  inset: 0;
-  color: var(--text);
-  pointer-events: none;
-}
-.chat-input-highlights mark {
-  color: inherit;
+.chat-input-layer .mention-textarea-highlights {
+  border: 0;
   background: transparent;
-  text-decoration: underline dotted var(--accent-bright) 1.5px;
-  text-underline-offset: 3px;
 }
 .chat-input-layer textarea {
-  position: relative;
-  z-index: 1;
   resize: vertical;
-  color: transparent;
-  caret-color: var(--text);
-  -webkit-text-fill-color: transparent;
-}
-.chat-input-layer textarea::placeholder {
-  color: var(--muted);
-  -webkit-text-fill-color: var(--muted);
-}
-.chat-input-layer textarea::selection {
-  background: #76614488;
 }
 .chat-composer textarea {
   border: 0;
@@ -2269,43 +2289,203 @@ label small {
   color: var(--accent-bright);
 }
 
-.manuscript-scope-controls,
-.scene-breadcrumb-selectors {
+.manuscript-scope-controls {
   display: flex;
   align-items: center;
-  gap: 7px;
-}
-
-.manuscript-scope-controls {
+  gap: 10px;
   min-width: 0;
   flex: 1;
 }
 
-.manuscript-scope-controls > label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.manuscript-scope-controls label > span {
+.manuscript-scope-label {
+  width: 44px;
+  flex: 0 0 44px;
   color: var(--faint);
   font-size: 9px;
   font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.manuscript-scope-controls select {
-  min-height: 31px;
-  padding-block: 4px;
-  font-size: 11px;
+.manuscript-scope-picker {
+  position: relative;
+  width: min(320px, 38vw);
+  min-width: 210px;
+  flex: 0 1 320px;
 }
 
-.scene-breadcrumb-selectors {
+.manuscript-scope-trigger {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 11px 6px 13px;
+  border: 1px solid #403b34;
+  border-radius: 8px;
+  background: #181715;
+  color: var(--text);
+  text-align: left;
+  box-shadow: inset 0 1px #ffffff08;
+}
+
+.manuscript-scope-trigger:hover,
+.manuscript-scope-trigger.open {
+  border-color: #a96d24;
+  background: #1d1a16;
+}
+
+.manuscript-scope-trigger.open {
+  box-shadow:
+    0 0 0 1px #d7922c33,
+    inset 0 1px #ffffff0a;
+}
+
+.manuscript-scope-trigger > svg {
+  flex: 0 0 auto;
+  color: var(--faint);
+  transition: transform 150ms ease;
+}
+
+.manuscript-scope-trigger.open > svg {
+  transform: rotate(180deg);
+}
+
+.manuscript-scope-trigger-copy {
   min-width: 0;
+  display: grid;
+  gap: 1px;
 }
 
-.scene-breadcrumb-selectors select {
-  max-width: 180px;
+.manuscript-scope-trigger-copy strong,
+.manuscript-scope-trigger-copy small,
+.manuscript-scope-option strong,
+.manuscript-scope-option small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manuscript-scope-trigger-copy strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.manuscript-scope-trigger-copy small {
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.manuscript-scope-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(520px, calc(100dvh - 190px));
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #474039;
+  border-radius: 9px;
+  background: #171614f8;
+  box-shadow: 0 20px 60px #000c;
+  scrollbar-color: #5c554b transparent;
+  overscroll-behavior: contain;
+}
+
+.manuscript-scope-option {
+  width: 100%;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #ddd6cc;
+  text-align: left;
+}
+
+.manuscript-scope-option:hover,
+.manuscript-scope-option:focus-visible {
+  background: #27231e;
+  outline: 0;
+}
+
+.manuscript-scope-option[aria-selected="true"] {
+  background: #2e261b;
+  color: var(--accent-bright);
+}
+
+.manuscript-scope-option > svg {
+  color: #8d857a;
+}
+
+.manuscript-scope-option > svg:last-child {
+  color: var(--accent);
+}
+
+.manuscript-scope-option > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.manuscript-scope-option strong {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.manuscript-scope-option small {
+  color: #81796f;
+  font-size: 10px;
+}
+
+.manuscript-scope-option.nested {
+  grid-template-columns: minmax(0, 1fr) 18px;
+  padding-left: 28px;
+}
+
+.manuscript-scope-group {
+  min-width: 0;
+  margin-top: 4px;
+  padding-top: 4px;
+  padding-inline: 0;
+  border: 0;
+  border-top: 1px solid #302d28;
+}
+
+.manuscript-scope-group-label {
+  width: 100%;
+  padding: 8px 10px 4px;
+  color: #8d857b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.manuscript-scope-stats {
+  min-width: 112px;
+  display: grid;
+  gap: 2px;
+  color: var(--faint);
+  line-height: 1.2;
+}
+
+.manuscript-scope-stats strong {
+  color: #9d958b;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.manuscript-scope-stats span {
+  font-size: 10px;
 }
 
 .manuscript-view-content {
@@ -2692,6 +2872,11 @@ label small {
   padding: 38px clamp(28px, 6vw, 72px) 90px;
 }
 
+.continuous-editor-column.has-candidate-controls .continuous-editor-prose {
+  padding-bottom: 180px;
+  scroll-padding-bottom: 110px;
+}
+
 .manuscript-structure-heading {
   margin: 60px 0 20px;
   padding-bottom: 10px;
@@ -2909,6 +3094,15 @@ label small {
 
 .scene-beat-textarea::placeholder {
   color: #555c6b;
+}
+
+.scene-beat-event {
+  margin-top: -8px;
+}
+
+.scene-beat-event .scene-beat-textarea {
+  border-top: 1px dashed #3b404a;
+  padding-top: 12px;
 }
 
 .scene-beat-controls {
@@ -3976,12 +4170,18 @@ label small {
 }
 
 .drawer-field input,
-.drawer-field textarea {
+.drawer-field textarea,
+.drawer-field .mention-textarea-highlights {
   border-color: #55514c;
   background: #242326;
 }
 
-.description-field textarea {
+.drawer-field .mention-textarea textarea {
+  background: transparent;
+}
+
+.description-field textarea,
+.description-field .mention-textarea-highlights {
   min-height: 175px;
   resize: vertical;
   font: 14px / 1.65 var(--sans);
@@ -4580,8 +4780,7 @@ button.mobile-only-tab {
 
   .manuscript-scope-controls {
     width: 100%;
-    overflow-x: auto;
-    padding-bottom: 2px;
+    overflow: visible;
   }
 
   .outline-grid {
@@ -5247,8 +5446,8 @@ button.mobile-only-tab {
 
   .manuscript-viewbar {
     min-width: 0;
-    max-height: 42dvh;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .manuscript-view-tabs {
@@ -5261,23 +5460,17 @@ button.mobile-only-tab {
   }
 
   .manuscript-scope-controls {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     overflow: visible;
   }
 
-  .manuscript-scope-controls > label {
-    min-width: min(150px, 100%);
-    flex: 1 1 150px;
+  .manuscript-scope-picker {
+    width: min(420px, 100%);
+    flex: 1 1 240px;
   }
 
-  .scene-breadcrumb-selectors {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .scene-breadcrumb-selectors select {
-    max-width: none;
-    flex: 1 1 140px;
+  .manuscript-scope-stats {
+    margin-left: auto;
   }
 
   .editor-toolbar {

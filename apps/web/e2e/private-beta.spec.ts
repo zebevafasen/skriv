@@ -36,7 +36,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
 
     await page.getByRole("button", { name: "Outline" }).click();
     const firstCard = page.locator(".outline-scene-card").first();
-    const summary = firstCard.getByRole("textbox", { name: "Opening Scene summary" });
+    const summary = firstCard.getByRole("textbox", { name: "Scene 1 summary" });
     await summary.fill("The opening changes the course of the story.");
     await expect(firstCard.locator(".outline-save-state")).toHaveText("saved", {
       timeout: 5_000,
@@ -48,9 +48,12 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(summary).toContainText("decisive change", { timeout: 5_000 });
 
     await page.getByRole("button", { name: "New Scene" }).click();
+    const viewingMode = page.getByRole("button", { name: "Viewing mode" });
+    await expect(viewingMode).toContainText("Scene 2");
+    await page.getByRole("button", { name: "Outline" }).click();
     await expect(page.locator(".outline-scene-card")).toHaveCount(2);
     const openingDragHandle = page
-      .locator(".outline-scene-card", { hasText: "Opening Scene" })
+      .locator(".outline-scene-card", { hasText: "Scene 1" })
       .locator(".outline-drag-handle");
     await openingDragHandle.focus();
     await page.keyboard.press("Space");
@@ -58,11 +61,13 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await page.keyboard.press("ArrowDown");
     await page.waitForTimeout(150);
     await page.keyboard.press("Space");
-    await expect(page.locator(".outline-scene-card").nth(1)).toContainText("Opening Scene");
-    const secondCard = page.locator(".outline-scene-card", { hasText: "New Scene" });
-    await secondCard.getByRole("button", { name: "Open Scene" }).click();
-    await expect(page.getByRole("combobox", { name: "Viewing mode" })).toHaveValue(/scene:/);
-    await page.getByRole("combobox", { name: "Viewing mode" }).selectOption("story:all");
+    await expect(page.locator(".outline-scene-card").nth(1)).toContainText("Foreshadowing");
+    const newSceneCard = page.locator(".outline-scene-card").nth(0);
+    await expect(newSceneCard).toContainText("Scene 1");
+    await newSceneCard.getByRole("button", { name: "Open Scene" }).click();
+    await expect(viewingMode).toContainText("Scene 1");
+    await viewingMode.click();
+    await page.getByRole("option", { name: /Everything/ }).click();
     await expect(page.locator(".continuous-scene-block")).toHaveCount(2);
     const secondSceneContent = page.locator(".continuous-scene-content").first();
     await secondSceneContent.locator("p").first().click();

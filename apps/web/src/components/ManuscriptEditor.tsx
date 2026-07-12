@@ -92,6 +92,7 @@ type ActiveGeneration = {
   options: GenerationOptions;
   selection: { from: number; to: number } | null;
   contextFallback: boolean;
+  previousText: string | null;
 };
 
 type SelectionMenu = {
@@ -541,6 +542,8 @@ export const ManuscriptEditor = forwardRef<
   const cursorRef = useRef(1);
   const abortRef = useRef<AbortController | null>(null);
   const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorColumnRef = useRef<HTMLDivElement>(null);
+  const candidateControlsRef = useRef<HTMLDivElement>(null);
   const typographyControlRef = useRef<HTMLDivElement>(null);
   const mobileNavigatorCloseRef = useRef<HTMLButtonElement>(null);
   const mobileToolsCloseRef = useRef<HTMLButtonElement>(null);
@@ -595,6 +598,7 @@ export const ManuscriptEditor = forwardRef<
           heading: { levels: [1, 2, 3] },
           codeBlock: false,
           italic: false,
+          underline: false,
         }),
         CustomItalic,
         CustomUnderline,
@@ -756,6 +760,24 @@ export const ManuscriptEditor = forwardRef<
     );
     editor.setEditable(!active);
   }, [active, editor]);
+  useEffect(() => {
+    if (!active || !editor) return;
+    const frame = editorColumnRef.current;
+    const controls = candidateControlsRef.current;
+    if (!frame || !controls) return;
+    const animationFrame = requestAnimationFrame(() => {
+      const candidate = editor.view.dom.querySelector<HTMLElement>(
+        '[data-testid="temporary-generation"]',
+      );
+      if (!candidate) return;
+      const candidateBottom = candidate.getBoundingClientRect().bottom;
+      const unobscuredBottom = controls.getBoundingClientRect().top - 20;
+      if (candidateBottom > unobscuredBottom) {
+        frame.scrollBy({ top: candidateBottom - unobscuredBottom });
+      }
+    });
+    return () => cancelAnimationFrame(animationFrame);
+  }, [active, editor]);
   useEffect(
     () => () => {
       for (const timer of saveTimers.current.values()) clearTimeout(timer);
@@ -781,7 +803,11 @@ export const ManuscriptEditor = forwardRef<
   );
 
   const startGeneration = useCallback(
-    async (options: GenerationOptions, positionOverride?: number) => {
+    async (
+      options: GenerationOptions,
+      positionOverride?: number,
+      previousText: string | null = null,
+    ) => {
       if (!editor) return;
       const position =
         positionOverride ??
@@ -800,11 +826,11 @@ export const ManuscriptEditor = forwardRef<
       setError(null);
       const controller = new AbortController();
       abortRef.current = controller;
-      setActive({
+      const nextActive: ActiveGeneration = {
         id: null,
         sceneId,
         position,
-        text: "",
+        text: previousText ?? "",
         status: "streaming",
         options,
         selection:
@@ -812,7 +838,10 @@ export const ManuscriptEditor = forwardRef<
             ? { from: options.selectionFrom, to: options.selectionTo }
             : null,
         contextFallback: false,
-      });
+        previousText,
+      };
+      activeRef.current = nextActive;
+      setActive(nextActive);
       const requestBase = {
         sceneId,
         sceneVersion: versionRefs.current.get(sceneId) ?? scene.version,
@@ -850,7 +879,15 @@ export const ManuscriptEditor = forwardRef<
             if (event.type === "generation.started") {
               setActive((value) => (value ? { ...value, id: event.generationId } : value));
             } else if (event.type === "generation.delta") {
-              setActive((value) => (value ? { ...value, text: value.text + event.delta } : value));
+              setActive((value) =>
+                value
+                  ? {
+                      ...value,
+                      text: value.previousText === null ? value.text + event.delta : event.delta,
+                      previousText: null,
+                    }
+                  : value,
+              );
             } else if (event.type === "generation.completed") {
               setActive((value) =>
                 value
@@ -859,18 +896,23 @@ export const ManuscriptEditor = forwardRef<
                       text: event.candidateText,
                       status: "complete",
                       contextFallback: event.contextFallback,
+                      previousText: null,
                     }
                   : value,
               );
             } else if (event.type === "generation.failed") {
               setActive((value) => (value ? { ...value, status: "failed" } : value));
               setError(new Error(event.message));
-            } else if (event.type === "generation.cancelled") setActive(null);
+            } else if (event.type === "generation.cancelled") {
+              activeRef.current = null;
+              setActive(null);
+            }
           },
           controller.signal,
         );
       } catch (generationError) {
         if (!controller.signal.aborted) setError(generationError);
+        activeRef.current = null;
         setActive(null);
       }
     },
@@ -911,6 +953,7 @@ export const ManuscriptEditor = forwardRef<
       versionRefs.current.set(updated.id, updated.version);
       documentRefs.current.set(updated.id, JSON.stringify(updated.document));
       onSaved(updated);
+      activeRef.current = null;
       setActive(null);
       setSelectionMenu(null);
       setSelectionPanel(null);
@@ -922,6 +965,7 @@ export const ManuscriptEditor = forwardRef<
   const reject = async () => {
     if (active?.id)
       await api(`/api/generations/${active.id}/reject`, { method: "POST" }).catch(setError);
+    activeRef.current = null;
     setActive(null);
     setSelectionMenu(null);
     setSelectionPanel(null);
@@ -930,9 +974,24 @@ export const ManuscriptEditor = forwardRef<
     abortRef.current?.abort();
     if (active?.id)
       await api(`/api/generations/${active.id}/cancel`, { method: "POST" }).catch(() => undefined);
+    activeRef.current = null;
     setActive(null);
     setSelectionMenu(null);
     setSelectionPanel(null);
+  };
+  const regenerate = async () => {
+    if (!active) return;
+    const { id, options, position, text } = active;
+    const pending: ActiveGeneration = {
+      ...active,
+      id: null,
+      status: "streaming",
+      previousText: text,
+    };
+    activeRef.current = pending;
+    setActive(pending);
+    if (id) await api(`/api/generations/${id}/reject`, { method: "POST" }).catch(setError);
+    await startGeneration(options, position, text);
   };
   const loadHistory = async () => {
     if (!activeSceneId) return;
@@ -946,8 +1005,15 @@ export const ManuscriptEditor = forwardRef<
 
   const allScenes = tree.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes));
   const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
+  const scopeDisplayLabel =
+    scope.kind === "story"
+      ? tree.project.title
+      : scope.kind === "act"
+        ? (structureLabels.acts.get(scope.id)?.label ?? "Act")
+        : scope.kind === "chapter"
+          ? (structureLabels.chapters.get(scope.id)?.label ?? "Chapter")
+          : (structureLabels.scenes.get(scope.id)?.label ?? "Scene");
   const selectedIndex = allScenes.findIndex((scene) => scene.id === activeSceneId);
-  const activeScene = allScenes[selectedIndex];
   const previousScene = selectedIndex > 0 ? allScenes[selectedIndex - 1] : undefined;
   const nextScene = selectedIndex >= 0 ? allScenes[selectedIndex + 1] : undefined;
   const selectedWordCount = selectionMenu?.text.split(/\s+/).length ?? 0;
@@ -1015,15 +1081,14 @@ export const ManuscriptEditor = forwardRef<
   );
 
   return (
-    <div className="editor-column continuous-editor-column" style={editorStyle}>
+    <div
+      ref={editorColumnRef}
+      className={`editor-column continuous-editor-column ${active ? "has-candidate-controls" : ""}`}
+      style={editorStyle}
+    >
       <div className="editor-header manuscript-scope-header">
         <div style={{ width: "100%", textAlign: "center" }}>
-          <h2>
-            {scope.kind === "story"
-              ? tree.project.title
-              : ((activeScene && structureLabels.scenes.get(activeScene.id)?.label) ??
-                "Manuscript")}
-          </h2>
+          <h2>{scopeDisplayLabel}</h2>
         </div>
       </div>
       <div className="editor-body">
@@ -1037,12 +1102,7 @@ export const ManuscriptEditor = forwardRef<
               onClick={() => setMobileNavigatorOpen(true)}
             >
               <ListTree size={16} />
-              <span>
-                {scope.kind === "story"
-                  ? "Everything"
-                  : ((activeScene && structureLabels.scenes.get(activeScene.id)?.label) ??
-                    "Manuscript")}
-              </span>
+              <span>{scope.kind === "story" ? "Everything" : scopeDisplayLabel}</span>
             </button>
             <button
               type="button"
@@ -1252,7 +1312,7 @@ export const ManuscriptEditor = forwardRef<
             </button>
           </div>
           <StructureActionsContext.Provider value={{ create: createStructure }}>
-            <EditorActionsContext.Provider value={{ baseModel, models, startGeneration }}>
+            <EditorActionsContext.Provider value={{ baseModel, entries, models, startGeneration }}>
               <EditorContent editor={editor} />
             </EditorActionsContext.Provider>
           </StructureActionsContext.Provider>
@@ -1700,11 +1760,12 @@ export const ManuscriptEditor = forwardRef<
         </div>
       ) : null}
       {active ? (
-        <div className="candidate-controls">
+        <div ref={candidateControlsRef} className="candidate-controls">
           <span>
             {active.status === "streaming" ? (
               <>
-                <RefreshCw className="spin" size={15} /> Asterism is writing…
+                <RefreshCw className="spin" size={15} />
+                {active.previousText === null ? "Asterism is writing…" : "Asterism is rewriting…"}
               </>
             ) : active.status === "complete" ? (
               "Candidate ready"
@@ -1722,14 +1783,7 @@ export const ManuscriptEditor = forwardRef<
                 <button type="button" className="button ghost" onClick={reject}>
                   <Trash2 size={15} /> Reject
                 </button>
-                <button
-                  type="button"
-                  className="button ghost"
-                  onClick={() => {
-                    const options = active.options;
-                    void reject().then(() => startGeneration(options));
-                  }}
-                >
+                <button type="button" className="button ghost" onClick={() => void regenerate()}>
                   <RefreshCw size={15} /> Regenerate
                 </button>
                 <button type="button" className="button primary" onClick={accept}>

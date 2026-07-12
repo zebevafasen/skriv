@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
+import { MentionTextarea } from "./MentionTextarea.js";
 
 const storyTypes = [
   { id: "story.character", label: "Character", icon: UserRound },
@@ -573,11 +574,13 @@ const contextModes: Array<{
 export function CompendiumEntryDrawer({
   projectId,
   entry,
+  entries,
   mentionCount = 0,
   onClose,
 }: {
   projectId: string;
   entry: CompendiumEntry | null;
+  entries: CompendiumEntry[];
   mentionCount?: number;
   onClose: () => void;
 }) {
@@ -635,6 +638,15 @@ export function CompendiumEntryDrawer({
       await invalidate();
     },
   });
+  const mentionEntries = useMemo(
+    () =>
+      draft
+        ? entries.some((item) => item.id === draft.id)
+          ? entries.map((item) => (item.id === draft.id ? draft : item))
+          : [...entries, draft]
+        : entries,
+    [draft, entries],
+  );
 
   if (!draft) return null;
   const currentType = storyTypes.find((type) => type.id === draft.typeId);
@@ -983,13 +995,15 @@ export function CompendiumEntryDrawer({
                 );
               })()
             ) : (
-              <label className="drawer-field description-field">
+              <label className="drawer-field description-field" htmlFor="compendium-description">
                 <strong>Description</strong>
                 <small>Write the information the AI should know about this entry.</small>
-                <textarea
+                <MentionTextarea
+                  id="compendium-description"
                   value={description}
-                  onChange={(event) =>
-                    setDraft({ ...draft, content: { kind: "text", text: event.target.value } })
+                  entries={mentionEntries}
+                  onValueChange={(value) =>
+                    setDraft({ ...draft, content: { kind: "text", text: value } })
                   }
                   placeholder="Write a description…"
                 />

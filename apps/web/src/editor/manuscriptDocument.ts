@@ -1,7 +1,7 @@
 import type { ManuscriptTree, Scene } from "@asterism/contracts";
 import { manuscriptLabels } from "@asterism/core";
 import type { JSONContent } from "@tiptap/core";
-import { generatedProseContent } from "./generatedProse.js";
+import { generatedInlineContent, generatedProseContent } from "./generatedProse.js";
 
 export type ManuscriptScope =
   | { kind: "scene"; id: string }
@@ -137,5 +137,8 @@ export function compositeDocument(tree: ManuscriptTree, scope: ManuscriptScope):
 }
 
 export function selectionReplacementContent(text: string, inline: boolean) {
-  return inline ? text.trim().replace(/\s*\n+\s*/g, " ") : generatedProseContent(text);
+  if (!inline) return generatedProseContent(text);
+  const normalized = text.trim().replace(/\s*\n+\s*/g, " ");
+  const content = generatedInlineContent(normalized);
+  return content.some((node) => node.marks?.length) ? content : normalized;
 }

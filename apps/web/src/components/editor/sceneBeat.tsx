@@ -2,6 +2,7 @@ import { mergeAttributes, Node } from "@tiptap/core";
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import { Activity, ChevronDown, Eraser, Play, Trash } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { MentionTextarea } from "../MentionTextarea.js";
 import { ModelSelect } from "../ModelSelect.js";
 import { useEditorActions } from "./EditorActionsContext.js";
 
@@ -12,7 +13,7 @@ function autoResize(element: HTMLTextAreaElement | null) {
 }
 
 function SceneBeatView(props: NodeViewProps) {
-  const { baseModel, models, startGeneration } = useEditorActions();
+  const { baseModel, entries, models, startGeneration } = useEditorActions();
 
   const {
     instructions,
@@ -144,7 +145,7 @@ function SceneBeatView(props: NodeViewProps) {
             </button>
           </div>
 
-          <textarea
+          <MentionTextarea
             ref={textareaRef}
             className="scene-beat-textarea"
             placeholder={
@@ -153,17 +154,19 @@ function SceneBeatView(props: NodeViewProps) {
                 : "Describe what should happen next..."
             }
             value={instructions}
-            onChange={(e) => updateAttr("instructions", e.target.value)}
+            entries={entries}
+            onValueChange={(value) => updateAttr("instructions", value)}
           />
 
           {workflow === "prose.toward_event" && (
-            <textarea
+            <MentionTextarea
               ref={eventTextareaRef}
               className="scene-beat-textarea"
+              wrapperClassName="scene-beat-event"
               placeholder="Describe what the final event of this generation should be..."
               value={eventTarget || ""}
-              onChange={(e) => updateAttr("eventTarget", e.target.value)}
-              style={{ marginTop: "-8px", borderTop: "1px dashed #3b404a", paddingTop: "12px" }}
+              entries={entries}
+              onValueChange={(value) => updateAttr("eventTarget", value)}
             />
           )}
 

@@ -69,7 +69,11 @@ function NoteEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false }),
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        codeBlock: false,
+        underline: false,
+      }),
       Underline,
       Placeholder.configure({ placeholder: "Start writing this note..." }),
     ],

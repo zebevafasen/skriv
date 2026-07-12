@@ -6,7 +6,7 @@ import type {
   CompendiumEntry,
   ManuscriptTree,
 } from "@asterism/contracts";
-import { findMentions, manuscriptLabels } from "@asterism/core";
+import { manuscriptLabels } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -39,6 +39,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { ApiError, api, streamChat } from "../api.js";
 import { CompendiumMentionText } from "./CompendiumMentionText.js";
 import { useAppDialog } from "./DialogProvider.js";
+import { MentionTextarea } from "./MentionTextarea.js";
 import { ModelSelect } from "./ModelSelect.js";
 
 const sourceKey = (source: ChatContextSource) =>
@@ -111,36 +112,16 @@ function MentionComposer({
   onChange: (value: string) => void;
   onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement>;
 }) {
-  const highlightRef = useRef<HTMLDivElement>(null);
-  const matches = findMentions(value, entries, { includeUntracked: true });
-  const pieces: ReactNode[] = [];
-  let cursor = 0;
-  for (const match of matches) {
-    if (match.from > cursor) pieces.push(value.slice(cursor, match.from));
-    pieces.push(<mark key={`${match.from}-${match.to}`}>{value.slice(match.from, match.to)}</mark>);
-    cursor = match.to;
-  }
-  if (cursor < value.length) pieces.push(value.slice(cursor));
   return (
-    <div className="chat-input-layer">
-      <div ref={highlightRef} className="chat-input-highlights" aria-hidden="true">
-        {pieces}
-        {value.endsWith("\n") ? " " : null}
-      </div>
-      <textarea
-        value={value}
-        spellCheck={false}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder="Ask anything about this project..."
-        onKeyDown={onKeyDown}
-        onScroll={(event) => {
-          if (highlightRef.current) {
-            highlightRef.current.scrollTop = event.currentTarget.scrollTop;
-            highlightRef.current.scrollLeft = event.currentTarget.scrollLeft;
-          }
-        }}
-      />
-    </div>
+    <MentionTextarea
+      wrapperClassName="chat-input-layer"
+      value={value}
+      entries={entries}
+      spellCheck={false}
+      onValueChange={onChange}
+      placeholder="Ask anything about this project..."
+      onKeyDown={onKeyDown}
+    />
   );
 }
 

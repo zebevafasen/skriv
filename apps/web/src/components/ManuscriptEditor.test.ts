@@ -92,4 +92,49 @@ describe("composite manuscript documents", () => {
       { type: "paragraph", content: [{ type: "text", text: "Second paragraph." }] },
     ]);
   });
+
+  it("converts generated inline Markdown into editor marks", () => {
+    expect(
+      selectionReplacementContent(
+        "Zebe was **certain**, *quietly amused*, and _not backing down_.",
+        true,
+      ),
+    ).toEqual([
+      { type: "text", text: "Zebe was " },
+      { type: "text", text: "certain", marks: [{ type: "bold" }] },
+      { type: "text", text: ", " },
+      { type: "text", text: "quietly amused", marks: [{ type: "italic" }] },
+      { type: "text", text: ", and " },
+      { type: "text", text: "not backing down", marks: [{ type: "underline" }] },
+      { type: "text", text: "." },
+    ]);
+  });
+
+  it("converts generated headings and lists into editor blocks", () => {
+    expect(selectionReplacementContent("## Next beat\n\n- **Arrive**\n- React", false)).toEqual([
+      {
+        type: "heading",
+        attrs: { level: 2 },
+        content: [{ type: "text", text: "Next beat" }],
+      },
+      {
+        type: "bulletList",
+        content: [
+          {
+            type: "listItem",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "Arrive", marks: [{ type: "bold" }] }],
+              },
+            ],
+          },
+          {
+            type: "listItem",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "React" }] }],
+          },
+        ],
+      },
+    ]);
+  });
 });

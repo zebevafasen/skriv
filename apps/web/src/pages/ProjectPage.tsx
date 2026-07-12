@@ -5,8 +5,11 @@ import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router"
 import {
   BookMarked,
   BookOpenText,
+  Check,
+  ChevronDown,
   Download,
   FileText,
+  Layers3,
   Library,
   Lightbulb,
   MessageCircle,
@@ -33,7 +36,7 @@ import { CompendiumEntryDrawer, CompendiumPanel } from "../components/Compendium
 import { useAppDialog } from "../components/DialogProvider.js";
 import { ExportDialog } from "../components/ExportDialog.js";
 import type { ManuscriptEditorHandle } from "../components/ManuscriptEditor.js";
-import type { ManuscriptScope } from "../editor/manuscriptDocument.js";
+import { type ManuscriptScope, scenesForScope } from "../editor/manuscriptDocument.js";
 import { trapFocusWithin } from "../utils/focus.js";
 import { updateSceneInTree } from "../utils/manuscript.js";
 
@@ -83,6 +86,10 @@ function parseScope(value: string | undefined): ManuscriptScope {
   return { kind: "story" };
 }
 
+function countWords(value: string): number {
+  return value.trim().match(/\S+/g)?.length ?? 0;
+}
+
 export function ProjectPage() {
   const { projectId } = useParams({ from: "/projects/$projectId" });
   const search = useSearch({ from: "/projects/$projectId" });
@@ -92,7 +99,9 @@ export function ProjectPage() {
   const tab: Tab = search.tab ?? "manuscript";
   const [moreOpen, setMoreOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [scopeMenuOpen, setScopeMenuOpen] = useState(false);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
+  const scopePickerRef = useRef<HTMLDivElement>(null);
   const [compendiumOpen, setCompendiumOpen] = useState(
     () => !window.matchMedia("(max-width: 900px)").matches,
   );
@@ -134,6 +143,28 @@ export function ProjectPage() {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [moreOpen]);
+
+  useEffect(() => {
+    if (!scopeMenuOpen) return;
+    const close = (event: PointerEvent | KeyboardEvent) => {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === "Escape") setScopeMenuOpen(false);
+        return;
+      }
+      if (!scopePickerRef.current?.contains(event.target as Node)) setScopeMenuOpen(false);
+    };
+    requestAnimationFrame(() =>
+      scopePickerRef.current
+        ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"]')
+        ?.focus(),
+    );
+    window.addEventListener("keydown", close);
+    window.addEventListener("pointerdown", close);
+    return () => {
+      window.removeEventListener("keydown", close);
+      window.removeEventListener("pointerdown", close);
+    };
+  }, [scopeMenuOpen]);
 
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 900px)");
@@ -256,6 +287,42 @@ export function ProjectPage() {
     return null;
   }, [selectedSceneId, tree.data]);
 
+  const scopedScenes = useMemo(
+    () => (tree.data ? scenesForScope(tree.data, scope) : []),
+    [scope, tree.data],
+  );
+  const scopedWordCount = useMemo(
+    () => scopedScenes.reduce((total, scene) => total + countWords(scene.plainText), 0),
+    [scopedScenes],
+  );
+  const scopedPageCount = scopedWordCount ? Math.ceil(scopedWordCount / 250) : 0;
+  const scopedReadMinutes = scopedWordCount ? Math.max(1, Math.ceil(scopedWordCount / 200)) : 0;
+  const scopeLabel = useMemo(() => {
+    if (scope.kind === "story") return { primary: "Everything", secondary: "Full manuscript" };
+    if (scope.kind === "act") {
+      const label = structureLabels?.acts.get(scope.id)?.label ?? "Full Act";
+      return { primary: label, secondary: "Full act" };
+    }
+    if (scope.kind === "chapter") {
+      const label = structureLabels?.chapters.get(scope.id)?.label ?? "Chapter";
+      const act = tree.data?.acts.find((candidate) =>
+        candidate.chapters.some((chapter) => chapter.id === scope.id),
+      );
+      return {
+        primary: label,
+        secondary: act ? (structureLabels?.acts.get(act.id)?.label ?? "Chapter") : "Chapter",
+      };
+    }
+    return {
+      primary: selectedLocation
+        ? (structureLabels?.scenes.get(selectedLocation.scene.id)?.label ?? "Current Scene")
+        : "Current Scene",
+      secondary: selectedLocation
+        ? (structureLabels?.chapters.get(selectedLocation.chapter.id)?.label ?? "Scene")
+        : "Scene",
+    };
+  }, [scope, selectedLocation, structureLabels, tree.data]);
+
   const changeScope = async (nextScope: ManuscriptScope) => {
     await editorRef.current?.flush();
     await updateSearch({ scope: nextScope.kind === "story" ? undefined : scopeValue(nextScope) });
@@ -263,6 +330,29 @@ export function ProjectPage() {
   const selectScene = async (sceneId: string) => {
     await editorRef.current?.flush();
     await updateSearch({ scene: sceneId, scope: `scene:${sceneId}`, view: undefined });
+  };
+
+  const chooseScope = async (nextScope: ManuscriptScope) => {
+    setScopeMenuOpen(false);
+    if (nextScope.kind === "scene") await selectScene(nextScope.id);
+    else await changeScope(nextScope);
+  };
+
+  const handleScopeMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const options = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+    if (!options.length) return;
+    const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? options.length - 1
+          : event.key === "ArrowDown"
+            ? Math.min(options.length - 1, currentIndex + 1)
+            : Math.max(0, currentIndex < 0 ? options.length - 1 : currentIndex - 1);
+    options[nextIndex]?.focus();
   };
 
   if (tree.isLoading) return <div className="page loading">Opening manuscript…</div>;
@@ -506,92 +596,127 @@ export function ProjectPage() {
               </div>
               {view === "write" && scope ? (
                 <div className="manuscript-scope-controls">
-                  <label>
-                    <span>Viewing mode</span>
-                    <select
+                  <span className="manuscript-scope-label">Viewing</span>
+                  <div ref={scopePickerRef} className="manuscript-scope-picker">
+                    <button
+                      type="button"
+                      className={`manuscript-scope-trigger ${scopeMenuOpen ? "open" : ""}`}
                       aria-label="Viewing mode"
-                      value={scopeValue(scope)}
-                      onChange={(event) => {
-                        const [kind, id] = event.target.value.split(":");
-                        if (kind === "story") void changeScope({ kind: "story" });
-                        else if (kind === "act" && id) void changeScope({ kind: "act", id });
-                        else if (kind === "chapter" && id)
-                          void changeScope({ kind: "chapter", id });
-                        else if (kind === "scene" && id) void selectScene(id);
-                      }}
+                      aria-haspopup="listbox"
+                      aria-expanded={scopeMenuOpen}
+                      onClick={() => setScopeMenuOpen((current) => !current)}
                     >
-                      {selectedSceneId ? (
-                        <option value={`scene:${selectedSceneId}`}>
-                          Current Scene ·{" "}
-                          {selectedLocation?.scene.id
-                            ? structureLabels?.scenes.get(selectedLocation.scene.id)?.label
-                            : "Scene"}
-                        </option>
-                      ) : null}
-                      <option value="story:all">Everything</option>
-                      {tree.data.acts.map((act) => (
-                        <optgroup
-                          key={act.id}
-                          label={structureLabels?.acts.get(act.id)?.label ?? "Act"}
+                      <span className="manuscript-scope-trigger-copy">
+                        <strong>{scopeLabel.primary}</strong>
+                        <small>{scopeLabel.secondary}</small>
+                      </span>
+                      <ChevronDown size={15} aria-hidden="true" />
+                    </button>
+                    {scopeMenuOpen ? (
+                      <div
+                        className="manuscript-scope-menu"
+                        role="listbox"
+                        aria-label="Manuscript viewing scope"
+                        onKeyDown={handleScopeMenuKeyDown}
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={scope.kind === "story"}
+                          className="manuscript-scope-option featured"
+                          onClick={() => void chooseScope({ kind: "story" })}
                         >
-                          <option value={`act:${act.id}`}>Full Act</option>
-                          {act.chapters.map((chapter) => (
-                            <option key={chapter.id} value={`chapter:${chapter.id}`}>
-                              {structureLabels?.chapters.get(chapter.id)?.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </label>
-                  {scope.kind === "scene" && selectedLocation ? (
-                    <div className="scene-breadcrumb-selectors">
-                      <select
-                        aria-label="Act"
-                        value={selectedLocation.act.id}
-                        onChange={(event) => {
-                          const act = tree.data?.acts.find(
-                            (candidate) => candidate.id === event.target.value,
-                          );
-                          const scene = act?.chapters[0]?.scenes[0];
-                          if (scene) selectScene(scene.id);
-                        }}
-                      >
+                          <Layers3 size={16} aria-hidden="true" />
+                          <span>
+                            <strong>Everything</strong>
+                            <small>Full manuscript</small>
+                          </span>
+                          {scope.kind === "story" ? <Check size={15} aria-hidden="true" /> : null}
+                        </button>
+                        {selectedSceneId && selectedLocation ? (
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={scope.kind === "scene" && scope.id === selectedSceneId}
+                            className="manuscript-scope-option featured"
+                            onClick={() => void chooseScope({ kind: "scene", id: selectedSceneId })}
+                          >
+                            <BookOpenText size={16} aria-hidden="true" />
+                            <span>
+                              <strong>Current Scene</strong>
+                              <small>
+                                {structureLabels?.scenes.get(selectedLocation.scene.id)?.label}
+                              </small>
+                            </span>
+                            {scope.kind === "scene" && scope.id === selectedSceneId ? (
+                              <Check size={15} aria-hidden="true" />
+                            ) : null}
+                          </button>
+                        ) : null}
                         {tree.data.acts.map((act) => (
-                          <option key={act.id} value={act.id}>
-                            {structureLabels?.acts.get(act.id)?.label}
-                          </option>
+                          <fieldset
+                            key={act.id}
+                            className="manuscript-scope-group"
+                            aria-label={structureLabels?.acts.get(act.id)?.label ?? "Act"}
+                          >
+                            <legend className="manuscript-scope-group-label">
+                              {structureLabels?.acts.get(act.id)?.label ?? "Act"}
+                            </legend>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={scope.kind === "act" && scope.id === act.id}
+                              className="manuscript-scope-option nested"
+                              onClick={() => void chooseScope({ kind: "act", id: act.id })}
+                            >
+                              <span>
+                                <strong>Full Act</strong>
+                                <small>
+                                  {act.chapters.length}{" "}
+                                  {act.chapters.length === 1 ? "chapter" : "chapters"}
+                                </small>
+                              </span>
+                              {scope.kind === "act" && scope.id === act.id ? (
+                                <Check size={15} aria-hidden="true" />
+                              ) : null}
+                            </button>
+                            {act.chapters.map((chapter) => (
+                              <button
+                                type="button"
+                                role="option"
+                                aria-selected={scope.kind === "chapter" && scope.id === chapter.id}
+                                className="manuscript-scope-option nested"
+                                key={chapter.id}
+                                onClick={() =>
+                                  void chooseScope({ kind: "chapter", id: chapter.id })
+                                }
+                              >
+                                <span>
+                                  <strong>
+                                    {structureLabels?.chapters.get(chapter.id)?.label ?? "Chapter"}
+                                  </strong>
+                                  <small>
+                                    {chapter.scenes.length}{" "}
+                                    {chapter.scenes.length === 1 ? "scene" : "scenes"}
+                                  </small>
+                                </span>
+                                {scope.kind === "chapter" && scope.id === chapter.id ? (
+                                  <Check size={15} aria-hidden="true" />
+                                ) : null}
+                              </button>
+                            ))}
+                          </fieldset>
                         ))}
-                      </select>
-                      <select
-                        aria-label="Chapter"
-                        value={selectedLocation.chapter.id}
-                        onChange={(event) => {
-                          const chapter = selectedLocation.act.chapters.find(
-                            (candidate) => candidate.id === event.target.value,
-                          );
-                          if (chapter?.scenes[0]) selectScene(chapter.scenes[0].id);
-                        }}
-                      >
-                        {selectedLocation.act.chapters.map((chapter) => (
-                          <option key={chapter.id} value={chapter.id}>
-                            {structureLabels?.chapters.get(chapter.id)?.label}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        aria-label="Scene"
-                        value={selectedLocation.scene.id}
-                        onChange={(event) => selectScene(event.target.value)}
-                      >
-                        {selectedLocation.chapter.scenes.map((scene) => (
-                          <option key={scene.id} value={scene.id}>
-                            {structureLabels?.scenes.get(scene.id)?.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="manuscript-scope-stats" aria-live="polite">
+                    <strong>{new Intl.NumberFormat().format(scopedWordCount)} words</strong>
+                    <span>
+                      {scopedPageCount} {scopedPageCount === 1 ? "page" : "pages"} ·{" "}
+                      {scopedReadMinutes} min read
+                    </span>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -647,6 +772,7 @@ export function ProjectPage() {
             <CompendiumEntryDrawer
               projectId={projectId}
               entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
+              entries={compendium.data ?? []}
               mentionCount={selectedEntryMentionCount}
               onClose={() => void updateSearch({ entry: undefined })}
             />
@@ -684,6 +810,7 @@ export function ProjectPage() {
             <CompendiumEntryDrawer
               projectId={projectId}
               entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
+              entries={compendium.data ?? []}
               mentionCount={selectedEntryMentionCount}
               onClose={() => void updateSearch({ entry: undefined })}
             />
