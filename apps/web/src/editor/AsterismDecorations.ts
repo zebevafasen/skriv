@@ -93,9 +93,9 @@ export function setCandidateDecoration(
   editor: Editor,
   candidate: DecorationState["candidate"],
 ): void {
-  editor.view.dispatch(editor.state.tr.setMeta(key, { candidate }));
+  editor.view.dispatch(editor.state.tr.setMeta(key, { candidate }).setMeta("addToHistory", false));
 }
 
 export function setMentionDecorations(editor: Editor, mentions: EditorMention[]): void {
-  editor.view.dispatch(editor.state.tr.setMeta(key, { mentions }));
+  editor.view.dispatch(editor.state.tr.setMeta(key, { mentions }).setMeta("addToHistory", false));
 }

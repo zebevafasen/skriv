@@ -7,7 +7,9 @@ import type {
 } from "@asterism/contracts";
 import { findMentions } from "@asterism/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { type Editor, Extension, type JSONContent, mergeAttributes, Node } from "@tiptap/core";
+import { type Editor, Extension, type JSONContent, mergeAttributes, Node, markInputRule, markPasteRule } from "@tiptap/core";
+import Italic from "@tiptap/extension-italic";
+import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin } from "@tiptap/pm/state";
@@ -69,6 +71,44 @@ type ActiveGeneration = {
 };
 
 type SceneRevision = { id: string; version: number; reason: string; createdAt: string };
+
+const CustomItalic = Italic.extend({
+  addInputRules() {
+    return [
+      markInputRule({
+        find: /(?:^|\s)((?:\*)((?:[^*]+))(?:\*))$/,
+        type: this.type,
+      }),
+    ];
+  },
+  addPasteRules() {
+    return [
+      markPasteRule({
+        find: /(?:^|\s)((?:\*)((?:[^*]+))(?:\*))/g,
+        type: this.type,
+      }),
+    ];
+  },
+});
+
+const CustomUnderline = Underline.extend({
+  addInputRules() {
+    return [
+      markInputRule({
+        find: /(?:^|\s)((?:_)((?:[^_]+))(?:_))$/,
+        type: this.type,
+      }),
+    ];
+  },
+  addPasteRules() {
+    return [
+      markPasteRule({
+        find: /(?:^|\s)((?:_)((?:[^_]+))(?:_))/g,
+        type: this.type,
+      }),
+    ];
+  },
+});
 
 const CompositeDocument = Node.create({
   name: "doc",
@@ -652,7 +692,10 @@ export const ManuscriptEditor = forwardRef<
           blockquote: false,
           bulletList: false,
           orderedList: false,
+          italic: false,
         }),
+        CustomItalic,
+        CustomUnderline,
         CompositeDocument,
         ManuscriptHeading,
         SceneBlock,
