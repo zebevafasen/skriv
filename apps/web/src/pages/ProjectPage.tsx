@@ -276,9 +276,6 @@ export function ProjectPage() {
   return (
     <div className="project-workspace">
       <nav className="mobile-project-nav" aria-label="Project workspace">
-        <Link to="/" className="mobile-project-home" aria-label="Back to Projects">
-          <Library size={16} /> Projects
-        </Link>
         <button
           type="button"
           className={tab === "manuscript" && view === "write" ? "active" : ""}
@@ -775,9 +772,9 @@ export function ProjectPage() {
               >
                 <Settings size={17} /> Project settings
               </button>
-              <a href="/">
-                <BookOpenText size={17} /> Projects
-              </a>
+              <Link to="/" onClick={() => setMoreOpen(false)}>
+                <Library size={17} /> Back to projects
+              </Link>
               <a href="/prompts">
                 <FileText size={17} /> Prompts
               </a>

@@ -54,7 +54,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
 
   try {
     await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Back to Projects" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to projects" })).toBeHidden();
     await expect(page.getByRole("navigation", { name: "Project workspace" })).toBeVisible();
     await expect(page.locator(".topbar")).toBeHidden();
     await expect(page.locator(".project-bar")).toBeHidden();
@@ -144,7 +144,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await expectNoDocumentOverflow(page);
 
     await page.getByRole("button", { name: "More" }).click();
-    await page.getByRole("link", { name: "Projects", exact: true }).click();
+    await page.getByRole("link", { name: "Back to projects" }).click();
     await expect(page).toHaveURL("/");
     await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
     await page.evaluate(() => {
