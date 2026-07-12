@@ -11,7 +11,19 @@ export const basePackage: ContentPackage = contentPackageSchema.parse({
   genres,
   themes,
   tags,
-  tagPacks,
+  tagPacks: [
+    ...tagPacks,
+    {
+      id: "pack.all",
+      name: "All",
+      description: "Contains all registered built-in genres, themes, and tags.",
+      values: {
+        genres: genres.map((g) => g.id),
+        themes: themes.map((t) => t.id),
+        tags: tags.map((t) => t.id),
+      },
+    },
+  ],
   prompts,
 });
 

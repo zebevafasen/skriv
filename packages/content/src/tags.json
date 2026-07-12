@@ -633,5 +633,20 @@
     "id": "tag.lost_knowledge",
     "label": "Lost Knowledge",
     "description": "Lost-knowledge stories are stories that feature lost knowledge."
+  },
+  {
+    "id": "tag.kingdom",
+    "label": "Kingdom",
+    "description": "Kingdom stories are stories that feature kingdoms."
+  },
+  {
+    "id": "tag.lost_kingdom",
+    "label": "Lost Kingdom",
+    "description": "Lost-kingdom stories are stories that feature lost kingdoms."
+  },
+  {
+    "id": "tag.exploration",
+    "label": "Exploration",
+    "description": "Exploration stories are stories that feature exploration."
   }
 ]

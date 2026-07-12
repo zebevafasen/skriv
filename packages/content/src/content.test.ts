@@ -10,6 +10,7 @@ describe("base content package", () => {
       "Science Fiction",
       "Romance",
       "Mystery",
+      "All",
     ]);
     expect(getBuiltinPrompt("prose.continue").ownership).toBe("builtin");
     expect(getBuiltinPrompt("prose.revise_selection").variables).toContain("selected_text");

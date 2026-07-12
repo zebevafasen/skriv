@@ -4,9 +4,66 @@
     "name": "Fantasy",
     "description": "Magic, quests, invented worlds, and mythic conflict.",
     "values": {
-      "genres": ["genre.fantasy"],
-      "themes": ["theme.sacrifice", "theme.found_family", "theme.corruption"],
-      "tags": ["tag.magic_system", "tag.high_fantasy", "tag.medieval", "tag.grimdark"]
+      "genres": [
+        "genre.fantasy"
+      ],
+      "themes": [
+        "theme.sacrifice",
+        "theme.found_family",
+        "theme.corruption"
+      ],
+      "tags": [
+        "tag.magic_system",
+        "tag.rare_magic",
+        "tag.common_magic",
+        "tag.hard_magic",
+        "tag.soft_magic",
+        "tag.no_magic",
+        "tag.high_fantasy",
+        "tag.low_fantasy",
+        "tag.medieval",
+        "tag.grimdark",
+        "tag.gothic",
+        "tag.victorian",
+        "tag.hopeful",
+        "tag.bleak",
+        "tag.adventure",
+        "tag.globetrotting",
+        "tag.exploration",
+        "tag.seafaring",
+        "tag.quest",
+        "tag.high_stakes",
+        "tag.low_stakes",
+        "tag.cozy",
+        "tag.chosen_one",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.monster_hunting",
+        "tag.guilds",
+        "tag.empire",
+        "tag.fallen_empire",
+        "tag.mercenaries",
+        "tag.golden_age",
+        "tag.shoulders_of_giants",
+        "tag.lost_knowledge",
+        "tag.wilderness",
+        "tag.war",
+        "tag.gifted_individual",
+        "tag.kingdom",
+        "tag.lost_kingdom",
+        "tag.human_centric",
+        "tag.alchemy",
+        "tag.ancient",
+        "tag.prehistoric",
+        "tag.single_location",
+        "tag.floating_city",
+        "tag.ensemble_cast",
+        "tag.dialogue_heavy",
+        "tag.dialogue_light",
+        "tag.no_dialogue",
+        "tag.grounded",
+        "tag.realistic"
+      ]
     }
   },
   {
@@ -14,9 +71,70 @@
     "name": "Science Fiction",
     "description": "Speculative technology, futures, and social change.",
     "values": {
-      "genres": ["genre.science_fiction"],
-      "themes": ["theme.identity", "theme.freedom", "theme.corruption"],
-      "tags": ["tag.forbidden_technology", "tag.cyberpunk", "tag.human_centric"]
+      "genres": [
+        "genre.science_fiction"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.freedom",
+        "theme.corruption"
+      ],
+      "tags": [
+        "tag.forbidden_technology",
+        "tag.cyberpunk",
+        "tag.human_centric",
+        "tag.industrial",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.steampunk",
+        "tag.cyberpunk",
+        "tag.post_apocalyptic",
+        "tag.post_collapse",
+        "tag.near_future",
+        "tag.far_future",
+        "tag.spacefaring",
+        "tag.exploration",
+        "tag.frontier",
+        "tag.shoulders_of_giants",
+        "tag.rebellion",
+        "tag.colonial",
+        "tag.western",
+        "tag.war",
+        "tag.retrofuturistic",
+        "tag.isolated",
+        "tag.zero_gravity",
+        "tag.low_gravity",
+        "tag.megacity",
+        "tag.single_location",
+        "tag.lost_civilization",
+        "tag.ruins",
+        "tag.advanced_technology",
+        "tag.artificial_intelligence",
+        "tag.transhumanism",
+        "tag.cybernetics",
+        "tag.cyborgs",
+        "tag.androids",
+        "tag.robots",
+        "tag.clockwork",
+        "tag.hard_sci_fi",
+        "tag.soft_sci_fi",
+        "tag.faster_than_light",
+        "tag.ensemble_cast",
+        "tag.dialogue_heavy",
+        "tag.dialogue_light",
+        "tag.no_dialogue",
+        "tag.grounded",
+        "tag.realistic",
+        "tag.hopeful",
+        "tag.bleak",
+        "tag.low_stakes",
+        "tag.high_stakes",
+        "tag.naval",
+        "tag.mutants",
+        "tag.pirates",
+        "tag.civil_war",
+        "tag.war"
+      ]
     }
   },
   {
@@ -24,9 +142,21 @@
     "name": "Romance",
     "description": "Intimacy, emotional obstacles, and relationship arcs.",
     "values": {
-      "genres": ["genre.romance"],
-      "themes": ["theme.identity", "theme.sacrifice", "theme.found_family"],
-      "tags": ["tag.slow_burn"]
+      "genres": [
+        "genre.romance",
+        "genre.drama",
+        "genre.slice_of_life"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.sacrifice",
+        "theme.found_family"
+      ],
+      "tags": [
+        "tag.slow_burn",
+        "tag.intimacy",
+        "tag.modern_day"
+      ]
     }
   },
   {
@@ -34,9 +164,18 @@
     "name": "Mystery",
     "description": "Questions, clues, secrets, and discovery.",
     "values": {
-      "genres": ["genre.mystery"],
-      "themes": ["theme.revenge", "theme.corruption", "theme.identity"],
-      "tags": ["tag.unreliable_narrator", "tag.isolated_village"]
+      "genres": [
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.revenge",
+        "theme.corruption",
+        "theme.identity"
+      ],
+      "tags": [
+        "tag.unreliable_narrator",
+        "tag.isolated_village"
+      ]
     }
   }
 ]
