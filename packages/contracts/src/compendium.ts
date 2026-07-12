@@ -10,6 +10,7 @@ export const compendiumTypeIdSchema = z.enum([
   "story.object",
   "story.faction",
   "story.lore",
+  "story.other",
   "project.premise",
   "project.genres",
   "project.themes",

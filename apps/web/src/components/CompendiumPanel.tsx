@@ -27,6 +27,7 @@ const storyTypes = [
   { id: "story.object", label: "Object / Item", icon: Box },
   { id: "story.faction", label: "Faction", icon: UsersRound },
   { id: "story.lore", label: "Lore", icon: Landmark },
+  { id: "story.other", label: "Other", icon: BookMarked },
 ] as const;
 
 const suggestedLabels: Record<(typeof storyTypes)[number]["id"], string[]> = {
@@ -35,6 +36,7 @@ const suggestedLabels: Record<(typeof storyTypes)[number]["id"], string[]> = {
   "story.object": ["Artifact", "Weapon", "Tool", "Vehicle", "Document"],
   "story.faction": ["Organization", "Government", "Guild", "Family", "Religion"],
   "story.lore": ["Culture", "History", "Magic", "Religion", "Event", "Technology"],
+  "story.other": ["Misc", "Concept", "Idea", "Note"],
 };
 
 function entrySummary(entry: CompendiumEntry): string {
@@ -123,7 +125,7 @@ export function CompendiumPanel({
     const grouped = new Map<string, CompendiumEntry[]>();
     const query = search.trim().toLocaleLowerCase();
     for (const entry of entries.filter((item) => {
-      if (item.singleton) {
+      if (item.singleton && !["project.genres", "project.themes", "project.tags"].includes(item.typeId)) {
         const isEmpty =
           item.content.kind === "selection"
             ? item.content.values.length === 0
@@ -642,11 +644,66 @@ export function CompendiumEntryDrawer({
               />
             </label>
             {draft.content.kind === "selection" ? (
-              <div className="selection-readout">
-                {draft.content.values.map((value) => (
-                  <span key={`${value.definitionId}-${value.label}`}>{value.label}</span>
-                ))}
-              </div>
+              (() => {
+                const selectionContent = draft.content;
+                return (
+                  <label className="drawer-field">
+                    <strong>Values</strong>
+                    <small>Add tags by typing and pressing Enter or comma.</small>
+                    <div className="entry-label-editor">
+                      <div className="entry-label-chips">
+                        {selectionContent.values.map((value) => (
+                          <button
+                            type="button"
+                            key={`${value.definitionId}-${value.label}`}
+                            title={`Remove ${value.label}`}
+                            onClick={() =>
+                              setDraft({
+                                ...draft,
+                                content: {
+                                  kind: "selection",
+                                  values: selectionContent.values.filter(
+                                    (item) => item.label !== value.label,
+                                  ),
+                                },
+                              })
+                            }
+                          >
+                            {value.label} <X size={11} />
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        placeholder={`+ Add ${draft.name.toLowerCase()}…`}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === ",") {
+                            event.preventDefault();
+                            const label = event.currentTarget.value.trim().replace(/,$/, "").trim();
+                            if (
+                              label &&
+                              !selectionContent.values.some(
+                                (v) => v.label.toLocaleLowerCase() === label.toLocaleLowerCase()
+                              )
+                            ) {
+                              setDraft({
+                                ...draft,
+                                content: {
+                                  kind: "selection",
+                                  values: [
+                                    ...selectionContent.values,
+                                    { definitionId: null, label, locked: false },
+                                  ],
+                                },
+                              });
+                              event.currentTarget.value = "";
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </label>
+                );
+              })()
             ) : (
               <label className="drawer-field description-field">
                 <strong>Description</strong>
