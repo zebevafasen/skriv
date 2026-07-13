@@ -1,14 +1,14 @@
-import type { TagPack, TagPackCatalog } from "@asterism/contracts";
+import type { IngredientPack, IngredientPackCatalog } from "@asterism/contracts";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
-import type { CatalogDefinition } from "./TagPackPicker.js";
+import type { IngredientDefinition } from "./IngredientPackPicker.js";
 
 type IngredientLabels = { genres: string[]; themes: string[]; tags: string[] };
 
-export function TagPackCatalogManager({
+export function IngredientPackCatalogManager({
   open,
   catalog,
   definitions,
@@ -17,8 +17,8 @@ export function TagPackCatalogManager({
   onChanged,
 }: {
   open: boolean;
-  catalog: TagPackCatalog;
-  definitions: CatalogDefinition[];
+  catalog: IngredientPackCatalog;
+  definitions: IngredientDefinition[];
   initialIngredients?: IngredientLabels | null;
   onClose: () => void;
   onChanged: () => Promise<void> | void;
@@ -91,7 +91,7 @@ export function TagPackCatalogManager({
     });
     if (!next?.trim()) return;
     await run(async () => {
-      await api(`/api/tag-pack-${kind}/${id}`, {
+      await api(`/api/ingredient-pack-${kind}/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ name: next.trim() }),
       });
@@ -102,18 +102,18 @@ export function TagPackCatalogManager({
     if (
       !(await dialog.confirm({
         title: `Delete “${name}”?`,
-        body: "Contained custom packs will be preserved in My Packs → Unsorted.",
+        body: "Contained custom ingredient packs will be preserved in My Packs → Unsorted.",
         confirmLabel: "Delete",
         destructive: true,
       }))
     )
       return;
     await run(async () => {
-      await api(`/api/tag-pack-${kind}/${id}`, { method: "DELETE" });
+      await api(`/api/ingredient-pack-${kind}/${id}`, { method: "DELETE" });
     });
   };
 
-  const editPack = (pack: TagPack) => {
+  const editPack = (pack: IngredientPack) => {
     setEditingPackId(pack.id);
     setPackName(pack.name);
     setPackDescription(pack.description);
@@ -127,7 +127,7 @@ export function TagPackCatalogManager({
 
   const labels = (value: string) =>
     [...new Set(value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean))];
-  const resolveDefinitions = async (kind: CatalogDefinition["kind"], value: string) =>
+  const resolveDefinitions = async (kind: IngredientDefinition["kind"], value: string) =>
     Promise.all(
       labels(value).map(async (label) => {
         const existing = definitions.find(
@@ -136,7 +136,7 @@ export function TagPackCatalogManager({
             definition.label.toLocaleLowerCase() === label.toLocaleLowerCase(),
         );
         if (existing) return existing.id;
-        const created = await api<CatalogDefinition>("/api/ideation/definitions", {
+        const created = await api<IngredientDefinition>("/api/ideation/definitions", {
           method: "POST",
           body: JSON.stringify({ kind, label }),
         });
@@ -145,32 +145,32 @@ export function TagPackCatalogManager({
     );
 
   return (
-    <div className="modal-backdrop tag-catalog-manager-backdrop">
+    <div className="modal-backdrop ingredient-catalog-manager-backdrop">
       <div
-        className="modal tag-catalog-manager"
+        className="modal ingredient-catalog-manager"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="tag-catalog-manager-title"
+        aria-labelledby="ingredient-catalog-manager-title"
       >
         <header>
           <div>
-            <p className="eyebrow">Tag catalog</p>
-            <h2 id="tag-catalog-manager-title">Manage packs</h2>
+            <p className="eyebrow">Ingredient catalog</p>
+            <h2 id="ingredient-catalog-manager-title">Manage ingredient packs</h2>
           </div>
           <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
             <X size={18} />
           </button>
         </header>
         {error ? <ErrorNotice error={error} /> : null}
-        <div className="tag-manager-columns">
+        <div className="ingredient-manager-columns">
           <section>
             <h3>Categories</h3>
             <p className="hint">Built-in categories are fixed. Custom categories can sit beside them.</p>
-            <div className="tag-manager-list">
+            <div className="ingredient-manager-list">
               {catalog.categories.filter((item) => item.ownership === "user").map((category) => (
                 <div key={category.id}>
                   <span>{category.name}{category.protected ? " · protected" : ""}</span>
-                  <span className="tag-manager-actions">
+                  <span className="ingredient-manager-actions">
                     <button type="button" className="icon-button" onClick={() => renameNode("categories", category.id, category.name)}><Pencil size={13} /></button>
                     {!category.protected ? <button type="button" className="icon-button danger" onClick={() => deleteNode("categories", category.id, category.name)}><Trash2 size={13} /></button> : null}
                   </span>
@@ -183,7 +183,7 @@ export function TagPackCatalogManager({
                 event.preventDefault();
                 if (!categoryName.trim()) return;
                 void run(async () => {
-                  await api("/api/tag-pack-categories", { method: "POST", body: JSON.stringify({ name: categoryName.trim() }) });
+                  await api("/api/ingredient-pack-categories", { method: "POST", body: JSON.stringify({ name: categoryName.trim() }) });
                   setCategoryName("");
                 });
               }}
@@ -193,17 +193,17 @@ export function TagPackCatalogManager({
             </form>
 
             <h3>Collections</h3>
-            <div className="tag-manager-list">
+            <div className="ingredient-manager-list">
               {catalog.collections.filter((item) => item.ownership === "user").map((collection) => (
                 <div key={collection.id}>
                   <span>{collection.name}{collection.protected ? " · protected" : ""}</span>
-                  <span className="tag-manager-actions">
+                  <span className="ingredient-manager-actions">
                     <select
                       aria-label={`Parent category for ${collection.name}`}
                       value={collection.categoryId}
                       disabled={busy || collection.protected}
                       onChange={(event) => void run(async () => {
-                        await api(`/api/tag-pack-collections/${collection.id}`, { method: "PATCH", body: JSON.stringify({ categoryId: event.target.value }) });
+                        await api(`/api/ingredient-pack-collections/${collection.id}`, { method: "PATCH", body: JSON.stringify({ categoryId: event.target.value }) });
                       })}
                     >
                       {catalog.categories.map((category) => <option key={category.id} value={category.id}>{category.name} ({category.ownership})</option>)}
@@ -220,7 +220,7 @@ export function TagPackCatalogManager({
                 event.preventDefault();
                 if (!collectionName.trim() || !collectionCategoryId) return;
                 void run(async () => {
-                  await api("/api/tag-pack-collections", { method: "POST", body: JSON.stringify({ name: collectionName.trim(), categoryId: collectionCategoryId }) });
+                  await api("/api/ingredient-pack-collections", { method: "POST", body: JSON.stringify({ name: collectionName.trim(), categoryId: collectionCategoryId }) });
                   setCollectionName("");
                 });
               }}
@@ -233,12 +233,12 @@ export function TagPackCatalogManager({
           </section>
 
           <section>
-            <div className="tag-manager-pack-heading">
-              <h3>{editingPackId ? "Edit pack" : "Create pack"}</h3>
-              {editingPackId ? <button type="button" className="button ghost compact" onClick={resetPack}>New pack</button> : null}
+            <div className="ingredient-manager-pack-heading">
+              <h3>{editingPackId ? "Edit ingredient pack" : "Create ingredient pack"}</h3>
+              {editingPackId ? <button type="button" className="button ghost compact" onClick={resetPack}>New ingredient pack</button> : null}
             </div>
             <form
-              className="tag-pack-editor"
+              className="ingredient-pack-editor"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!packName.trim() || !packCollectionId) return;
@@ -248,7 +248,7 @@ export function TagPackCatalogManager({
                     themes: await resolveDefinitions("theme", ingredientText.themes),
                     tags: await resolveDefinitions("tag", ingredientText.tags),
                   };
-                  await api(editingPackId ? `/api/tag-packs/${editingPackId}` : "/api/tag-packs", {
+                  await api(editingPackId ? `/api/ingredient-packs/${editingPackId}` : "/api/ingredient-packs", {
                     method: editingPackId ? "PATCH" : "POST",
                     body: JSON.stringify({ name: packName.trim(), description: packDescription, collectionId: packCollectionId, values }),
                   });
@@ -265,19 +265,19 @@ export function TagPackCatalogManager({
                   <textarea value={ingredientText[kind]} onChange={(event) => setIngredientText((current) => ({ ...current, [kind]: event.target.value }))} />
                 </label>
               ))}
-              <button type="submit" className="button primary" disabled={busy || !packName.trim() || !packCollectionId}>{busy ? "Saving…" : editingPackId ? "Save pack" : "Create pack"}</button>
+              <button type="submit" className="button primary" disabled={busy || !packName.trim() || !packCollectionId}>{busy ? "Saving…" : editingPackId ? "Save ingredient pack" : "Create ingredient pack"}</button>
             </form>
 
-            <h3>Custom packs</h3>
-            <div className="tag-manager-list pack-list">
+            <h3>Custom ingredient packs</h3>
+            <div className="ingredient-manager-list ingredient-pack-list">
               {catalog.packs.filter((pack) => pack.ownership === "user").map((pack) => (
                 <div key={pack.id}>
                   <span>{pack.name}<small>{catalog.collections.find((collection) => collection.id === pack.collectionId)?.name}</small></span>
-                  <span className="tag-manager-actions">
+                  <span className="ingredient-manager-actions">
                     <button type="button" className="icon-button" onClick={() => editPack(pack)}><Pencil size={13} /></button>
                     <button type="button" className="icon-button danger" onClick={async () => {
-                      if (!(await dialog.confirm({ title: `Delete “${pack.name}”?`, body: "Projects that imported it keep their snapshot.", confirmLabel: "Delete pack", destructive: true }))) return;
-                      await run(async () => { await api(`/api/tag-packs/${pack.id}`, { method: "DELETE" }); if (editingPackId === pack.id) resetPack(); });
+                      if (!(await dialog.confirm({ title: `Delete “${pack.name}”?`, body: "Projects that imported it keep their snapshot.", confirmLabel: "Delete ingredient pack", destructive: true }))) return;
+                      await run(async () => { await api(`/api/ingredient-packs/${pack.id}`, { method: "DELETE" }); if (editingPackId === pack.id) resetPack(); });
                     }}><Trash2 size={13} /></button>
                   </span>
                 </div>

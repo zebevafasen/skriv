@@ -6,7 +6,7 @@ import {
   compendiumEntries,
   projectNotes,
   projects,
-  projectTagPacks,
+  projectIngredientPacks,
   scenes,
 } from "@asterism/db";
 import { AlignmentType, Document, HeadingLevel, Packer, PageBreak, Paragraph, TextRun } from "docx";
@@ -79,11 +79,11 @@ async function loadProject(context: AppContext, id: string) {
     .from(projectNotes)
     .where(eq(projectNotes.projectId, id))
     .orderBy(desc(projectNotes.pinned), desc(projectNotes.updatedAt));
-  const importedTagPacks = await context.db
+  const importedIngredientPacks = await context.db
     .select()
-    .from(projectTagPacks)
-    .where(eq(projectTagPacks.projectId, id));
-  return { project, actRows, chapterRows, sceneRows, entries, categories, notes, importedTagPacks };
+    .from(projectIngredientPacks)
+    .where(eq(projectIngredientPacks.projectId, id));
+  return { project, actRows, chapterRows, sceneRows, entries, categories, notes, importedIngredientPacks };
 }
 
 function jsonPayload(rows: NonNullable<ExportRows>) {
@@ -103,7 +103,8 @@ function jsonPayload(rows: NonNullable<ExportRows>) {
     compendiumCategories: rows.categories,
     compendium: rows.entries,
     notes: rows.notes,
-    projectTagPacks: rows.importedTagPacks,
+    // Export schema v4 keeps this legacy key so existing project archives remain portable.
+    projectTagPacks: rows.importedIngredientPacks,
   };
 }
 

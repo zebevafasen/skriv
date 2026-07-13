@@ -3,7 +3,7 @@ import {
   projectSettingsSchema,
   type SceneMetadata,
   type TiptapNode,
-  tagPackValuesSchema,
+  ingredientPackValuesSchema,
 } from "@asterism/contracts";
 import {
   acts,
@@ -12,7 +12,7 @@ import {
   compendiumEntries,
   projectNotes,
   projects,
-  projectTagPacks,
+  projectIngredientPacks,
   scenes,
 } from "@asterism/db";
 import type { FastifyInstance } from "fastify";
@@ -87,6 +87,7 @@ const importSchema = z.object({
     )
     .optional()
     .default([]),
+  // Export schema v4 keeps this legacy key for backward-compatible archives.
   projectTagPacks: z
     .array(
       z.object({
@@ -94,7 +95,7 @@ const importSchema = z.object({
         name: z.string().trim().min(1).max(120),
         description: z.string().max(1_000).optional().default(""),
         ownership: z.enum(["builtin", "user"]),
-        values: tagPackValuesSchema,
+        values: ingredientPackValuesSchema,
       }),
     )
     .optional()
@@ -145,7 +146,7 @@ export async function registerImportRoutes(
       }
 
       if (input.projectTagPacks.length) {
-        await tx.insert(projectTagPacks).values(
+        await tx.insert(projectIngredientPacks).values(
           input.projectTagPacks.map((pack) => ({
             projectId: project.id,
             sourcePackId: pack.sourcePackId,

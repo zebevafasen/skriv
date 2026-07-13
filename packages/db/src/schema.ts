@@ -5,7 +5,7 @@ import type {
   ProjectSettings,
   PromptMessage,
   SceneMetadata,
-  TagPackValues,
+  IngredientPackValues,
   TiptapNode,
   WorkflowKey,
 } from "@asterism/contracts";
@@ -131,7 +131,7 @@ export const projectDefaults = pgTable("project_defaults", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const tagPacks = pgTable(
+export const ingredientPacks = pgTable(
   "tag_packs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -142,13 +142,13 @@ export const tagPacks = pgTable(
     normalizedName: text("normalized_name").notNull(),
     description: text("description").notNull().default(""),
     collectionId: text("collection_id"),
-    values: jsonb("values").$type<TagPackValues>().notNull(),
+    values: jsonb("values").$type<IngredientPackValues>().notNull(),
     ...timestamps,
   },
   (table) => [uniqueIndex("tag_packs_user_name_idx").on(table.userId, table.normalizedName)],
 );
 
-export const tagPackCatalogNodes = pgTable(
+export const ingredientPackCatalogNodes = pgTable(
   "tag_pack_catalog_nodes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -174,7 +174,7 @@ export const tagPackCatalogNodes = pgTable(
   ],
 );
 
-export const projectTagPacks = pgTable(
+export const projectIngredientPacks = pgTable(
   "project_tag_packs",
   {
     projectId: uuid("project_id")
@@ -184,7 +184,7 @@ export const projectTagPacks = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     ownership: text("ownership", { enum: ["builtin", "user"] }).notNull(),
-    values: jsonb("values").$type<TagPackValues>().notNull(),
+    values: jsonb("values").$type<IngredientPackValues>().notNull(),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.projectId, table.sourcePackId] })],
@@ -515,10 +515,13 @@ export const projectsRelations = relations(projects, ({ many }) => ({
   entries: many(compendiumEntries),
   notes: many(projectNotes),
   categories: many(compendiumCategories),
-  tagPacks: many(projectTagPacks),
+  ingredientPacks: many(projectIngredientPacks),
 }));
-export const projectTagPacksRelations = relations(projectTagPacks, ({ one }) => ({
-  project: one(projects, { fields: [projectTagPacks.projectId], references: [projects.id] }),
+export const projectIngredientPacksRelations = relations(projectIngredientPacks, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectIngredientPacks.projectId],
+    references: [projects.id],
+  }),
 }));
 export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
   project: one(projects, { fields: [projectNotes.projectId], references: [projects.id] }),

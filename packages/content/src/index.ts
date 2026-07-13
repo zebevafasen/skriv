@@ -2,9 +2,9 @@ import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@as
 import genres from "./genres.json" with { type: "json" };
 import packageMetadata from "./manifest.json" with { type: "json" };
 import prompts from "./prompts.json" with { type: "json" };
-import tagPackCategories from "./tag-pack-categories.json" with { type: "json" };
-import tagPackCollections from "./tag-pack-collections.json" with { type: "json" };
-import tagPacks from "./tag-packs.json" with { type: "json" };
+import ingredientPackCategories from "./ingredient-pack-categories.json" with { type: "json" };
+import ingredientPackCollections from "./ingredient-pack-collections.json" with { type: "json" };
+import ingredientPacks from "./ingredient-packs.json" with { type: "json" };
 import tags from "./tags.json" with { type: "json" };
 import themes from "./themes.json" with { type: "json" };
 
@@ -40,35 +40,36 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
   }
 
   const packIds = new Set<string>();
-  const categoryIds = new Set(content.tagPackCategories.map((category) => category.id));
-  if (categoryIds.size !== content.tagPackCategories.length) {
-    throw new Error(`Duplicate tag pack category id in ${content.id}.`);
+  const categoryIds = new Set(content.ingredientPackCategories.map((category) => category.id));
+  if (categoryIds.size !== content.ingredientPackCategories.length) {
+    throw new Error(`Duplicate ingredient pack category id in ${content.id}.`);
   }
   const collectionIds = new Set<string>();
-  for (const collection of content.tagPackCollections) {
+  for (const collection of content.ingredientPackCollections) {
     if (collectionIds.has(collection.id)) {
-      throw new Error(`Duplicate tag pack collection id in ${content.id}: ${collection.id}.`);
+      throw new Error(`Duplicate ingredient pack collection id in ${content.id}: ${collection.id}.`);
     }
     if (!categoryIds.has(collection.categoryId)) {
-      throw new Error(`Unknown category for tag pack collection ${collection.id}.`);
+      throw new Error(`Unknown category for ingredient pack collection ${collection.id}.`);
     }
     collectionIds.add(collection.id);
   }
-  for (const pack of content.tagPacks) {
-    if (packIds.has(pack.id)) throw new Error(`Duplicate tag pack id in ${content.id}: ${pack.id}.`);
+  for (const pack of content.ingredientPacks) {
+    if (packIds.has(pack.id))
+      throw new Error(`Duplicate ingredient pack id in ${content.id}: ${pack.id}.`);
     packIds.add(pack.id);
     if (!collectionIds.has(pack.collectionId)) {
-      throw new Error(`Unknown collection for tag pack ${pack.id}: ${pack.collectionId}.`);
+      throw new Error(`Unknown collection for ingredient pack ${pack.id}: ${pack.collectionId}.`);
     }
 
     for (const key of catalogKeys) {
       const values = pack.values[key];
       if (new Set(values).size !== values.length) {
-        throw new Error(`Duplicate ${key} reference in tag pack ${pack.id}.`);
+        throw new Error(`Duplicate ${key} reference in ingredient pack ${pack.id}.`);
       }
       for (const value of values) {
         if (!catalogIds[key].has(value)) {
-          throw new Error(`Unknown ${key} reference in tag pack ${pack.id}: ${value}.`);
+          throw new Error(`Unknown ${key} reference in ingredient pack ${pack.id}: ${value}.`);
         }
       }
     }
@@ -77,16 +78,18 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
   return content;
 }
 
-export const basePackage: ContentPackage = validateContentReferences(contentPackageSchema.parse({
-  ...packageMetadata,
-  genres,
-  themes,
-  tags,
-  tagPackCategories,
-  tagPackCollections,
-  tagPacks,
-  prompts: normalizedPrompts,
-}));
+export const basePackage: ContentPackage = validateContentReferences(
+  contentPackageSchema.parse({
+    ...packageMetadata,
+    genres,
+    themes,
+    tags,
+    ingredientPackCategories,
+    ingredientPackCollections,
+    ingredientPacks,
+    prompts: normalizedPrompts,
+  }),
+);
 
 export function getBuiltinPrompt(workflow: WorkflowKey) {
   const prompt = basePackage.prompts.find((candidate) => candidate.workflow === workflow);

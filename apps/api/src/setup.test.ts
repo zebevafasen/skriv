@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { mentionActivatedEntryIds } from "./routes/chat.js";
-import { removePackOnlyValues } from "./routes/setup.js";
+import { removeIngredientPackOnlyValues } from "./routes/setup.js";
 
-describe("project tag-pack cleanup", () => {
+describe("project ingredient pack cleanup", () => {
   it("removes unique values and preserves overlaps and unrelated values", () => {
     const values = [
       { definitionId: "unique", label: "Unique" },
@@ -11,7 +11,11 @@ describe("project tag-pack cleanup", () => {
       { definitionId: null, label: "Freeform" },
     ];
     expect(
-      removePackOnlyValues(values, new Set(["unique", "shared"]), new Set(["shared"])),
+      removeIngredientPackOnlyValues(
+        values,
+        new Set(["unique", "shared"]),
+        new Set(["shared"]),
+      ),
     ).toEqual(values.slice(1));
   });
 });

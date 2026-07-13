@@ -6,7 +6,7 @@ import {
   type Project,
   type ProjectDefaults,
   storyLanguages,
-  type TagPackCatalog,
+  type IngredientPackCatalog,
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -14,8 +14,8 @@ import { ArrowRight, BookOpen, Plus, Search, Sparkles, Upload } from "lucide-rea
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
-import { TagPackPicker } from "../components/TagPackPicker.js";
-import { TagPackCatalogManager } from "../components/TagPackCatalogManager.js";
+import { IngredientPackPicker } from "../components/IngredientPackPicker.js";
+import { IngredientPackCatalogManager } from "../components/IngredientPackCatalogManager.js";
 
 type DefinitionsResponse = {
   package: ContentPackage;
@@ -39,8 +39,8 @@ export function LibraryPage() {
   const [outlineChoice, setOutlineChoice] = useState("blank");
   const [copyProjectId, setCopyProjectId] = useState("");
   const [copyEntryIds, setCopyEntryIds] = useState<string[]>([]);
-  const [tagPackIds, setTagPackIds] = useState<string[]>([]);
-  const [packManagerOpen, setPackManagerOpen] = useState(false);
+  const [ingredientPackIds, setIngredientPackIds] = useState<string[]>([]);
+  const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const defaultsInitialized = useRef(false);
@@ -55,9 +55,9 @@ export function LibraryPage() {
     queryKey: ["project-defaults"],
     queryFn: () => api<ProjectDefaults>("/api/project-defaults"),
   });
-  const tagPackCatalog = useQuery({
-    queryKey: ["tag-pack-catalog"],
-    queryFn: () => api<TagPackCatalog>("/api/tag-pack-catalog"),
+  const ingredientPackCatalog = useQuery({
+    queryKey: ["ingredient-pack-catalog"],
+    queryFn: () => api<IngredientPackCatalog>("/api/ingredient-pack-catalog"),
   });
   const definitions = useQuery({
     queryKey: ["ideation-definitions"],
@@ -110,7 +110,7 @@ export function LibraryPage() {
           title: newTitle.trim(),
           author,
           language,
-          tagPackIds,
+          ingredientPackIds,
           outline:
             outlineChoice === "copy"
               ? { kind: "project", projectId: copyProjectId }
@@ -341,18 +341,18 @@ export function LibraryPage() {
                   ) : null}
                 </section>
                 <section>
-                  <h3>Tag packs</h3>
-                  {tagPackCatalog.error ? <ErrorNotice error={tagPackCatalog.error} /> : <TagPackPicker
-                    catalog={tagPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
-                    selectedIds={new Set(tagPackIds)}
+                  <h3>Ingredient packs</h3>
+                  {ingredientPackCatalog.error ? <ErrorNotice error={ingredientPackCatalog.error} /> : <IngredientPackPicker
+                    catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
+                    selectedIds={new Set(ingredientPackIds)}
                     definitions={[
                       ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
                       ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
                       ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
                       ...(definitions.data?.customDefinitions ?? []),
                     ]}
-                    onSelectionChange={setTagPackIds}
-                    onManage={() => setPackManagerOpen(true)}
+                    onSelectionChange={setIngredientPackIds}
+                    onManage={() => setIngredientPackManagerOpen(true)}
                   />}
                 </section>
                 <section>
@@ -459,19 +459,19 @@ export function LibraryPage() {
           </form>
         </div>
       ) : null}
-      <TagPackCatalogManager
-        open={packManagerOpen}
-        catalog={tagPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
+      <IngredientPackCatalogManager
+        open={ingredientPackManagerOpen}
+        catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
         definitions={[
           ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
           ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
           ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
           ...(definitions.data?.customDefinitions ?? []),
         ]}
-        onClose={() => setPackManagerOpen(false)}
+        onClose={() => setIngredientPackManagerOpen(false)}
         onChanged={async () => {
           await Promise.all([
-            client.invalidateQueries({ queryKey: ["tag-pack-catalog"] }),
+            client.invalidateQueries({ queryKey: ["ingredient-pack-catalog"] }),
             client.invalidateQueries({ queryKey: ["ideation-definitions"] }),
           ]);
         }}

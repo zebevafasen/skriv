@@ -3,8 +3,8 @@ import type {
   CompendiumCategory,
   CompendiumEntry,
   ContentPackage,
-  ProjectTagPack,
-  TagPackCatalog,
+  ProjectIngredientPack,
+  IngredientPackCatalog,
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookMarked, Dice5, Lock, Sparkles, X } from "lucide-react";
@@ -12,8 +12,8 @@ import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { ModelSelect } from "./ModelSelect.js";
-import { TagPackPicker } from "./TagPackPicker.js";
-import { TagPackCatalogManager } from "./TagPackCatalogManager.js";
+import { IngredientPackPicker } from "./IngredientPackPicker.js";
+import { IngredientPackCatalogManager } from "./IngredientPackCatalogManager.js";
 
 type Value = { definitionId: string | null; label: string; locked: boolean };
 type Metadata = {
@@ -55,13 +55,13 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     queryKey: ["models"],
     queryFn: () => api<Array<{ id: string; name: string }>>("/api/models"),
   });
-  const packCatalog = useQuery({
-    queryKey: ["tag-pack-catalog"],
-    queryFn: () => api<TagPackCatalog>("/api/tag-pack-catalog"),
+  const ingredientPackCatalog = useQuery({
+    queryKey: ["ingredient-pack-catalog"],
+    queryFn: () => api<IngredientPackCatalog>("/api/ingredient-pack-catalog"),
   });
-  const importedPacks = useQuery({
-    queryKey: ["project-tag-packs", projectId],
-    queryFn: () => api<ProjectTagPack[]>(`/api/projects/${projectId}/tag-packs`),
+  const importedIngredientPacks = useQuery({
+    queryKey: ["project-ingredient-packs", projectId],
+    queryFn: () => api<ProjectIngredientPack[]>(`/api/projects/${projectId}/ingredient-packs`),
   });
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
@@ -79,7 +79,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
   const [instructions, setInstructions] = useState("");
   const [alternatives, setAlternatives] = useState<string[]>([]);
   const [model, setModel] = useState("");
-  const [packManagerOpen, setPackManagerOpen] = useState(false);
+  const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
   const [entityTypeId, setEntityTypeId] = useState("story.character");
   const [entityContextIds, setEntityContextIds] = useState<string[]>([]);
   const [entitySearch, setEntitySearch] = useState("");
@@ -120,15 +120,15 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
       }),
     onSuccess: (result) => setAlternatives(result.alternatives),
   });
-  const syncPacks = useMutation({
-    mutationFn: (packIds: string[]) =>
-      api(`/api/projects/${projectId}/tag-packs`, {
+  const syncIngredientPacks = useMutation({
+    mutationFn: (ingredientPackIds: string[]) =>
+      api(`/api/projects/${projectId}/ingredient-packs`, {
         method: "PUT",
-        body: JSON.stringify({ packIds }),
+        body: JSON.stringify({ ingredientPackIds }),
       }),
     onSuccess: async () => {
       await Promise.all([
-        client.invalidateQueries({ queryKey: ["project-tag-packs", projectId] }),
+        client.invalidateQueries({ queryKey: ["project-ingredient-packs", projectId] }),
         client.invalidateQueries({ queryKey: ["ideation", projectId] }),
         client.invalidateQueries({ queryKey: ["compendium", projectId] }),
       ]);
@@ -185,11 +185,11 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
   const createDefinition = async (_kind: CustomDefinition["kind"], label: string) =>
     ({ definitionId: null, label, locked: false }) satisfies Value;
   const available = (() => {
-    if (!definitions.data || !importedPacks.data) return null;
+    if (!definitions.data || !importedIngredientPacks.data) return null;
     const ids = {
-      genres: new Set(importedPacks.data.flatMap((pack) => pack.values.genres)),
-      themes: new Set(importedPacks.data.flatMap((pack) => pack.values.themes)),
-      tags: new Set(importedPacks.data.flatMap((pack) => pack.values.tags)),
+      genres: new Set(importedIngredientPacks.data.flatMap((pack) => pack.values.genres)),
+      themes: new Set(importedIngredientPacks.data.flatMap((pack) => pack.values.themes)),
+      tags: new Set(importedIngredientPacks.data.flatMap((pack) => pack.values.tags)),
     };
     const custom = definitions.data.customDefinitions;
     return {
@@ -259,8 +259,8 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           <BookMarked size={15} /> Entity
         </button>
       </nav>
-      {definitions.error || metadata.error || packCatalog.error || importedPacks.error ? (
-        <ErrorNotice error={definitions.error ?? metadata.error ?? packCatalog.error ?? importedPacks.error} />
+      {definitions.error || metadata.error || ingredientPackCatalog.error || importedIngredientPacks.error ? (
+        <ErrorNotice error={definitions.error ?? metadata.error ?? ingredientPackCatalog.error ?? importedIngredientPacks.error} />
       ) : null}
       <div className="ideation-columns">
         <div className="ingredient-stack">
@@ -298,32 +298,32 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
             <div className="loading">Loading ingredients…</div>
           )}
           <section className="ingredient-group">
-            <div className="tag-pack-section-heading">
-              <h3>Tag packs</h3>
+            <div className="ingredient-pack-section-heading">
+              <h3>Ingredient packs</h3>
               <button
                 type="button"
                 className="button ghost compact"
                 disabled={genres.length === 0 && themes.length === 0 && tags.length === 0}
-                onClick={() => setPackManagerOpen(true)}
+                onClick={() => setIngredientPackManagerOpen(true)}
               >
-                Save current ingredients as pack
+                Save as ingredient pack
               </button>
             </div>
-            <TagPackPicker
-              catalog={packCatalog.data ?? { categories: [], collections: [], packs: [] }}
-              selectedIds={new Set((importedPacks.data ?? []).map((pack) => pack.sourcePackId))}
+            <IngredientPackPicker
+              catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
+              selectedIds={new Set((importedIngredientPacks.data ?? []).map((pack) => pack.sourcePackId))}
               definitions={[
                 ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
                 ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
                 ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
                 ...(definitions.data?.customDefinitions ?? []),
               ]}
-              archivedPacks={(importedPacks.data ?? []).filter(
-                (snapshot) => !(packCatalog.data?.packs ?? []).some((pack) => pack.id === snapshot.sourcePackId),
+              archivedIngredientPacks={(importedIngredientPacks.data ?? []).filter(
+                (snapshot) => !(ingredientPackCatalog.data?.packs ?? []).some((pack) => pack.id === snapshot.sourcePackId),
               )}
-              disabled={syncPacks.isPending}
-              onSelectionChange={(packIds) => syncPacks.mutate(packIds)}
-              onManage={() => setPackManagerOpen(true)}
+              disabled={syncIngredientPacks.isPending}
+              onSelectionChange={(packIds) => syncIngredientPacks.mutate(packIds)}
+              onManage={() => setIngredientPackManagerOpen(true)}
             />
           </section>
         </div>
@@ -491,9 +491,9 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
-      <TagPackCatalogManager
-        open={packManagerOpen}
-        catalog={packCatalog.data ?? { categories: [], collections: [], packs: [] }}
+      <IngredientPackCatalogManager
+        open={ingredientPackManagerOpen}
+        catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
         definitions={[
           ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
           ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
@@ -505,10 +505,10 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           themes: themes.map((value) => value.label),
           tags: tags.map((value) => value.label),
         }}
-        onClose={() => setPackManagerOpen(false)}
+        onClose={() => setIngredientPackManagerOpen(false)}
         onChanged={async () => {
           await Promise.all([
-            client.invalidateQueries({ queryKey: ["tag-pack-catalog"] }),
+            client.invalidateQueries({ queryKey: ["ingredient-pack-catalog"] }),
             client.invalidateQueries({ queryKey: ["ideation-definitions"] }),
           ]);
         }}

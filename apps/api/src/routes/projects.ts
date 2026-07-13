@@ -22,7 +22,7 @@ import {
   compendiumCategories,
   compendiumEntries,
   projects,
-  projectTagPacks,
+  projectIngredientPacks,
   sceneRevisions,
   scenes,
   touchUpdatedAt,
@@ -34,7 +34,7 @@ import { z } from "zod";
 import type { AppContext } from "../context.js";
 import { conflict, notFound, parseWith } from "../http.js";
 import { ownedAct, ownedChapter, ownedScene, ownedWorkspaceId, ownsProject } from "../ownership.js";
-import { getTagPacks } from "./setup.js";
+import { getIngredientPacks } from "./setup.js";
 
 const idParams = z.object({ id: z.uuid() });
 const childParams = z.object({ id: z.uuid(), childId: z.uuid().optional() });
@@ -114,12 +114,12 @@ export async function registerProjectRoutes(
     const input = parseWith(createProjectInputSchema, request.body);
     const workspaceId = await ownedWorkspaceId(context, request.userId);
 
-    const packs = await getTagPacks(context, request.userId);
-    const selectedPacks = input.tagPackIds.map((id) => packs.find((pack) => pack.id === id));
+    const packs = await getIngredientPacks(context, request.userId);
+    const selectedPacks = input.ingredientPackIds.map((id) => packs.find((pack) => pack.id === id));
     if (selectedPacks.some((pack) => !pack)) {
       return reply
         .code(400)
-        .send({ error: { code: "BAD_REQUEST", message: "One or more tag packs were not found." } });
+        .send({ error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." } });
     }
     const validSelectedPacks = [
       ...new Map(
@@ -306,7 +306,7 @@ export async function registerProjectRoutes(
         })),
       );
       if (validSelectedPacks.length) {
-        await tx.insert(projectTagPacks).values(
+        await tx.insert(projectIngredientPacks).values(
           validSelectedPacks.map((pack) => ({
             projectId: project.id,
             sourcePackId: pack.id,

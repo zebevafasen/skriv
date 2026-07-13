@@ -10,7 +10,8 @@ import {
   promptDefinitionSchema,
   sceneMetadataSchema,
   selectionActionSchema,
-  tagPackSchema,
+  ingredientPackSchema,
+  syncProjectIngredientPacksInputSchema,
   updateProjectNoteInputSchema,
 } from "./index.js";
 
@@ -21,14 +22,20 @@ describe("shared contracts", () => {
         title: "Story",
         outline: { kind: "preset", presetId: "three-act" },
       }),
-    ).toMatchObject({ language: "General English", tagPackIds: [] });
+    ).toMatchObject({ language: "General English", ingredientPackIds: [] });
+    expect(
+      createProjectInputSchema.parse({ title: "Legacy Story", tagPackIds: ["pack.legacy"] }),
+    ).toMatchObject({ ingredientPackIds: ["pack.legacy"] });
+    expect(syncProjectIngredientPacksInputSchema.parse({ packIds: ["pack.legacy"] })).toEqual({
+      ingredientPackIds: ["pack.legacy"],
+    });
     expect(manuscriptExportOptionsSchema.parse({ format: "docx" })).toMatchObject({
       titlePage: true,
       includeEmptyScenes: false,
     });
     expect(compendiumTypeIdSchema.safeParse(`custom.${crypto.randomUUID()}`).success).toBe(true);
     expect(
-      tagPackSchema.safeParse({
+      ingredientPackSchema.safeParse({
         id: "pack.fantasy",
         collectionId: "tag-collection.genre.fantasy",
         name: "Fantasy",

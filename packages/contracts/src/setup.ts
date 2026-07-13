@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tagPackValuesSchema } from "./packages.js";
+import { ingredientPackValuesSchema } from "./packages.js";
 import { idSchema, timestampSchema } from "./primitives.js";
 
 export const storyLanguageSchema = z.enum([
@@ -25,13 +25,13 @@ export const projectDefaultsSchema = z.object({
   language: storyLanguageSchema.default("General English"),
 });
 
-export const tagPackSchema = z.object({
+export const ingredientPackSchema = z.object({
   id: z.string().min(1),
   collectionId: z.string().min(1),
   name: z.string().trim().min(1).max(120),
   description: z.string().max(1_000).default(""),
   ownership: z.enum(["builtin", "user"]),
-  values: tagPackValuesSchema,
+  values: ingredientPackValuesSchema,
   createdAt: timestampSchema.nullable(),
   updatedAt: timestampSchema.nullable(),
 });
@@ -46,37 +46,43 @@ const catalogNodeBaseSchema = z.object({
   updatedAt: timestampSchema.nullable(),
 });
 
-export const tagPackCategorySchema = catalogNodeBaseSchema;
-export const tagPackCollectionSchema = catalogNodeBaseSchema.extend({
+export const ingredientPackCategorySchema = catalogNodeBaseSchema;
+export const ingredientPackCollectionSchema = catalogNodeBaseSchema.extend({
   categoryId: z.string().min(1),
 });
-export const tagPackCatalogSchema = z.object({
-  categories: z.array(tagPackCategorySchema),
-  collections: z.array(tagPackCollectionSchema),
-  packs: z.array(tagPackSchema),
+export const ingredientPackCatalogSchema = z.object({
+  categories: z.array(ingredientPackCategorySchema),
+  collections: z.array(ingredientPackCollectionSchema),
+  packs: z.array(ingredientPackSchema),
 });
 
-export const projectTagPackSchema = tagPackSchema.omit({ collectionId: true }).extend({
+export const projectIngredientPackSchema = ingredientPackSchema.omit({ collectionId: true }).extend({
   sourcePackId: z.string().min(1),
   importedAt: timestampSchema,
 });
 
-export const createTagPackInputSchema = tagPackSchema
+export const createIngredientPackInputSchema = ingredientPackSchema
   .pick({ collectionId: true, name: true, description: true, values: true })
   .partial({ description: true });
-export const updateTagPackInputSchema = createTagPackInputSchema.partial();
+export const updateIngredientPackInputSchema = createIngredientPackInputSchema.partial();
 
-export const createTagPackCategoryInputSchema = tagPackCategorySchema
+export const createIngredientPackCategoryInputSchema = ingredientPackCategorySchema
   .pick({ name: true, description: true })
   .partial({ description: true });
-export const updateTagPackCategoryInputSchema = createTagPackCategoryInputSchema.partial();
-export const createTagPackCollectionInputSchema = tagPackCollectionSchema
+export const updateIngredientPackCategoryInputSchema = createIngredientPackCategoryInputSchema.partial();
+export const createIngredientPackCollectionInputSchema = ingredientPackCollectionSchema
   .pick({ categoryId: true, name: true, description: true })
   .partial({ description: true });
-export const updateTagPackCollectionInputSchema = createTagPackCollectionInputSchema.partial();
-export const syncProjectTagPacksInputSchema = z.object({
-  packIds: z.array(z.string().min(1)).max(250),
-});
+export const updateIngredientPackCollectionInputSchema = createIngredientPackCollectionInputSchema.partial();
+export const syncProjectIngredientPacksInputSchema = z
+  .object({
+    ingredientPackIds: z.array(z.string().min(1)).max(250).optional(),
+    /** @deprecated Use ingredientPackIds. */
+    packIds: z.array(z.string().min(1)).max(250).optional(),
+  })
+  .transform(({ ingredientPackIds, packIds }) => ({
+    ingredientPackIds: ingredientPackIds ?? packIds ?? [],
+  }));
 
 export const outlineSourceSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("blank") }),
@@ -95,10 +101,45 @@ export const manuscriptExportOptionsSchema = z.object({
 });
 
 export type ProjectDefaults = z.infer<typeof projectDefaultsSchema>;
-export type TagPack = z.infer<typeof tagPackSchema>;
-export type TagPackCategory = z.infer<typeof tagPackCategorySchema>;
-export type TagPackCollection = z.infer<typeof tagPackCollectionSchema>;
-export type TagPackCatalog = z.infer<typeof tagPackCatalogSchema>;
-export type ProjectTagPack = z.infer<typeof projectTagPackSchema>;
+export type IngredientPack = z.infer<typeof ingredientPackSchema>;
+export type IngredientPackCategory = z.infer<typeof ingredientPackCategorySchema>;
+export type IngredientPackCollection = z.infer<typeof ingredientPackCollectionSchema>;
+export type IngredientPackCatalog = z.infer<typeof ingredientPackCatalogSchema>;
+export type ProjectIngredientPack = z.infer<typeof projectIngredientPackSchema>;
 export type OutlineSource = z.infer<typeof outlineSourceSchema>;
 export type ManuscriptExportOptions = z.infer<typeof manuscriptExportOptionsSchema>;
+
+/** @deprecated Use Ingredient Pack terminology. */
+export const tagPackSchema = ingredientPackSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const tagPackCategorySchema = ingredientPackCategorySchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const tagPackCollectionSchema = ingredientPackCollectionSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const tagPackCatalogSchema = ingredientPackCatalogSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const projectTagPackSchema = projectIngredientPackSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const createTagPackInputSchema = createIngredientPackInputSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const updateTagPackInputSchema = updateIngredientPackInputSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const createTagPackCategoryInputSchema = createIngredientPackCategoryInputSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const updateTagPackCategoryInputSchema = updateIngredientPackCategoryInputSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const createTagPackCollectionInputSchema = createIngredientPackCollectionInputSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const updateTagPackCollectionInputSchema = updateIngredientPackCollectionInputSchema;
+/** @deprecated Use Ingredient Pack terminology. */
+export const syncProjectTagPacksInputSchema = syncProjectIngredientPacksInputSchema;
+/** @deprecated Use IngredientPack. */
+export type TagPack = IngredientPack;
+/** @deprecated Use IngredientPackCategory. */
+export type TagPackCategory = IngredientPackCategory;
+/** @deprecated Use IngredientPackCollection. */
+export type TagPackCollection = IngredientPackCollection;
+/** @deprecated Use IngredientPackCatalog. */
+export type TagPackCatalog = IngredientPackCatalog;
+/** @deprecated Use ProjectIngredientPack. */
+export type ProjectTagPack = ProjectIngredientPack;

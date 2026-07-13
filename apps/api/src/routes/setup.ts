@@ -1,25 +1,25 @@
 import { basePackage } from "@asterism/content";
 import {
-  createTagPackCategoryInputSchema,
-  createTagPackCollectionInputSchema,
-  createTagPackInputSchema,
+  createIngredientPackCategoryInputSchema,
+  createIngredientPackCollectionInputSchema,
+  createIngredientPackInputSchema,
   projectDefaultsSchema,
-  projectTagPackSchema,
-  syncProjectTagPacksInputSchema,
-  tagPackCatalogSchema,
-  tagPackCategorySchema,
-  tagPackCollectionSchema,
-  tagPackSchema,
-  updateTagPackCategoryInputSchema,
-  updateTagPackCollectionInputSchema,
-  updateTagPackInputSchema,
+  projectIngredientPackSchema,
+  syncProjectIngredientPacksInputSchema,
+  ingredientPackCatalogSchema,
+  ingredientPackCategorySchema,
+  ingredientPackCollectionSchema,
+  ingredientPackSchema,
+  updateIngredientPackCategoryInputSchema,
+  updateIngredientPackCollectionInputSchema,
+  updateIngredientPackInputSchema,
 } from "@asterism/contracts";
 import {
   compendiumEntries,
   projectDefaults,
-  projectTagPacks,
-  tagPackCatalogNodes,
-  tagPacks,
+  projectIngredientPacks,
+  ingredientPackCatalogNodes,
+  ingredientPacks,
   touchUpdatedAt,
 } from "@asterism/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -29,16 +29,19 @@ import type { AppContext } from "../context.js";
 import { notFound, parseWith } from "../http.js";
 import { ownsProject } from "../ownership.js";
 
-const packParams = z.object({ id: z.string().min(1) });
-const projectPackParams = z.object({ projectId: z.uuid(), packId: z.string().min(1) });
+const ingredientPackParams = z.object({ id: z.string().min(1) });
+const projectIngredientPackParams = z.object({ projectId: z.uuid(), packId: z.string().min(1) });
 const nodeParams = z.object({ id: z.string().min(1) });
 
 function normalize(value: string) {
   return value.normalize("NFKC").trim().toLocaleLowerCase();
 }
 
-function customPackResponse(row: typeof tagPacks.$inferSelect, fallbackCollectionId: string) {
-  return tagPackSchema.parse({
+function customIngredientPackResponse(
+  row: typeof ingredientPacks.$inferSelect,
+  fallbackCollectionId: string,
+) {
+  return ingredientPackSchema.parse({
     ...row,
     collectionId: row.collectionId ?? fallbackCollectionId,
     ownership: "user",
@@ -47,49 +50,51 @@ function customPackResponse(row: typeof tagPacks.$inferSelect, fallbackCollectio
   });
 }
 
-function userNodeResponse(row: typeof tagPackCatalogNodes.$inferSelect) {
+function userNodeResponse(row: typeof ingredientPackCatalogNodes.$inferSelect) {
   const common = {
     ...row,
+    description:
+      row.systemKey === "my-packs" ? "Your custom ingredient pack catalog." : row.description,
     ownership: "user" as const,
     protected: Boolean(row.systemKey),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
   return row.kind === "category"
-    ? tagPackCategorySchema.parse(common)
-    : tagPackCollectionSchema.parse({ ...common, categoryId: row.parentId });
+    ? ingredientPackCategorySchema.parse(common)
+    : ingredientPackCollectionSchema.parse({ ...common, categoryId: row.parentId });
 }
 
 async function ensureDefaultHierarchy(context: AppContext, userId: string) {
   let rows = await context.db
     .select()
-    .from(tagPackCatalogNodes)
-    .where(eq(tagPackCatalogNodes.userId, userId));
+    .from(ingredientPackCatalogNodes)
+    .where(eq(ingredientPackCatalogNodes.userId, userId));
   let category = rows.find((row) => row.systemKey === "my-packs");
   if (!category) {
     await context.db
-      .insert(tagPackCatalogNodes)
+      .insert(ingredientPackCatalogNodes)
       .values({
         userId,
         kind: "category",
         parentId: null,
         name: "My Packs",
         normalizedName: "my packs",
-        description: "Your custom tag-pack catalog.",
+        description: "Your custom ingredient pack catalog.",
         systemKey: "my-packs",
       })
       .onConflictDoNothing();
     rows = await context.db
       .select()
-      .from(tagPackCatalogNodes)
-      .where(eq(tagPackCatalogNodes.userId, userId));
+      .from(ingredientPackCatalogNodes)
+      .where(eq(ingredientPackCatalogNodes.userId, userId));
     category = rows.find((row) => row.systemKey === "my-packs");
   }
-  if (!category) throw new Error("Default tag-pack category creation failed.");
+  if (!category) throw new Error("Default ingredient pack category creation failed.");
   let collection = rows.find((row) => row.systemKey === "unsorted-packs");
   if (!collection) {
     await context.db
-      .insert(tagPackCatalogNodes)
+      .insert(ingredientPackCatalogNodes)
       .values({
         userId,
         kind: "collection",
@@ -102,27 +107,27 @@ async function ensureDefaultHierarchy(context: AppContext, userId: string) {
       .onConflictDoNothing();
     rows = await context.db
       .select()
-      .from(tagPackCatalogNodes)
-      .where(eq(tagPackCatalogNodes.userId, userId));
+      .from(ingredientPackCatalogNodes)
+      .where(eq(ingredientPackCatalogNodes.userId, userId));
     collection = rows.find((row) => row.systemKey === "unsorted-packs");
   }
-  if (!collection) throw new Error("Default tag-pack collection creation failed.");
+  if (!collection) throw new Error("Default ingredient pack collection creation failed.");
   await context.db
-    .update(tagPacks)
+    .update(ingredientPacks)
     .set({ collectionId: collection.id })
-    .where(and(eq(tagPacks.userId, userId), isNull(tagPacks.collectionId)));
+    .where(and(eq(ingredientPacks.userId, userId), isNull(ingredientPacks.collectionId)));
   return { category, collection, rows };
 }
 
-export async function getTagPackCatalog(context: AppContext, userId: string) {
+export async function getIngredientPackCatalog(context: AppContext, userId: string) {
   const defaults = await ensureDefaultHierarchy(context, userId);
   const [nodes, rows] = await Promise.all([
-    context.db.select().from(tagPackCatalogNodes).where(eq(tagPackCatalogNodes.userId, userId)),
-    context.db.select().from(tagPacks).where(eq(tagPacks.userId, userId)),
+    context.db.select().from(ingredientPackCatalogNodes).where(eq(ingredientPackCatalogNodes.userId, userId)),
+    context.db.select().from(ingredientPacks).where(eq(ingredientPacks.userId, userId)),
   ]);
-  return tagPackCatalogSchema.parse({
+  return ingredientPackCatalogSchema.parse({
     categories: [
-      ...basePackage.tagPackCategories.map((category) => ({
+      ...basePackage.ingredientPackCategories.map((category) => ({
         ...category,
         ownership: "builtin",
         protected: true,
@@ -132,7 +137,7 @@ export async function getTagPackCatalog(context: AppContext, userId: string) {
       ...nodes.filter((node) => node.kind === "category").map(userNodeResponse),
     ],
     collections: [
-      ...basePackage.tagPackCollections.map((collection) => ({
+      ...basePackage.ingredientPackCollections.map((collection) => ({
         ...collection,
         ownership: "builtin",
         protected: true,
@@ -142,40 +147,40 @@ export async function getTagPackCatalog(context: AppContext, userId: string) {
       ...nodes.filter((node) => node.kind === "collection").map(userNodeResponse),
     ],
     packs: [
-      ...basePackage.tagPacks.map((pack) => ({
+      ...basePackage.ingredientPacks.map((pack) => ({
         ...pack,
         ownership: "builtin",
         createdAt: null,
         updatedAt: null,
       })),
-      ...rows.map((row) => customPackResponse(row, defaults.collection.id)),
+      ...rows.map((row) => customIngredientPackResponse(row, defaults.collection.id)),
     ],
   });
 }
 
-export async function getTagPacks(context: AppContext, userId: string) {
-  return (await getTagPackCatalog(context, userId)).packs;
+export async function getIngredientPacks(context: AppContext, userId: string) {
+  return (await getIngredientPackCatalog(context, userId)).packs;
 }
 
-export async function resolveTagPack(context: AppContext, userId: string, id: string) {
-  const packs = await getTagPacks(context, userId);
+export async function resolveIngredientPack(context: AppContext, userId: string, id: string) {
+  const packs = await getIngredientPacks(context, userId);
   return packs.find((pack) => pack.id === id) ?? null;
 }
 
-export async function importTagPacksIntoProject(
+export async function importIngredientPacksIntoProject(
   context: AppContext,
   userId: string,
   projectId: string,
   packIds: string[],
 ) {
   if (!packIds.length) return [];
-  const available = await getTagPacks(context, userId);
+  const available = await getIngredientPacks(context, userId);
   const selected = packIds.map((id) => available.find((pack) => pack.id === id));
   if (selected.some((pack) => !pack))
-    throw Object.assign(new Error("Tag pack not found."), { statusCode: 400 });
+    throw Object.assign(new Error("Ingredient pack not found."), { statusCode: 400 });
   const validSelected = selected.filter((pack) => pack !== undefined);
   await context.db
-    .insert(projectTagPacks)
+    .insert(projectIngredientPacks)
     .values(
       validSelected.map((pack) => ({
         projectId,
@@ -189,14 +194,14 @@ export async function importTagPacksIntoProject(
     .onConflictDoNothing();
   return context.db
     .select()
-    .from(projectTagPacks)
+    .from(projectIngredientPacks)
     .where(
-      and(eq(projectTagPacks.projectId, projectId), inArray(projectTagPacks.sourcePackId, packIds)),
+      and(eq(projectIngredientPacks.projectId, projectId), inArray(projectIngredientPacks.sourcePackId, packIds)),
     );
 }
 
-function projectPackResponse(row: typeof projectTagPacks.$inferSelect) {
-  return projectTagPackSchema.parse({
+function projectIngredientPackResponse(row: typeof projectIngredientPacks.$inferSelect) {
+  return projectIngredientPackSchema.parse({
     id: row.sourcePackId,
     sourcePackId: row.sourcePackId,
     name: row.name,
@@ -209,34 +214,34 @@ function projectPackResponse(row: typeof projectTagPacks.$inferSelect) {
   });
 }
 
-export async function syncProjectTagPacks(
+export async function syncProjectIngredientPacks(
   context: AppContext,
   userId: string,
   projectId: string,
   requestedPackIds: string[],
 ) {
   const desiredIds = [...new Set(requestedPackIds)];
-  const available = await getTagPacks(context, userId);
+  const available = await getIngredientPacks(context, userId);
   const availableById = new Map(available.map((pack) => [pack.id, pack]));
   return context.db.transaction(async (tx) => {
     const current = await tx
       .select()
-      .from(projectTagPacks)
-      .where(eq(projectTagPacks.projectId, projectId));
+      .from(projectIngredientPacks)
+      .where(eq(projectIngredientPacks.projectId, projectId));
     const currentById = new Map(current.map((pack) => [pack.sourcePackId, pack]));
     const additions = desiredIds.filter((id) => !currentById.has(id));
     const missing = additions.find((id) => !availableById.has(id));
-    if (missing) throw Object.assign(new Error(`Tag pack not found: ${missing}.`), { statusCode: 400 });
+    if (missing) throw Object.assign(new Error(`Ingredient pack not found: ${missing}.`), { statusCode: 400 });
     const removed = current.filter((pack) => !desiredIds.includes(pack.sourcePackId));
 
     if (removed.length) {
       await tx
-        .delete(projectTagPacks)
+        .delete(projectIngredientPacks)
         .where(
           and(
-            eq(projectTagPacks.projectId, projectId),
+            eq(projectIngredientPacks.projectId, projectId),
             inArray(
-              projectTagPacks.sourcePackId,
+              projectIngredientPacks.sourcePackId,
               removed.map((pack) => pack.sourcePackId),
             ),
           ),
@@ -247,7 +252,7 @@ export async function syncProjectTagPacks(
         const pack = availableById.get(id);
         return pack ? [pack] : [];
       });
-      await tx.insert(projectTagPacks).values(
+      await tx.insert(projectIngredientPacks).values(
         packs.map((pack) => ({
           projectId,
           sourcePackId: pack.id,
@@ -262,8 +267,8 @@ export async function syncProjectTagPacks(
     if (removed.length) {
       const remaining = await tx
         .select()
-        .from(projectTagPacks)
-        .where(eq(projectTagPacks.projectId, projectId));
+        .from(projectIngredientPacks)
+        .where(eq(projectIngredientPacks.projectId, projectId));
       const entries = await tx
         .select()
         .from(compendiumEntries)
@@ -279,7 +284,11 @@ export async function syncProjectTagPacks(
           .set({
             content: {
               kind: "selection",
-              values: removePackOnlyValues(entry.content.values, removedIds, remainingIds),
+              values: removeIngredientPackOnlyValues(
+                entry.content.values,
+                removedIds,
+                remainingIds,
+              ),
             },
             revision: entry.revision + 1,
             ...touchUpdatedAt,
@@ -290,12 +299,12 @@ export async function syncProjectTagPacks(
 
     return tx
       .select()
-      .from(projectTagPacks)
-      .where(eq(projectTagPacks.projectId, projectId));
+      .from(projectIngredientPacks)
+      .where(eq(projectIngredientPacks.projectId, projectId));
   });
 }
 
-export function removePackOnlyValues<T extends { definitionId: string | null }>(
+export function removeIngredientPackOnlyValues<T extends { definitionId: string | null }>(
   values: T[],
   removedIds: ReadonlySet<string>,
   remainingIds: ReadonlySet<string>,
@@ -336,21 +345,26 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return merged;
   });
 
-  app.get("/api/tag-pack-catalog", async (request) =>
-    getTagPackCatalog(context, request.userId),
-  );
-  app.get("/api/tag-packs", async (request) => getTagPacks(context, request.userId));
+  // Keep the former tag-pack routes as compatibility aliases for existing clients.
+  for (const routePath of ["/api/ingredient-pack-catalog", "/api/tag-pack-catalog"])
+    app.get(routePath, async (request) => getIngredientPackCatalog(context, request.userId));
+  for (const routePath of ["/api/ingredient-packs", "/api/tag-packs"])
+    app.get(routePath, async (request) => getIngredientPacks(context, request.userId));
 
-  app.post("/api/tag-pack-categories", async (request, reply) => {
-    const input = parseWith(createTagPackCategoryInputSchema, request.body);
-    const catalog = await getTagPackCatalog(context, request.userId);
+  for (const routePath of ["/api/ingredient-pack-categories", "/api/tag-pack-categories"])
+    app.post(routePath, async (request, reply) => {
+    const input = parseWith(createIngredientPackCategoryInputSchema, request.body);
+    const catalog = await getIngredientPackCatalog(context, request.userId);
     if (catalog.categories.some((category) => normalize(category.name) === normalize(input.name))) {
       return reply.code(409).send({
-        error: { code: "DUPLICATE_NAME", message: "A tag-pack category with that name already exists." },
+        error: {
+          code: "DUPLICATE_NAME",
+          message: "An ingredient pack category with that name already exists.",
+        },
       });
     }
     const [created] = await context.db
-      .insert(tagPackCatalogNodes)
+      .insert(ingredientPackCatalogNodes)
       .values({
         userId: request.userId,
         kind: "category",
@@ -360,19 +374,23 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
         description: input.description ?? "",
       })
       .returning();
-    if (!created) throw new Error("Tag-pack category creation failed.");
+    if (!created) throw new Error("Ingredient pack category creation failed.");
     return reply.code(201).send(userNodeResponse(created));
   });
 
-  app.patch("/api/tag-pack-categories/:id", async (request, reply) => {
+  for (const routePath of [
+    "/api/ingredient-pack-categories/:id",
+    "/api/tag-pack-categories/:id",
+  ])
+    app.patch(routePath, async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
         error: { code: "IMMUTABLE_BUILTIN", message: "Built-in categories cannot be changed." },
       });
-    const input = parseWith(updateTagPackCategoryInputSchema, request.body);
+    const input = parseWith(updateIngredientPackCategoryInputSchema, request.body);
     const [updated] = await context.db
-      .update(tagPackCatalogNodes)
+      .update(ingredientPackCatalogNodes)
       .set({
         ...(input.name !== undefined
           ? { name: input.name, normalizedName: normalize(input.name) }
@@ -382,17 +400,21 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
       })
       .where(
         and(
-          eq(tagPackCatalogNodes.id, id),
-          eq(tagPackCatalogNodes.userId, request.userId),
-          eq(tagPackCatalogNodes.kind, "category"),
+          eq(ingredientPackCatalogNodes.id, id),
+          eq(ingredientPackCatalogNodes.userId, request.userId),
+          eq(ingredientPackCatalogNodes.kind, "category"),
         ),
       )
       .returning();
-    if (!updated) return notFound(reply, "Custom tag-pack category not found.");
+    if (!updated) return notFound(reply, "Custom ingredient pack category not found.");
     return userNodeResponse(updated);
   });
 
-  app.delete("/api/tag-pack-categories/:id", async (request, reply) => {
+  for (const routePath of [
+    "/api/ingredient-pack-categories/:id",
+    "/api/tag-pack-categories/:id",
+  ])
+    app.delete(routePath, async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
@@ -401,10 +423,10 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     const defaults = await ensureDefaultHierarchy(context, request.userId);
     const nodes = await context.db
       .select()
-      .from(tagPackCatalogNodes)
-      .where(eq(tagPackCatalogNodes.userId, request.userId));
+      .from(ingredientPackCatalogNodes)
+      .where(eq(ingredientPackCatalogNodes.userId, request.userId));
     const target = nodes.find((node) => node.id === id && node.kind === "category");
-    if (!target) return notFound(reply, "Custom tag-pack category not found.");
+    if (!target) return notFound(reply, "Custom ingredient pack category not found.");
     if (target.systemKey)
       return reply.code(409).send({
         error: { code: "PROTECTED_NODE", message: "The default My Packs category cannot be deleted." },
@@ -415,38 +437,39 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     await context.db.transaction(async (tx) => {
       if (childIds.length) {
         await tx
-          .update(tagPacks)
+          .update(ingredientPacks)
           .set({ collectionId: defaults.collection.id, ...touchUpdatedAt })
           .where(
-            and(eq(tagPacks.userId, request.userId), inArray(tagPacks.collectionId, childIds)),
+            and(eq(ingredientPacks.userId, request.userId), inArray(ingredientPacks.collectionId, childIds)),
           );
         await tx
-          .delete(tagPackCatalogNodes)
+          .delete(ingredientPackCatalogNodes)
           .where(
             and(
-              eq(tagPackCatalogNodes.userId, request.userId),
-              inArray(tagPackCatalogNodes.id, childIds),
+              eq(ingredientPackCatalogNodes.userId, request.userId),
+              inArray(ingredientPackCatalogNodes.id, childIds),
             ),
           );
       }
       await tx
-        .delete(tagPackCatalogNodes)
+        .delete(ingredientPackCatalogNodes)
         .where(
           and(
-            eq(tagPackCatalogNodes.id, id),
-            eq(tagPackCatalogNodes.userId, request.userId),
+            eq(ingredientPackCatalogNodes.id, id),
+            eq(ingredientPackCatalogNodes.userId, request.userId),
           ),
         );
     });
     return reply.code(204).send();
   });
 
-  app.post("/api/tag-pack-collections", async (request, reply) => {
-    const input = parseWith(createTagPackCollectionInputSchema, request.body);
-    const catalog = await getTagPackCatalog(context, request.userId);
+  for (const routePath of ["/api/ingredient-pack-collections", "/api/tag-pack-collections"])
+    app.post(routePath, async (request, reply) => {
+    const input = parseWith(createIngredientPackCollectionInputSchema, request.body);
+    const catalog = await getIngredientPackCatalog(context, request.userId);
     if (!catalog.categories.some((category) => category.id === input.categoryId)) {
       return reply.code(400).send({
-        error: { code: "BAD_REQUEST", message: "Parent tag-pack category was not found." },
+        error: { code: "BAD_REQUEST", message: "Parent ingredient pack category was not found." },
       });
     }
     if (
@@ -461,7 +484,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
       });
     }
     const [created] = await context.db
-      .insert(tagPackCatalogNodes)
+      .insert(ingredientPackCatalogNodes)
       .values({
         userId: request.userId,
         kind: "collection",
@@ -471,27 +494,31 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
         description: input.description ?? "",
       })
       .returning();
-    if (!created) throw new Error("Tag-pack collection creation failed.");
+    if (!created) throw new Error("Ingredient pack collection creation failed.");
     return reply.code(201).send(userNodeResponse(created));
   });
 
-  app.patch("/api/tag-pack-collections/:id", async (request, reply) => {
+  for (const routePath of [
+    "/api/ingredient-pack-collections/:id",
+    "/api/tag-pack-collections/:id",
+  ])
+    app.patch(routePath, async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
         error: { code: "IMMUTABLE_BUILTIN", message: "Built-in collections cannot be changed." },
       });
-    const input = parseWith(updateTagPackCollectionInputSchema, request.body);
+    const input = parseWith(updateIngredientPackCollectionInputSchema, request.body);
     if (input.categoryId !== undefined) {
-      const catalog = await getTagPackCatalog(context, request.userId);
+      const catalog = await getIngredientPackCatalog(context, request.userId);
       if (!catalog.categories.some((category) => category.id === input.categoryId)) {
         return reply.code(400).send({
-          error: { code: "BAD_REQUEST", message: "Parent tag-pack category was not found." },
+          error: { code: "BAD_REQUEST", message: "Parent ingredient pack category was not found." },
         });
       }
     }
     const [updated] = await context.db
-      .update(tagPackCatalogNodes)
+      .update(ingredientPackCatalogNodes)
       .set({
         ...(input.categoryId !== undefined ? { parentId: input.categoryId } : {}),
         ...(input.name !== undefined
@@ -502,17 +529,21 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
       })
       .where(
         and(
-          eq(tagPackCatalogNodes.id, id),
-          eq(tagPackCatalogNodes.userId, request.userId),
-          eq(tagPackCatalogNodes.kind, "collection"),
+          eq(ingredientPackCatalogNodes.id, id),
+          eq(ingredientPackCatalogNodes.userId, request.userId),
+          eq(ingredientPackCatalogNodes.kind, "collection"),
         ),
       )
       .returning();
-    if (!updated) return notFound(reply, "Custom tag-pack collection not found.");
+    if (!updated) return notFound(reply, "Custom ingredient pack collection not found.");
     return userNodeResponse(updated);
   });
 
-  app.delete("/api/tag-pack-collections/:id", async (request, reply) => {
+  for (const routePath of [
+    "/api/ingredient-pack-collections/:id",
+    "/api/tag-pack-collections/:id",
+  ])
+    app.delete(routePath, async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
@@ -521,53 +552,58 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     const defaults = await ensureDefaultHierarchy(context, request.userId);
     const [target] = await context.db
       .select()
-      .from(tagPackCatalogNodes)
+      .from(ingredientPackCatalogNodes)
       .where(
         and(
-          eq(tagPackCatalogNodes.id, id),
-          eq(tagPackCatalogNodes.userId, request.userId),
-          eq(tagPackCatalogNodes.kind, "collection"),
+          eq(ingredientPackCatalogNodes.id, id),
+          eq(ingredientPackCatalogNodes.userId, request.userId),
+          eq(ingredientPackCatalogNodes.kind, "collection"),
         ),
       );
-    if (!target) return notFound(reply, "Custom tag-pack collection not found.");
+    if (!target) return notFound(reply, "Custom ingredient pack collection not found.");
     if (target.systemKey)
       return reply.code(409).send({
         error: { code: "PROTECTED_NODE", message: "The default Unsorted collection cannot be deleted." },
       });
     await context.db.transaction(async (tx) => {
       await tx
-        .update(tagPacks)
+        .update(ingredientPacks)
         .set({ collectionId: defaults.collection.id, ...touchUpdatedAt })
-        .where(and(eq(tagPacks.userId, request.userId), eq(tagPacks.collectionId, id)));
+        .where(and(eq(ingredientPacks.userId, request.userId), eq(ingredientPacks.collectionId, id)));
       await tx
-        .delete(tagPackCatalogNodes)
+        .delete(ingredientPackCatalogNodes)
         .where(
           and(
-            eq(tagPackCatalogNodes.id, id),
-            eq(tagPackCatalogNodes.userId, request.userId),
+            eq(ingredientPackCatalogNodes.id, id),
+            eq(ingredientPackCatalogNodes.userId, request.userId),
           ),
         );
     });
     return reply.code(204).send();
   });
 
-  app.get("/api/projects/:projectId/tag-packs", async (request, reply) => {
+  for (const routePath of [
+    "/api/projects/:projectId/ingredient-packs",
+    "/api/projects/:projectId/tag-packs",
+  ])
+    app.get(routePath, async (request, reply) => {
     const { projectId } = parseWith(z.object({ projectId: z.uuid() }), request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
     const rows = await context.db
       .select()
-      .from(projectTagPacks)
-      .where(eq(projectTagPacks.projectId, projectId));
-    return rows.map(projectPackResponse);
+      .from(projectIngredientPacks)
+      .where(eq(projectIngredientPacks.projectId, projectId));
+    return rows.map(projectIngredientPackResponse);
   });
 
-  app.post("/api/tag-packs", async (request, reply) => {
-    const input = parseWith(createTagPackInputSchema, request.body);
-    const catalog = await getTagPackCatalog(context, request.userId);
+  for (const routePath of ["/api/ingredient-packs", "/api/tag-packs"])
+    app.post(routePath, async (request, reply) => {
+    const input = parseWith(createIngredientPackInputSchema, request.body);
+    const catalog = await getIngredientPackCatalog(context, request.userId);
     if (!catalog.collections.some((collection) => collection.id === input.collectionId)) {
       return reply.code(400).send({
-        error: { code: "BAD_REQUEST", message: "Parent tag-pack collection was not found." },
+        error: { code: "BAD_REQUEST", message: "Parent ingredient pack collection was not found." },
       });
     }
     if (
@@ -581,7 +617,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
       });
     }
     const [created] = await context.db
-      .insert(tagPacks)
+      .insert(ingredientPacks)
       .values({
         userId: request.userId,
         name: input.name,
@@ -591,24 +627,25 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
         values: input.values,
       })
       .returning();
-    if (!created) throw new Error("Tag pack creation failed.");
-    return reply.code(201).send(customPackResponse(created, input.collectionId));
+    if (!created) throw new Error("Ingredient pack creation failed.");
+    return reply.code(201).send(customIngredientPackResponse(created, input.collectionId));
   });
 
-  app.patch("/api/tag-packs/:id", async (request, reply) => {
-    const { id } = parseWith(packParams, request.params);
-    if (!z.uuid().safeParse(id).success) return notFound(reply, "Custom tag pack not found.");
-    const input = parseWith(updateTagPackInputSchema, request.body);
+  for (const routePath of ["/api/ingredient-packs/:id", "/api/tag-packs/:id"])
+    app.patch(routePath, async (request, reply) => {
+    const { id } = parseWith(ingredientPackParams, request.params);
+    if (!z.uuid().safeParse(id).success) return notFound(reply, "Custom ingredient pack not found.");
+    const input = parseWith(updateIngredientPackInputSchema, request.body);
     if (input.collectionId !== undefined) {
-      const catalog = await getTagPackCatalog(context, request.userId);
+      const catalog = await getIngredientPackCatalog(context, request.userId);
       if (!catalog.collections.some((collection) => collection.id === input.collectionId)) {
         return reply.code(400).send({
-          error: { code: "BAD_REQUEST", message: "Parent tag-pack collection was not found." },
+          error: { code: "BAD_REQUEST", message: "Parent ingredient pack collection was not found." },
         });
       }
     }
     const [updated] = await context.db
-      .update(tagPacks)
+      .update(ingredientPacks)
       .set({
         ...(input.name !== undefined
           ? { name: input.name, normalizedName: normalize(input.name) }
@@ -618,66 +655,79 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
         ...(input.values !== undefined ? { values: input.values } : {}),
         ...touchUpdatedAt,
       })
-      .where(and(eq(tagPacks.id, id), eq(tagPacks.userId, request.userId)))
+      .where(and(eq(ingredientPacks.id, id), eq(ingredientPacks.userId, request.userId)))
       .returning();
-    if (!updated) return notFound(reply, "Custom tag pack not found.");
+    if (!updated) return notFound(reply, "Custom ingredient pack not found.");
     const defaults = await ensureDefaultHierarchy(context, request.userId);
-    return customPackResponse(updated, defaults.collection.id);
+    return customIngredientPackResponse(updated, defaults.collection.id);
   });
 
-  app.delete("/api/tag-packs/:id", async (request, reply) => {
-    const { id } = parseWith(packParams, request.params);
-    if (!z.uuid().safeParse(id).success) return notFound(reply, "Custom tag pack not found.");
+  for (const routePath of ["/api/ingredient-packs/:id", "/api/tag-packs/:id"])
+    app.delete(routePath, async (request, reply) => {
+    const { id } = parseWith(ingredientPackParams, request.params);
+    if (!z.uuid().safeParse(id).success) return notFound(reply, "Custom ingredient pack not found.");
     const [deleted] = await context.db
-      .delete(tagPacks)
-      .where(and(eq(tagPacks.id, id), eq(tagPacks.userId, request.userId)))
-      .returning({ id: tagPacks.id });
-    if (!deleted) return notFound(reply, "Custom tag pack not found.");
+      .delete(ingredientPacks)
+      .where(and(eq(ingredientPacks.id, id), eq(ingredientPacks.userId, request.userId)))
+      .returning({ id: ingredientPacks.id });
+    if (!deleted) return notFound(reply, "Custom ingredient pack not found.");
     return reply.code(204).send();
   });
 
-  app.put("/api/projects/:projectId/tag-packs", async (request, reply) => {
+  for (const routePath of [
+    "/api/projects/:projectId/ingredient-packs",
+    "/api/projects/:projectId/tag-packs",
+  ])
+    app.put(routePath, async (request, reply) => {
     const { projectId } = parseWith(z.object({ projectId: z.uuid() }), request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
-    const input = parseWith(syncProjectTagPacksInputSchema, request.body);
-    const rows = await syncProjectTagPacks(
+    const input = parseWith(syncProjectIngredientPacksInputSchema, request.body);
+    const rows = await syncProjectIngredientPacks(
       context,
       request.userId,
       projectId,
-      input.packIds,
+      input.ingredientPackIds,
     );
-    return rows.map(projectPackResponse);
+    return rows.map(projectIngredientPackResponse);
   });
 
-  app.post("/api/projects/:projectId/tag-packs/:packId/import", async (request, reply) => {
-    const { projectId, packId } = parseWith(projectPackParams, request.params);
+  for (const routePath of [
+    "/api/projects/:projectId/ingredient-packs/:packId/import",
+    "/api/projects/:projectId/tag-packs/:packId/import",
+  ])
+    app.post(routePath, async (request, reply) => {
+    const { projectId, packId } = parseWith(projectIngredientPackParams, request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
     const current = await context.db
       .select()
-      .from(projectTagPacks)
-      .where(eq(projectTagPacks.projectId, projectId));
-    const rows = await syncProjectTagPacks(context, request.userId, projectId, [
+      .from(projectIngredientPacks)
+      .where(eq(projectIngredientPacks.projectId, projectId));
+    const rows = await syncProjectIngredientPacks(context, request.userId, projectId, [
       ...current.map((pack) => pack.sourcePackId),
       packId,
     ]);
     const row = rows.find((pack) => pack.sourcePackId === packId);
-    if (!row) throw new Error("Tag pack import failed.");
-    return reply.code(201).send(projectPackResponse(row));
+    if (!row) throw new Error("Ingredient pack import failed.");
+    return reply.code(201).send(projectIngredientPackResponse(row));
   });
 
-  app.delete("/api/projects/:projectId/tag-packs/:packId", async (request, reply) => {
-    const { projectId, packId } = parseWith(projectPackParams, request.params);
+  for (const routePath of [
+    "/api/projects/:projectId/ingredient-packs/:packId",
+    "/api/projects/:projectId/tag-packs/:packId",
+  ])
+    app.delete(routePath, async (request, reply) => {
+    const { projectId, packId } = parseWith(projectIngredientPackParams, request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
     const current = await context.db
       .select()
-      .from(projectTagPacks)
-      .where(eq(projectTagPacks.projectId, projectId));
+      .from(projectIngredientPacks)
+      .where(eq(projectIngredientPacks.projectId, projectId));
     if (!current.some((pack) => pack.sourcePackId === packId))
-      return notFound(reply, "Imported tag pack not found.");
-    await syncProjectTagPacks(
+      return notFound(reply, "Imported ingredient pack not found.");
+    await syncProjectIngredientPacks(
       context,
       request.userId,
       projectId,
