@@ -12,6 +12,14 @@ Before starting, make sure you have installed:
 
 ## Step-by-Step Local Setup
 
+### One-click Windows startup
+
+On Windows, double-click `START_ASTERISM.bat` in the project folder. It starts Docker Desktop
+when needed, waits for PostgreSQL, applies database migrations, and starts the app. Keep the
+terminal window open while using Asterism; press `Ctrl+C` in it to stop the development servers.
+
+For manual setup, use the steps below.
+
 Open your terminal (or Command Prompt) in the project folder and run the following commands in order:
 
 1. **Enable the package manager** (this allows you to use the `pnpm` command):

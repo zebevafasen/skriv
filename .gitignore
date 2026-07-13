@@ -1,16 +1,58 @@
+# Dependencies and package-manager caches
 node_modules/
-.turbo/
-dist/
-coverage/
-playwright-report/
-test-results/
-.env
-.env.local
-*.log
-*.tsbuildinfo
-.DS_Store
+.pnpm-store/
 
-.vercel
+# Build output and tool caches
+dist/
+build/
+coverage/
+.cache/
+.turbo/
+.vite/
+*.tsbuildinfo
+.vercel/
 .vercel-build/
 
-.env*
+# Test artifacts
+playwright-report/
+test-results/
+blob-report/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and diagnostic output
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor and local workspace settings
+.idea/
+.vscode/
+*.suo
+*.user
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Codex and other local agent state
+.codex/
+.agents/
+
+# Operating-system metadata
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
