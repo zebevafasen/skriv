@@ -113,6 +113,32 @@ export class FakeAIProvider implements AIProvider {
   }
 
   async complete(request: CompletionRequest): Promise<{ text: string; usage: CompletionUsage }> {
+    const isCompendiumExtraction = request.messages.some((message) =>
+      message.content.includes(
+        "Extract useful Compendium entries from the supplied fiction premise.",
+      ),
+    );
+    if (isCompendiumExtraction) {
+      return {
+        text: JSON.stringify({
+          entries: [
+            {
+              name: "Mara Vale",
+              typeId: "story.character",
+              description: "A determined investigator drawn into the premise's central conflict.",
+              evidence: "Mara Vale",
+            },
+            {
+              name: "The Glass Archive",
+              typeId: "story.location",
+              description: "The archive at the center of the premise's opening mystery.",
+              evidence: "the Glass Archive",
+            },
+          ],
+        }),
+        usage: { inputTokens: 1, outputTokens: 64 },
+      };
+    }
     const isContext = request.messages.some((message) =>
       message.content.includes("Candidate fragments:"),
     );
@@ -289,7 +315,9 @@ export class OpenRouterProvider implements AIProvider {
           if (delta) yield { text: delta, finishReason: null };
         }
         if (done) {
-          throw new Error("The AI provider stream ended unexpectedly. Your partial draft was preserved.");
+          throw new Error(
+            "The AI provider stream ended unexpectedly. Your partial draft was preserved.",
+          );
         }
       }
     } finally {

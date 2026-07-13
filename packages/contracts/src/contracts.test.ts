@@ -5,6 +5,7 @@ import {
   createProjectInputSchema,
   createProjectNoteInputSchema,
   editorSettingsSchema,
+  extractCompendiumResponseSchema,
   generationRequestSchema,
   manuscriptExportOptionsSchema,
   promptDefinitionSchema,
@@ -72,6 +73,39 @@ describe("shared contracts", () => {
       lengthUnit: "words",
     });
     expect(result.success).toBe(true);
+  });
+
+  it("accepts first-Scene generation and validates extraction drafts", () => {
+    expect(
+      generationRequestSchema.safeParse({
+        sceneId: crypto.randomUUID(),
+        sceneVersion: 1,
+        workflow: "prose.first_scene",
+        cursorPosition: 0,
+        manuscriptBeforeCursor: "",
+        manuscriptAfterCursor: "",
+        targetLength: 1_000,
+        lengthUnit: "words",
+      }).success,
+    ).toBe(true);
+    expect(
+      extractCompendiumResponseSchema.safeParse({
+        sourcePremiseRevision: 2,
+        suggestions: [
+          {
+            id: crypto.randomUUID(),
+            name: "Mara",
+            typeId: "story.character",
+            description: "An investigator.",
+            evidence: "Mara",
+            duplicateEntryId: null,
+            duplicateEntryRevision: null,
+          },
+        ],
+        model: "test/model",
+        promptId: "builtin.ideation.compendium_extract.default",
+      }).success,
+    ).toBe(true);
   });
 
   it("validates every selection revision action", () => {

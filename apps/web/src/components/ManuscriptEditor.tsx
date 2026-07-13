@@ -80,7 +80,11 @@ import {
 import { trapFocusWithin } from "../utils/focus.js";
 import { updateSceneInTree } from "../utils/manuscript.js";
 import { ErrorNotice } from "./AppShell.js";
-import { EditorActionsContext, type GenerationOptions } from "./editor/EditorActionsContext.js";
+import {
+  EditorActionsContext,
+  type GenerationOptions,
+  type InsertionGenerationOptions,
+} from "./editor/EditorActionsContext.js";
 import { SceneBeat } from "./editor/sceneBeat.js";
 import { ModelSelect } from "./ModelSelect.js";
 
@@ -498,6 +502,11 @@ function refreshMentionDecorations(editor: Editor, entries: CompendiumEntry[]) {
 }
 
 export type ManuscriptEditorHandle = { flush: () => Promise<void> };
+export type FirstSceneGenerationIntent = {
+  id: string;
+  sceneId: string;
+  options: InsertionGenerationOptions & { workflow: "prose.first_scene" };
+};
 
 export const ManuscriptEditor = forwardRef<
   ManuscriptEditorHandle,
@@ -511,9 +520,23 @@ export const ManuscriptEditor = forwardRef<
     onOpenEntry: (entryIds: string[], direct: boolean) => void;
     onSelectScope: (scope: ManuscriptScope) => void;
     onSelectScene: (sceneId: string) => void;
+    firstSceneGenerationIntent?: FirstSceneGenerationIntent | null;
+    onFirstSceneGenerationIntentConsumed?: () => void;
   }
 >(function ManuscriptEditor(
-  { tree, scope, entries, baseModel, models, onSaved, onOpenEntry, onSelectScope, onSelectScene },
+  {
+    tree,
+    scope,
+    entries,
+    baseModel,
+    models,
+    onSaved,
+    onOpenEntry,
+    onSelectScope,
+    onSelectScene,
+    firstSceneGenerationIntent = null,
+    onFirstSceneGenerationIntentConsumed,
+  },
   ref,
 ) {
   const queryClient = useQueryClient();
@@ -549,6 +572,7 @@ export const ManuscriptEditor = forwardRef<
   const typographyControlRef = useRef<HTMLDivElement>(null);
   const mobileNavigatorCloseRef = useRef<HTMLButtonElement>(null);
   const mobileToolsCloseRef = useRef<HTMLButtonElement>(null);
+  const consumedFirstSceneIntentRef = useRef<string | null>(null);
   const settingsQuery = useQuery({
     queryKey: ["editor-settings"],
     queryFn: () => api<EditorSettings>("/api/settings/editor"),
@@ -948,6 +972,22 @@ export const ManuscriptEditor = forwardRef<
     },
     [editor, saveScene, visibleScenes],
   );
+
+  useEffect(() => {
+    if (
+      !editor ||
+      !firstSceneGenerationIntent ||
+      activeRef.current ||
+      consumedFirstSceneIntentRef.current === firstSceneGenerationIntent.id
+    ) {
+      return;
+    }
+    const found = sceneNode(editor, firstSceneGenerationIntent.sceneId);
+    if (!found) return;
+    consumedFirstSceneIntentRef.current = firstSceneGenerationIntent.id;
+    onFirstSceneGenerationIntentConsumed?.();
+    void startGeneration(firstSceneGenerationIntent.options, found.pos + 1);
+  }, [editor, firstSceneGenerationIntent, onFirstSceneGenerationIntentConsumed, startGeneration]);
 
   const accept = async () => {
     if (!editor || !active?.id) return;

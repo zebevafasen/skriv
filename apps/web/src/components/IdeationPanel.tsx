@@ -3,11 +3,22 @@ import type {
   CompendiumCategory,
   CompendiumEntry,
   ContentPackage,
+  ExtractCompendiumResponse,
   ProjectIngredientPack,
   IngredientPackCatalog,
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookMarked, Check, ChevronDown, Dice5, Lock, Plus, Sparkles, X } from "lucide-react";
+import {
+  ArrowRight,
+  BookMarked,
+  Check,
+  ChevronDown,
+  Dice5,
+  Lock,
+  Plus,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
@@ -37,6 +48,19 @@ type Collection = {
 };
 type CustomDefinition = { id: string; kind: "genre" | "theme" | "tag"; label: string };
 type EntityAlternative = { id: string; name: string; description: string };
+type ExtractionReview = ExtractCompendiumResponse["suggestions"][number] & {
+  selected: boolean;
+};
+export const DEFAULT_FIRST_SCENE_TARGET_LENGTH = 1_000;
+
+export function prepareExtractionReview(
+  suggestions: ExtractCompendiumResponse["suggestions"],
+): ExtractionReview[] {
+  return suggestions.map((suggestion) => ({
+    ...suggestion,
+    selected: true,
+  }));
+}
 type Definitions = {
   package: ContentPackage;
   enabled: boolean;
@@ -49,11 +73,22 @@ type IdeationMode = "premise" | "entity";
 export function IdeationPanel({
   projectId,
   entries,
+  firstScene,
   onOpenCompendium,
+  onOpenFirstScene,
+  onGenerateFirstScene,
 }: {
   projectId: string;
   entries: CompendiumEntry[];
+  firstScene: { id: string; plainText: string } | null;
   onOpenCompendium: () => void;
+  onOpenFirstScene: () => void;
+  onGenerateFirstScene: (options: {
+    instructions: string;
+    targetLength: number | null;
+    lengthUnit: "words" | "paragraphs";
+    modelOverride: string | null;
+  }) => void;
 }) {
   const client = useQueryClient();
   const definitions = useQuery({
@@ -102,6 +137,16 @@ export function IdeationPanel({
   const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
   const [entityTypeId, setEntityTypeId] = useState("story.character");
   const [entityAlternatives, setEntityAlternatives] = useState<EntityAlternative[]>([]);
+  const [developmentStage, setDevelopmentStage] = useState<"idle" | "choice" | "review" | "setup">(
+    "idle",
+  );
+  const [extractionReview, setExtractionReview] = useState<ExtractionReview[]>([]);
+  const [sourcePremiseRevision, setSourcePremiseRevision] = useState<number | null>(null);
+  const [openingInstructions, setOpeningInstructions] = useState("");
+  const [firstSceneTargetLength, setFirstSceneTargetLength] = useState<number | null>(
+    DEFAULT_FIRST_SCENE_TARGET_LENGTH,
+  );
+  const [firstSceneLengthUnit, setFirstSceneLengthUnit] = useState<"words" | "paragraphs">("words");
   const referenceEntries = useMemo(() => entries.filter((entry) => !entry.singleton), [entries]);
   const persistedValues = useMemo<IdeationSavePayload>(
     () => ({ premise, genres, themes, tags }),
@@ -232,6 +277,49 @@ export function IdeationPanel({
       await client.invalidateQueries({ queryKey: ["compendium", projectId] });
     },
   });
+  const extractCompendium = useMutation({
+    mutationFn: async () => {
+      await save.mutateAsync(persistedValues);
+      return api<ExtractCompendiumResponse>(
+        `/api/projects/${projectId}/ideation/extract-compendium`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            modelOverride: model && model !== settings.data?.baseModel ? model : null,
+          }),
+        },
+      );
+    },
+    onSuccess: (result) => {
+      setSourcePremiseRevision(result.sourcePremiseRevision);
+      setExtractionReview(prepareExtractionReview(result.suggestions));
+      setDevelopmentStage("review");
+    },
+  });
+  const importCompendium = useMutation({
+    mutationFn: () => {
+      if (sourcePremiseRevision === null) throw new Error("Run extraction again.");
+      return api<CompendiumEntry[]>(`/api/projects/${projectId}/ideation/import-compendium`, {
+        method: "POST",
+        body: JSON.stringify({
+          sourcePremiseRevision,
+          entries: extractionReview
+            .filter((entry) => entry.selected)
+            .map(({ name, typeId, description, duplicateEntryId, duplicateEntryRevision }) => ({
+              name,
+              typeId,
+              description,
+              existingEntryId: duplicateEntryId,
+              expectedExistingRevision: duplicateEntryRevision,
+            })),
+        }),
+      });
+    },
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["compendium", projectId] });
+      setDevelopmentStage("setup");
+    },
+  });
   const createDefinition = async (_kind: CustomDefinition["kind"], label: string) =>
     ({ definitionId: null, label, locked: false }) satisfies Value;
   const available = (() => {
@@ -275,6 +363,322 @@ export function IdeationPanel({
     setTags(choose(available.tags, rand(3, 15), tags));
   };
   const persistIngredients = () => save.mutate(persistedValues);
+  const choosePremise = async (alternative: string) => {
+    const payload = { ...persistedValues, premise: alternative };
+    setPremise(alternative);
+    setDevelopmentStage("idle");
+    setExtractionReview([]);
+    setSourcePremiseRevision(null);
+    await save.mutateAsync(payload).catch(() => undefined);
+  };
+  const duplicateForName = (name: string) => {
+    const normalized = name.trim().normalize("NFKC").toLocaleLowerCase();
+    return (
+      entries.find(
+        (entry) =>
+          !entry.singleton &&
+          [entry.name, ...entry.aliases].some(
+            (candidate) => candidate.trim().normalize("NFKC").toLocaleLowerCase() === normalized,
+          ),
+      ) ?? null
+    );
+  };
+  const developmentPanel = premise.trim() ? (
+    <section className="ideation-development">
+      <header>
+        <span className="eyebrow">Next steps</span>
+        <h3>Develop the chosen premise</h3>
+      </header>
+      {developmentStage === "idle" ? (
+        <div className="button-row">
+          <button
+            type="button"
+            className="button ghost"
+            disabled={extractCompendium.isPending || save.isPending}
+            onClick={() => extractCompendium.mutate()}
+          >
+            <BookMarked size={15} />
+            {extractCompendium.isPending ? "Extracting…" : "Extract starter entries"}
+          </button>
+          <button
+            type="button"
+            className="button primary"
+            onClick={() => setDevelopmentStage("choice")}
+          >
+            Continue to first scene <ArrowRight size={15} />
+          </button>
+        </div>
+      ) : null}
+      {developmentStage === "choice" ? (
+        <div className="ideation-transition-choice">
+          <h4>Build a starter Compendium first?</h4>
+          <p>
+            Asterism can extract premise-supported characters, places, objects, factions, and lore
+            for you to review before writing.
+          </p>
+          <div className="button-row">
+            <button
+              type="button"
+              className="button primary"
+              disabled={extractCompendium.isPending || save.isPending}
+              onClick={() => extractCompendium.mutate()}
+            >
+              <Sparkles size={15} />
+              {extractCompendium.isPending ? "Extracting…" : "Extract and review"}
+            </button>
+            <button
+              type="button"
+              className="button ghost"
+              onClick={() => setDevelopmentStage("setup")}
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {developmentStage === "review" ? (
+        <div className="ideation-extraction-review">
+          <div className="ideation-review-heading">
+            <div>
+              <h4>Review starter entries</h4>
+              <p>Edit the factual drafts and select only what should become canonical.</p>
+            </div>
+            <button
+              type="button"
+              className="button ghost compact"
+              disabled={extractCompendium.isPending}
+              onClick={() => extractCompendium.mutate()}
+            >
+              Extract again
+            </button>
+          </div>
+          {extractionReview.length ? (
+            <div className="ideation-extraction-list">
+              {extractionReview.map((draft) => (
+                <article
+                  className={`ideation-extraction-card ${draft.duplicateEntryId ? "duplicate" : ""}`}
+                  key={draft.id}
+                >
+                  <label className="ideation-extraction-select">
+                    <input
+                      type="checkbox"
+                      checked={draft.selected}
+                      onChange={(event) =>
+                        setExtractionReview((current) =>
+                          current.map((entry) =>
+                            entry.id === draft.id
+                              ? { ...entry, selected: event.target.checked }
+                              : entry,
+                          ),
+                        )
+                      }
+                    />
+                    Include
+                  </label>
+                  <div className="ideation-extraction-fields">
+                    <label>
+                      Name
+                      <input
+                        value={draft.name}
+                        onChange={(event) => {
+                          const name = event.target.value;
+                          const duplicate = duplicateForName(name);
+                          setExtractionReview((current) =>
+                            current.map((entry) =>
+                              entry.id === draft.id
+                                ? {
+                                    ...entry,
+                                    name,
+                                    duplicateEntryId: duplicate?.id ?? null,
+                                    duplicateEntryRevision: duplicate?.revision ?? null,
+                                  }
+                                : entry,
+                            ),
+                          );
+                        }}
+                      />
+                    </label>
+                    <label>
+                      Category
+                      <select
+                        value={draft.typeId}
+                        onChange={(event) =>
+                          setExtractionReview((current) =>
+                            current.map((entry) =>
+                              entry.id === draft.id
+                                ? {
+                                    ...entry,
+                                    typeId: event.target.value as ExtractionReview["typeId"],
+                                  }
+                                : entry,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="story.character">Character</option>
+                        <option value="story.location">Location</option>
+                        <option value="story.object">Object / Item</option>
+                        <option value="story.faction">Faction</option>
+                        <option value="story.lore">Lore</option>
+                        <option value="story.other">Other</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className="content-field">
+                    Description
+                    <textarea
+                      value={draft.description}
+                      onChange={(event) =>
+                        setExtractionReview((current) =>
+                          current.map((entry) =>
+                            entry.id === draft.id
+                              ? { ...entry, description: event.target.value }
+                              : entry,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <blockquote>“{draft.evidence}”</blockquote>
+                  {draft.duplicateEntryId ? (
+                    <small>
+                      An entry with this name or alias already exists. This description will be
+                      appended to it as a new paragraph.
+                    </small>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p>No clearly supported Compendium entries were found in this premise.</p>
+          )}
+          <div className="button-row">
+            <button
+              type="button"
+              className="button primary"
+              disabled={
+                importCompendium.isPending || !extractionReview.some((entry) => entry.selected)
+              }
+              onClick={() => importCompendium.mutate()}
+            >
+              <Check size={15} />
+              {importCompendium.isPending ? "Importing…" : "Import selected"}
+            </button>
+            <button
+              type="button"
+              className="button ghost"
+              onClick={() => setDevelopmentStage("setup")}
+            >
+              Continue without importing
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {developmentStage === "setup" ? (
+        <div className="ideation-first-scene-setup">
+          <div>
+            <h4>Set up the first Scene</h4>
+            <p>The result will open in the editor as a provisional candidate.</p>
+          </div>
+          <MentionTextarea
+            value={openingInstructions}
+            entries={referenceEntries}
+            placeholder="Optional opening direction…"
+            onValueChange={setOpeningInstructions}
+          />
+          <div className="form-field">
+            <span>First Scene model</span>
+            <ModelSelect value={model} onChange={setModel} models={models.data ?? []} />
+          </div>
+          <div className="first-scene-length-controls">
+            <div className="scene-beat-segmented">
+              <button
+                type="button"
+                className={
+                  firstSceneLengthUnit === "words" && firstSceneTargetLength !== null
+                    ? "active"
+                    : ""
+                }
+                onClick={() => {
+                  setFirstSceneLengthUnit("words");
+                  setFirstSceneTargetLength(DEFAULT_FIRST_SCENE_TARGET_LENGTH);
+                }}
+              >
+                Words
+              </button>
+              <button
+                type="button"
+                className={
+                  firstSceneLengthUnit === "paragraphs" && firstSceneTargetLength !== null
+                    ? "active"
+                    : ""
+                }
+                onClick={() => {
+                  setFirstSceneLengthUnit("paragraphs");
+                  setFirstSceneTargetLength(5);
+                }}
+              >
+                Paragraphs
+              </button>
+              <button
+                type="button"
+                className={firstSceneTargetLength === null ? "active" : ""}
+                onClick={() => setFirstSceneTargetLength(null)}
+              >
+                No limit
+              </button>
+            </div>
+            {firstSceneTargetLength !== null ? (
+              <label>
+                Target
+                <input
+                  type="number"
+                  min={1}
+                  max={10_000}
+                  value={firstSceneTargetLength}
+                  onChange={(event) =>
+                    setFirstSceneTargetLength(
+                      Math.max(1, Math.min(10_000, Number(event.target.value))),
+                    )
+                  }
+                />
+                <span>{firstSceneLengthUnit}</span>
+              </label>
+            ) : null}
+          </div>
+          {firstScene?.plainText.trim() ? (
+            <div className="ideation-existing-first-scene">
+              <p>The project's first Scene already contains prose.</p>
+              <button type="button" className="button primary" onClick={onOpenFirstScene}>
+                Open first Scene <ArrowRight size={15} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="button primary full"
+              disabled={!firstScene || save.isPending}
+              onClick={async () => {
+                const saved = await save.mutateAsync(persistedValues).then(
+                  () => true,
+                  () => false,
+                );
+                if (!saved) return;
+                onGenerateFirstScene({
+                  instructions: openingInstructions,
+                  targetLength: firstSceneTargetLength,
+                  lengthUnit: firstSceneLengthUnit,
+                  modelOverride: model && model !== settings.data?.baseModel ? model : null,
+                });
+              }}
+            >
+              <Sparkles size={16} /> Generate first Scene
+            </button>
+          )}
+        </div>
+      ) : null}
+    </section>
+  ) : null;
 
   return (
     <div className="workspace-panel ideation-panel">
@@ -317,8 +721,18 @@ export function IdeationPanel({
           <BookMarked size={15} /> Entity
         </button>
       </nav>
-      {definitions.error || metadata.error || ingredientPackCatalog.error || importedIngredientPacks.error ? (
-        <ErrorNotice error={definitions.error ?? metadata.error ?? ingredientPackCatalog.error ?? importedIngredientPacks.error} />
+      {definitions.error ||
+      metadata.error ||
+      ingredientPackCatalog.error ||
+      importedIngredientPacks.error ? (
+        <ErrorNotice
+          error={
+            definitions.error ??
+            metadata.error ??
+            ingredientPackCatalog.error ??
+            importedIngredientPacks.error
+          }
+        />
       ) : null}
       <div className="ideation-columns">
         <div className="ingredient-stack">
@@ -369,15 +783,29 @@ export function IdeationPanel({
             </div>
             <IngredientPackPicker
               catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
-              selectedIds={new Set((importedIngredientPacks.data ?? []).map((pack) => pack.sourcePackId))}
+              selectedIds={
+                new Set((importedIngredientPacks.data ?? []).map((pack) => pack.sourcePackId))
+              }
               definitions={[
-                ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
-                ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
-                ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
+                ...(definitions.data?.package.genres.map((item) => ({
+                  ...item,
+                  kind: "genre" as const,
+                })) ?? []),
+                ...(definitions.data?.package.themes.map((item) => ({
+                  ...item,
+                  kind: "theme" as const,
+                })) ?? []),
+                ...(definitions.data?.package.tags.map((item) => ({
+                  ...item,
+                  kind: "tag" as const,
+                })) ?? []),
                 ...(definitions.data?.customDefinitions ?? []),
               ]}
               archivedIngredientPacks={(importedIngredientPacks.data ?? []).filter(
-                (snapshot) => !(ingredientPackCatalog.data?.packs ?? []).some((pack) => pack.id === snapshot.sourcePackId),
+                (snapshot) =>
+                  !(ingredientPackCatalog.data?.packs ?? []).some(
+                    (pack) => pack.id === snapshot.sourcePackId,
+                  ),
               )}
               disabled={syncIngredientPacks.isPending}
               onSelectionChange={(packIds) => syncIngredientPacks.mutate(packIds)}
@@ -422,22 +850,46 @@ export function IdeationPanel({
             {generate.error ? <ErrorNotice error={generate.error} /> : null}
             <div className="alternative-list">
               {alternatives.map((alternative) => (
-                <button type="button" key={alternative} onClick={() => setPremise(alternative)}>
-                  {alternative}
-                </button>
+                <article key={alternative}>
+                  <p>{alternative}</p>
+                  <button
+                    type="button"
+                    className="button ghost compact"
+                    disabled={save.isPending}
+                    onClick={() => void choosePremise(alternative)}
+                  >
+                    <Check size={14} /> Use this premise
+                  </button>
+                </article>
               ))}
             </div>
             <label className="content-field">
               Active premise
               <textarea
                 value={premise}
-                onChange={(event) => setPremise(event.target.value)}
+                onChange={(event) => {
+                  setPremise(event.target.value);
+                  setDevelopmentStage("idle");
+                  setSourcePremiseRevision(null);
+                  setExtractionReview([]);
+                }}
                 placeholder="Your project premise will live here…"
               />
             </label>
-            <button type="button" className="button ghost" onClick={persistIngredients}>
-              Save premise
+            <button
+              type="button"
+              className="button ghost"
+              disabled={save.isPending}
+              onClick={persistIngredients}
+            >
+              {save.isPending ? "Saving…" : "Save active premise"}
             </button>
+            {save.error || extractCompendium.error || importCompendium.error ? (
+              <ErrorNotice
+                error={save.error ?? extractCompendium.error ?? importCompendium.error}
+              />
+            ) : null}
+            {developmentPanel}
           </div>
         ) : (
           <div className="premise-workbench entity-workbench">
@@ -529,9 +981,16 @@ export function IdeationPanel({
         open={ingredientPackManagerOpen}
         catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
         definitions={[
-          ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
-          ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
-          ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
+          ...(definitions.data?.package.genres.map((item) => ({
+            ...item,
+            kind: "genre" as const,
+          })) ?? []),
+          ...(definitions.data?.package.themes.map((item) => ({
+            ...item,
+            kind: "theme" as const,
+          })) ?? []),
+          ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ??
+            []),
           ...(definitions.data?.customDefinitions ?? []),
         ]}
         initialIngredients={{
@@ -659,10 +1118,7 @@ function AdditionalInstructions({
         </div>
       </div>
       {selected.length ? (
-        <fieldset
-          className="ideation-reference-chips"
-          aria-label="Pinned Compendium references"
-        >
+        <fieldset className="ideation-reference-chips" aria-label="Pinned Compendium references">
           {selected.map((entry) => (
             <button type="button" key={entry.id} onClick={() => toggle(entry.id)}>
               {entry.name} <X size={12} />

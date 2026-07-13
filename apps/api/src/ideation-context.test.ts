@@ -5,6 +5,9 @@ import {
   formatIdeationContext,
   hasInvalidIdeationReferenceIds,
   ideationPromptMessages,
+  appendCompendiumContent,
+  existingEntryNames,
+  parseCompendiumExtraction,
 } from "./routes/ideation.js";
 
 function entry(name: string, content: string): CompendiumEntry {
@@ -104,5 +107,78 @@ describe("Ideation Compendium context", () => {
     expect(hasInvalidIdeationReferenceIds([available], [available])).toBe(false);
     expect(hasInvalidIdeationReferenceIds([available, available], [available])).toBe(true);
     expect(hasInvalidIdeationReferenceIds([crypto.randomUUID()], [available])).toBe(true);
+  });
+
+  it("strictly parses premise extraction and rejects invalid categories", () => {
+    const extraction = JSON.stringify({
+      entries: [
+        {
+          name: "Mara",
+          typeId: "story.character",
+          description: "An investigator.",
+          evidence: "Mara",
+        },
+      ],
+    });
+    expect(parseCompendiumExtraction(extraction).entries).toHaveLength(1);
+    expect(parseCompendiumExtraction(`\`\`\`json\n${extraction}\n\`\`\``).entries).toHaveLength(1);
+    expect(
+      parseCompendiumExtraction(`<think>Internal reasoning.</think>\nResult:\n${extraction}`)
+        .entries,
+    ).toHaveLength(1);
+    expect(() =>
+      parseCompendiumExtraction(
+        JSON.stringify({
+          entries: [
+            {
+              name: "Mood",
+              typeId: "project.themes",
+              description: "Not an entity.",
+              evidence: "mood",
+            },
+          ],
+        }),
+      ),
+    ).toThrow();
+    expect(() => parseCompendiumExtraction("not json")).toThrow();
+  });
+
+  it("matches extracted names against existing names and aliases canonically", () => {
+    const id = crypto.randomUUID();
+    const names = existingEntryNames([{ id, name: "Mara Vale", aliases: ["The Investigator"] }]);
+    expect(names.get("mara vale")?.id).toBe(id);
+    expect(names.get("the investigator")?.id).toBe(id);
+  });
+
+  it("appends extracted details on a new paragraph without replacing existing content", () => {
+    expect(
+      appendCompendiumContent({ kind: "text", text: "Existing details." }, "New details."),
+    ).toEqual({ kind: "text", text: "Existing details.\n\nNew details." });
+
+    expect(
+      appendCompendiumContent(
+        {
+          kind: "rich_text",
+          plainText: "Existing details.",
+          document: {
+            type: "doc",
+            content: [
+              { type: "paragraph", content: [{ type: "text", text: "Existing details." }] },
+            ],
+          },
+        },
+        "New details.",
+      ),
+    ).toEqual({
+      kind: "rich_text",
+      plainText: "Existing details.\n\nNew details.",
+      document: {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "Existing details." }] },
+          { type: "paragraph", content: [{ type: "text", text: "New details." }] },
+        ],
+      },
+    });
   });
 });

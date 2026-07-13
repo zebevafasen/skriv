@@ -1,5 +1,65 @@
 [
   {
+    "id": "builtin.prose.first_scene.default",
+    "name": "Default First Scene",
+    "workflow": "prose.first_scene",
+    "version": 1,
+    "description": "Turns the chosen premise into an opening Scene while respecting project settings and approved Compendium facts.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": [
+          "Write the opening scene of a work of fiction from the chosen premise.",
+          "",
+          "Begin in a concrete moment with narrative movement. Establish only the characters, setting, tensions, and facts needed for this scene; do not summarize the whole planned story or explain the premise to the reader.",
+          "",
+          "Treat the supplied Compendium context as canonical. Do not contradict, rename, or silently revise it. Use the Scene title and planning summary as direction where they are populated.",
+          "",
+          "Follow the requested language, tense, point of view, opening direction, and target length. Return polished prose only."
+        ]
+      },
+      {
+        "role": "user",
+        "content": [
+          "Chosen premise:",
+          "{{premise}}",
+          "",
+          "Canonical project context:",
+          "{{context_package}}",
+          "",
+          "First Scene title: {{scene_title}}",
+          "First Scene planning summary: {{scene_summary}}",
+          "",
+          "Opening direction:",
+          "{{user_instructions}}",
+          "",
+          "Write {{target_length}}.",
+          "Language: {{story_language}}",
+          "Tense: {{story_tense}}",
+          "Point of view: {{story_pov}}",
+          "Configured POV character: {{pov_character}}"
+        ]
+      }
+    ],
+    "variables": [
+      "premise",
+      "context_package",
+      "scene_title",
+      "scene_summary",
+      "user_instructions",
+      "target_length",
+      "story_tense",
+      "story_language",
+      "story_pov",
+      "pov_character"
+    ],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
     "id": "builtin.prose.start.default",
     "name": "Default Start Writing",
     "workflow": "prose.start",
@@ -49,9 +109,7 @@
       },
       {
         "role": "assistant",
-        "content": [
-          "{{style_reference_prose}}"
-        ]
+        "content": ["{{style_reference_prose}}"]
       },
       {
         "role": "user",
@@ -122,9 +180,7 @@
       },
       {
         "role": "assistant",
-        "content": [
-          "{{style_reference_prose}}"
-        ]
+        "content": ["{{style_reference_prose}}"]
       },
       {
         "role": "user",
@@ -202,9 +258,7 @@
       },
       {
         "role": "assistant",
-        "content": [
-          "{{style_reference_prose}}"
-        ]
+        "content": ["{{style_reference_prose}}"]
       },
       {
         "role": "user",
@@ -371,13 +425,7 @@
         ]
       }
     ],
-    "variables": [
-      "genres",
-      "themes",
-      "tags",
-      "selected_context",
-      "user_instructions"
-    ],
+    "variables": ["genres", "themes", "tags", "selected_context", "user_instructions"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -408,10 +456,7 @@
         ]
       }
     ],
-    "variables": [
-      "request_context",
-      "candidate_fragments"
-    ],
+    "variables": ["request_context", "candidate_fragments"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -443,10 +488,7 @@
         ]
       }
     ],
-    "variables": [
-      "scene_title",
-      "scene_prose"
-    ],
+    "variables": ["scene_title", "scene_prose"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -477,10 +519,7 @@
         ]
       }
     ],
-    "variables": [
-      "project_context",
-      "conversation_summary"
-    ],
+    "variables": ["project_context", "conversation_summary"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -511,10 +550,7 @@
         ]
       }
     ],
-    "variables": [
-      "existing_summary",
-      "new_messages"
-    ],
+    "variables": ["existing_summary", "new_messages"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -544,10 +580,41 @@
         ]
       }
     ],
-    "variables": [
-      "project_context",
-      "target_budget"
+    "variables": ["project_context", "target_budget"],
+    "createdAt": null,
+    "updatedAt": null
+  },
+  {
+    "id": "builtin.ideation.compendium_extract.default",
+    "name": "Default Premise Compendium Extraction",
+    "workflow": "ideation.compendium_extract",
+    "version": 1,
+    "description": "Extracts a reviewable starter Compendium using only facts established by the chosen premise.",
+    "ownership": "builtin",
+    "ownerId": null,
+    "sourcePromptId": null,
+    "messages": [
+      {
+        "role": "system",
+        "content": [
+          "Extract useful Compendium entries from the supplied fiction premise.",
+          "",
+          "Be strictly factual. Include only named or unambiguously labelable characters, locations, objects, factions, lore, or other story elements supported by the premise. Do not invent traits, relationships, history, supporting characters, or worldbuilding. Consolidate repeated references to the same entity and return no more than 30 entries.",
+          "",
+          "Write names and descriptions in the requested story language. Descriptions should be concise and contain only premise-supported facts. Evidence must be a short excerpt from the premise supporting the entry.",
+          "",
+          "Return exactly one JSON object in this shape:",
+          "{\"entries\":[{\"name\":\"...\",\"typeId\":\"story.character\",\"description\":\"...\",\"evidence\":\"...\"}]}",
+          "",
+          "typeId must be exactly one of story.character, story.location, story.object, story.faction, story.lore, or story.other. Return no markdown or other text."
+        ]
+      },
+      {
+        "role": "user",
+        "content": ["Story language: {{story_language}}", "", "Chosen premise:", "{{premise}}"]
+      }
     ],
+    "variables": ["premise", "story_language"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -608,14 +675,7 @@
         ]
       }
     ],
-    "variables": [
-      "category",
-      "genres",
-      "themes",
-      "tags",
-      "selected_context",
-      "user_instructions"
-    ],
+    "variables": ["category", "genres", "themes", "tags", "selected_context", "user_instructions"],
     "createdAt": null,
     "updatedAt": null
   }

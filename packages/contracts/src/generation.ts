@@ -21,7 +21,7 @@ const generationRequestBaseSchema = z.object({
 
 const insertionGenerationRequestSchema = generationRequestBaseSchema
   .extend({
-    workflow: z.enum(["prose.start", "prose.continue", "prose.toward_event"]),
+    workflow: z.enum(["prose.first_scene", "prose.start", "prose.continue", "prose.toward_event"]),
   })
   .superRefine((value, context) => {
     if (value.workflow === "prose.toward_event" && !value.eventTarget.trim()) {

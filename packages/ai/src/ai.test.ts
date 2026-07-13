@@ -49,6 +49,23 @@ describe("FakeAIProvider", () => {
     });
     expect(result.text).toContain("decisive change");
   });
+
+  it("returns structured premise Compendium extraction", async () => {
+    const provider = new FakeAIProvider(0);
+    const result = await provider.complete({
+      model: "asterism/fake-prose",
+      messages: [
+        {
+          role: "system",
+          content: "Extract useful Compendium entries from the supplied fiction premise.",
+        },
+      ],
+      maxOutputTokens: 1_000,
+    });
+    expect(JSON.parse(result.text).entries).toEqual(
+      expect.arrayContaining([expect.objectContaining({ typeId: "story.character" })]),
+    );
+  });
 });
 
 describe("OpenRouterProvider streaming", () => {
@@ -109,10 +126,10 @@ describe("OpenRouterProvider streaming", () => {
   });
 
   it("rejects a provider stream that closes without a DONE marker", async () => {
-    const body = new Response(
-      'data: {"choices":[{"delta":{"content":"Partial prose."}}]}\n\n',
-      { status: 200, headers: { "Content-Type": "text/event-stream" } },
-    );
+    const body = new Response('data: {"choices":[{"delta":{"content":"Partial prose."}}]}\n\n', {
+      status: 200,
+      headers: { "Content-Type": "text/event-stream" },
+    });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(body));
     const provider = new OpenRouterProvider("test-key", "https://example.test");
 

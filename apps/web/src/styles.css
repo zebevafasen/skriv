@@ -1220,7 +1220,9 @@ label small {
   border: 1px solid #37322b;
   border-radius: 9px;
   background: linear-gradient(145deg, #1d1b18, #171512);
-  transition: border-color 140ms ease, background 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
 }
 .ingredient-category.selected,
 .ingredient-collection.selected {
@@ -1304,7 +1306,10 @@ label small {
   border-radius: 5px;
   background: #171512;
   color: #17120b;
-  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
 }
 .catalog-checkbox.checked > span,
 .catalog-checkbox.mixed > span {
@@ -5214,20 +5219,131 @@ label small {
   gap: 7px;
 }
 
-.alternative-list button {
+.alternative-list article {
   padding: 12px;
-  text-align: left;
   border: 1px solid var(--border-soft);
   border-radius: 7px;
   background: #141310;
+}
+
+.alternative-list article p {
+  margin: 0 0 10px;
   color: var(--muted);
-  cursor: pointer;
   font: 13px / 1.5 var(--serif);
 }
 
-.alternative-list button:hover {
+.alternative-list article .button {
+  padding: 6px 9px;
+  font: 11px / 1.2 var(--sans);
+}
+
+.ideation-development {
+  display: grid;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.ideation-development h3,
+.ideation-development h4,
+.ideation-development p {
+  margin: 0;
+}
+
+.ideation-transition-choice,
+.ideation-extraction-review,
+.ideation-first-scene-setup {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: #141310;
+}
+
+.ideation-review-heading,
+.ideation-extraction-fields,
+.first-scene-length-controls,
+.ideation-existing-first-scene {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.ideation-review-heading > div,
+.ideation-extraction-fields > label {
+  display: grid;
+  gap: 6px;
+}
+
+.ideation-extraction-fields > label {
+  flex: 1;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ideation-extraction-fields input,
+.ideation-extraction-fields select,
+.first-scene-length-controls input {
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0f0e0c;
   color: var(--text);
+}
+
+.ideation-extraction-list {
+  display: grid;
+  gap: 10px;
+  max-height: 680px;
+  overflow: auto;
+}
+
+.ideation-extraction-card {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  background: #1b1916;
+}
+
+.ideation-extraction-card.duplicate {
   border-color: var(--accent-deep);
+}
+
+.ideation-extraction-select {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.ideation-extraction-card blockquote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-deep);
+  color: var(--faint);
+  font: italic 12px / 1.5 var(--serif);
+}
+
+.ideation-extraction-card small {
+  color: var(--warning, #d6a15d);
+}
+
+.first-scene-length-controls > label {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.first-scene-length-controls input {
+  width: 90px;
 }
 
 .prompt-layout {

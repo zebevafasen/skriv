@@ -58,6 +58,20 @@ const contextCache = new Map<
   }
 >();
 
+export function proseContextRows<T extends { typeId: string }>(rows: T[]): T[] {
+  return rows.filter(
+    (entry) => entry.typeId !== "project.instructions" && entry.typeId !== "project.premise",
+  );
+}
+
+export function firstSceneGenerationEligible(
+  requestedSceneId: string,
+  firstSceneId: string | undefined,
+  currentPlainText: string,
+): boolean {
+  return requestedSceneId === firstSceneId && !currentPlainText.trim();
+}
+
 async function assembleContext(
   context: AppContext,
   userId: string,
@@ -70,19 +84,20 @@ async function assembleContext(
     .select()
     .from(compendiumEntries)
     .where(eq(compendiumEntries.projectId, projectId));
-  const entries = rows
-    .filter((entry) => entry.typeId !== "project.instructions")
-    .map((entry) =>
-      compendiumEntrySchema.parse({
-        ...entry,
-        singleton: entry.singletonKey !== null,
-        createdAt: entry.createdAt.toISOString(),
-        updatedAt: entry.updatedAt.toISOString(),
-      }),
-    );
+  const premiseEntry = rows.find((entry) => entry.typeId === "project.premise");
+  const premise = premiseEntry?.content.kind === "text" ? premiseEntry.content.text.trim() : "";
+  const entries = proseContextRows(rows).map((entry) =>
+    compendiumEntrySchema.parse({
+      ...entry,
+      singleton: entry.singletonKey !== null,
+      createdAt: entry.createdAt.toISOString(),
+      updatedAt: entry.updatedAt.toISOString(),
+    }),
+  );
   const before = input.manuscriptBeforeCursor.slice(-12_000);
   const after = input.manuscriptAfterCursor.slice(0, 2_000);
   const scanText = [
+    input.workflow === "prose.first_scene" ? premise : "",
     before,
     "selectedText" in input ? input.selectedText : "",
     after,
@@ -116,7 +131,7 @@ async function assembleContext(
     ),
   );
   if (!settings.smartContextEnabled || smartCandidates.length === 0) {
-    return { fragments: fixedCandidates, fallback: false };
+    return { fragments: fixedCandidates, fallback: false, premise };
   }
   const cacheKey = createHash("sha256")
     .update(
@@ -134,7 +149,7 @@ async function assembleContext(
     )
     .digest("base64url");
   const cached = contextCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached && cached.expiresAt > Date.now()) return { ...cached.value, premise };
 
   try {
     const extractionPrompt = await resolvePrompt(context, userId, "context.extract");
@@ -173,9 +188,9 @@ async function assembleContext(
     const value = { fragments, fallback: false };
     if (contextCache.size >= 500) contextCache.delete(contextCache.keys().next().value ?? "");
     contextCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60 * 1_000, value });
-    return value;
+    return { ...value, premise };
   } catch {
-    return { fragments: fixedCandidates, fallback: true };
+    return { fragments: fixedCandidates, fallback: true, premise };
   }
 }
 
@@ -307,6 +322,30 @@ export async function registerGenerationRoutes(
           currentVersion: ownedRecord.scene.version,
         });
       }
+      if (input.workflow === "prose.first_scene") {
+        const [firstScene] = await context.db
+          .select({ id: scenes.id })
+          .from(scenes)
+          .innerJoin(chapters, eq(chapters.id, scenes.chapterId))
+          .innerJoin(acts, eq(acts.id, chapters.actId))
+          .where(eq(acts.projectId, ownedRecord.projectId))
+          .orderBy(asc(acts.position), asc(chapters.position), asc(scenes.position))
+          .limit(1);
+        if (
+          !firstSceneGenerationEligible(
+            ownedRecord.scene.id,
+            firstScene?.id,
+            ownedRecord.scene.plainText,
+          )
+        ) {
+          return reply.code(400).send({
+            error: {
+              code: "BAD_REQUEST",
+              message: "First-scene generation requires the project's earliest Scene to be empty.",
+            },
+          });
+        }
+      }
       const settings = await getSettings(context, request.userId);
       const model = input.modelOverride ?? settings.baseModel;
       const prompt = await resolvePrompt(
@@ -315,13 +354,18 @@ export async function registerGenerationRoutes(
         input.workflow,
         input.promptOverrideId,
       );
-      const { fragments, fallback } = await assembleContext(
+      const { fragments, fallback, premise } = await assembleContext(
         context,
         request.userId,
         input,
         ownedRecord.projectId,
         ownedRecord.scene,
       );
+      if (input.workflow === "prose.first_scene" && !premise) {
+        return reply.code(400).send({
+          error: { code: "BAD_REQUEST", message: "Choose and save a premise first." },
+        });
+      }
       const contextPackage = formatContext(fragments);
       const planningContext = await prosePlanningContext(
         context,
@@ -357,7 +401,10 @@ export async function registerGenerationRoutes(
       const messages = [
         protectedProtocolMessage(input.workflow),
         ...renderPrompt(prompt, {
+          premise,
           context_package: contextPackage,
+          scene_title: ownedRecord.scene.title,
+          scene_summary: ownedRecord.scene.metadata.summary,
           current_scene_summary: planningContext.currentSceneSummary,
           prior_scene_summaries: planningContext.priorSceneSummaries,
           style_reference_prose:
@@ -442,10 +489,7 @@ export async function registerGenerationRoutes(
             maxCompletionTokens: DEFAULT_MODEL_COMPLETION_LIMIT,
           };
           try {
-            const lookupSignal = AbortSignal.any([
-              controller.signal,
-              AbortSignal.timeout(8_000),
-            ]);
+            const lookupSignal = AbortSignal.any([controller.signal, AbortSignal.timeout(8_000)]);
             modelLimits = await getModelLimits(context, userId, model, lookupSignal);
           } catch {
             controller.signal.throwIfAborted();

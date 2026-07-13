@@ -3,6 +3,12 @@ import {
   compendiumEntrySchema,
   compendiumContentSchema,
   compendiumTypeIdSchema,
+  type CompendiumContent,
+  extractedCompendiumDraftSchema,
+  extractCompendiumInputSchema,
+  extractCompendiumResponseSchema,
+  importExtractedCompendiumInputSchema,
+  importExtractedCompendiumResponseSchema,
   type PromptDefinition,
   type PromptMessage,
   workflowKeySchema,
@@ -19,6 +25,7 @@ import {
   compendiumCategories,
   compendiumEntries,
   packageSettings,
+  projects,
   touchUpdatedAt,
   usageEvents,
   userCollections,
@@ -68,6 +75,9 @@ const entityRequestSchema = draftIngredientsSchema.extend({
   count: z.number().int().min(1).max(5).default(3),
 });
 const generateRequestSchema = z.union([entityRequestSchema, premiseRequestSchema]);
+const extractionResultSchema = z.object({
+  entries: z.array(extractedCompendiumDraftSchema).max(30),
+});
 const IDEATION_CONTEXT_TOKEN_BUDGET = 8_000;
 const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -78,6 +88,96 @@ const definitionSchema = z.object({
   kind: z.enum(["genre", "theme", "tag"]),
   label: z.string().trim().min(1).max(120),
 });
+
+export function normalizedEntryName(value: string): string {
+  return value.trim().normalize("NFKC").toLocaleLowerCase();
+}
+
+export function existingEntryNames<T extends { id: string; name: string; aliases: string[] }>(
+  entries: T[],
+): Map<string, T> {
+  const result = new Map<string, T>();
+  for (const entry of entries) {
+    for (const candidate of [entry.name, ...entry.aliases]) {
+      result.set(normalizedEntryName(candidate), entry);
+    }
+  }
+  return result;
+}
+
+export function parseCompendiumExtraction(value: string) {
+  const withoutReasoning = value.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const fenced = withoutReasoning.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)?.[1]?.trim();
+  const firstBrace = withoutReasoning.indexOf("{");
+  const lastBrace = withoutReasoning.lastIndexOf("}");
+  const embedded =
+    firstBrace >= 0 && lastBrace > firstBrace
+      ? withoutReasoning.slice(firstBrace, lastBrace + 1)
+      : null;
+  const candidates = [withoutReasoning, fenced, embedded].filter(
+    (candidate, index, all): candidate is string =>
+      Boolean(candidate) && all.indexOf(candidate) === index,
+  );
+  let lastError: unknown = new Error("No JSON object was found in the model response.");
+  for (const candidate of candidates) {
+    try {
+      return extractionResultSchema.parse(JSON.parse(candidate));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+function richTextContent(text: string) {
+  return {
+    kind: "rich_text" as const,
+    plainText: text,
+    document: {
+      type: "doc",
+      content: text.split(/\r?\n/).map((line) => ({
+        type: "paragraph",
+        ...(line ? { content: [{ type: "text", text: line }] } : {}),
+      })),
+    },
+  };
+}
+
+export function appendCompendiumContent(
+  content: CompendiumContent,
+  appendedText: string,
+): CompendiumContent {
+  const text = appendedText.trim();
+  if (content.kind === "text") {
+    return { kind: "text", text: [content.text.trimEnd(), text].filter(Boolean).join("\n\n") };
+  }
+  const existingText = normalizeCompendiumContent(content).trimEnd();
+  const appended = richTextContent(text);
+  if (content.kind === "selection") {
+    return richTextContent([existingText, text].filter(Boolean).join("\n\n"));
+  }
+  return {
+    kind: "rich_text",
+    plainText: [existingText, text].filter(Boolean).join("\n\n"),
+    document: {
+      ...content.document,
+      type: content.document.type ?? "doc",
+      content: [
+        ...(existingText ? (content.document.content ?? []) : []),
+        ...(appended.document.content ?? []),
+      ],
+    },
+  };
+}
+
+function ideationEntryResponse(entry: typeof compendiumEntries.$inferSelect) {
+  return compendiumEntrySchema.parse({
+    ...entry,
+    singleton: entry.singletonKey !== null,
+    createdAt: entry.createdAt.toISOString(),
+    updatedAt: entry.updatedAt.toISOString(),
+  });
+}
 
 async function metadataEntries(context: AppContext, projectId: string) {
   const rows = await context.db
@@ -271,6 +371,7 @@ export async function registerIdeationRoutes(
         const content = compendiumContentSchema.parse(
           key === "premise" ? { kind: "text", text: value } : { kind: "selection", values: value },
         );
+        if (JSON.stringify(content) === JSON.stringify(entry.content)) continue;
         await tx
           .update(compendiumEntries)
           .set({ content, revision: entry.revision + 1, ...touchUpdatedAt })
@@ -278,6 +379,205 @@ export async function registerIdeationRoutes(
       }
     });
     return reply.code(204).send();
+  });
+
+  app.post("/api/projects/:projectId/ideation/extract-compendium", async (request, reply) => {
+    const { projectId } = parseWith(projectParams, request.params);
+    if (!(await ownsProject(context, request.userId, projectId)))
+      return notFound(reply, "Project not found.");
+    const input = parseWith(extractCompendiumInputSchema, request.body ?? {});
+    const entries = await metadataEntries(context, projectId);
+    const premiseEntry = entries.get("premise");
+    const premise = premiseEntry?.content.kind === "text" ? premiseEntry.content.text.trim() : "";
+    if (!premiseEntry || !premise) {
+      return reply.code(400).send({
+        error: {
+          code: "BAD_REQUEST",
+          message: "Choose and save a premise before extracting entries.",
+        },
+      });
+    }
+    const [project] = await context.db
+      .select({ settings: projects.settings })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    if (!project) return notFound(reply, "Project not found.");
+    const settings = await getSettings(context, request.userId);
+    const prompt = await resolvePrompt(
+      context,
+      request.userId,
+      workflowKeySchema.enum["ideation.compendium_extract"],
+    );
+    const model = input.modelOverride ?? settings.baseModel;
+    const result = await (await context.getAi(request.userId, model)).complete({
+      model,
+      maxOutputTokens: 4_000,
+      messages: [
+        protectedProtocolMessage("ideation.compendium_extract"),
+        ...renderPrompt(prompt, {
+          premise,
+          story_language: project.settings.language,
+        }),
+      ],
+    });
+    let extracted: z.infer<typeof extractionResultSchema>;
+    try {
+      extracted = parseCompendiumExtraction(result.text);
+    } catch (error) {
+      request.log.warn({ err: error }, "Invalid Compendium extraction response");
+      return reply.code(502).send({
+        error: {
+          code: "INVALID_AI_RESPONSE",
+          message:
+            "The model returned an invalid Compendium extraction. Try again or choose another model.",
+        },
+      });
+    }
+    const existingRows = await context.db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+    const duplicateByName = existingEntryNames(
+      existingRows.filter((entry) => entry.singletonKey === null),
+    );
+    const seen = new Set<string>();
+    const suggestions = extracted.entries.flatMap((entry) => {
+      const normalized = normalizedEntryName(entry.name);
+      if (seen.has(normalized)) return [];
+      seen.add(normalized);
+      const duplicate = duplicateByName.get(normalized) ?? null;
+      return [
+        {
+          ...entry,
+          id: crypto.randomUUID(),
+          duplicateEntryId: duplicate?.id ?? null,
+          duplicateEntryRevision: duplicate?.revision ?? null,
+        },
+      ];
+    });
+    await context.db.insert(usageEvents).values({
+      userId: request.userId,
+      projectId,
+      model,
+      role: "ideation",
+      inputTokens: result.usage.inputTokens,
+      outputTokens: result.usage.outputTokens,
+    });
+    return extractCompendiumResponseSchema.parse({
+      sourcePremiseRevision: premiseEntry.revision,
+      suggestions,
+      model,
+      promptId: prompt.id,
+    });
+  });
+
+  app.post("/api/projects/:projectId/ideation/import-compendium", async (request, reply) => {
+    const { projectId } = parseWith(projectParams, request.params);
+    if (!(await ownsProject(context, request.userId, projectId)))
+      return notFound(reply, "Project not found.");
+    const input = parseWith(importExtractedCompendiumInputSchema, request.body);
+    const allEntries = await context.db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+    const premiseEntry = allEntries.find((entry) => entry.singletonKey === "premise");
+    if (!premiseEntry || premiseEntry.revision !== input.sourcePremiseRevision) {
+      return reply.code(409).send({
+        error: {
+          code: "CONFLICT",
+          message: "The premise changed after these entries were extracted. Run extraction again.",
+        },
+      });
+    }
+    const regularEntries = allEntries.filter((entry) => entry.singletonKey === null);
+    const occupied = existingEntryNames(regularEntries);
+    const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
+    const incoming = new Set<string>();
+    const appendTargets = new Set<string>();
+    const conflicts = input.entries.flatMap((entry) => {
+      const normalized = normalizedEntryName(entry.name);
+      const matched = occupied.get(normalized) ?? null;
+      const repeated = incoming.has(normalized);
+      incoming.add(normalized);
+      if (entry.existingEntryId && entry.expectedExistingRevision) {
+        const target = byId.get(entry.existingEntryId);
+        const repeatedTarget = appendTargets.has(entry.existingEntryId);
+        appendTargets.add(entry.existingEntryId);
+        if (
+          !target ||
+          target.revision !== entry.expectedExistingRevision ||
+          matched?.id !== target.id ||
+          repeated ||
+          repeatedTarget
+        ) {
+          return [{ name: entry.name, existingEntryId: entry.existingEntryId }];
+        }
+        return [];
+      }
+      return matched || repeated
+        ? [{ name: entry.name, existingEntryId: matched?.id ?? null }]
+        : [];
+    });
+    if (conflicts.length) {
+      return reply.code(409).send({
+        error: {
+          code: "CONFLICT",
+          message:
+            "One or more destination entries changed. Run extraction again before importing.",
+          details: conflicts,
+        },
+      });
+    }
+    const imported = await context.db.transaction(async (tx) => {
+      const results = [];
+      for (const entry of input.entries) {
+        if (entry.existingEntryId && entry.expectedExistingRevision) {
+          const existing = byId.get(entry.existingEntryId);
+          if (!existing) throw new Error("Compendium entry not found.");
+          const [updated] = await tx
+            .update(compendiumEntries)
+            .set({
+              content: appendCompendiumContent(existing.content, entry.description),
+              revision: existing.revision + 1,
+              ...touchUpdatedAt,
+            })
+            .where(
+              and(
+                eq(compendiumEntries.id, existing.id),
+                eq(compendiumEntries.revision, entry.expectedExistingRevision),
+              ),
+            )
+            .returning();
+          if (!updated) {
+            throw Object.assign(new Error("Compendium entry changed while it was being updated."), {
+              statusCode: 409,
+            });
+          }
+          results.push(ideationEntryResponse(updated));
+          continue;
+        }
+        const [created] = await tx
+          .insert(compendiumEntries)
+          .values({
+            projectId,
+            name: entry.name,
+            typeId: entry.typeId,
+            aliases: [],
+            labels: [],
+            trackingEnabled: true,
+            matchExclusions: [],
+            activationMode: "mention",
+            caseSensitive: false,
+            content: richTextContent(entry.description),
+          })
+          .returning();
+        if (!created) throw new Error("Compendium entry creation failed.");
+        results.push(ideationEntryResponse(created));
+      }
+      return results;
+    });
+    return reply.code(201).send(importExtractedCompendiumResponseSchema.parse(imported));
   });
 
   app.post("/api/projects/:projectId/ideation/generate", async (request, reply) => {

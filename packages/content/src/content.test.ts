@@ -17,7 +17,7 @@ describe("base content package", () => {
     expect(basePackage.tags.some((tag) => themeLabels.has(tag.label.toLocaleLowerCase()))).toBe(
       false,
     );
-    expect(basePackage.prompts).toHaveLength(11);
+    expect(basePackage.prompts).toHaveLength(13);
     expect(basePackage.schemaVersion).toBe(2);
     expect(basePackage.contentVersion).toBe(11);
     expect(basePackage.ingredientPackCategories.map((category) => category.name)).toEqual([
@@ -40,6 +40,11 @@ describe("base content package", () => {
     expect(getBuiltinPrompt("prose.revise_selection").variables).toContain("selected_text");
     expect(getBuiltinPrompt("chat.respond").variables).toContain("project_context");
     expect(getBuiltinPrompt("ideation.entity").variables).toContain("selected_context");
+    expect(getBuiltinPrompt("ideation.compendium_extract").variables).toEqual([
+      "premise",
+      "story_language",
+    ]);
+    expect(getBuiltinPrompt("prose.first_scene").variables).toContain("premise");
   });
 
   it("ships stable beat-level outline presets", () => {

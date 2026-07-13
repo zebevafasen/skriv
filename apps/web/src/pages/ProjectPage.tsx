@@ -35,7 +35,10 @@ import { ErrorNotice } from "../components/AppShell.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { ExportDialog } from "../components/ExportDialog.js";
-import type { ManuscriptEditorHandle } from "../components/ManuscriptEditor.js";
+import type {
+  FirstSceneGenerationIntent,
+  ManuscriptEditorHandle,
+} from "../components/ManuscriptEditor.js";
 import { type ManuscriptScope, scenesForScope } from "../editor/manuscriptDocument.js";
 import { trapFocusWithin } from "../utils/focus.js";
 import { updateSceneInTree } from "../utils/manuscript.js";
@@ -101,6 +104,8 @@ export function ProjectPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [scopeMenuOpen, setScopeMenuOpen] = useState(false);
   const [ideationCompendiumOpen, setIdeationCompendiumOpen] = useState(false);
+  const [firstSceneGenerationIntent, setFirstSceneGenerationIntent] =
+    useState<FirstSceneGenerationIntent | null>(null);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
   const scopePickerRef = useRef<HTMLDivElement>(null);
   const ideationCompendiumCloseRef = useRef<HTMLButtonElement>(null);
@@ -354,6 +359,37 @@ export function ProjectPage() {
   const selectScene = async (sceneId: string) => {
     await editorRef.current?.flush();
     await updateSearch({ scene: sceneId, scope: `scene:${sceneId}`, view: undefined });
+  };
+
+  const openFirstScene = async () => {
+    const firstScene = allScenes[0];
+    if (!firstScene) return;
+    await updateSearch({
+      tab: undefined,
+      view: undefined,
+      scene: firstScene.id,
+      scope: `scene:${firstScene.id}`,
+    });
+  };
+
+  const generateFirstScene = async (options: {
+    instructions: string;
+    targetLength: number | null;
+    lengthUnit: "words" | "paragraphs";
+    modelOverride: string | null;
+  }) => {
+    const firstScene = allScenes[0];
+    if (!firstScene) return;
+    setFirstSceneGenerationIntent({
+      id: crypto.randomUUID(),
+      sceneId: firstScene.id,
+      options: {
+        workflow: "prose.first_scene",
+        ...options,
+        eventTarget: "",
+      },
+    });
+    await openFirstScene();
   };
 
   const chooseScope = async (nextScope: ManuscriptScope) => {
@@ -772,6 +808,10 @@ export function ProjectPage() {
                       }}
                       onSelectScope={(nextScope) => void changeScope(nextScope)}
                       onSelectScene={selectScene}
+                      firstSceneGenerationIntent={firstSceneGenerationIntent}
+                      onFirstSceneGenerationIntentConsumed={() =>
+                        setFirstSceneGenerationIntent(null)
+                      }
                     />
                   </DeferredWorkspace>
                 </div>
@@ -814,7 +854,10 @@ export function ProjectPage() {
             <IdeationPanel
               projectId={projectId}
               entries={compendium.data ?? []}
+              firstScene={allScenes[0] ?? null}
               onOpenCompendium={() => setIdeationCompendiumOpen(true)}
+              onOpenFirstScene={() => void openFirstScene()}
+              onGenerateFirstScene={(options) => void generateFirstScene(options)}
             />
           </DeferredWorkspace>
           {ideationCompendiumOpen ? (
@@ -854,7 +897,9 @@ export function ProjectPage() {
               </section>
               <CompendiumEntryDrawer
                 projectId={projectId}
-                entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
+                entry={
+                  (compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null
+                }
                 entries={compendium.data ?? []}
                 mentionCount={selectedEntryMentionCount}
                 onClose={() => void updateSearch({ entry: undefined })}

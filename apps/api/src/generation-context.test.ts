@@ -3,6 +3,8 @@ import { renderPrompt } from "@asterism/core";
 import { describe, expect, it } from "vitest";
 import {
   continuationMessages,
+  firstSceneGenerationEligible,
+  proseContextRows,
   proseOutputTokenBudget,
   recentSummaryContext,
   trimRepeatedBoundary,
@@ -10,7 +12,9 @@ import {
 
 describe("prose prompt context", () => {
   it("uses explicit project data and excludes manuscript organization and outline fields", () => {
-    for (const prompt of basePackage.prompts.filter((item) => item.workflow.startsWith("prose."))) {
+    for (const prompt of basePackage.prompts.filter(
+      (item) => item.workflow.startsWith("prose.") && item.workflow !== "prose.first_scene",
+    )) {
       const messages = renderPrompt(prompt, {
         context_package: "Canonical compendium fact",
         current_scene_summary: "Allowed current summary",
@@ -46,6 +50,45 @@ describe("prose prompt context", () => {
     }
   });
 
+  it("renders the premise and opening plan only for the dedicated first-Scene prompt", () => {
+    const prompt = basePackage.prompts.find((item) => item.workflow === "prose.first_scene");
+    expect(prompt).toBeDefined();
+    if (!prompt) throw new Error("First-Scene prompt not found.");
+    const rendered = renderPrompt(prompt, {
+      premise: "Mara enters the Glass Archive to recover a stolen memory.",
+      context_package: "Mara is an investigator.",
+      scene_title: "Opening Image",
+      scene_summary: "Establish the archive before the theft is discovered.",
+      user_instructions: "Open during a storm.",
+      target_length: "1000 words",
+      story_tense: "Past",
+      story_language: "British English",
+      story_pov: "3rd Person (Limited)",
+      pov_character: "Mara",
+    })
+      .map((message) => message.content)
+      .join("\n");
+    expect(rendered).toContain("Mara enters the Glass Archive");
+    expect(rendered).toContain("Opening Image");
+    expect(rendered).toContain("Establish the archive");
+  });
+
+  it("excludes premise metadata only from prose Compendium context", () => {
+    const rows = [
+      { typeId: "project.premise", name: "Premise" },
+      { typeId: "project.genres", name: "Genres" },
+      { typeId: "story.character", name: "Mara" },
+      { typeId: "project.instructions", name: "Legacy instructions" },
+    ];
+    expect(proseContextRows(rows).map((entry) => entry.name)).toEqual(["Genres", "Mara"]);
+  });
+
+  it("allows first-Scene generation only for the earliest empty Scene", () => {
+    expect(firstSceneGenerationEligible("first", "first", "")).toBe(true);
+    expect(firstSceneGenerationEligible("second", "first", "")).toBe(false);
+    expect(firstSceneGenerationEligible("first", "first", "Existing prose")).toBe(false);
+  });
+
   it("keeps the newest summaries within the context budget and preserves their order", () => {
     const summaries = ["oldest".repeat(2_000), "middle".repeat(1_000), "newest"];
     const result = recentSummaryContext(summaries);
@@ -73,13 +116,7 @@ describe("prose prompt context", () => {
 
   it("fails clearly when the prompt leaves no safe prose capacity", () => {
     expect(() =>
-      proseOutputTokenBudget(
-        [{ content: "context".repeat(2_000) }],
-        2_048,
-        16_384,
-        null,
-        "words",
-      ),
+      proseOutputTokenBudget([{ content: "context".repeat(2_000) }], 2_048, 16_384, null, "words"),
     ).toThrow("too little model context");
   });
 

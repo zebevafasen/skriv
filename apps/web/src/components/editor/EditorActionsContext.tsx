@@ -2,7 +2,10 @@ import type { CompendiumEntry, SelectionAction, WorkflowKey } from "@asterism/co
 import { createContext, useContext } from "react";
 
 export type InsertionGenerationOptions = {
-  workflow: Extract<WorkflowKey, "prose.start" | "prose.continue" | "prose.toward_event">;
+  workflow: Extract<
+    WorkflowKey,
+    "prose.first_scene" | "prose.start" | "prose.continue" | "prose.toward_event"
+  >;
   instructions: string;
   eventTarget: string;
   targetLength: number | null;

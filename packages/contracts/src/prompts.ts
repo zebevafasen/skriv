@@ -2,12 +2,14 @@ import { z } from "zod";
 import { idSchema, timestampSchema } from "./primitives.js";
 
 export const workflowKeySchema = z.enum([
+  "prose.first_scene",
   "prose.start",
   "prose.continue",
   "prose.toward_event",
   "prose.revise_selection",
   "ideation.premise",
   "ideation.entity",
+  "ideation.compendium_extract",
   "context.extract",
   "summary.scene",
   "chat.respond",
@@ -44,6 +46,18 @@ export const createPromptInputSchema = promptDefinitionSchema
 export const updatePromptInputSchema = createPromptInputSchema.partial();
 
 export const workflowVariables: Record<z.infer<typeof workflowKeySchema>, readonly string[]> = {
+  "prose.first_scene": [
+    "premise",
+    "context_package",
+    "scene_title",
+    "scene_summary",
+    "user_instructions",
+    "target_length",
+    "story_tense",
+    "story_language",
+    "story_pov",
+    "pov_character",
+  ],
   "prose.start": [
     "context_package",
     "current_scene_summary",
@@ -108,6 +122,7 @@ export const workflowVariables: Record<z.infer<typeof workflowKeySchema>, readon
     "selected_context",
     "user_instructions",
   ],
+  "ideation.compendium_extract": ["premise", "story_language"],
   "context.extract": ["request_context", "candidate_fragments"],
   "summary.scene": ["scene_title", "scene_prose"],
   "chat.respond": ["project_context", "conversation_summary"],
