@@ -1335,9 +1335,9 @@
     "description": "A character's deliberate growth in skill, power, knowledge, or status drives the story."
   },
   {
-    "id":"tag.sexuality",
-    "label":"Sexuality",
-    "description":"The story explores sexual identity, orientation, or expression."
+    "id": "tag.sexuality",
+    "label": "Sexuality",
+    "description": "The story explores sexual identity, orientation, or expression."
   },
   {
     "id": "tag.bdsm",
@@ -4028,5 +4028,845 @@
     "id": "tag.bakery",
     "label": "Bakery",
     "description": "A bakery, its craft, or its local community shapes the story's setting or relationships."
+  },
+  {
+    "id": "tag.unnamed_protagonist",
+    "label": "Unnamed Protagonist",
+    "description": "The central character's personal name is withheld from the reader."
+  },
+  {
+    "id": "tag.reluctant_hero",
+    "label": "Reluctant Hero",
+    "description": "A protagonist resists the responsibility or danger of becoming heroic."
+  },
+  {
+    "id": "tag.tragic_hero",
+    "label": "Tragic Hero",
+    "description": "A capable protagonist is brought down by a flaw, choice, or unavoidable conflict."
+  },
+  {
+    "id": "tag.everyman_protagonist",
+    "label": "Everyman Protagonist",
+    "description": "An ordinary central character offers an accessible lens on extraordinary events."
+  },
+  {
+    "id": "tag.outsider_protagonist",
+    "label": "Outsider Protagonist",
+    "description": "The protagonist stands apart from the story's dominant community or institution."
+  },
+  {
+    "id": "tag.immigrant_protagonist",
+    "label": "Immigrant Protagonist",
+    "description": "Immigration substantially shapes the protagonist's identity and circumstances."
+  },
+  {
+    "id": "tag.indigenous_protagonist",
+    "label": "Indigenous Protagonist",
+    "description": "An Indigenous protagonist's community, identity, and perspective are central."
+  },
+  {
+    "id": "tag.artificial_protagonist",
+    "label": "Artificial Protagonist",
+    "description": "An artificial intelligence, construct, or synthetic being is the central character."
+  },
+  {
+    "id": "tag.monster_protagonist",
+    "label": "Monster Protagonist",
+    "description": "A being regarded as monstrous carries the story's central perspective."
+  },
+  {
+    "id": "tag.animal_protagonist",
+    "label": "Animal Protagonist",
+    "description": "A nonhuman animal is the story's central character."
+  },
+  {
+    "id": "tag.enemies_to_allies",
+    "label": "Enemies to Allies",
+    "description": "Former enemies form a necessary or genuine alliance."
+  },
+  {
+    "id": "tag.friendship_breakup",
+    "label": "Friendship Breakup",
+    "description": "The dissolution of a friendship drives emotional conflict."
+  },
+  {
+    "id": "tag.surrogate_siblings",
+    "label": "Surrogate Siblings",
+    "description": "Characters develop a sibling-like bond without being related."
+  },
+  {
+    "id": "tag.mentor_betrayal",
+    "label": "Mentor Betrayal",
+    "description": "A trusted mentor betrays their student or the principles they taught."
+  },
+  {
+    "id": "tag.codependent_relationship",
+    "label": "Codependent Relationship",
+    "description": "A relationship is shaped by unhealthy mutual dependence."
+  },
+  {
+    "id": "tag.healthy_relationship",
+    "label": "Healthy Relationship",
+    "description": "Mutual respect, communication, and support define a central relationship."
+  },
+  {
+    "id": "tag.queer_romance",
+    "label": "Queer Romance",
+    "description": "A romance between queer characters is central to the story."
+  },
+  {
+    "id": "tag.polycule",
+    "label": "Polycule",
+    "description": "An interconnected network of consensually non-monogamous relationships is central."
+  },
+  {
+    "id": "tag.platonic_soulmates",
+    "label": "Platonic Soulmates",
+    "description": "A profound non-romantic bond is framed as life-defining partnership."
+  },
+  {
+    "id": "tag.interspecies_romance",
+    "label": "Interspecies Romance",
+    "description": "Romance develops between characters of different species."
+  },
+  {
+    "id": "tag.human_ai_relationship",
+    "label": "Human–AI Relationship",
+    "description": "A meaningful bond develops between a human and an artificial intelligence."
+  },
+  {
+    "id": "tag.guardian_ward",
+    "label": "Guardian and Ward",
+    "description": "A guardian's responsibility for a dependent young person shapes the story."
+  },
+  {
+    "id": "tag.reluctant_partnership",
+    "label": "Reluctant Partnership",
+    "description": "Characters who would not choose each other must work together."
+  },
+  {
+    "id": "tag.dysfunctional_family",
+    "label": "Dysfunctional Family",
+    "description": "Harmful patterns and unresolved conflict shape a family system."
+  },
+  {
+    "id": "tag.blended_family",
+    "label": "Blended Family",
+    "description": "Partners and children combine households and negotiate a new family structure."
+  },
+  {
+    "id": "tag.apothecary",
+    "label": "Apothecary",
+    "description": "A maker and seller of remedies, herbs, or potions plays a central role."
+  },
+  {
+    "id": "tag.courier",
+    "label": "Courier",
+    "description": "A character transports messages or valuable items through dangerous territory."
+  },
+  {
+    "id": "tag.cartographer",
+    "label": "Cartographer",
+    "description": "A mapmaker's work shapes exploration, borders, or discovery."
+  },
+  {
+    "id": "tag.archaeologist",
+    "label": "Archaeologist",
+    "description": "A character studies material remains and uncovers buried histories."
+  },
+  {
+    "id": "tag.occultist",
+    "label": "Occultist",
+    "description": "A practitioner or scholar of hidden supernatural knowledge shapes the story."
+  },
+  {
+    "id": "tag.exorcist",
+    "label": "Exorcist",
+    "description": "A character confronts possession, haunting, or invasive supernatural forces."
+  },
+  {
+    "id": "tag.knight",
+    "label": "Knight",
+    "description": "A sworn armored warrior navigates duty, violence, status, and service."
+  },
+  {
+    "id": "tag.mage",
+    "label": "Mage",
+    "description": "A professional or socially recognized magic user is central."
+  },
+  {
+    "id": "tag.witch_hunter",
+    "label": "Witch Hunter",
+    "description": "A character hunts suspected magic users, willingly or under institutional command."
+  },
+  {
+    "id": "tag.miner",
+    "label": "Miner",
+    "description": "A character extracts resources underground or in a hazardous frontier."
+  },
+  {
+    "id": "tag.factory_worker",
+    "label": "Factory Worker",
+    "description": "Industrial labor and workplace conditions shape a character's life."
+  },
+  {
+    "id": "tag.sex_worker",
+    "label": "Sex Worker",
+    "description": "Sex work shapes a character's livelihood, relationships, safety, or social position."
+  },
+  {
+    "id": "tag.innkeeper",
+    "label": "Innkeeper",
+    "description": "A character runs lodging where travelers, locals, and secrets converge."
+  },
+  {
+    "id": "tag.shopkeeper",
+    "label": "Shopkeeper",
+    "description": "A character's small business anchors work, community, and daily encounters."
+  },
+  {
+    "id": "tag.veterinarian",
+    "label": "Veterinarian",
+    "description": "A character cares medically for animals and the people attached to them."
+  },
+  {
+    "id": "tag.athlete",
+    "label": "Athlete",
+    "description": "Training and athletic competition substantially shape a character's life."
+  },
+  {
+    "id": "tag.coach",
+    "label": "Coach",
+    "description": "A character trains competitors and manages performance, trust, and pressure."
+  },
+  {
+    "id": "tag.actor",
+    "label": "Actor",
+    "description": "A performer's work with roles, audiences, and identity shapes the story."
+  },
+  {
+    "id": "tag.filmmaker",
+    "label": "Filmmaker",
+    "description": "The creation of film or video shapes a character's work and perspective."
+  },
+  {
+    "id": "tag.podcaster",
+    "label": "Podcaster",
+    "description": "A character produces an audio show that influences events or public attention."
+  },
+  {
+    "id": "tag.game_developer",
+    "label": "Game Developer",
+    "description": "Designing or building games shapes a character's work and creative conflicts."
+  },
+  {
+    "id": "tag.forest",
+    "label": "Forest",
+    "description": "A forest shapes travel, ecology, livelihood, concealment, or supernatural danger."
+  },
+  {
+    "id": "tag.tundra",
+    "label": "Tundra",
+    "description": "A cold treeless landscape creates ecological and survival pressures."
+  },
+  {
+    "id": "tag.archipelago",
+    "label": "Archipelago",
+    "description": "A chain of islands shapes travel, culture, trade, and political boundaries."
+  },
+  {
+    "id": "tag.river",
+    "label": "River",
+    "description": "A river structures movement, settlement, ecology, borders, or livelihood."
+  },
+  {
+    "id": "tag.lake",
+    "label": "Lake",
+    "description": "A lake anchors community, mystery, recreation, ecology, or isolation."
+  },
+  {
+    "id": "tag.desert_city",
+    "label": "Desert City",
+    "description": "An urban center in an arid landscape is shaped by heat, water, and trade."
+  },
+  {
+    "id": "tag.mountain_village",
+    "label": "Mountain Village",
+    "description": "A highland settlement is shaped by terrain, weather, tradition, and isolation."
+  },
+  {
+    "id": "tag.underground_bunker",
+    "label": "Underground Bunker",
+    "description": "A fortified subterranean shelter creates safety, secrecy, and confinement."
+  },
+  {
+    "id": "tag.research_station",
+    "label": "Research Station",
+    "description": "A remote scientific outpost concentrates discovery, isolation, and institutional pressure."
+  },
+  {
+    "id": "tag.abandoned_mall",
+    "label": "Abandoned Mall",
+    "description": "A deserted shopping complex becomes a ruin, shelter, or uncanny labyrinth."
+  },
+  {
+    "id": "tag.shopping_mall",
+    "label": "Shopping Mall",
+    "description": "A commercial complex brings consumption, work, youth culture, and strangers together."
+  },
+  {
+    "id": "tag.office_tower",
+    "label": "Office Tower",
+    "description": "A vertical workplace concentrates hierarchy, ambition, routine, and corporate power."
+  },
+  {
+    "id": "tag.restaurant",
+    "label": "Restaurant",
+    "description": "A restaurant's kitchen, staff, patrons, and service shape the story."
+  },
+  {
+    "id": "tag.coffee_shop",
+    "label": "Coffee Shop",
+    "description": "A café becomes a workplace, refuge, meeting place, or neighborhood anchor."
+  },
+  {
+    "id": "tag.tavern",
+    "label": "Tavern",
+    "description": "A public house brings travelers, locals, rumors, and conflict together."
+  },
+  {
+    "id": "tag.inn",
+    "label": "Inn",
+    "description": "A small lodging house gathers strangers, journeys, work, and secrets."
+  },
+  {
+    "id": "tag.school",
+    "label": "School",
+    "description": "A primary or secondary school shapes community, authority, learning, and growing up."
+  },
+  {
+    "id": "tag.laboratory",
+    "label": "Laboratory",
+    "description": "A scientific workspace becomes a site of experiment, discovery, risk, or control."
+  },
+  {
+    "id": "tag.spaceship",
+    "label": "Spaceship",
+    "description": "A spacecraft serves as transport, workplace, home, or isolated setting."
+  },
+  {
+    "id": "tag.alien_planet",
+    "label": "Alien Planet",
+    "description": "A world beyond Earth shapes ecology, culture, exploration, and survival."
+  },
+  {
+    "id": "tag.coastal_village",
+    "label": "Coastal Village",
+    "description": "A small seaside community is shaped by weather, fishing, tourism, and the sea."
+  },
+  {
+    "id": "tag.matriarchy",
+    "label": "Matriarchy",
+    "description": "Women hold dominant authority in the story's social or political system."
+  },
+  {
+    "id": "tag.patriarchy",
+    "label": "Patriarchy",
+    "description": "Male-dominated institutions and expectations structure power and daily life."
+  },
+  {
+    "id": "tag.anarchism",
+    "label": "Anarchism",
+    "description": "Anti-authoritarian political organization or philosophy shapes the story."
+  },
+  {
+    "id": "tag.monarchy",
+    "label": "Monarchy",
+    "description": "Hereditary or personal sovereign rule structures the story's society."
+  },
+  {
+    "id": "tag.republic",
+    "label": "Republic",
+    "description": "Representative civic government shapes institutions, citizenship, and conflict."
+  },
+  {
+    "id": "tag.city_state",
+    "label": "City-State",
+    "description": "An independent city and its territory form the story's political world."
+  },
+  {
+    "id": "tag.surveillance_capitalism",
+    "label": "Surveillance Capitalism",
+    "description": "Personal data is extracted and monetized as a source of prediction and control."
+  },
+  {
+    "id": "tag.mutual_aid",
+    "label": "Mutual Aid",
+    "description": "People organize reciprocal support outside or alongside formal institutions."
+  },
+  {
+    "id": "tag.cooperative",
+    "label": "Cooperative",
+    "description": "A collectively owned organization shapes work, resources, and community decisions."
+  },
+  {
+    "id": "tag.criminalized_magic",
+    "label": "Criminalized Magic",
+    "description": "The use or possession of magic is forbidden by law."
+  },
+  {
+    "id": "tag.magical_bureaucracy",
+    "label": "Magical Bureaucracy",
+    "description": "Rules, permits, offices, and officials regulate supernatural power."
+  },
+  {
+    "id": "tag.guild_politics",
+    "label": "Guild Politics",
+    "description": "Professional guilds compete over influence, membership, labor, and resources."
+  },
+  {
+    "id": "tag.religious_conflict",
+    "label": "Religious Conflict",
+    "description": "Competing beliefs, institutions, or sacred claims drive conflict."
+  },
+  {
+    "id": "tag.cultural_assimilation",
+    "label": "Cultural Assimilation",
+    "description": "Pressure to adopt a dominant culture reshapes identity, language, and belonging."
+  },
+  {
+    "id": "tag.food_culture",
+    "label": "Food Culture",
+    "description": "Cuisine, meals, etiquette, and food traditions shape identity and community."
+  },
+  {
+    "id": "tag.court_etiquette",
+    "label": "Court Etiquette",
+    "description": "Formal behavior at court becomes a tool of status, access, and political danger."
+  },
+  {
+    "id": "tag.magical_illness",
+    "label": "Magical Illness",
+    "description": "A supernatural disease or affliction changes bodies, communities, or magic itself."
+  },
+  {
+    "id": "tag.magical_pollution",
+    "label": "Magical Pollution",
+    "description": "Magic contaminates an environment, resource, population, or ecosystem."
+  },
+  {
+    "id": "tag.wild_magic",
+    "label": "Wild Magic",
+    "description": "Uncontrolled or naturally occurring magic behaves unpredictably."
+  },
+  {
+    "id": "tag.inherited_magic",
+    "label": "Inherited Magic",
+    "description": "Supernatural power passes through bloodlines, families, or succession."
+  },
+  {
+    "id": "tag.stolen_magic",
+    "label": "Stolen Magic",
+    "description": "Magical power is taken from another being, place, or tradition."
+  },
+  {
+    "id": "tag.forbidden_magic",
+    "label": "Forbidden Magic",
+    "description": "A dangerous or taboo form of magic tempts characters despite its prohibition."
+  },
+  {
+    "id": "tag.divine_magic",
+    "label": "Divine Magic",
+    "description": "Supernatural power comes from gods, faith, sacred office, or revelation."
+  },
+  {
+    "id": "tag.nature_magic",
+    "label": "Nature Magic",
+    "description": "Magic draws on landscapes, seasons, plants, animals, or ecological relationships."
+  },
+  {
+    "id": "tag.technomancy",
+    "label": "Technomancy",
+    "description": "Magic and technology operate together or become indistinguishable."
+  },
+  {
+    "id": "tag.magical_companion",
+    "label": "Magical Companion",
+    "description": "A supernatural creature or construct accompanies a central character."
+  },
+  {
+    "id": "tag.sentient_artifact",
+    "label": "Sentient Artifact",
+    "description": "A magical object possesses awareness, desires, and agency."
+  },
+  {
+    "id": "tag.living_city",
+    "label": "Living City",
+    "description": "A city behaves as a conscious organism, magical entity, or active character."
+  },
+  {
+    "id": "tag.pocket_dimension",
+    "label": "Pocket Dimension",
+    "description": "A small self-contained reality exists beside or within the ordinary world."
+  },
+  {
+    "id": "tag.cosmic_entity",
+    "label": "Cosmic Entity",
+    "description": "A vast nonhuman intelligence operates on a scale beyond ordinary life."
+  },
+  {
+    "id": "tag.alien_ecology",
+    "label": "Alien Ecology",
+    "description": "An extraterrestrial ecosystem and its relationships are central to the story."
+  },
+  {
+    "id": "tag.alien_ruins",
+    "label": "Alien Ruins",
+    "description": "Remains of an extraterrestrial civilization invite study, exploitation, or danger."
+  },
+  {
+    "id": "tag.uplifted_animals",
+    "label": "Uplifted Animals",
+    "description": "Animals have been given human-level or greater intelligence."
+  },
+  {
+    "id": "tag.hive_mind",
+    "label": "Hive Mind",
+    "description": "Multiple bodies or people share a linked collective consciousness."
+  },
+  {
+    "id": "tag.neural_implants",
+    "label": "Neural Implants",
+    "description": "Technology embedded in the nervous system changes perception or capability."
+  },
+  {
+    "id": "tag.brain_computer_interface",
+    "label": "Brain–Computer Interface",
+    "description": "A direct connection between mind and machine enables communication or control."
+  },
+  {
+    "id": "tag.synthetic_biology",
+    "label": "Synthetic Biology",
+    "description": "Engineered organisms and designed biological systems shape the story."
+  },
+  {
+    "id": "tag.posthuman",
+    "label": "Posthuman",
+    "description": "Characters or societies have moved beyond conventionally human embodiment."
+  },
+  {
+    "id": "tag.digital_identity",
+    "label": "Digital Identity",
+    "description": "A person's online or virtual self becomes socially or legally consequential."
+  },
+  {
+    "id": "tag.uploaded_consciousness",
+    "label": "Uploaded Consciousness",
+    "description": "A mind is copied, transferred, or sustained in a digital substrate."
+  },
+  {
+    "id": "tag.interstellar_trade",
+    "label": "Interstellar Trade",
+    "description": "Commerce between star systems shapes routes, power, labor, and culture."
+  },
+  {
+    "id": "tag.galactic_empire",
+    "label": "Galactic Empire",
+    "description": "A vast imperial power rules across planets or star systems."
+  },
+  {
+    "id": "tag.space_pirates",
+    "label": "Space Pirates",
+    "description": "Outlaws raid, smuggle, or resist authority along spacefaring routes."
+  },
+  {
+    "id": "tag.salvage_crew",
+    "label": "Salvage Crew",
+    "description": "A team recovers valuable material from wrecks, ruins, or abandoned technology."
+  },
+  {
+    "id": "tag.search_and_rescue",
+    "label": "Search and Rescue",
+    "description": "A coordinated effort seeks people in immediate danger or difficult terrain."
+  },
+  {
+    "id": "tag.stranded",
+    "label": "Stranded",
+    "description": "Characters are cut off from safe travel, support, or a route home."
+  },
+  {
+    "id": "tag.mutiny",
+    "label": "Mutiny",
+    "description": "A crew or military group rebels against its commanding authority."
+  },
+  {
+    "id": "tag.labor_dispute",
+    "label": "Labor Dispute",
+    "description": "Conflict over work, pay, safety, or control drives collective action."
+  },
+  {
+    "id": "tag.whistleblower",
+    "label": "Whistleblower",
+    "description": "A character exposes wrongdoing from inside an organization."
+  },
+  {
+    "id": "tag.corporate_sabotage",
+    "label": "Corporate Sabotage",
+    "description": "An operation deliberately disrupts a company's systems, assets, or plans."
+  },
+  {
+    "id": "tag.political_marriage",
+    "label": "Political Marriage",
+    "description": "A marriage is arranged or maintained to secure political power."
+  },
+  {
+    "id": "tag.secret_baby",
+    "label": "Secret Baby",
+    "description": "A child's existence or parentage is concealed from someone closely affected."
+  },
+  {
+    "id": "tag.fake_dating",
+    "label": "Fake Dating",
+    "description": "Characters pretend to be romantically involved and complicate the arrangement."
+  },
+  {
+    "id": "tag.accidental_marriage",
+    "label": "Accidental Marriage",
+    "description": "Characters unexpectedly discover or create a legally binding marriage."
+  },
+  {
+    "id": "tag.dating_competition",
+    "label": "Dating Competition",
+    "description": "Romantic courtship unfolds within a formal contest or elimination structure."
+  },
+  {
+    "id": "tag.holiday_romance",
+    "label": "Holiday Romance",
+    "description": "A romance develops around a holiday, seasonal gathering, or festive tradition."
+  },
+  {
+    "id": "tag.missing_heir",
+    "label": "Missing Heir",
+    "description": "A vanished or unidentified successor destabilizes inheritance or rule."
+  },
+  {
+    "id": "tag.stolen_identity",
+    "label": "Stolen Identity",
+    "description": "Someone assumes or exploits another person's identity."
+  },
+  {
+    "id": "tag.wrongful_conviction",
+    "label": "Wrongful Conviction",
+    "description": "An innocent person has been legally convicted of a crime."
+  },
+  {
+    "id": "tag.inheritance_mystery",
+    "label": "Inheritance Mystery",
+    "description": "A disputed legacy, strange condition, or unknown beneficiary drives investigation."
+  },
+  {
+    "id": "tag.buried_secret",
+    "label": "Buried Secret",
+    "description": "A long-hidden truth threatens to surface and transform the present."
+  },
+  {
+    "id": "tag.forbidden_archive",
+    "label": "Forbidden Archive",
+    "description": "Restricted records contain knowledge that authorities want concealed."
+  },
+  {
+    "id": "tag.lost_expedition",
+    "label": "Lost Expedition",
+    "description": "A vanished exploratory party leaves clues, survivors, or an unfinished mission."
+  },
+  {
+    "id": "tag.cursed_object",
+    "label": "Cursed Object",
+    "description": "An object brings supernatural harm, obligation, or escalating consequences."
+  },
+  {
+    "id": "tag.deal_with_the_devil",
+    "label": "Deal with the Devil",
+    "description": "A bargain grants a desire at a profound moral or supernatural cost."
+  },
+  {
+    "id": "tag.impossible_choice",
+    "label": "Impossible Choice",
+    "description": "A character must choose between outcomes that each carry unacceptable loss."
+  },
+  {
+    "id": "tag.moral_dilemma",
+    "label": "Moral Dilemma",
+    "description": "Competing ethical duties make a character's decision genuinely difficult."
+  },
+  {
+    "id": "tag.pyrrhic_victory",
+    "label": "Pyrrhic Victory",
+    "description": "Success is achieved at a cost that nearly or entirely negates it."
+  },
+  {
+    "id": "tag.redemption_arc",
+    "label": "Redemption Arc",
+    "description": "A character confronts past harm and works toward meaningful change."
+  },
+  {
+    "id": "tag.corruption_arc",
+    "label": "Corruption Arc",
+    "description": "A character gradually abandons principles and becomes complicit in harm."
+  },
+  {
+    "id": "tag.fall_from_grace",
+    "label": "Fall from Grace",
+    "description": "A respected or powerful character loses status through exposure, failure, or wrongdoing."
+  },
+  {
+    "id": "tag.rise_to_power",
+    "label": "Rise to Power",
+    "description": "A character climbs toward political, social, magical, or institutional control."
+  },
+  {
+    "id": "tag.rags_to_riches",
+    "label": "Rags to Riches",
+    "description": "A character rises dramatically from poverty to wealth or status."
+  },
+  {
+    "id": "tag.eerie",
+    "label": "Eerie",
+    "description": "The story sustains a subtly strange and unsettling atmosphere."
+  },
+  {
+    "id": "tag.suspenseful",
+    "label": "Suspenseful",
+    "description": "Anticipation, uncertainty, and threatened consequences drive the reading experience."
+  },
+  {
+    "id": "tag.playful",
+    "label": "Playful",
+    "description": "The story approaches language, situations, or conventions with lively amusement."
+  },
+  {
+    "id": "tag.warm",
+    "label": "Warm",
+    "description": "Affection, generosity, and emotional safety shape the story's atmosphere."
+  },
+  {
+    "id": "tag.tender",
+    "label": "Tender",
+    "description": "The story treats vulnerability and affection with gentleness."
+  },
+  {
+    "id": "tag.joyous",
+    "label": "Joyous",
+    "description": "Celebration, delight, and exuberant positive feeling dominate the tone."
+  },
+  {
+    "id": "tag.awe_inspiring",
+    "label": "Awe-Inspiring",
+    "description": "Vastness, beauty, or power evokes wonder mixed with humility."
+  },
+  {
+    "id": "tag.cerebral",
+    "label": "Cerebral",
+    "description": "Ideas, inference, and intellectual engagement dominate the reading experience."
+  },
+  {
+    "id": "tag.philosophical",
+    "label": "Philosophical",
+    "description": "The story directly engages difficult questions about existence, knowledge, or ethics."
+  },
+  {
+    "id": "tag.irreverent",
+    "label": "Irreverent",
+    "description": "The story treats authority, convention, or sacred subjects with comic disrespect."
+  },
+  {
+    "id": "tag.earnest",
+    "label": "Earnest",
+    "description": "The story presents its emotions and convictions with open sincerity."
+  },
+  {
+    "id": "tag.pulpy",
+    "label": "Pulpy",
+    "description": "Bold hooks, heightened danger, and energetic genre pleasures shape the style."
+  },
+  {
+    "id": "tag.operatic",
+    "label": "Operatic",
+    "description": "Emotion, conflict, spectacle, and consequence are heightened to grand scale."
+  },
+  {
+    "id": "tag.quiet",
+    "label": "Quiet",
+    "description": "Subtle change, observation, and restrained conflict define the story's energy."
+  },
+  {
+    "id": "tag.frenetic",
+    "label": "Frenetic",
+    "description": "Rapid, chaotic energy propels scenes and overwhelms characters."
+  },
+  {
+    "id": "tag.ominous",
+    "label": "Ominous",
+    "description": "The atmosphere persistently suggests that something harmful is approaching."
+  },
+  {
+    "id": "tag.decadent",
+    "label": "Decadent",
+    "description": "Luxury, excess, decline, and sensual detail shape the aesthetic."
+  },
+  {
+    "id": "tag.slapstick",
+    "label": "Slapstick",
+    "description": "Physical mishaps and exaggerated action drive the comedy."
+  },
+  {
+    "id": "tag.deadpan",
+    "label": "Deadpan",
+    "description": "Comedy is delivered with deliberate seriousness and minimal reaction."
+  },
+  {
+    "id": "tag.witty",
+    "label": "Witty",
+    "description": "Clever language, quick observation, and verbal play shape the humor."
+  },
+  {
+    "id": "tag.farcical",
+    "label": "Farcical",
+    "description": "Escalating misunderstandings and improbable complications create broad comedy."
+  },
+  {
+    "id": "tag.performance",
+    "label": "Performance",
+    "description": "Live artistic performance and its preparation are central to the story."
+  },
+  {
+    "id": "tag.injury",
+    "label": "Injury",
+    "description": "Physical injury changes a character's abilities, choices, work, or relationships."
+  },
+  {
+    "id": "tag.shared_goal",
+    "label": "Shared Goal",
+    "description": "Characters with different motives must cooperate toward the same outcome."
+  },
+  {
+    "id": "tag.banter",
+    "label": "Banter",
+    "description": "Quick playful verbal exchange defines a central relationship or group dynamic."
+  },
+  {
+    "id": "tag.grandparent",
+    "label": "Grandparent",
+    "description": "A grandparent's care, history, or relationship with younger generations is central."
+  },
+  {
+    "id": "tag.testimony",
+    "label": "Testimony",
+    "description": "Formal or personal accounts of events become evidence and contested narrative."
+  },
+  {
+    "id": "tag.escalating_misunderstandings",
+    "label": "Escalating Misunderstandings",
+    "description": "Layered mistakes and false assumptions compound into larger complications."
   }
 ]

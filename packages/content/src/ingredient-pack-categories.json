@@ -8,5 +8,25 @@
     "id": "tag-category.themes",
     "name": "Themes",
     "description": "Ideas, tensions, and emotional questions explored by a story."
+  },
+  {
+    "id": "tag-category.characters",
+    "name": "Characters & Relationships",
+    "description": "Character lenses, roles, identities, bonds, and interpersonal dynamics."
+  },
+  {
+    "id": "tag-category.worlds",
+    "name": "Worlds & Settings",
+    "description": "Places, cultures, institutions, technologies, magic, and material conditions."
+  },
+  {
+    "id": "tag-category.plots",
+    "name": "Plots & Structures",
+    "description": "Story engines, complications, trajectories, mysteries, and narrative shapes."
+  },
+  {
+    "id": "tag-category.tone",
+    "name": "Tone & Texture",
+    "description": "Mood, pacing, scale, prose texture, and the felt experience of a story."
   }
 ]
