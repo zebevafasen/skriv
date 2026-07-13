@@ -2,6 +2,8 @@ import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@as
 import genres from "./genres.json" with { type: "json" };
 import packageMetadata from "./manifest.json" with { type: "json" };
 import prompts from "./prompts.json" with { type: "json" };
+import tagPackCategories from "./tag-pack-categories.json" with { type: "json" };
+import tagPackCollections from "./tag-pack-collections.json" with { type: "json" };
 import tagPacks from "./tag-packs.json" with { type: "json" };
 import tags from "./tags.json" with { type: "json" };
 import themes from "./themes.json" with { type: "json" };
@@ -38,9 +40,26 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
   }
 
   const packIds = new Set<string>();
+  const categoryIds = new Set(content.tagPackCategories.map((category) => category.id));
+  if (categoryIds.size !== content.tagPackCategories.length) {
+    throw new Error(`Duplicate tag pack category id in ${content.id}.`);
+  }
+  const collectionIds = new Set<string>();
+  for (const collection of content.tagPackCollections) {
+    if (collectionIds.has(collection.id)) {
+      throw new Error(`Duplicate tag pack collection id in ${content.id}: ${collection.id}.`);
+    }
+    if (!categoryIds.has(collection.categoryId)) {
+      throw new Error(`Unknown category for tag pack collection ${collection.id}.`);
+    }
+    collectionIds.add(collection.id);
+  }
   for (const pack of content.tagPacks) {
     if (packIds.has(pack.id)) throw new Error(`Duplicate tag pack id in ${content.id}: ${pack.id}.`);
     packIds.add(pack.id);
+    if (!collectionIds.has(pack.collectionId)) {
+      throw new Error(`Unknown collection for tag pack ${pack.id}: ${pack.collectionId}.`);
+    }
 
     for (const key of catalogKeys) {
       const values = pack.values[key];
@@ -63,19 +82,9 @@ export const basePackage: ContentPackage = validateContentReferences(contentPack
   genres,
   themes,
   tags,
-  tagPacks: [
-    ...tagPacks,
-    {
-      id: "pack.all",
-      name: "All",
-      description: "Contains all registered built-in genres, themes, and tags.",
-      values: {
-        genres: genres.map((g) => g.id),
-        themes: themes.map((t) => t.id),
-        tags: tags.map((t) => t.id),
-      },
-    },
-  ],
+  tagPackCategories,
+  tagPackCollections,
+  tagPacks,
   prompts: normalizedPrompts,
 }));
 

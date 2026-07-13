@@ -30,6 +30,7 @@ describe("shared contracts", () => {
     expect(
       tagPackSchema.safeParse({
         id: "pack.fantasy",
+        collectionId: "tag-collection.genre.fantasy",
         name: "Fantasy",
         ownership: "builtin",
         values: { genres: [], themes: [], tags: [] },

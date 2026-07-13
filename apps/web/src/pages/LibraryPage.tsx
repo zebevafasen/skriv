@@ -1,11 +1,12 @@
 import {
   type CompendiumCategory,
   type CompendiumEntry,
+  type ContentPackage,
   type ManuscriptTree,
   type Project,
   type ProjectDefaults,
   storyLanguages,
-  type TagPack,
+  type TagPackCatalog,
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -14,6 +15,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 import { TagPackPicker } from "../components/TagPackPicker.js";
+import { TagPackCatalogManager } from "../components/TagPackCatalogManager.js";
+
+type DefinitionsResponse = {
+  package: ContentPackage;
+  customDefinitions: Array<{ id: string; kind: "genre" | "theme" | "tag"; label: string }>;
+};
 
 type CreatedProject = { project: Project; initialSceneId: string };
 
@@ -33,6 +40,7 @@ export function LibraryPage() {
   const [copyProjectId, setCopyProjectId] = useState("");
   const [copyEntryIds, setCopyEntryIds] = useState<string[]>([]);
   const [tagPackIds, setTagPackIds] = useState<string[]>([]);
+  const [packManagerOpen, setPackManagerOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const defaultsInitialized = useRef(false);
@@ -47,9 +55,13 @@ export function LibraryPage() {
     queryKey: ["project-defaults"],
     queryFn: () => api<ProjectDefaults>("/api/project-defaults"),
   });
-  const tagPacks = useQuery({
-    queryKey: ["tag-packs"],
-    queryFn: () => api<TagPack[]>("/api/tag-packs"),
+  const tagPackCatalog = useQuery({
+    queryKey: ["tag-pack-catalog"],
+    queryFn: () => api<TagPackCatalog>("/api/tag-pack-catalog"),
+  });
+  const definitions = useQuery({
+    queryKey: ["ideation-definitions"],
+    queryFn: () => api<DefinitionsResponse>("/api/ideation/definitions"),
   });
   const sourceEntries = useQuery({
     queryKey: ["compendium", copyProjectId],
@@ -330,15 +342,18 @@ export function LibraryPage() {
                 </section>
                 <section>
                   <h3>Tag packs</h3>
-                  <TagPackPicker
-                    packs={tagPacks.data ?? []}
+                  {tagPackCatalog.error ? <ErrorNotice error={tagPackCatalog.error} /> : <TagPackPicker
+                    catalog={tagPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
                     selectedIds={new Set(tagPackIds)}
-                    onToggle={(pack, selected) =>
-                      setTagPackIds((current) =>
-                        selected ? current.filter((id) => id !== pack.id) : [...current, pack.id],
-                      )
-                    }
-                  />
+                    definitions={[
+                      ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
+                      ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
+                      ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
+                      ...(definitions.data?.customDefinitions ?? []),
+                    ]}
+                    onSelectionChange={setTagPackIds}
+                    onManage={() => setPackManagerOpen(true)}
+                  />}
                 </section>
                 <section>
                   <h3>Copy from another project</h3>
@@ -444,6 +459,23 @@ export function LibraryPage() {
           </form>
         </div>
       ) : null}
+      <TagPackCatalogManager
+        open={packManagerOpen}
+        catalog={tagPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
+        definitions={[
+          ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
+          ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
+          ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
+          ...(definitions.data?.customDefinitions ?? []),
+        ]}
+        onClose={() => setPackManagerOpen(false)}
+        onChanged={async () => {
+          await Promise.all([
+            client.invalidateQueries({ queryKey: ["tag-pack-catalog"] }),
+            client.invalidateQueries({ queryKey: ["ideation-definitions"] }),
+          ]);
+        }}
+      />
     </div>
   );
 }

@@ -149,7 +149,7 @@ export const createProjectInputSchema = z.object({
   title: z.string().trim().min(1).max(300),
   author: z.string().max(100).default(""),
   language: storyLanguageSchema.default("General English"),
-  tagPackIds: z.array(z.string().min(1)).max(50).default([]),
+  tagPackIds: z.array(z.string().min(1)).max(250).default([]),
   outline: outlineSourceSchema.default({ kind: "blank" }),
   compendiumCopy: z
     .object({ sourceProjectId: idSchema, entryIds: z.array(idSchema).max(1_000) })

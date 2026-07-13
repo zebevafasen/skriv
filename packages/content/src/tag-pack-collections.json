@@ -1,0 +1,110 @@
+[
+  {
+    "id": "tag-collection.genre.fantasy",
+    "name": "Fantasy",
+    "description": "Fantasy packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.science_fiction",
+    "name": "Science Fiction",
+    "description": "Science Fiction packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.romance",
+    "name": "Romance",
+    "description": "Romance packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.mystery_crime",
+    "name": "Mystery & Crime",
+    "description": "Mystery & Crime packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.horror_supernatural",
+    "name": "Horror & Supernatural",
+    "description": "Horror & Supernatural packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.historical_frontier",
+    "name": "Historical & Frontier",
+    "description": "Historical & Frontier packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.literary_contemporary",
+    "name": "Literary & Contemporary",
+    "description": "Literary & Contemporary packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.action_adventure",
+    "name": "Action & Adventure",
+    "description": "Action & Adventure packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.cozy_gentle",
+    "name": "Cozy & Gentle",
+    "description": "Cozy & Gentle packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.genre.erotica",
+    "name": "Erotica",
+    "description": "Erotica packs with focused conventions and story ingredients.",
+    "categoryId": "tag-category.genres"
+  },
+  {
+    "id": "tag-collection.theme.obsession",
+    "name": "Obsession",
+    "description": "Obsession packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.revenge",
+    "name": "Revenge",
+    "description": "Revenge packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.identity_belonging",
+    "name": "Identity & Belonging",
+    "description": "Identity & Belonging packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.power_society",
+    "name": "Power & Society",
+    "description": "Power & Society packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.love_trust",
+    "name": "Love & Trust",
+    "description": "Love & Trust packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.survival_transformation",
+    "name": "Survival & Transformation",
+    "description": "Survival & Transformation packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.truth_memory",
+    "name": "Truth & Memory",
+    "description": "Truth & Memory packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.theme.nature_technology",
+    "name": "Nature & Technology",
+    "description": "Nature & Technology packs built around distinct thematic pressures.",
+    "categoryId": "tag-category.themes"
+  }
+]

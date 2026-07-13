@@ -1,137 +1,199 @@
 [
   {
-    "id": "pack.fantasy",
-    "name": "Fantasy",
-    "description": "Magic, quests, invented worlds, and mythic conflict.",
+    "id": "pack.genre.fantasy.epic",
+    "collectionId": "tag-collection.genre.fantasy",
+    "name": "Epic Fantasy",
+    "description": "A focused epic fantasy pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [
         "genre.fantasy",
-        "genre.urban_fantasy",
-      "genre.epic_fantasy",
-      "genre.sword_and_sorcery",
-      "genre.dark_fantasy",
-      "genre.adventure",
-      "genre.drama",
-      "genre.romance",
-      "genre.comedy"
+        "genre.epic_fantasy"
       ],
       "themes": [
-        "theme.sacrifice",
-        "theme.found_family",
-        "theme.corruption",
-        "theme.identity",
-        "theme.revenge",
-        "theme.freedom",
-        "theme.hope",
-        "theme.knowledge",
-        "theme.power",
         "theme.duty",
-        "theme.legacy",
-        "theme.transformation"
+        "theme.sacrifice",
+        "theme.power"
       ],
       "tags": [
-        "tag.magic_system",
-        "tag.rare_magic",
-        "tag.common_magic",
+        "tag.quest",
+        "tag.chosen_one",
+        "tag.empire",
+        "tag.fallen_empire",
+        "tag.kingdom",
+        "tag.lost_kingdom",
+        "tag.dragons",
+        "tag.prophecy",
+        "tag.lit_rpg",
+        "tag.golems",
+        "tag.skeletons",
         "tag.hard_magic",
         "tag.soft_magic",
         "tag.no_magic",
         "tag.high_fantasy",
-        "tag.low_fantasy",
-        "tag.medieval",
-        "tag.grimdark",
+        "tag.low_fantasy"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.fantasy.dark",
+    "collectionId": "tag-collection.genre.fantasy",
+    "name": "Dark Fantasy",
+    "description": "A focused dark fantasy pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.fantasy",
+        "genre.dark_fantasy",
+        "genre.horror"
+      ],
+      "themes": [
+        "theme.corruption",
+        "theme.mortality",
+        "theme.survival"
+      ],
+      "tags": [
         "tag.gothic",
-        "tag.victorian",
-        "tag.hopeful",
-        "tag.bleak",
-        "tag.adventure",
-        "tag.globetrotting",
-        "tag.exploration",
-        "tag.seafaring",
+        "tag.monster_hunting",
+        "tag.necromancy",
+        "tag.gore",
+        "tag.curses",
+        "tag.blood_magic",
+        "tag.dungeon",
+        "tag.monsters",
+        "tag.demons",
+        "tag.forbidden_book",
         "tag.quest",
         "tag.high_stakes",
         "tag.low_stakes",
         "tag.cozy",
         "tag.chosen_one",
-        "tag.male_protagonist",
-        "tag.female_protagonist",
-        "tag.monster_hunting",
-        "tag.guilds",
-        "tag.empire",
-        "tag.fallen_empire",
+        "tag.male_protagonist"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.fantasy.sword_sorcery",
+    "collectionId": "tag-collection.genre.fantasy",
+    "name": "Sword & Sorcery",
+    "description": "A focused sword & sorcery pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.sword_and_sorcery",
+        "genre.action",
+        "genre.adventure"
+      ],
+      "themes": [
+        "theme.ambition",
+        "theme.survival"
+      ],
+      "tags": [
         "tag.mercenaries",
-        "tag.golden_age",
-        "tag.shoulders_of_giants",
-        "tag.lost_knowledge",
-        "tag.wilderness",
-        "tag.war",
-        "tag.gifted_individual",
-        "tag.kingdom",
-        "tag.lost_kingdom",
-        "tag.human_centric",
-        "tag.alchemy",
-        "tag.ancient",
-        "tag.prehistoric",
-        "tag.single_location",
+        "tag.dungeon",
+        "tag.liches",
+        "tag.elderly_protagonist",
+        "tag.dual_protagonists",
+        "tag.villain_protagonist",
+        "tag.surreal",
+        "tag.dreamlike",
+        "tag.immersive",
+        "tag.sweeping",
+        "tag.mythic",
+        "tag.unsettling",
+        "tag.investigation",
+        "tag.conspiracy",
+        "tag.secrets",
+        "tag.escape"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.fantasy.urban",
+    "collectionId": "tag-collection.genre.fantasy",
+    "name": "Urban Fantasy",
+    "description": "A focused urban fantasy pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.urban_fantasy",
+        "genre.fantasy",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.belonging"
+      ],
+      "tags": [
         "tag.floating_city",
-        "tag.ensemble_cast",
-        "tag.dialogue_heavy",
-        "tag.dialogue_light",
-        "tag.no_dialogue",
-        "tag.grounded",
-        "tag.realistic",
-        "tag.dragons",
         "tag.witches",
-        "tag.fae",
-        "tag.prophecy",
-        "tag.mentor_student",
-        "tag.enemies_to_lovers",
-        "tag.portals",
-        "tag.time_travel",
-        "tag.atmospheric",
-        "tag.whimsical",
-        "tag.lyrical",
-        "tag.fast_paced",
-        "tag.uplifting",
-        "tag.bittersweet",
-        "tag.tragic",
-        "tag.unlikely_allies",
-        "tag.child_protagonist",
-        "tag.nonhuman_protagonist",
-        "tag.castle",
-        "tag.haunted_house",
-        "tag.boarding_school",
-        "tag.marketplace",
-        "tag.mythology",
-        "tag.necromancy",
-        "tag.progression_fantasy",
-        "tag.lit_rpg",
-        "tag.gore",
-        "tag.death",
-        "tag.resistance",
-        "tag.exile",
-        "tag.reconstruction",
+        "tag.divination",
+        "tag.conspiracy",
+        "tag.modern_day",
+        "tag.vampires",
+        "tag.secret_relationship",
+        "tag.secret_society",
+        "tag.diary",
+        "tag.cave",
+        "tag.monastery",
+        "tag.cult_leader",
+        "tag.healer",
+        "tag.mirror",
+        "tag.mask",
+        "tag.key"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.fantasy.fairy_fable",
+    "collectionId": "tag-collection.genre.fantasy",
+    "name": "Fairy Tales & Fables",
+    "description": "A focused fairy tales & fables pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.fairy_tale",
+        "genre.fable",
+        "genre.children"
+      ],
+      "themes": [
+        "theme.transformation",
+        "theme.truth",
+        "theme.responsibility"
+      ],
+      "tags": [
         "tag.curses",
         "tag.enchanted_artifact",
-        "tag.ritual_magic",
-        "tag.elemental_magic",
-        "tag.blood_magic",
-        "tag.divination",
-        "tag.summoning",
-        "tag.magical_contract",
-        "tag.magical_school",
-        "tag.dungeon",
-        "tag.monsters",
-        "tag.spirit_world",
-        "tag.dream_magic",
-        "tag.magical_relic",
-        "tag.ley_lines",
-        "tag.runes",
         "tag.familiar",
+        "tag.dryads",
+        "tag.animal_focus",
+        "tag.runes",
         "tag.ancient_weapon",
         "tag.automaton",
         "tag.folklore",
         "tag.masquerade",
+        "tag.siege",
+        "tag.horses",
+        "tag.blacksmithing",
+        "tag.goblin",
+        "tag.elves",
+        "tag.dwarves"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.fantasy.wuxia_xianxia",
+    "collectionId": "tag-collection.genre.fantasy",
+    "name": "Wuxia & Xianxia",
+    "description": "A focused wuxia & xianxia pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.wuxia",
+        "genre.xianxia",
+        "genre.action"
+      ],
+      "themes": [
+        "theme.duty",
+        "theme.ambition",
+        "theme.transformation"
+      ],
+      "tags": [
+        "tag.spirit_world",
         "tag.siege",
         "tag.horses",
         "tag.blacksmithing",
@@ -146,149 +208,136 @@
         "tag.unicorns",
         "tag.phoenixes",
         "tag.trolls",
-        "tag.djinn",
-        "tag.dryads",
-        "tag.golems",
-        "tag.liches",
-        "tag.skeletons",
-        "tag.fairies",
-        "tag.elementals",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.dual_protagonists", "tag.villain_protagonist",
-        "tag.surreal", "tag.dreamlike", "tag.immersive", "tag.sweeping", "tag.mythic", "tag.unsettling",
-        "tag.investigation", "tag.conspiracy", "tag.secrets", "tag.escape", "tag.rescue_mission", "tag.violence"
+        "tag.djinn"
       ]
     }
   },
   {
-    "id": "pack.science_fiction",
-    "name": "Science Fiction",
-    "description": "Speculative technology, futures, and social change.",
+    "id": "pack.genre.scifi.space_opera",
+    "collectionId": "tag-collection.genre.science_fiction",
+    "name": "Space Opera",
+    "description": "A focused space opera pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [
         "genre.science_fiction",
         "genre.space_opera",
-        "genre.dystopian",
-        "genre.speculative",
-        "genre.political",
-        "genre.thriller"
+        "genre.adventure"
       ],
       "themes": [
-        "theme.identity",
-        "theme.freedom",
-        "theme.corruption",
-        "theme.technology",
-        "theme.survival",
-        "theme.responsibility",
-        "theme.community",
-        "theme.belonging",
-        "theme.knowledge",
         "theme.power",
-        "theme.mortality",
-        "theme.class",
-        "theme.legacy"
+        "theme.freedom",
+        "theme.community"
       ],
       "tags": [
-        "tag.forbidden_technology",
-        "tag.cyberpunk",
-        "tag.human_centric",
-        "tag.industrial",
-        "tag.male_protagonist",
-        "tag.female_protagonist",
-        "tag.steampunk",
-        "tag.post_apocalyptic",
-        "tag.post_collapse",
-        "tag.near_future",
-        "tag.far_future",
         "tag.spacefaring",
-        "tag.exploration",
-        "tag.frontier",
-        "tag.shoulders_of_giants",
-        "tag.rebellion",
-        "tag.colonial",
-        "tag.western",
-        "tag.war",
-        "tag.retrofuturistic",
-        "tag.isolated",
-        "tag.zero_gravity",
-        "tag.low_gravity",
-        "tag.megacity",
-        "tag.single_location",
-        "tag.lost_civilization",
-        "tag.ruins",
-        "tag.advanced_technology",
-        "tag.artificial_intelligence",
-        "tag.transhumanism",
-        "tag.cybernetics",
-        "tag.cyborgs",
-        "tag.androids",
-        "tag.robots",
-        "tag.clockwork",
-        "tag.hard_sci_fi",
-        "tag.soft_sci_fi",
-        "tag.faster_than_light",
-        "tag.ensemble_cast",
-        "tag.dialogue_heavy",
-        "tag.dialogue_light",
-        "tag.no_dialogue",
-        "tag.grounded",
-        "tag.realistic",
-        "tag.hopeful",
-        "tag.bleak",
-        "tag.low_stakes",
-        "tag.high_stakes",
-        "tag.naval",
-        "tag.mutants",
-        "tag.pirates",
-        "tag.civil_war",
         "tag.space_station",
         "tag.generation_ship",
         "tag.orbital",
-        "tag.first_contact",
         "tag.alien_invasion",
         "tag.sentient_ship",
-        "tag.biopunk",
-        "tag.nanotechnology",
-        "tag.surveillance_state",
-        "tag.virtual_reality",
-        "tag.time_loop",
-        "tag.artificial_world",
-        "tag.resource_scarcity",
-        "tag.ecological_collapse",
         "tag.clones",
-        "tag.memory_manipulation",
-        "tag.resistance",
-        "tag.exile",
         "tag.space_elevator",
         "tag.wormholes",
-        "tag.hypersleep",
         "tag.terraforming",
-        "tag.cryonics",
-        "tag.augmented_reality",
-        "tag.deepfakes",
-        "tag.automation",
-        "tag.quantum_computing",
-        "tag.biotechnology",
+        "tag.corporate_dystopia",
+        "tag.astronaut",
+        "tag.space_shuttle",
+        "tag.rover",
+        "tag.rocket",
+        "tag.airlock",
+        "tag.shipwreck"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.scifi.cyberpunk_dystopian",
+    "collectionId": "tag-collection.genre.science_fiction",
+    "name": "Cyberpunk & Dystopian",
+    "description": "A focused cyberpunk & dystopian pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.science_fiction",
+        "genre.dystopian",
+        "genre.crime"
+      ],
+      "themes": [
+        "theme.technology",
+        "theme.class",
+        "theme.corruption"
+      ],
+      "tags": [
+        "tag.cyberpunk",
+        "tag.cybernetics",
+        "tag.androids",
+        "tag.biopunk",
+        "tag.surveillance_state",
         "tag.mega_corporation",
         "tag.corporate_dystopia",
-        "tag.digital_afterlife",
-        "tag.machine_consciousness",
-        "tag.robot_rights",
-        "tag.personal_ai",
-        "tag.biohacking",
-        "tag.exoskeletons",
-        "tag.drone_warfare",
-        "tag.asteroid_mining",
-        "tag.moon_base",
-        "tag.mars_colony",
-        "tag.ocean_colony",
-        "tag.astronaut",
-        "tag.engineer",
-        "tag.scientist",
-        "tag.programmer",
         "tag.hacker",
-        "tag.mecha",
-        "tag.power_armor",
+        "tag.skyscraper",
+        "tag.bridge",
+        "tag.tunnel",
+        "tag.fog",
+        "tag.thunderstorm",
+        "tag.heatwave",
+        "tag.identity_documents",
+        "tag.passport"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.scifi.solarpunk",
+    "collectionId": "tag-collection.genre.science_fiction",
+    "name": "Solarpunk",
+    "description": "A focused solarpunk pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.science_fiction",
+        "genre.speculative"
+      ],
+      "themes": [
+        "theme.environmental_stewardship",
+        "theme.hope",
+        "theme.community"
+      ],
+      "tags": [
+        "tag.reconstruction",
+        "tag.solarpunk",
+        "tag.renewable_energy",
+        "tag.engineer",
+        "tag.gardening",
+        "tag.farming",
+        "tag.flood",
+        "tag.factory",
+        "tag.greenhouse",
+        "tag.wind_farm",
+        "tag.solar_farm",
+        "tag.space_station",
+        "tag.steampunk",
+        "tag.post_apocalyptic",
+        "tag.far_future",
+        "tag.spacefaring"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.scifi.first_contact",
+    "collectionId": "tag-collection.genre.science_fiction",
+    "name": "First Contact",
+    "description": "A focused first contact pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.science_fiction",
+        "genre.speculative"
+      ],
+      "themes": [
+        "theme.knowledge",
+        "theme.prejudice",
+        "theme.truth"
+      ],
+      "tags": [
+        "tag.first_contact",
+        "tag.alien_invasion",
         "tag.holograms",
         "tag.teleportation",
         "tag.force_fields",
@@ -299,508 +348,1928 @@
         "tag.observatory",
         "tag.power_plant",
         "tag.factory",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.child_protagonist", "tag.dual_protagonists", "tag.villain_protagonist",
-        "tag.surreal", "tag.dreamlike", "tag.atmospheric", "tag.immersive", "tag.open_ended",
-        "tag.ambiguous_ending", "tag.conspiracy", "tag.escape", "tag.rescue_mission", "tag.violence", "tag.death"
-      ]
-    }
-  },
-  {
-    "id": "pack.romance",
-    "name": "Romance",
-    "description": "Intimacy, emotional obstacles, and relationship arcs.",
-    "values": {
-      "genres": [
-        "genre.romance",
-        "genre.drama",
-        "genre.slice_of_life",
-        "genre.comedy",
-        "genre.historical_fiction",
-        "genre.paranormal",
-        "genre.erotica"
-      ],
-      "themes": [
-        "theme.identity",
-        "theme.sacrifice",
-        "theme.found_family",
-        "theme.love",
-        "theme.trust",
-        "theme.belonging",
-        "theme.friendship",
-        "theme.hope",
-        "theme.betrayal",
-        "theme.reconciliation",
-        "theme.coming_of_age",
-        "theme.memory",
-        "theme.obsession"
-      ],
-      "tags": [
-        "tag.slow_burn",
-        "tag.intimate",
-        "tag.modern_day",
-        "tag.enemies_to_lovers",
-        "tag.friends_to_lovers",
-        "tag.second_chance_romance",
-        "tag.love_triangle",
-        "tag.arranged_marriage",
-        "tag.marriage_of_convenience",
-        "tag.rivals",
-        "tag.dual_protagonists",
         "tag.queer_protagonist",
-        "tag.dialogue_heavy",
-        "tag.emotionally_intense",
-        "tag.hopeful",
-        "tag.bittersweet",
-        "tag.festival",
-        "tag.workplace",
-        "tag.university",
-        "tag.small_town",
-        "tag.coastal",
-        "tag.low_stakes",
-        "tag.cozy",
-        "tag.pining",
-        "tag.unrequited_love",
-        "tag.secret_relationship",
-        "tag.forced_proximity",
-        "tag.soulmates",
-        "tag.workplace_romance",
-        "tag.open_relationship",
-        "tag.sensual",
-        "tag.romantic",
-        "tag.wedding",
-        "tag.masquerade",
-        "tag.parent_child",
-        "tag.family_secrets",
-        "tag.foster_family",
-        "tag.adoption",
-        "tag.chef",
-        "tag.artist",
-        "tag.musician",
-        "tag.dance",
-        "tag.divorce",
-        "tag.homecoming",
-        "tag.family_reunion",
-        "tag.old_flames",
-        "tag.mutual_pining",
-        "tag.secret_crush",
-        "tag.long_distance_relationship",
-        "tag.co_parenting",
-        "tag.broken_engagement",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic", "tag.surreal", "tag.dreamlike",
-        "tag.atmospheric", "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-        "tag.child_protagonist", "tag.villain_protagonist", "tag.open_ended", "tag.ambiguous_ending"
+        "tag.disabled_protagonist",
+        "tag.neurodivergent_protagonist",
+        "tag.elderly_protagonist"
       ]
     }
   },
   {
-    "id": "pack.mystery",
-    "name": "Mystery",
-    "description": "Questions, clues, secrets, and discovery.",
+    "id": "pack.genre.scifi.time_alternate",
+    "collectionId": "tag-collection.genre.science_fiction",
+    "name": "Time & Alternate Realities",
+    "description": "A focused time & alternate realities pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [
-        "genre.mystery",
-        "genre.crime",
-        "genre.noir",
-        "genre.thriller",
-        "genre.psychological",
-        "genre.supernatural"
+        "genre.science_fiction",
+        "genre.speculative"
       ],
       "themes": [
-        "theme.revenge",
-        "theme.corruption",
-        "theme.identity",
-        "theme.truth",
-        "theme.justice",
-        "theme.knowledge",
-        "theme.obsession",
-        "theme.betrayal",
+        "theme.free_will",
         "theme.memory",
-        "theme.mortality",
-        "theme.power",
-        "theme.class",
-        "theme.trauma",
         "theme.responsibility"
       ],
       "tags": [
-        "tag.unreliable_narrator",
-        "tag.isolated_village",
-        "tag.investigation",
+        "tag.colonial",
+        "tag.first_contact",
+        "tag.time_loop",
+        "tag.wormholes",
+        "tag.cryonics",
+        "tag.holograms",
+        "tag.machine_consciousness",
+        "tag.robot_rights",
+        "tag.personal_ai",
+        "tag.biohacking",
+        "tag.exoskeletons",
+        "tag.drone_warfare",
+        "tag.asteroid_mining",
+        "tag.moon_base",
+        "tag.mars_colony",
+        "tag.ocean_colony"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.romance.contemporary",
+    "collectionId": "tag-collection.genre.romance",
+    "name": "Contemporary Romance",
+    "description": "A focused contemporary romance pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.romance",
+        "genre.slice_of_life"
+      ],
+      "themes": [
+        "theme.love",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.friends_to_lovers",
+        "tag.second_chance_romance",
+        "tag.workplace",
+        "tag.small_town",
+        "tag.secret_relationship",
+        "tag.workplace_romance",
+        "tag.family_secrets",
+        "tag.foster_family",
+        "tag.adoption",
+        "tag.family_reunion",
+        "tag.broken_engagement",
+        "tag.long_distance_relationship",
+        "tag.co_parenting",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.human_centric"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.romance.historical",
+    "collectionId": "tag-collection.genre.romance",
+    "name": "Historical Romance",
+    "description": "A focused historical romance pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.romance",
+        "genre.historical_fiction"
+      ],
+      "themes": [
+        "theme.love",
+        "theme.duty",
+        "theme.class"
+      ],
+      "tags": [
+        "tag.second_chance_romance",
+        "tag.arranged_marriage",
+        "tag.marriage_of_convenience",
+        "tag.pining",
+        "tag.secret_relationship",
+        "tag.sensual",
+        "tag.romantic",
+        "tag.divorce",
+        "tag.old_flames",
+        "tag.wartime",
+        "tag.civil_war",
+        "tag.court_intrigue",
+        "tag.georgian",
+        "tag.edwardian",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.ancient_rome",
+        "tag.ancient_greece",
+        "tag.belle_epoque",
+        "tag.royal_court",
+        "tag.oral_tradition",
+        "tag.aristocracy",
+        "tag.tragic"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.romance.paranormal",
+    "collectionId": "tag-collection.genre.romance",
+    "name": "Paranormal Romance",
+    "description": "A focused paranormal romance pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.romance",
+        "genre.paranormal",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.love",
+        "theme.identity",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.supernatural_abilities",
+        "tag.vampires",
+        "tag.werewolves",
+        "tag.ghosts",
+        "tag.witches",
+        "tag.immortality",
+        "tag.curses",
+        "tag.enchanted_artifact",
+        "tag.divination",
+        "tag.magical_contract",
+        "tag.ghost_town",
+        "tag.mirror",
+        "tag.goblin",
+        "tag.elves",
+        "tag.dwarves",
+        "tag.orcs",
+        "tag.unicorns",
+        "tag.phoenixes",
+        "tag.djinn",
+        "tag.dryads",
+        "tag.skeletons"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.romance.romantic_comedy",
+    "collectionId": "tag-collection.genre.romance",
+    "name": "Romantic Comedy",
+    "description": "A focused romantic comedy pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.romance",
+        "genre.comedy"
+      ],
+      "themes": [
+        "theme.love",
+        "theme.friendship"
+      ],
+      "tags": [
+        "tag.friends_to_lovers",
+        "tag.rivals",
+        "tag.workplace",
+        "tag.workplace_romance",
+        "tag.wedding",
+        "tag.humorous",
+        "tag.orchard",
+        "tag.vineyard",
+        "tag.bakery",
+        "tag.card_games",
+        "tag.apartment_building",
+        "tag.nonhuman_protagonist",
+        "tag.slow_burn",
+        "tag.intimate",
+        "tag.modern_day",
+        "tag.enemies_to_lovers"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.mystery.classic",
+    "collectionId": "tag-collection.genre.mystery_crime",
+    "name": "Classic Mystery",
+    "description": "A focused classic mystery pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.truth",
+        "theme.knowledge"
+      ],
+      "tags": [
         "tag.locked_room",
         "tag.puzzle_box",
-        "tag.conspiracy",
-        "tag.secrets",
-        "tag.mistaken_identity",
-        "tag.cold_case",
         "tag.whodunit",
         "tag.murder",
-        "tag.dual_timeline",
-        "tag.nonlinear",
-        "tag.flashbacks",
-        "tag.cat_and_mouse",
-        "tag.ticking_clock",
-        "tag.undercover",
-        "tag.atmospheric",
-        "tag.darkly_comic",
-        "tag.manor",
-        "tag.haunted_house",
-        "tag.small_town",
-        "tag.courtroom",
         "tag.detective",
         "tag.amateur_detective",
         "tag.private_detective",
-        "tag.twist_ending",
-        "tag.ambiguous_ending",
-        "tag.missing_person",
-        "tag.false_accusation",
-        "tag.framed_for_crime",
-        "tag.family_secrets",
-        "tag.hotel",
-        "tag.library",
-        "tag.museum",
-        "tag.photographs",
-        "tag.recordings",
-        "tag.newspaper",
-        "tag.map",
-        "tag.key",
+        "tag.poison",
         "tag.diary",
         "tag.codex",
         "tag.forbidden_book",
-        "tag.poison",
         "tag.forgery",
         "tag.art_heist",
         "tag.kidnapping",
         "tag.witness_protection",
-        "tag.informant",
+        "tag.informant"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.mystery.cozy",
+    "collectionId": "tag-collection.genre.mystery_crime",
+    "name": "Cozy Mystery",
+    "description": "A focused cozy mystery pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.mystery",
+        "genre.slice_of_life"
+      ],
+      "themes": [
+        "theme.community",
+        "theme.truth"
+      ],
+      "tags": [
+        "tag.isolated_village",
+        "tag.small_town",
+        "tag.amateur_detective",
+        "tag.cozy",
+        "tag.bookshop",
+        "tag.cats",
+        "tag.uplifting",
+        "tag.gentle",
+        "tag.comforting",
+        "tag.quotidian",
+        "tag.chef",
+        "tag.farmer",
+        "tag.caregiver",
+        "tag.roadside_diner",
+        "tag.farm",
+        "tag.parental_figure"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.mystery.crime_noir",
+    "collectionId": "tag-collection.genre.mystery_crime",
+    "name": "Crime & Noir",
+    "description": "A focused crime & noir pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.crime",
+        "genre.noir",
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.corruption",
+        "theme.justice"
+      ],
+      "tags": [
+        "tag.detective",
+        "tag.private_detective",
+        "tag.amateur_detective",
+        "tag.cold_case",
+        "tag.whodunit",
+        "tag.locked_room",
+        "tag.cover_up",
+        "tag.framed_for_crime",
         "tag.arson",
-        "tag.train_station",
-        "tag.airport",
-        "tag.apartment_building",
-        "tag.tenement",
-        "tag.skyscraper",
-        "tag.cemetery",
-        "tag.crypt",
-        "tag.photography",
+        "tag.corrupt_official",
+        "tag.serial_killer",
+        "tag.crime_family",
+        "tag.gang",
+        "tag.newspaper",
         "tag.passport",
-        "tag.identity_documents",
-        "tag.extortion",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.surreal", "tag.dreamlike", "tag.hopeful", "tag.bleak", "tag.high_stakes", "tag.low_stakes",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.male_protagonist"
       ]
     }
   },
   {
-    "id": "pack.horror",
-    "name": "Horror",
-    "description": "Dread, violation, isolation, and forces that refuse to be understood.",
+    "id": "pack.genre.mystery.police_procedural",
+    "collectionId": "tag-collection.genre.mystery_crime",
+    "name": "Police Procedural",
+    "description": "A focused police procedural pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.supernatural", "genre.psychological", "genre.dark_fantasy", "genre.thriller", "genre.paranormal"],
-      "themes": ["theme.mortality", "theme.isolation", "theme.trauma", "theme.knowledge", "theme.grief", "theme.identity", "theme.revenge", "theme.corruption", "theme.sacrifice", "theme.obsession", "theme.truth", "theme.transformation"],
+      "genres": [
+        "genre.crime",
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.justice",
+        "theme.responsibility"
+      ],
       "tags": [
-        "tag.gothic", "tag.eldritch", "tag.body_horror", "tag.folk_horror", "tag.haunted_house",
-        "tag.ghosts", "tag.vampires", "tag.werewolves", "tag.witches", "tag.demons", "tag.necromancy",
-        "tag.unreliable_reality", "tag.dream_world", "tag.isolated", "tag.single_location",
-        "tag.atmospheric", "tag.bleak", "tag.gore", "tag.death",
-        "tag.unsettling", "tag.claustrophobic", "tag.hallucinatory", "tag.gritty",
-        "tag.torture", "tag.self_harm", "tag.suicide", "tag.child_abuse", "tag.medical_trauma",
-        "tag.captivity", "tag.quarantine_zone", "tag.ghost_town", "tag.cave", "tag.monsters",
-        "tag.curses", "tag.magical_contract", "tag.spirit_world", "tag.dream_magic"
-        ,"tag.mirror", "tag.mask", "tag.forbidden_book", "tag.poison", "tag.serial_killer",
-        "tag.funeral_rites", "tag.folklore", "tag.insects", "tag.wildfire", "tag.flood"
-        ,"tag.cemetery", "tag.crypt", "tag.cathedral", "tag.temple", "tag.shrine", "tag.mansion",
-        "tag.fog", "tag.thunderstorm", "tag.blizzard", "tag.sandstorm", "tag.lightning", "tag.zombies",
-        "tag.skeletons", "tag.leviathan", "tag.scar", "tag.tattoo",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.surreal", "tag.dreamlike", "tag.high_stakes", "tag.low_stakes", "tag.queer_protagonist",
-        "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-        "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.investigation",
+        "tag.cold_case",
+        "tag.detective",
+        "tag.amateur_detective",
+        "tag.private_detective",
+        "tag.framed_for_crime",
+        "tag.photographs",
+        "tag.codex",
+        "tag.outlaw",
+        "tag.legal_battle",
+        "tag.elderly_protagonist",
+        "tag.child_protagonist",
+        "tag.nonhuman_protagonist",
+        "tag.villain_protagonist",
+        "tag.caper",
+        "tag.robbery"
       ]
     }
   },
   {
-    "id": "pack.historical",
-    "name": "Historical",
-    "description": "Stories grounded in a past era, its institutions, and its lived contradictions.",
+    "id": "pack.genre.mystery.heist_caper",
+    "collectionId": "tag-collection.genre.mystery_crime",
+    "name": "Heist & Caper",
+    "description": "A focused heist & caper pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.historical_fiction", "genre.drama", "genre.literary_fiction", "genre.romance", "genre.crime", "genre.mystery", "genre.political", "genre.western", "genre.adventure"],
-      "themes": ["theme.legacy", "theme.class", "theme.duty", "theme.displacement", "theme.freedom", "theme.identity", "theme.corruption", "theme.justice", "theme.power", "theme.memory", "theme.grief", "theme.belonging", "theme.betrayal", "theme.religion", "theme.community", "theme.prejudice", "theme.responsibility"],
+      "genres": [
+        "genre.crime",
+        "genre.thriller",
+        "genre.comedy"
+      ],
+      "themes": [
+        "theme.trust",
+        "theme.ambition"
+      ],
       "tags": [
-        "tag.ancient", "tag.medieval", "tag.victorian", "tag.colonial", "tag.wartime", "tag.western",
-        "tag.military", "tag.naval", "tag.empire", "tag.rebellion", "tag.civil_war", "tag.occupation",
-        "tag.resistance", "tag.exile", "tag.diaspora", "tag.political_intrigue", "tag.court_intrigue",
-        "tag.dual_timeline", "tag.atmospheric",
-        "tag.bronze_age", "tag.iron_age", "tag.renaissance", "tag.regency", "tag.georgian",
-        "tag.edwardian", "tag.gilded_age", "tag.roaring_twenties", "tag.prohibition", "tag.cold_war",
-        "tag.world_war_i", "tag.world_war_ii", "tag.industrial_revolution", "tag.decolonization",
-        "tag.ancient_rome", "tag.ancient_greece", "tag.belle_epoque", "tag.royal_court", "tag.embassy",
-        "tag.battlefield", "tag.frontline", "tag.scandal", "tag.espionage"
-        ,"tag.multilingual", "tag.language_barrier", "tag.oral_tradition", "tag.propaganda", "tag.censorship",
-        "tag.protest", "tag.strike", "tag.riot", "tag.coup", "tag.election", "tag.succession_crisis",
-        "tag.peace_treaty", "tag.ceasefire", "tag.amnesty", "tag.union_organizer", "tag.activist",
-        "tag.lawyer", "tag.judge", "tag.prosecutor", "tag.diplomat", "tag.priest"
-        ,"tag.aristocracy", "tag.working_class", "tag.upper_class", "tag.caste_system", "tag.feudalism",
-        "tag.immigration", "tag.citizenship", "tag.asylum", "tag.border_control", "tag.passport",
-        "tag.identity_documents", "tag.labor_union", "tag.company_town", "tag.coronation", "tag.wedding",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.child_protagonist", "tag.villain_protagonist", "tag.sweeping",
-        "tag.lyrical", "tag.tragic", "tag.hopeful"
+        "tag.murder",
+        "tag.caper",
+        "tag.heist",
+        "tag.con_artist",
+        "tag.thief",
+        "tag.blackmail",
+        "tag.cover_up",
+        "tag.conspiracy",
+        "tag.courtroom",
+        "tag.port_city",
+        "tag.gritty",
+        "tag.arson",
+        "tag.art_heist",
+        "tag.counterfeit",
+        "tag.cartel",
+        "tag.drug_trade",
+        "tag.card_games",
+        "tag.chess",
+        "tag.prison_break",
+        "tag.captivity",
+        "tag.hideout",
+        "tag.taxi",
+        "tag.skyscraper",
+        "tag.tunnel",
+        "tag.judge"
       ]
     }
   },
   {
-    "id": "pack.cozy",
-    "name": "Cozy",
-    "description": "Comfort, local problems, small communities, and satisfying emotional resolutions.",
+    "id": "pack.genre.horror.gothic",
+    "collectionId": "tag-collection.genre.horror_supernatural",
+    "name": "Gothic Horror",
+    "description": "A focused gothic horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.fantasy", "genre.mystery", "genre.slice_of_life", "genre.comedy", "genre.romance", "genre.drama"],
-      "themes": ["theme.belonging", "theme.community", "theme.friendship", "theme.hope", "theme.found_family", "theme.love", "theme.trust", "theme.identity", "theme.memory", "theme.grief", "theme.reconciliation"],
+      "genres": [
+        "genre.horror",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.isolation",
+        "theme.mortality"
+      ],
       "tags": [
-        "tag.cozy", "tag.low_stakes", "tag.small_town", "tag.rural", "tag.isolated_village",
-        "tag.investigation", "tag.whodunit", "tag.marketplace", "tag.festival",
-        "tag.animal_focus", "tag.dialogue_heavy", "tag.humorous", "tag.whimsical", "tag.uplifting", "tag.hopeful",
-        "tag.gentle", "tag.comforting", "tag.quotidian", "tag.chef", "tag.farmer", "tag.caregiver",
-        "tag.library", "tag.bookshop", "tag.hotel", "tag.roadside_diner", "tag.farm",
-        "tag.parental_figure", "tag.foster_family"
-        ,"tag.cooking", "tag.baking", "tag.gardening", "tag.crafting", "tag.sewing", "tag.pottery",
-        "tag.cats", "tag.dogs", "tag.horses", "tag.fishing", "tag.foraging", "tag.board_games",
-        "tag.chess", "tag.harvest_festival", "tag.masquerade", "tag.wedding"
-        ,"tag.greenhouse", "tag.orchard", "tag.vineyard", "tag.bakery",
-        "tag.card_games", "tag.apartment_building",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic", "tag.atmospheric",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.gothic",
+        "tag.haunted_house",
+        "tag.ghosts",
+        "tag.ghost_town",
+        "tag.child_protagonist",
+        "tag.nonhuman_protagonist",
+        "tag.villain_protagonist",
+        "tag.modern_day",
+        "tag.urban",
+        "tag.supernatural_abilities",
+        "tag.psychic_abilities",
+        "tag.telepathy",
+        "tag.wizards",
+        "tag.fae",
+        "tag.angels",
+        "tag.shapeshifters"
       ]
     }
   },
   {
-    "id": "pack.thriller",
-    "name": "Thriller",
-    "description": "Urgency, pursuit, hidden motives, and escalating danger.",
+    "id": "pack.genre.horror.psychological",
+    "collectionId": "tag-collection.genre.horror_supernatural",
+    "name": "Psychological Horror",
+    "description": "A focused psychological horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.thriller", "genre.action", "genre.supernatural", "genre.mystery", "genre.crime", "genre.horror", "genre.dystopian", "genre.science_fiction"],
-      "themes": ["theme.truth", "theme.survival", "theme.betrayal", "theme.responsibility", "theme.revenge", "theme.corruption", "theme.freedom", "theme.justice", "theme.identity", "theme.power", "theme.obsession", "theme.knowledge", "theme.mortality", "theme.trauma"],
+      "genres": [
+        "genre.horror",
+        "genre.psychological"
+      ],
+      "themes": [
+        "theme.trauma",
+        "theme.identity",
+        "theme.truth"
+      ],
       "tags": [
-        "tag.high_stakes", "tag.fast_paced", "tag.ticking_clock", "tag.countdown",
-        "tag.cat_and_mouse", "tag.escape", "tag.rescue_mission", "tag.undercover", "tag.conspiracy",
-        "tag.investigation", "tag.secret_identity", "tag.mistaken_identity", "tag.murder", "tag.cold_case",
-        "tag.violence", "tag.death", "tag.urban", "tag.megacity", "tag.single_location",
-        "tag.manhunt", "tag.hostage_situation", "tag.ransom", "tag.blackmail", "tag.cover_up",
-        "tag.infiltration", "tag.sabotage", "tag.espionage", "tag.assassination", "tag.missing_person",
-        "tag.false_accusation", "tag.framed_for_crime", "tag.prison_break", "tag.disaster_response",
-        "tag.legal_battle", "tag.fish_out_of_water", "tag.gritty", "tag.unsettling", "tag.captivity"
-        ,"tag.hacker", "tag.police_officer", "tag.firefighter", "tag.safehouse", "tag.hideout",
-        "tag.kidnapping", "tag.extortion", "tag.witness_protection", "tag.informant", "tag.corrupt_official",
-        "tag.arson", "tag.earthquake", "tag.hurricane", "tag.wildfire", "tag.flood", "tag.quarantine_zone"
-        ,"tag.taxi", "tag.automobile", "tag.bus", "tag.subway", "tag.airport", "tag.apartment_building",
-        "tag.skyscraper", "tag.bridge", "tag.tunnel", "tag.fog", "tag.thunderstorm", "tag.heatwave",
-        "tag.identity_documents", "tag.passport", "tag.lawyer", "tag.judge",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.surreal", "tag.dreamlike", "tag.hopeful", "tag.bleak", "tag.queer_protagonist",
-        "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-        "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.unreliable_reality",
+        "tag.cemetery",
+        "tag.tattoo",
+        "tag.dream_magic",
+        "tag.mirror",
+        "tag.mask",
+        "tag.forbidden_book",
+        "tag.poison",
+        "tag.serial_killer",
+        "tag.funeral_rites",
+        "tag.folklore",
+        "tag.insects",
+        "tag.wildfire",
+        "tag.flood",
+        "tag.crypt",
+        "tag.cathedral"
       ]
     }
   },
   {
-    "id": "pack.space",
-    "name": "Spacefaring",
-    "description": "Life beyond Earth, impossible distances, and communities built in the void.",
+    "id": "pack.genre.horror.folk",
+    "collectionId": "tag-collection.genre.horror_supernatural",
+    "name": "Folk Horror",
+    "description": "A focused folk horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.science_fiction", "genre.space_opera", "genre.speculative", "genre.dystopian", "genre.political"],
-      "themes": ["theme.identity", "theme.freedom", "theme.legacy", "theme.environmental_stewardship", "theme.belonging", "theme.technology", "theme.survival", "theme.knowledge", "theme.power", "theme.community", "theme.corruption", "theme.class", "theme.displacement", "theme.responsibility", "theme.mortality", "theme.hope"],
+      "genres": [
+        "genre.horror",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.community",
+        "theme.faith",
+        "theme.nature"
+      ],
       "tags": [
-        "tag.spacefaring", "tag.space_station", "tag.generation_ship", "tag.orbital", "tag.megastructure",
-        "tag.low_gravity", "tag.zero_gravity", "tag.far_future", "tag.frontier", "tag.exploration",
-        "tag.first_contact", "tag.alien_invasion", "tag.sentient_ship", "tag.artificial_intelligence",
-        "tag.advanced_technology", "tag.hard_sci_fi", "tag.soft_sci_fi", "tag.faster_than_light",
-        "tag.colony", "tag.resource_scarcity", "tag.climate_fiction", "tag.high_stakes",
-        "tag.space_elevator", "tag.wormholes", "tag.hypersleep", "tag.terraforming", "tag.cryonics",
-        "tag.augmented_reality", "tag.quantum_computing", "tag.automation", "tag.renewable_energy",
-        "tag.machine_consciousness", "tag.robot_rights", "tag.personal_ai", "tag.asteroid_mining"
-        ,"tag.moon_base", "tag.mars_colony", "tag.ocean_colony", "tag.astronaut", "tag.engineer",
-        "tag.mecha", "tag.power_armor", "tag.holograms", "tag.teleportation", "tag.force_fields",
-        "tag.submarine", "tag.shipwreck", "tag.sailing", "tag.diving", "tag.earthquake", "tag.tsunami",
-        "tag.space_shuttle", "tag.rover", "tag.rocket", "tag.airlock", "tag.observatory", "tag.power_plant", "tag.factory",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.surreal", "tag.dreamlike", "tag.hopeful", "tag.bleak", "tag.queer_protagonist",
-        "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-        "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.folk_horror",
+        "tag.vampires",
+        "tag.folklore",
+        "tag.temple",
+        "tag.blizzard",
+        "tag.ritual_magic",
+        "tag.summoning",
+        "tag.cult_leader",
+        "tag.healer",
+        "tag.chaplain",
+        "tag.fairies",
+        "tag.orcs",
+        "tag.merfolk",
+        "tag.griffins",
+        "tag.trolls",
+        "tag.dryads"
       ]
     }
   },
   {
-    "id": "pack.western",
-    "name": "Western",
-    "description": "Frontier justice, harsh landscapes, and communities deciding what comes next.",
+    "id": "pack.genre.horror.cosmic",
+    "collectionId": "tag-collection.genre.horror_supernatural",
+    "name": "Cosmic Horror",
+    "description": "A focused cosmic horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.western", "genre.adventure", "genre.crime", "genre.historical_fiction", "genre.drama", "genre.action", "genre.political"],
-      "themes": ["theme.justice", "theme.freedom", "theme.community", "theme.power", "theme.revenge", "theme.corruption", "theme.duty", "theme.survival", "theme.class", "theme.legacy", "theme.displacement", "theme.betrayal", "theme.reconciliation", "theme.trauma"],
+      "genres": [
+        "genre.horror",
+        "genre.science_fiction"
+      ],
+      "themes": [
+        "theme.knowledge",
+        "theme.mortality",
+        "theme.isolation"
+      ],
       "tags": [
-        "tag.western", "tag.frontier", "tag.frontier_settlement", "tag.rural", "tag.wilderness", "tag.desert",
-        "tag.mountain", "tag.mercenaries", "tag.military", "tag.rebellion", "tag.occupation", "tag.violence",
-        "tag.gunpowder", "tag.high_stakes", "tag.morally_gray", "tag.antihero", "tag.road_trip",
-        "tag.outlaw", "tag.bounty_hunter", "tag.thief", "tag.vigilante", "tag.smuggler", "tag.caper",
-        "tag.robbery", "tag.manhunt", "tag.borderland", "tag.port_city", "tag.ghost_town", "tag.frontline",
-        "tag.battlefield", "tag.gritty", "tag.gunslinger", "tag.legal_battle"
-        ,"tag.horses", "tag.horse_racing", "tag.farmer", "tag.blacksmithing", "tag.saddle",
-        "tag.caravan", "tag.free_port", "tag.siege", "tag.blockade", "tag.cowboy"
-        ,"tag.carriage", "tag.stagecoach", "tag.automobile", "tag.fishing_boat", "tag.harbor", "tag.canal",
-        "tag.bridge", "tag.tunnel", "tag.rifle", "tag.bow_and_arrow", "tag.shield", "tag.armor",
-        "tag.uniform", "tag.scar", "tag.inheritance", "tag.will",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.bleak", "tag.hopeful", "tag.queer_protagonist", "tag.disabled_protagonist",
-        "tag.neurodivergent_protagonist", "tag.elderly_protagonist", "tag.child_protagonist",
+        "tag.eldritch",
+        "tag.skeletons",
+        "tag.gritty",
+        "tag.torture",
+        "tag.self_harm",
+        "tag.suicide",
+        "tag.child_abuse",
+        "tag.medical_trauma",
+        "tag.captivity",
+        "tag.quarantine_zone",
+        "tag.ghost_town",
+        "tag.cave",
+        "tag.monsters",
+        "tag.curses",
+        "tag.magical_contract",
+        "tag.spirit_world"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.horror.hauntings_occult",
+    "collectionId": "tag-collection.genre.horror_supernatural",
+    "name": "Hauntings & Occult",
+    "description": "A focused hauntings & occult pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.horror",
+        "genre.paranormal",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.faith",
+        "theme.grief"
+      ],
+      "tags": [
+        "tag.haunted_house",
+        "tag.ghosts",
+        "tag.demons",
+        "tag.necromancy",
+        "tag.ghost_town",
+        "tag.spirit_world",
+        "tag.cemetery",
+        "tag.summoning",
+        "tag.familiar",
+        "tag.healer",
+        "tag.chaplain",
+        "tag.dryads",
+        "tag.claustrophobic",
+        "tag.hallucinatory",
+        "tag.gritty",
+        "tag.torture"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.horror.monsters_body",
+    "collectionId": "tag-collection.genre.horror_supernatural",
+    "name": "Monsters & Body Horror",
+    "description": "A focused monsters & body horror pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.horror",
+        "genre.dark_fantasy"
+      ],
+      "themes": [
+        "theme.transformation",
+        "theme.survival",
+        "theme.identity"
+      ],
+      "tags": [
+        "tag.body_horror",
+        "tag.monsters",
+        "tag.zombies",
+        "tag.leviathan",
+        "tag.eldritch",
+        "tag.folk_horror",
+        "tag.haunted_house",
+        "tag.ghosts",
+        "tag.vampires",
+        "tag.werewolves",
+        "tag.witches",
+        "tag.demons",
+        "tag.necromancy",
+        "tag.unreliable_reality",
+        "tag.dream_world",
+        "tag.isolated"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.historical.drama",
+    "collectionId": "tag-collection.genre.historical_frontier",
+    "name": "Historical Drama",
+    "description": "A focused historical drama pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.historical_fiction",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.legacy",
+        "theme.class",
+        "theme.duty"
+      ],
+      "tags": [
+        "tag.wartime",
+        "tag.civil_war",
+        "tag.court_intrigue",
+        "tag.georgian",
+        "tag.edwardian",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.ancient_rome",
+        "tag.ancient_greece",
+        "tag.belle_epoque",
+        "tag.royal_court",
+        "tag.oral_tradition",
+        "tag.succession_crisis",
+        "tag.aristocracy",
+        "tag.immigration",
+        "tag.tragic"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.historical.adventure",
+    "collectionId": "tag-collection.genre.historical_frontier",
+    "name": "Historical Adventure",
+    "description": "A focused historical adventure pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.historical_fiction",
+        "genre.adventure",
+        "genre.action"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.freedom"
+      ],
+      "tags": [
+        "tag.wartime",
+        "tag.civil_war",
+        "tag.edwardian",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.industrial_revolution",
+        "tag.belle_epoque",
+        "tag.queer_protagonist",
+        "tag.tragic",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.human_centric",
+        "tag.ensemble_cast",
+        "tag.dialogue_heavy",
+        "tag.dialogue_light"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.historical.alternate",
+    "collectionId": "tag-collection.genre.historical_frontier",
+    "name": "Alternate History",
+    "description": "A focused alternate history pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.historical_fiction",
+        "genre.speculative"
+      ],
+      "themes": [
+        "theme.free_will",
+        "theme.power",
+        "theme.responsibility"
+      ],
+      "tags": [
+        "tag.wartime",
+        "tag.empire",
+        "tag.civil_war",
+        "tag.political_intrigue",
+        "tag.dual_timeline",
+        "tag.georgian",
+        "tag.edwardian",
+        "tag.roaring_twenties",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.industrial_revolution",
+        "tag.belle_epoque",
+        "tag.royal_court",
+        "tag.scandal",
+        "tag.propaganda",
+        "tag.coup",
+        "tag.feudalism",
+        "tag.citizenship",
+        "tag.tragic",
+        "tag.forbidden_technology",
+        "tag.steampunk",
+        "tag.war",
+        "tag.advanced_technology",
+        "tag.clockwork",
+        "tag.nanotechnology",
+        "tag.terraforming",
+        "tag.automation",
+        "tag.biotechnology",
+        "tag.machine_consciousness",
+        "tag.drone_warfare",
+        "tag.mars_colony",
+        "tag.programmer",
+        "tag.mecha",
+        "tag.teleportation",
+        "tag.space_shuttle",
+        "tag.rocket"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.historical.western",
+    "collectionId": "tag-collection.genre.historical_frontier",
+    "name": "Western & Frontier",
+    "description": "A focused western & frontier pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.western",
+        "genre.historical_fiction",
+        "genre.adventure"
+      ],
+      "themes": [
+        "theme.justice",
+        "theme.community",
+        "theme.survival"
+      ],
+      "tags": [
+        "tag.western",
+        "tag.frontier",
+        "tag.frontier_settlement",
+        "tag.desert",
+        "tag.outlaw",
+        "tag.cowboy",
+        "tag.rifle",
+        "tag.shield",
+        "tag.armor",
+        "tag.uniform",
+        "tag.scar",
+        "tag.inheritance",
+        "tag.will",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.human_centric"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.literary.literary",
+    "collectionId": "tag-collection.genre.literary_contemporary",
+    "name": "Literary Fiction",
+    "description": "A focused literary fiction pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.literary_fiction",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.memory",
+        "theme.mortality"
+      ],
+      "tags": [
+        "tag.lyrical",
+        "tag.stream_of_consciousness",
+        "tag.exile",
+        "tag.diaspora",
+        "tag.epilogue",
+        "tag.interconnected_stories",
+        "tag.multigenerational",
+        "tag.experimental",
+        "tag.suburban",
+        "tag.journalist",
+        "tag.scholar",
+        "tag.photographs",
+        "tag.heirloom",
+        "tag.diary",
+        "tag.cooking",
+        "tag.gardening",
+        "tag.language_barrier",
+        "tag.multilingual",
+        "tag.funeral_rites",
+        "tag.masquerade",
+        "tag.family_secrets",
+        "tag.inheritance",
+        "tag.homecoming",
+        "tag.family_reunion",
+        "tag.estranged_family",
+        "tag.chronic_illness",
+        "tag.disability",
+        "tag.recovery",
+        "tag.librarian",
+        "tag.archivist",
+        "tag.professor",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.human_centric",
+        "tag.queer_protagonist",
+        "tag.disabled_protagonist",
+        "tag.neurodivergent_protagonist",
         "tag.villain_protagonist"
       ]
     }
   },
   {
-    "id": "pack.supernatural",
-    "name": "Supernatural",
-    "description": "Ordinary lives interrupted by powers, beings, and rules beyond the natural world.",
+    "id": "pack.genre.literary.slice_of_life",
+    "collectionId": "tag-collection.genre.literary_contemporary",
+    "name": "Slice of Life",
+    "description": "A focused slice of life pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.supernatural", "genre.paranormal", "genre.urban_fantasy", "genre.horror", "genre.fantasy", "genre.dark_fantasy", "genre.thriller", "genre.romance", "genre.mystery", "genre.drama"],
-      "themes": ["theme.identity", "theme.mortality", "theme.faith", "theme.transformation", "theme.grief", "theme.revenge", "theme.found_family", "theme.corruption", "theme.sacrifice", "theme.freedom", "theme.love", "theme.obsession", "theme.truth", "theme.knowledge", "theme.trauma", "theme.isolation"],
+      "genres": [
+        "genre.slice_of_life",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.community",
+        "theme.belonging",
+        "theme.friendship"
+      ],
       "tags": [
-        "tag.modern_day", "tag.urban", "tag.supernatural_abilities", "tag.psychic_abilities", "tag.telepathy",
-        "tag.vampires", "tag.werewolves", "tag.ghosts", "tag.witches", "tag.wizards", "tag.fae", "tag.demons",
-        "tag.angels", "tag.shapeshifters", "tag.reincarnation", "tag.immortality", "tag.secret_identity",
-        "tag.gifted_individual", "tag.female_protagonist", "tag.male_protagonist", "tag.high_stakes",
-        "tag.curses", "tag.enchanted_artifact", "tag.ritual_magic", "tag.divination", "tag.summoning",
-        "tag.magical_contract", "tag.spirit_world", "tag.dream_magic", "tag.shapeshifting_magic",
-        "tag.familiar", "tag.secret_relationship", "tag.soulmates", "tag.forced_proximity",
-        "tag.ghost_town", "tag.cave", "tag.monastery", "tag.cult_leader", "tag.healer"
-        ,"tag.mirror", "tag.mask", "tag.key", "tag.folklore", "tag.funeral_rites", "tag.initiation_rite",
-        "tag.secret_society", "tag.theocracy", "tag.priest", "tag.nun", "tag.monk", "tag.chaplain",
-        "tag.photographs", "tag.diary", "tag.hallucinatory"
-        ,"tag.fairies", "tag.goblin", "tag.elves", "tag.dwarves", "tag.orcs", "tag.merfolk", "tag.centaurs",
-        "tag.giants", "tag.griffins", "tag.unicorns", "tag.phoenixes", "tag.trolls", "tag.djinn", "tag.dryads",
-        "tag.sirens", "tag.golems", "tag.liches", "tag.zombies", "tag.skeletons", "tag.elementals",
-        "tag.crown", "tag.throne", "tag.sword", "tag.dagger", "tag.birthmark",
-        "tag.human_centric", "tag.ensemble_cast", "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue",
-        "tag.grounded", "tag.realistic", "tag.surreal", "tag.dreamlike", "tag.bleak", "tag.hopeful",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.small_town",
+        "tag.workplace",
+        "tag.multigenerational",
+        "tag.heirloom",
+        "tag.family_secrets",
+        "tag.family_reunion",
+        "tag.estranged_family",
+        "tag.farm",
+        "tag.parental_figure",
+        "tag.foster_family",
+        "tag.orchard",
+        "tag.melancholic",
+        "tag.meditative",
+        "tag.minimalist",
+        "tag.experimental",
+        "tag.quotidian"
       ]
     }
   },
   {
-    "id": "pack.solarpunk",
-    "name": "Solarpunk",
-    "description": "Repair, mutual aid, resilient technology, and hopeful futures worth building.",
+    "id": "pack.genre.literary.family_social",
+    "collectionId": "tag-collection.genre.literary_contemporary",
+    "name": "Family & Social Drama",
+    "description": "A focused family & social drama pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.speculative", "genre.science_fiction", "genre.dystopian", "genre.literary_fiction", "genre.drama"],
-      "themes": ["theme.environmental_stewardship", "theme.community", "theme.hope", "theme.responsibility", "theme.technology", "theme.freedom", "theme.survival", "theme.justice", "theme.power", "theme.class", "theme.legacy", "theme.nature", "theme.knowledge", "theme.belonging", "theme.reconciliation", "theme.identity"],
+      "genres": [
+        "genre.drama",
+        "genre.literary_fiction"
+      ],
+      "themes": [
+        "theme.class",
+        "theme.legacy",
+        "theme.community"
+      ],
       "tags": [
-        "tag.near_future", "tag.post_collapse", "tag.ecological_collapse", "tag.reconstruction", "tag.resource_scarcity",
-        "tag.climate_fiction",
-        "tag.advanced_technology", "tag.solarpunk", "tag.artificial_intelligence", "tag.gene_editing", "tag.urban",
-        "tag.rural", "tag.floating_city", "tag.resistance", "tag.hopeful", "tag.uplifting",
-        "tag.ensemble_cast", "tag.renewable_energy", "tag.automation", "tag.biotechnology",
-        "tag.weather_control", "tag.climate_engineering", "tag.mega_corporation", "tag.corporate_dystopia",
-        "tag.robot_rights", "tag.personal_ai", "tag.augmented_reality", "tag.suburban", "tag.port_city",
-        "tag.disaster_response", "tag.immersive", "tag.optimistic"
-        ,"tag.botanist", "tag.engineer", "tag.scientist", "tag.gardening", "tag.farming", "tag.fishing",
-        "tag.foraging", "tag.wildlife_conservation", "tag.flood", "tag.drought", "tag.wildfire",
-        "tag.earthquake", "tag.tsunami", "tag.hurricane", "tag.protest",
-        "tag.strike", "tag.union_organizer", "tag.activist"
-        ,"tag.factory", "tag.power_plant", "tag.greenhouse", "tag.wind_farm", "tag.solar_farm", "tag.dam",
-        "tag.bridge", "tag.canal", "tag.smog", "tag.heatwave", "tag.monsoon", "tag.zoologist",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.dialogue_heavy",
-        "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic", "tag.queer_protagonist",
-        "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-        "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.workplace",
+        "tag.multigenerational",
+        "tag.key",
+        "tag.ring",
+        "tag.heirloom",
+        "tag.baking",
+        "tag.family_secrets",
+        "tag.inheritance",
+        "tag.homecoming",
+        "tag.family_reunion",
+        "tag.estranged_family",
+        "tag.teacher",
+        "tag.regency",
+        "tag.edwardian",
+        "tag.succession_crisis",
+        "tag.working_class",
+        "tag.upper_class",
+        "tag.immigration",
+        "tag.company_town"
       ]
     }
   },
   {
-    "id": "pack.literary",
-    "name": "Literary",
-    "description": "Character, language, memory, and social observation at the center of the work.",
+    "id": "pack.genre.literary.satire",
+    "collectionId": "tag-collection.genre.literary_contemporary",
+    "name": "Satire",
+    "description": "A focused satire pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.literary_fiction", "genre.drama", "genre.slice_of_life", "genre.romance", "genre.historical_fiction", "genre.comedy"],
-      "themes": ["theme.identity", "theme.memory", "theme.mortality", "theme.belonging", "theme.truth", "theme.class", "theme.grief", "theme.revenge", "theme.found_family", "theme.corruption", "theme.sacrifice", "theme.freedom", "theme.ambition", "theme.betrayal", "theme.coming_of_age", "theme.community", "theme.duty", "theme.faith", "theme.free_will", "theme.friendship", "theme.hope", "theme.justice", "theme.legacy", "theme.love", "theme.nature", "theme.obsession", "theme.power", "theme.prejudice", "theme.redemption", "theme.responsibility", "theme.survival", "theme.technology", "theme.transformation", "theme.trauma", "theme.trust", "theme.environmental_stewardship", "theme.displacement", "theme.isolation", "theme.knowledge", "theme.religion", "theme.reconciliation"],
+      "genres": [
+        "genre.satire",
+        "genre.comedy",
+        "genre.literary_fiction"
+      ],
+      "themes": [
+        "theme.power",
+        "theme.truth",
+        "theme.corruption"
+      ],
       "tags": [
-        "tag.realistic", "tag.grounded", "tag.intimate", "tag.lyrical", "tag.atmospheric", "tag.stream_of_consciousness",
-        "tag.epistolary", "tag.dual_timeline", "tag.nonlinear", "tag.magical_realism", "tag.flashbacks", "tag.dialogue_heavy",
-        "tag.emotionally_intense", "tag.bittersweet", "tag.tragic", "tag.rural", "tag.small_town", "tag.workplace",
-        "tag.exile", "tag.diaspora", "tag.prologue", "tag.epilogue", "tag.nested_narrative",
-        "tag.circular_structure", "tag.reverse_chronology", "tag.epic_timespan", "tag.episodic",
-        "tag.interconnected_stories", "tag.multigenerational", "tag.parallel_narrative", "tag.open_ended",
-        "tag.ambiguous_ending", "tag.nostalgic", "tag.melancholic", "tag.meditative", "tag.minimalist",
-        "tag.experimental", "tag.quotidian", "tag.sensual", "tag.raw", "tag.suburban", "tag.theater",
-        "tag.artist", "tag.musician", "tag.journalist", "tag.scholar"
-        ,"tag.photographs", "tag.recordings", "tag.newspaper", "tag.map", "tag.compass", "tag.key",
-        "tag.mirror", "tag.ring", "tag.heirloom", "tag.locket", "tag.diary", "tag.codex", "tag.forbidden_book",
-        "tag.cooking", "tag.baking", "tag.gardening", "tag.crafting", "tag.painting", "tag.photography",
-        "tag.fishing", "tag.language_barrier", "tag.multilingual", "tag.oral_tradition", "tag.funeral_rites",
-        "tag.wedding", "tag.masquerade", "tag.family_secrets"
-        ,"tag.inheritance", "tag.will",
-        "tag.homecoming", "tag.family_reunion", "tag.estranged_family", "tag.chronic_illness", "tag.disability",
-        "tag.recovery", "tag.librarian", "tag.archivist", "tag.curator", "tag.teacher", "tag.professor",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_light", "tag.no_dialogue", "tag.surreal", "tag.dreamlike",
-        "tag.queer_protagonist", "tag.disabled_protagonist", "tag.neurodivergent_protagonist",
-        "tag.elderly_protagonist", "tag.child_protagonist", "tag.nonhuman_protagonist", "tag.villain_protagonist"
+        "tag.exile",
+        "tag.multigenerational",
+        "tag.professor",
+        "tag.teacher",
+        "tag.male_protagonist",
+        "tag.female_protagonist",
+        "tag.human_centric",
+        "tag.ensemble_cast",
+        "tag.dialogue_light",
+        "tag.no_dialogue",
+        "tag.surreal",
+        "tag.dreamlike",
+        "tag.queer_protagonist",
+        "tag.disabled_protagonist",
+        "tag.neurodivergent_protagonist",
+        "tag.elderly_protagonist"
       ]
     }
   },
   {
-    "id": "pack.erotica",
-    "name": "Erotica",
-    "description": "Sexuality, desire, and intimacy at the center of the work.",
+    "id": "pack.genre.action.thriller",
+    "collectionId": "tag-collection.genre.action_adventure",
+    "name": "Action Thriller",
+    "description": "A focused action thriller pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.erotica", "genre.romance", "genre.slice_of_life", "genre.drama", "genre.psychological", "genre.comedy"],
-      "themes": ["theme.identity", "theme.love", "theme.trust", "theme.obsession", "theme.betrayal", "theme.freedom", "theme.transformation", "theme.belonging", "theme.sacrifice", "theme.reconciliation"],
-      "tags": ["tag.erotic", "tag.sex", "tag.intimate", "tag.nsfw", "tag.forbidden_romance", "tag.fetish", "tag.kink",
-      "tag.sexuality", "tag.enemies_to_lovers", "tag.friends_to_lovers", "tag.bdsm", "tag.polyamory",
-      "tag.pining", "tag.unrequited_love", "tag.secret_relationship", "tag.forced_proximity",
-      "tag.open_relationship", "tag.soulmates", "tag.sensual", "tag.provocative", "tag.pregnancy"
-      ,"tag.wedding", "tag.masquerade", "tag.dance", "tag.age_gap"
-      ,"tag.divorce", "tag.homecoming", "tag.old_flames", "tag.mutual_pining", "tag.secret_crush",
-      "tag.long_distance_relationship", "tag.co_parenting", "tag.broken_engagement", "tag.heirloom",
-      "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.dialogue_heavy",
-      "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic", "tag.queer_protagonist",
-      "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-      "tag.villain_protagonist"
-    ]
+      "genres": [
+        "genre.action",
+        "genre.thriller"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.responsibility"
+      ],
+      "tags": [
+        "tag.cat_and_mouse",
+        "tag.conspiracy",
+        "tag.hostage_situation",
+        "tag.assassination",
+        "tag.safehouse",
+        "tag.hideout",
+        "tag.bleak",
+        "tag.queer_protagonist",
+        "tag.disabled_protagonist",
+        "tag.neurodivergent_protagonist",
+        "tag.elderly_protagonist",
+        "tag.child_protagonist",
+        "tag.nonhuman_protagonist",
+        "tag.villain_protagonist",
+        "tag.high_stakes",
+        "tag.fast_paced"
+      ]
     }
   },
   {
-    "id": "pack.crime_noir",
-    "name": "Crime & Noir",
-    "description": "Investigation, criminal schemes, compromised institutions, and moral pressure.",
+    "id": "pack.genre.action.survival",
+    "collectionId": "tag-collection.genre.action_adventure",
+    "name": "Survival Adventure",
+    "description": "A focused survival adventure pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.crime", "genre.noir", "genre.mystery", "genre.thriller", "genre.drama", "genre.action", "genre.political", "genre.psychological", "genre.literary_fiction"],
-      "themes": ["theme.justice", "theme.corruption", "theme.truth", "theme.obsession", "theme.revenge", "theme.identity", "theme.betrayal", "theme.power", "theme.class", "theme.survival", "theme.responsibility", "theme.knowledge", "theme.mortality", "theme.trust", "theme.freedom"],
+      "genres": [
+        "genre.adventure",
+        "genre.action",
+        "genre.thriller"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.hope"
+      ],
       "tags": [
-        "tag.detective", "tag.private_detective", "tag.amateur_detective", "tag.investigation", "tag.murder",
-        "tag.cold_case", "tag.whodunit", "tag.locked_room", "tag.caper", "tag.robbery", "tag.heist",
-        "tag.con_artist", "tag.thief", "tag.outlaw", "tag.blackmail", "tag.cover_up", "tag.scandal",
-        "tag.conspiracy", "tag.espionage", "tag.undercover", "tag.infiltration", "tag.manhunt",
-        "tag.missing_person", "tag.false_accusation", "tag.framed_for_crime", "tag.legal_battle",
-        "tag.courtroom", "tag.urban", "tag.megacity", "tag.port_city", "tag.hotel", "tag.gritty",
-        "tag.cynical", "tag.atmospheric", "tag.ambiguous_ending", "tag.twist_ending"
-        ,"tag.poison", "tag.arson", "tag.kidnapping", "tag.extortion", "tag.forgery", "tag.art_heist",
-        "tag.counterfeit", "tag.witness_protection", "tag.informant", "tag.corrupt_official", "tag.serial_killer",
-        "tag.crime_family", "tag.gang", "tag.cartel", "tag.drug_trade", "tag.gambling", "tag.casino",
-        "tag.card_games", "tag.chess", "tag.photographs", "tag.recordings", "tag.newspaper", "tag.passport",
-        "tag.male_protagonist", "tag.female_protagonist", "tag.human_centric", "tag.ensemble_cast",
-        "tag.dialogue_heavy", "tag.dialogue_light", "tag.no_dialogue", "tag.grounded", "tag.realistic",
-        "tag.surreal", "tag.dreamlike", "tag.bleak", "tag.hopeful", "tag.queer_protagonist",
-        "tag.disabled_protagonist", "tag.neurodivergent_protagonist", "tag.elderly_protagonist",
-        "tag.child_protagonist", "tag.villain_protagonist"
+        "tag.escape",
+        "tag.cover_up",
+        "tag.false_accusation",
+        "tag.disaster_response",
+        "tag.flood",
+        "tag.tunnel",
+        "tag.thunderstorm",
+        "tag.passport",
+        "tag.wilderness",
+        "tag.ghost_town",
+        "tag.scar",
+        "tag.smuggler",
+        "tag.caper",
+        "tag.robbery",
+        "tag.borderland",
+        "tag.port_city"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.action.political",
+    "collectionId": "tag-collection.genre.action_adventure",
+    "name": "Political Thriller",
+    "description": "A focused political thriller pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.thriller",
+        "genre.political",
+        "genre.crime"
+      ],
+      "themes": [
+        "theme.power",
+        "theme.corruption",
+        "theme.truth"
+      ],
+      "tags": [
+        "tag.conspiracy",
+        "tag.cover_up",
+        "tag.espionage",
+        "tag.assassination",
+        "tag.scandal",
+        "tag.earthquake",
+        "tag.hurricane",
+        "tag.wildfire",
+        "tag.flood",
+        "tag.quarantine_zone",
+        "tag.taxi",
+        "tag.automobile",
+        "tag.bus",
+        "tag.subway",
+        "tag.airport",
+        "tag.apartment_building"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.action.superhero",
+    "collectionId": "tag-collection.genre.action_adventure",
+    "name": "Superhero Adventure",
+    "description": "A focused superhero adventure pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.superhero",
+        "genre.action",
+        "genre.adventure"
+      ],
+      "themes": [
+        "theme.responsibility",
+        "theme.justice",
+        "theme.identity"
+      ],
+      "tags": [
+        "tag.floating_city",
+        "tag.castle",
+        "tag.progression_fantasy",
+        "tag.enchanted_artifact",
+        "tag.blood_magic",
+        "tag.magical_relic",
+        "tag.ley_lines",
+        "tag.runes",
+        "tag.ancient_weapon",
+        "tag.phoenixes",
+        "tag.villain_protagonist",
+        "tag.secret_identity",
+        "tag.megacity",
+        "tag.legal_battle",
+        "tag.common_magic",
+        "tag.hard_magic"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.cozy.fantasy",
+    "collectionId": "tag-collection.genre.cozy_gentle",
+    "name": "Cozy Fantasy",
+    "description": "A focused cozy fantasy pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.fantasy",
+        "genre.slice_of_life"
+      ],
+      "themes": [
+        "theme.community",
+        "theme.hope",
+        "theme.belonging"
+      ],
+      "tags": [
+        "tag.cozy",
+        "tag.isolated_village",
+        "tag.bookshop",
+        "tag.gardening",
+        "tag.djinn",
+        "tag.exploration",
+        "tag.seafaring",
+        "tag.quest",
+        "tag.high_stakes",
+        "tag.chosen_one",
+        "tag.monster_hunting",
+        "tag.guilds",
+        "tag.empire",
+        "tag.fallen_empire",
+        "tag.mercenaries",
+        "tag.golden_age"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.cozy.small_town",
+    "collectionId": "tag-collection.genre.cozy_gentle",
+    "name": "Small-Town Comfort",
+    "description": "A focused small-town comfort pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.slice_of_life",
+        "genre.romance",
+        "genre.comedy"
+      ],
+      "themes": [
+        "theme.community",
+        "theme.friendship",
+        "theme.belonging"
+      ],
+      "tags": [
+        "tag.small_town",
+        "tag.isolated_village",
+        "tag.festival",
+        "tag.library",
+        "tag.bookshop",
+        "tag.farm",
+        "tag.parental_figure",
+        "tag.foster_family",
+        "tag.baking",
+        "tag.sewing",
+        "tag.harvest_festival",
+        "tag.orchard",
+        "tag.bakery",
+        "tag.apartment_building",
+        "tag.workplace",
+        "tag.multigenerational",
+        "tag.heirloom",
+        "tag.family_secrets",
+        "tag.homecoming",
+        "tag.family_reunion",
+        "tag.estranged_family",
+        "tag.teacher"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.erotica.contemporary",
+    "collectionId": "tag-collection.genre.erotica",
+    "name": "Contemporary Erotica",
+    "description": "A focused contemporary erotica pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.erotica",
+        "genre.slice_of_life"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.forbidden_romance",
+        "tag.friends_to_lovers",
+        "tag.bdsm",
+        "tag.polyamory",
+        "tag.secret_relationship",
+        "tag.open_relationship",
+        "tag.soulmates",
+        "tag.pregnancy",
+        "tag.wedding",
+        "tag.dance",
+        "tag.age_gap",
+        "tag.divorce",
+        "tag.long_distance_relationship",
+        "tag.broken_engagement",
+        "tag.masquerade",
+        "tag.homecoming"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.erotica.historical",
+    "collectionId": "tag-collection.genre.erotica",
+    "name": "Historical Erotica",
+    "description": "A focused historical erotica pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.erotica",
+        "genre.historical_fiction"
+      ],
+      "themes": [
+        "theme.freedom",
+        "theme.class",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.secret_relationship",
+        "tag.divorce",
+        "tag.old_flames",
+        "tag.secret_crush",
+        "tag.heirloom",
+        "tag.court_intrigue",
+        "tag.georgian",
+        "tag.edwardian",
+        "tag.ancient_rome",
+        "tag.ancient_greece",
+        "tag.royal_court",
+        "tag.espionage",
+        "tag.oral_tradition",
+        "tag.aristocracy",
+        "tag.political_intrigue",
+        "tag.dual_timeline"
+      ]
+    }
+  },
+  {
+    "id": "pack.genre.erotica.speculative",
+    "collectionId": "tag-collection.genre.erotica",
+    "name": "Speculative Erotica",
+    "description": "A focused speculative erotica pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [
+        "genre.erotica",
+        "genre.speculative",
+        "genre.fantasy"
+      ],
+      "themes": [
+        "theme.transformation",
+        "theme.identity",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.elderly_protagonist",
+        "tag.magic_system",
+        "tag.rare_magic",
+        "tag.common_magic",
+        "tag.hard_magic",
+        "tag.soft_magic",
+        "tag.no_magic",
+        "tag.high_fantasy",
+        "tag.witches",
+        "tag.fae",
+        "tag.prophecy",
+        "tag.child_protagonist",
+        "tag.haunted_house",
+        "tag.necromancy",
+        "tag.curses",
+        "tag.enchanted_artifact",
+        "tag.ritual_magic",
+        "tag.elemental_magic",
+        "tag.blood_magic",
+        "tag.divination",
+        "tag.magical_contract",
+        "tag.magical_school",
+        "tag.dream_magic",
+        "tag.magical_relic",
+        "tag.ley_lines",
+        "tag.runes",
+        "tag.familiar",
+        "tag.goblin",
+        "tag.elves",
+        "tag.dwarves",
+        "tag.orcs",
+        "tag.unicorns",
+        "tag.phoenixes",
+        "tag.djinn",
+        "tag.dryads",
+        "tag.golems",
+        "tag.liches",
+        "tag.skeletons",
+        "tag.fairies",
+        "tag.elementals",
+        "tag.near_future",
+        "tag.far_future",
+        "tag.retrofuturistic",
+        "tag.alien_invasion",
+        "tag.terraforming",
+        "tag.teleportation",
+        "tag.force_fields"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.obsession.ambition",
+    "collectionId": "tag-collection.theme.obsession",
+    "name": "Consuming Ambition",
+    "description": "A focused consuming ambition pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.obsession",
+        "theme.ambition",
+        "theme.power"
+      ],
+      "tags": [
+        "tag.emotionally_intense",
+        "tag.ring",
+        "tag.scandal",
+        "tag.manhunt",
+        "tag.legal_battle",
+        "tag.informant",
+        "tag.cartel",
+        "tag.neurodivergent_protagonist",
+        "tag.elderly_protagonist",
+        "tag.child_protagonist",
+        "tag.nonhuman_protagonist",
+        "tag.villain_protagonist",
+        "tag.detective",
+        "tag.private_detective",
+        "tag.amateur_detective",
+        "tag.investigation"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.obsession.possessive_love",
+    "collectionId": "tag-collection.theme.obsession",
+    "name": "Possessive Love",
+    "description": "A focused possessive love pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.obsession",
+        "theme.love",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.love_triangle",
+        "tag.unrequited_love",
+        "tag.secret_relationship",
+        "tag.family_secrets",
+        "tag.secret_crush",
+        "tag.secret_identity",
+        "tag.blackmail",
+        "tag.cover_up",
+        "tag.espionage",
+        "tag.captivity",
+        "tag.hideout",
+        "tag.informant",
+        "tag.bus",
+        "tag.subway",
+        "tag.airport",
+        "tag.apartment_building"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.obsession.perfection",
+    "collectionId": "tag-collection.theme.obsession",
+    "name": "Pursuit of Perfection",
+    "description": "A focused pursuit of perfection pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.obsession",
+        "theme.identity",
+        "theme.transformation"
+      ],
+      "tags": [
+        "tag.experimental",
+        "tag.theater",
+        "tag.artist",
+        "tag.musician",
+        "tag.scientist",
+        "tag.quotidian",
+        "tag.sensual",
+        "tag.raw",
+        "tag.suburban",
+        "tag.journalist",
+        "tag.scholar",
+        "tag.photographs",
+        "tag.recordings",
+        "tag.newspaper",
+        "tag.map",
+        "tag.compass"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.revenge.personal",
+    "collectionId": "tag-collection.theme.revenge",
+    "name": "Personal Vengeance",
+    "description": "A focused personal vengeance pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.revenge",
+        "theme.justice",
+        "theme.grief"
+      ],
+      "tags": [
+        "tag.murder",
+        "tag.manhunt",
+        "tag.assassination",
+        "tag.serial_killer",
+        "tag.crime_family",
+        "tag.port_city",
+        "tag.hotel",
+        "tag.cynical",
+        "tag.atmospheric",
+        "tag.ambiguous_ending",
+        "tag.twist_ending",
+        "tag.poison",
+        "tag.forgery",
+        "tag.art_heist",
+        "tag.counterfeit",
+        "tag.gang"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.revenge.cycles",
+    "collectionId": "tag-collection.theme.revenge",
+    "name": "Cycles of Retaliation",
+    "description": "A focused cycles of retaliation pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.revenge",
+        "theme.legacy",
+        "theme.betrayal"
+      ],
+      "tags": [
+        "tag.wartime",
+        "tag.civil_war",
+        "tag.edwardian",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.belle_epoque",
+        "tag.succession_crisis",
+        "tag.feudalism",
+        "tag.immigration",
+        "tag.tragic",
+        "tag.war",
+        "tag.boarding_school",
+        "tag.gore",
+        "tag.blood_magic",
+        "tag.magical_school",
+        "tag.dwarves"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.revenge.justice",
+    "collectionId": "tag-collection.theme.revenge",
+    "name": "Revenge vs Justice",
+    "description": "A focused revenge vs justice pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.revenge",
+        "theme.justice",
+        "theme.responsibility"
+      ],
+      "tags": [
+        "tag.locked_room",
+        "tag.cold_case",
+        "tag.whodunit",
+        "tag.courtroom",
+        "tag.detective",
+        "tag.amateur_detective",
+        "tag.private_detective",
+        "tag.framed_for_crime",
+        "tag.codex",
+        "tag.arson",
+        "tag.outlaw",
+        "tag.vigilante",
+        "tag.legal_battle",
+        "tag.western",
+        "tag.frontier",
+        "tag.frontier_settlement"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.identity.discovery",
+    "collectionId": "tag-collection.theme.identity_belonging",
+    "name": "Self-Discovery",
+    "description": "A focused self-discovery pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.identity",
+        "theme.transformation",
+        "theme.coming_of_age"
+      ],
+      "tags": [
+        "tag.key",
+        "tag.mirror",
+        "tag.heirloom",
+        "tag.family_secrets",
+        "tag.will",
+        "tag.teacher",
+        "tag.queer_protagonist",
+        "tag.elderly_protagonist",
+        "tag.child_protagonist",
+        "tag.mentor_student",
+        "tag.boarding_school",
+        "tag.curses",
+        "tag.magical_school",
+        "tag.secrets",
+        "tag.meditative",
+        "tag.minimalist"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.identity.found_family",
+    "collectionId": "tag-collection.theme.identity_belonging",
+    "name": "Found Family",
+    "description": "A focused found family pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.found_family",
+        "theme.belonging",
+        "theme.friendship"
+      ],
+      "tags": [
+        "tag.isolated_village",
+        "tag.library",
+        "tag.bookshop",
+        "tag.baking",
+        "tag.sewing",
+        "tag.harvest_festival",
+        "tag.greenhouse",
+        "tag.bakery",
+        "tag.boarding_school",
+        "tag.reconstruction",
+        "tag.blacksmithing",
+        "tag.automaton",
+        "tag.folklore",
+        "tag.siege",
+        "tag.goblin",
+        "tag.elves"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.identity.exile",
+    "collectionId": "tag-collection.theme.identity_belonging",
+    "name": "Exile & Displacement",
+    "description": "A focused exile & displacement pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.displacement",
+        "theme.belonging",
+        "theme.identity"
+      ],
+      "tags": [
+        "tag.exile",
+        "tag.diaspora",
+        "tag.immigration",
+        "tag.border_control",
+        "tag.colony",
+        "tag.mars_colony",
+        "tag.ocean_colony",
+        "tag.nonhuman_protagonist",
+        "tag.ancient",
+        "tag.medieval",
+        "tag.victorian",
+        "tag.colonial",
+        "tag.wartime",
+        "tag.western",
+        "tag.military",
+        "tag.naval"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.power.corruption",
+    "collectionId": "tag-collection.theme.power_society",
+    "name": "Corruption & Complicity",
+    "description": "A focused corruption & complicity pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.corruption",
+        "theme.power",
+        "theme.responsibility"
+      ],
+      "tags": [
+        "tag.detective",
+        "tag.amateur_detective",
+        "tag.cold_case",
+        "tag.whodunit",
+        "tag.locked_room",
+        "tag.blackmail",
+        "tag.cover_up",
+        "tag.conspiracy",
+        "tag.framed_for_crime",
+        "tag.cynical",
+        "tag.arson",
+        "tag.corrupt_official",
+        "tag.serial_killer",
+        "tag.crime_family",
+        "tag.police_officer",
+        "tag.hurricane"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.power.class",
+    "collectionId": "tag-collection.theme.power_society",
+    "name": "Class & Prejudice",
+    "description": "A focused class & prejudice pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.class",
+        "theme.prejudice",
+        "theme.power"
+      ],
+      "tags": [
+        "tag.regency",
+        "tag.georgian",
+        "tag.edwardian",
+        "tag.gilded_age",
+        "tag.industrial_revolution",
+        "tag.ancient_rome",
+        "tag.ancient_greece",
+        "tag.strike",
+        "tag.aristocracy",
+        "tag.working_class",
+        "tag.upper_class",
+        "tag.labor_union",
+        "tag.teacher",
+        "tag.raw",
+        "tag.suburban",
+        "tag.theater"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.power.freedom_duty",
+    "collectionId": "tag-collection.theme.power_society",
+    "name": "Freedom vs Duty",
+    "description": "A focused freedom vs duty pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.freedom",
+        "theme.duty",
+        "theme.sacrifice"
+      ],
+      "tags": [
+        "tag.war",
+        "tag.kingdom",
+        "tag.lost_kingdom",
+        "tag.tragic",
+        "tag.dwarves",
+        "tag.escape",
+        "tag.wartime",
+        "tag.rebellion",
+        "tag.civil_war",
+        "tag.edwardian",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.belle_epoque",
+        "tag.succession_crisis",
+        "tag.ceasefire",
+        "tag.immigration",
+        "tag.passport"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.love.sacrifice",
+    "collectionId": "tag-collection.theme.love_trust",
+    "name": "Love & Sacrifice",
+    "description": "A focused love & sacrifice pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.love",
+        "theme.sacrifice",
+        "theme.duty"
+      ],
+      "tags": [
+        "tag.second_chance_romance",
+        "tag.arranged_marriage",
+        "tag.marriage_of_convenience",
+        "tag.pining",
+        "tag.secret_relationship",
+        "tag.sensual",
+        "tag.family_secrets",
+        "tag.foster_family",
+        "tag.adoption",
+        "tag.divorce",
+        "tag.family_reunion",
+        "tag.long_distance_relationship",
+        "tag.broken_engagement",
+        "tag.wartime",
+        "tag.civil_war",
+        "tag.edwardian",
+        "tag.cold_war",
+        "tag.world_war_i",
+        "tag.world_war_ii",
+        "tag.belle_epoque",
+        "tag.succession_crisis",
+        "tag.immigration",
+        "tag.tragic"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.love.betrayal",
+    "collectionId": "tag-collection.theme.love_trust",
+    "name": "Betrayal & Reconciliation",
+    "description": "A focused betrayal & reconciliation pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.betrayal",
+        "theme.trust",
+        "theme.reconciliation"
+      ],
+      "tags": [
+        "tag.friends_to_lovers",
+        "tag.second_chance_romance",
+        "tag.secret_relationship",
+        "tag.family_secrets",
+        "tag.foster_family",
+        "tag.adoption",
+        "tag.family_reunion",
+        "tag.secret_crush",
+        "tag.broken_engagement",
+        "tag.multigenerational",
+        "tag.key",
+        "tag.heirloom",
+        "tag.will",
+        "tag.estranged_family",
+        "tag.wedding",
+        "tag.masquerade"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.survival.trauma",
+    "collectionId": "tag-collection.theme.survival_transformation",
+    "name": "Survival & Trauma",
+    "description": "A focused survival & trauma pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.survival",
+        "theme.trauma",
+        "theme.hope"
+      ],
+      "tags": [
+        "tag.claustrophobic",
+        "tag.ghost_town",
+        "tag.insects",
+        "tag.wildfire",
+        "tag.flood",
+        "tag.scar",
+        "tag.escape",
+        "tag.cover_up",
+        "tag.false_accusation",
+        "tag.disaster_response",
+        "tag.hurricane",
+        "tag.tunnel",
+        "tag.passport",
+        "tag.bleak",
+        "tag.gore",
+        "tag.death"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.survival.redemption",
+    "collectionId": "tag-collection.theme.survival_transformation",
+    "name": "Redemption & Rebirth",
+    "description": "A focused redemption & rebirth pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.redemption",
+        "theme.transformation",
+        "theme.responsibility"
+      ],
+      "tags": [
+        "tag.exile",
+        "tag.circular_structure",
+        "tag.homecoming",
+        "tag.blood_magic",
+        "tag.rural",
+        "tag.small_town",
+        "tag.workplace",
+        "tag.diaspora",
+        "tag.prologue",
+        "tag.epilogue",
+        "tag.nested_narrative",
+        "tag.reverse_chronology",
+        "tag.epic_timespan",
+        "tag.episodic",
+        "tag.interconnected_stories",
+        "tag.multigenerational"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.truth.secrets",
+    "collectionId": "tag-collection.theme.truth_memory",
+    "name": "Secrets & Truth",
+    "description": "A focused secrets & truth pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.truth",
+        "theme.knowledge",
+        "theme.trust"
+      ],
+      "tags": [
+        "tag.investigation",
+        "tag.puzzle_box",
+        "tag.conspiracy",
+        "tag.secrets",
+        "tag.murder",
+        "tag.dual_timeline",
+        "tag.flashbacks",
+        "tag.family_secrets",
+        "tag.library",
+        "tag.recordings",
+        "tag.map",
+        "tag.key",
+        "tag.diary",
+        "tag.poison",
+        "tag.informant",
+        "tag.cemetery",
+        "tag.crypt",
+        "tag.photography",
+        "tag.secret_identity",
+        "tag.cover_up",
+        "tag.espionage",
+        "tag.hideout"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.truth.memory",
+    "collectionId": "tag-collection.theme.truth_memory",
+    "name": "Memory & Legacy",
+    "description": "A focused memory & legacy pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.memory",
+        "theme.legacy",
+        "theme.mortality"
+      ],
+      "tags": [
+        "tag.diaspora",
+        "tag.multigenerational",
+        "tag.photographs",
+        "tag.key",
+        "tag.ring",
+        "tag.heirloom",
+        "tag.diary",
+        "tag.cooking",
+        "tag.gardening",
+        "tag.oral_tradition",
+        "tag.family_secrets",
+        "tag.inheritance",
+        "tag.family_reunion",
+        "tag.estranged_family",
+        "tag.librarian",
+        "tag.succession_crisis",
+        "tag.immigration"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.nature.stewardship",
+    "collectionId": "tag-collection.theme.nature_technology",
+    "name": "Stewardship & Community",
+    "description": "A focused stewardship & community pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.environmental_stewardship",
+        "theme.community",
+        "theme.nature"
+      ],
+      "tags": [
+        "tag.reconstruction",
+        "tag.engineer",
+        "tag.gardening",
+        "tag.farming",
+        "tag.flood",
+        "tag.drought",
+        "tag.factory",
+        "tag.wind_farm",
+        "tag.solar_farm",
+        "tag.isolated_village",
+        "tag.farmer",
+        "tag.library",
+        "tag.bookshop",
+        "tag.farm",
+        "tag.baking",
+        "tag.sewing",
+        "tag.harvest_festival",
+        "tag.bakery"
+      ]
+    }
+  },
+  {
+    "id": "pack.theme.nature.technology",
+    "collectionId": "tag-collection.theme.nature_technology",
+    "name": "Technology & Humanity",
+    "description": "A focused technology & humanity pack of genres, themes, and story ingredients.",
+    "values": {
+      "genres": [],
+      "themes": [
+        "theme.technology",
+        "theme.identity",
+        "theme.responsibility"
+      ],
+      "tags": [
+        "tag.cyberpunk",
+        "tag.human_centric",
+        "tag.artificial_intelligence",
+        "tag.transhumanism",
+        "tag.cybernetics",
+        "tag.androids",
+        "tag.robots",
+        "tag.first_contact",
+        "tag.virtual_reality",
+        "tag.robot_rights",
+        "tag.personal_ai",
+        "tag.mars_colony",
+        "tag.scientist",
+        "tag.nonhuman_protagonist",
+        "tag.clones",
+        "tag.memory_manipulation"
       ]
     }
   }

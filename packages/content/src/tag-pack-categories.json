@@ -1,0 +1,12 @@
+[
+  {
+    "id": "tag-category.genres",
+    "name": "Genres",
+    "description": "Story traditions, modes, and genre-specific conventions."
+  },
+  {
+    "id": "tag-category.themes",
+    "name": "Themes",
+    "description": "Ideas, tensions, and emotional questions explored by a story."
+  }
+]

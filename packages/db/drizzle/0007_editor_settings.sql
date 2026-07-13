@@ -1,4 +1,4 @@
-CREATE TABLE "editor_settings" (
+CREATE TABLE IF NOT EXISTS "editor_settings" (
 	"user_id" text PRIMARY KEY NOT NULL,
 	"font_family" text DEFAULT 'literary' NOT NULL,
 	"font_size" integer DEFAULT 20 NOT NULL,
@@ -10,4 +10,8 @@ CREATE TABLE "editor_settings" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "editor_settings" ADD CONSTRAINT "editor_settings_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+DO $$ BEGIN
+	ALTER TABLE "editor_settings" ADD CONSTRAINT "editor_settings_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+	WHEN duplicate_object THEN NULL;
+END $$;

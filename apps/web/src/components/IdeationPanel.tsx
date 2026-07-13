@@ -4,16 +4,16 @@ import type {
   CompendiumEntry,
   ContentPackage,
   ProjectTagPack,
-  TagPack,
+  TagPackCatalog,
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookMarked, Dice5, Lock, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
-import { useAppDialog } from "./DialogProvider.js";
 import { ModelSelect } from "./ModelSelect.js";
 import { TagPackPicker } from "./TagPackPicker.js";
+import { TagPackCatalogManager } from "./TagPackCatalogManager.js";
 
 type Value = { definitionId: string | null; label: string; locked: boolean };
 type Metadata = {
@@ -39,7 +39,6 @@ type Definitions = {
 
 export function IdeationPanel({ projectId }: { projectId: string }) {
   const client = useQueryClient();
-  const dialog = useAppDialog();
   const definitions = useQuery({
     queryKey: ["ideation-definitions"],
     queryFn: () => api<Definitions>("/api/ideation/definitions"),
@@ -56,9 +55,9 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     queryKey: ["models"],
     queryFn: () => api<Array<{ id: string; name: string }>>("/api/models"),
   });
-  const packs = useQuery({
-    queryKey: ["tag-packs"],
-    queryFn: () => api<TagPack[]>("/api/tag-packs"),
+  const packCatalog = useQuery({
+    queryKey: ["tag-pack-catalog"],
+    queryFn: () => api<TagPackCatalog>("/api/tag-pack-catalog"),
   });
   const importedPacks = useQuery({
     queryKey: ["project-tag-packs", projectId],
@@ -80,7 +79,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
   const [instructions, setInstructions] = useState("");
   const [alternatives, setAlternatives] = useState<string[]>([]);
   const [model, setModel] = useState("");
-  const [collectionName, setCollectionName] = useState("");
+  const [packManagerOpen, setPackManagerOpen] = useState(false);
   const [entityTypeId, setEntityTypeId] = useState("story.character");
   const [entityContextIds, setEntityContextIds] = useState<string[]>([]);
   const [entitySearch, setEntitySearch] = useState("");
@@ -121,34 +120,12 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
       }),
     onSuccess: (result) => setAlternatives(result.alternatives),
   });
-  const createCollection = useMutation({
-    mutationFn: async () =>
-      api("/api/tag-packs", {
-        method: "POST",
-        body: JSON.stringify({
-          name: collectionName,
-          description: "Custom ideation pack",
-          values: await currentPackValues(),
-        }),
+  const syncPacks = useMutation({
+    mutationFn: (packIds: string[]) =>
+      api(`/api/projects/${projectId}/tag-packs`, {
+        method: "PUT",
+        body: JSON.stringify({ packIds }),
       }),
-    onSuccess: async () => {
-      setCollectionName("");
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["tag-packs"] }),
-        client.invalidateQueries({ queryKey: ["ideation-definitions"] }),
-      ]);
-    },
-  });
-  const importPack = useMutation({
-    mutationFn: (packId: string) =>
-      api(`/api/projects/${projectId}/tag-packs/${packId}/import`, { method: "POST" }),
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["project-tag-packs", projectId] });
-    },
-  });
-  const removePack = useMutation({
-    mutationFn: (packId: string) =>
-      api(`/api/projects/${projectId}/tag-packs/${packId}`, { method: "DELETE" }),
     onSuccess: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: ["project-tag-packs", projectId] }),
@@ -156,31 +133,6 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
         client.invalidateQueries({ queryKey: ["compendium", projectId] }),
       ]);
     },
-  });
-  const updatePack = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: object }) =>
-      api(`/api/tag-packs/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["tag-packs"] }),
-  });
-  const deletePack = useMutation({
-    mutationFn: (id: string) => api(`/api/tag-packs/${id}`, { method: "DELETE" }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["tag-packs"] }),
-  });
-  const packDefinitionIds = async (kind: CustomDefinition["kind"], values: Value[]) =>
-    Promise.all(
-      values.map(async (value) => {
-        if (value.definitionId) return value.definitionId;
-        const created = await api<CustomDefinition>("/api/ideation/definitions", {
-          method: "POST",
-          body: JSON.stringify({ kind, label: value.label }),
-        });
-        return created.id;
-      }),
-    );
-  const currentPackValues = async () => ({
-    genres: await packDefinitionIds("genre", genres),
-    themes: await packDefinitionIds("theme", themes),
-    tags: await packDefinitionIds("tag", tags),
   });
   const generateEntity = useMutation({
     mutationFn: () =>
@@ -307,8 +259,8 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           <BookMarked size={15} /> Entity
         </button>
       </nav>
-      {definitions.error || metadata.error ? (
-        <ErrorNotice error={definitions.error ?? metadata.error} />
+      {definitions.error || metadata.error || packCatalog.error || importedPacks.error ? (
+        <ErrorNotice error={definitions.error ?? metadata.error ?? packCatalog.error ?? importedPacks.error} />
       ) : null}
       <div className="ideation-columns">
         <div className="ingredient-stack">
@@ -346,102 +298,33 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
             <div className="loading">Loading ingredients…</div>
           )}
           <section className="ingredient-group">
-            <h3>Tag packs</h3>
-            <TagPackPicker
-              packs={[
-                ...(packs.data ?? []),
-                ...(importedPacks.data ?? []).filter(
-                  (snapshot) => !(packs.data ?? []).some((pack) => pack.id === snapshot.id),
-                ),
-              ]}
-              selectedIds={new Set((importedPacks.data ?? []).map((pack) => pack.sourcePackId))}
-              disabled={importPack.isPending || removePack.isPending}
-              onToggle={(pack, selected) =>
-                selected ? removePack.mutate(pack.id) : importPack.mutate(pack.id)
-              }
-            />
-            {(packs.data ?? []).some((pack) => pack.ownership === "user") ? (
-              <div className="custom-pack-management">
-                <span className="field-label">Manage custom packs</span>
-                {(packs.data ?? [])
-                  .filter((pack) => pack.ownership === "user")
-                  .map((pack) => (
-                    <div className="tag-pack-row" key={pack.id}>
-                      <span>{pack.name}</span>
-                      <div className="button-row">
-                        <button
-                          type="button"
-                          className="icon-button"
-                          title="Replace pack with current ingredients"
-                          onClick={async () =>
-                            updatePack.mutate({
-                              id: pack.id,
-                              payload: { values: await currentPackValues() },
-                            })
-                          }
-                        >
-                          ↻
-                        </button>
-                        <button
-                          type="button"
-                          className="icon-button"
-                          title="Rename pack"
-                          onClick={async () => {
-                            const name = await dialog.prompt({
-                              title: "Rename tag pack",
-                              label: "Pack name",
-                              initialValue: pack.name,
-                            });
-                            if (name?.trim())
-                              updatePack.mutate({
-                                id: pack.id,
-                                payload: { name: name.trim() },
-                              });
-                          }}
-                        >
-                          ✎
-                        </button>
-                        <button
-                          type="button"
-                          className="icon-button danger"
-                          title="Delete pack"
-                          onClick={async () => {
-                            if (
-                              await dialog.confirm({
-                                title: `Delete “${pack.name}”?`,
-                                body: "Projects that already imported this pack will not change.",
-                                confirmLabel: "Delete pack",
-                                destructive: true,
-                              })
-                            )
-                              deletePack.mutate(pack.id);
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : null}
-            <div className="collection-form">
-              <input
-                value={collectionName}
-                onChange={(event) => setCollectionName(event.target.value)}
-                placeholder="My story ingredients"
-              />
+            <div className="tag-pack-section-heading">
+              <h3>Tag packs</h3>
               <button
                 type="button"
-                className="button ghost"
-                disabled={
-                  !collectionName ||
-                  (genres.length === 0 && themes.length === 0 && tags.length === 0)
-                }
-                onClick={() => createCollection.mutate()}
+                className="button ghost compact"
+                disabled={genres.length === 0 && themes.length === 0 && tags.length === 0}
+                onClick={() => setPackManagerOpen(true)}
               >
                 Save current ingredients as pack
               </button>
             </div>
+            <TagPackPicker
+              catalog={packCatalog.data ?? { categories: [], collections: [], packs: [] }}
+              selectedIds={new Set((importedPacks.data ?? []).map((pack) => pack.sourcePackId))}
+              definitions={[
+                ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
+                ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
+                ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
+                ...(definitions.data?.customDefinitions ?? []),
+              ]}
+              archivedPacks={(importedPacks.data ?? []).filter(
+                (snapshot) => !(packCatalog.data?.packs ?? []).some((pack) => pack.id === snapshot.sourcePackId),
+              )}
+              disabled={syncPacks.isPending}
+              onSelectionChange={(packIds) => syncPacks.mutate(packIds)}
+              onManage={() => setPackManagerOpen(true)}
+            />
           </section>
         </div>
         {mode === "premise" ? (
@@ -608,6 +491,28 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
+      <TagPackCatalogManager
+        open={packManagerOpen}
+        catalog={packCatalog.data ?? { categories: [], collections: [], packs: [] }}
+        definitions={[
+          ...(definitions.data?.package.genres.map((item) => ({ ...item, kind: "genre" as const })) ?? []),
+          ...(definitions.data?.package.themes.map((item) => ({ ...item, kind: "theme" as const })) ?? []),
+          ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ?? []),
+          ...(definitions.data?.customDefinitions ?? []),
+        ]}
+        initialIngredients={{
+          genres: genres.map((value) => value.label),
+          themes: themes.map((value) => value.label),
+          tags: tags.map((value) => value.label),
+        }}
+        onClose={() => setPackManagerOpen(false)}
+        onChanged={async () => {
+          await Promise.all([
+            client.invalidateQueries({ queryKey: ["tag-pack-catalog"] }),
+            client.invalidateQueries({ queryKey: ["ideation-definitions"] }),
+          ]);
+        }}
+      />
     </div>
   );
 }

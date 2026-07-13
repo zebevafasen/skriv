@@ -141,10 +141,37 @@ export const tagPacks = pgTable(
     name: text("name").notNull(),
     normalizedName: text("normalized_name").notNull(),
     description: text("description").notNull().default(""),
+    collectionId: text("collection_id"),
     values: jsonb("values").$type<TagPackValues>().notNull(),
     ...timestamps,
   },
   (table) => [uniqueIndex("tag_packs_user_name_idx").on(table.userId, table.normalizedName)],
+);
+
+export const tagPackCatalogNodes = pgTable(
+  "tag_pack_catalog_nodes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["category", "collection"] }).notNull(),
+    parentId: text("parent_id"),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    description: text("description").notNull().default(""),
+    systemKey: text("system_key"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("tag_pack_catalog_nodes_user_system_idx").on(table.userId, table.systemKey),
+    uniqueIndex("tag_pack_catalog_nodes_user_parent_name_idx").on(
+      table.userId,
+      table.kind,
+      table.parentId,
+      table.normalizedName,
+    ),
+  ],
 );
 
 export const projectTagPacks = pgTable(

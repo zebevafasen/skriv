@@ -16,24 +16,18 @@ describe("base content package", () => {
     const themeLabels = new Set(basePackage.themes.map((theme) => theme.label.toLocaleLowerCase()));
     expect(basePackage.tags.some((tag) => themeLabels.has(tag.label.toLocaleLowerCase()))).toBe(false);
     expect(basePackage.prompts).toHaveLength(11);
-    expect(basePackage.tagPacks.map((pack) => pack.name)).toEqual([
-      "Fantasy",
-      "Science Fiction",
-      "Romance",
-      "Mystery",
-      "Horror",
-      "Historical",
-      "Cozy",
-      "Thriller",
-      "Spacefaring",
-      "Western",
-      "Supernatural",
-      "Solarpunk",
-      "Literary",
-      "Erotica",
-      "Crime & Noir",
-      "All",
+    expect(basePackage.schemaVersion).toBe(2);
+    expect(basePackage.contentVersion).toBe(10);
+    expect(basePackage.tagPackCategories.map((category) => category.name)).toEqual([
+      "Genres",
+      "Themes",
     ]);
+    expect(basePackage.tagPackCollections).toHaveLength(18);
+    expect(basePackage.tagPacks).toHaveLength(63);
+    expect(basePackage.tagPacks.map((pack) => pack.name)).toEqual(
+      "Epic Fantasy|Dark Fantasy|Sword & Sorcery|Urban Fantasy|Fairy Tales & Fables|Wuxia & Xianxia|Space Opera|Cyberpunk & Dystopian|Solarpunk|First Contact|Time & Alternate Realities|Contemporary Romance|Historical Romance|Paranormal Romance|Romantic Comedy|Classic Mystery|Cozy Mystery|Crime & Noir|Police Procedural|Heist & Caper|Gothic Horror|Psychological Horror|Folk Horror|Cosmic Horror|Hauntings & Occult|Monsters & Body Horror|Historical Drama|Historical Adventure|Alternate History|Western & Frontier|Literary Fiction|Slice of Life|Family & Social Drama|Satire|Action Thriller|Survival Adventure|Political Thriller|Superhero Adventure|Cozy Fantasy|Small-Town Comfort|Contemporary Erotica|Historical Erotica|Speculative Erotica|Consuming Ambition|Possessive Love|Pursuit of Perfection|Personal Vengeance|Cycles of Retaliation|Revenge vs Justice|Self-Discovery|Found Family|Exile & Displacement|Corruption & Complicity|Class & Prejudice|Freedom vs Duty|Love & Sacrifice|Betrayal & Reconciliation|Survival & Trauma|Redemption & Rebirth|Secrets & Truth|Memory & Legacy|Stewardship & Community|Technology & Humanity".split("|"),
+    );
+    expect(basePackage.tagPacks.some((pack) => pack.id === "pack.all")).toBe(false);
     expect(getBuiltinPrompt("prose.continue").ownership).toBe("builtin");
     expect(getBuiltinPrompt("prose.revise_selection").variables).toContain("selected_text");
     expect(getBuiltinPrompt("chat.respond").variables).toContain("project_context");
