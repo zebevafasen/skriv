@@ -1693,7 +1693,11 @@ export const ManuscriptEditor = forwardRef<
         <section
           className="selection-revision-panel"
           aria-label="Revise selected text"
-          style={{ top: Math.max(12, selectionPanel.top), left: selectionPanel.left }}
+          style={{
+            top: Math.max(12, selectionPanel.top),
+            left: selectionPanel.left,
+            maxHeight: `calc(var(--visual-viewport-height, 100dvh) - ${Math.max(12, selectionPanel.top) + 12}px)`,
+          }}
         >
           <div className="selection-revision-heading">
             <strong>Revise selection</strong>
@@ -1742,6 +1746,7 @@ export const ManuscriptEditor = forwardRef<
             <span>Model</span>
             <ModelSelect
               value={selectionPanel.modelOverride ?? baseModel}
+              placement="auto"
               onChange={(value) =>
                 setSelectionPanel({
                   ...selectionPanel,

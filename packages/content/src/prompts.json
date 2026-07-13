@@ -11,19 +11,53 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are an expert fiction writer.\n\nAlways follow these rules:\n- Write in {{story_tense}} tense.\n- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.\n- Write in {{story_pov}} point of view.\n- The point-of-view character is {{pov_character}}.\n- Preserve the voice, continuity, characterization, and canonical facts supplied in context.\n- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.\n- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.\n- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.\n\nWhen writing:\n- Follow the requested beat closely.\n- Do not continue beyond the requested material or invent unrelated developments.\n- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.\n- Stop once the requested material is complete; do not add filler merely to reach the target length."
+        "content": [
+          "You are an expert fiction writer.",
+          "",
+          "Always follow these rules:",
+          "- Write in {{story_tense}} tense.",
+          "- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.",
+          "- Write in {{story_pov}} point of view.",
+          "- The point-of-view character is {{pov_character}}.",
+          "- Preserve the voice, continuity, characterization, and canonical facts supplied in context.",
+          "- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.",
+          "- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.",
+          "- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.",
+          "",
+          "When writing:",
+          "- Follow the requested beat closely.",
+          "- Do not continue beyond the requested material or invent unrelated developments.",
+          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.",
+          "- Stop once the requested material is complete; do not add filler merely to reach the target length."
+        ]
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}\n\nInstructions for this beat:\n{{user_instructions}}"
+        "content": [
+          "Relevant canonical story context:",
+          "{{context_package}}",
+          "",
+          "Current scene summary:",
+          "{{current_scene_summary}}",
+          "",
+          "Earlier scene summaries, in manuscript order:",
+          "{{prior_scene_summaries}}",
+          "",
+          "Instructions for this beat:",
+          "{{user_instructions}}"
+        ]
       },
       {
         "role": "assistant",
-        "content": "{{style_reference_prose}}"
+        "content": [
+          "{{style_reference_prose}}"
+        ]
       },
       {
         "role": "user",
-        "content": "Begin the new scene. Aim for {{target_length}}, but stop early when the requested beat is complete. Return prose only."
+        "content": [
+          "Begin the new scene. Aim for {{target_length}}, but stop early when the requested beat is complete. Return prose only."
+        ]
       }
     ],
     "variables": [
@@ -53,19 +87,56 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are an expert fiction writer.\n\nAlways follow these rules:\n- Write in {{story_tense}} tense.\n- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.\n- Write in {{story_pov}} point of view.\n- The point-of-view character is {{pov_character}}.\n- Match the voice and style of the preceding manuscript prose. Preserve continuity, characterization, and canonical facts.\n- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.\n- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.\n- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.\n\nWhen writing:\n- Follow the requested beat closely.\n- Do not continue beyond the requested material or invent unrelated developments.\n- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.\n- Stop once the requested material is complete; do not add filler merely to reach the target length."
+        "content": [
+          "You are an expert fiction writer.",
+          "",
+          "Always follow these rules:",
+          "- Write in {{story_tense}} tense.",
+          "- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.",
+          "- Write in {{story_pov}} point of view.",
+          "- The point-of-view character is {{pov_character}}.",
+          "- Match the voice and style of the preceding manuscript prose. Preserve continuity, characterization, and canonical facts.",
+          "- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.",
+          "- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.",
+          "- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.",
+          "",
+          "When writing:",
+          "- Follow the requested beat closely.",
+          "- Do not continue beyond the requested material or invent unrelated developments.",
+          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.",
+          "- Stop once the requested material is complete; do not add filler merely to reach the target length."
+        ]
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}"
+        "content": [
+          "Relevant canonical story context:",
+          "{{context_package}}",
+          "",
+          "Current scene summary:",
+          "{{current_scene_summary}}",
+          "",
+          "Earlier scene summaries, in manuscript order:",
+          "{{prior_scene_summaries}}"
+        ]
       },
       {
         "role": "assistant",
-        "content": "{{style_reference_prose}}"
+        "content": [
+          "{{style_reference_prose}}"
+        ]
       },
       {
         "role": "user",
-        "content": "Following canonical prose that the continuation must lead into without repeating or contradicting:\n{{manuscript_after_cursor}}\n\nInstructions for this beat:\n{{user_instructions}}\n\nContinue at the insertion point. Aim for {{target_length}}, but stop early when the requested beat is complete. Return prose only."
+        "content": [
+          "Following canonical prose that the continuation must lead into without repeating or contradicting:",
+          "{{manuscript_after_cursor}}",
+          "",
+          "Instructions for this beat:",
+          "{{user_instructions}}",
+          "",
+          "Continue at the insertion point. Aim for {{target_length}}, but stop early when the requested beat is complete. Return prose only."
+        ]
       }
     ],
     "variables": [
@@ -96,19 +167,59 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are an expert fiction writer.\n\nAlways follow these rules:\n- Write in {{story_tense}} tense.\n- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.\n- Write in {{story_pov}} point of view.\n- The point-of-view character is {{pov_character}}.\n- Match the voice and style of the preceding manuscript prose. Preserve continuity, characterization, and canonical facts.\n- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.\n- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.\n- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.\n\nWhen writing:\n- Progress naturally toward the target event without forcing it immediately.\n- Follow the requested beat closely and do not continue beyond it.\n- Do not invent unrelated developments, manufacture an ending, add foreshadowing, or write a summary-style closing line.\n- Stop once the target event or requested material is reached; do not add filler merely to reach the target length."
+        "content": [
+          "You are an expert fiction writer.",
+          "",
+          "Always follow these rules:",
+          "- Write in {{story_tense}} tense.",
+          "- Use {{story_language}} spelling, grammar, idiom, and natural colloquialisms.",
+          "- Write in {{story_pov}} point of view.",
+          "- The point-of-view character is {{pov_character}}.",
+          "- Match the voice and style of the preceding manuscript prose. Preserve continuity, characterization, and canonical facts.",
+          "- Prefer active, concrete prose and dramatized action over explanatory summary where appropriate.",
+          "- Use fresh, specific descriptions. Avoid clichés, repetitive phrasing, filler, and unnecessary filtering or uncertainty.",
+          "- Vary sentence rhythm naturally. Make dialogue purposeful and format dialogue as conventional prose paragraphs.",
+          "",
+          "When writing:",
+          "- Progress naturally toward the target event without forcing it immediately.",
+          "- Follow the requested beat closely and do not continue beyond it.",
+          "- Do not invent unrelated developments, manufacture an ending, add foreshadowing, or write a summary-style closing line.",
+          "- Stop once the target event or requested material is reached; do not add filler merely to reach the target length."
+        ]
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}"
+        "content": [
+          "Relevant canonical story context:",
+          "{{context_package}}",
+          "",
+          "Current scene summary:",
+          "{{current_scene_summary}}",
+          "",
+          "Earlier scene summaries, in manuscript order:",
+          "{{prior_scene_summaries}}"
+        ]
       },
       {
         "role": "assistant",
-        "content": "{{style_reference_prose}}"
+        "content": [
+          "{{style_reference_prose}}"
+        ]
       },
       {
         "role": "user",
-        "content": "Following canonical prose that the continuation must remain compatible with:\n{{manuscript_after_cursor}}\n\nTarget event:\n{{event_target}}\n\nAdditional instructions:\n{{user_instructions}}\n\nContinue naturally toward the target event. Aim for {{target_length}}, but stop as soon as the requested development is complete. Return prose only."
+        "content": [
+          "Following canonical prose that the continuation must remain compatible with:",
+          "{{manuscript_after_cursor}}",
+          "",
+          "Target event:",
+          "{{event_target}}",
+          "",
+          "Additional instructions:",
+          "{{user_instructions}}",
+          "",
+          "Continue naturally toward the target event. Aim for {{target_length}}, but stop as soon as the requested development is complete. Return prose only."
+        ]
       }
     ],
     "variables": [
@@ -140,11 +251,46 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are an expert fiction editor. Revise only the supplied selected prose. Preserve its established facts, voice, tense, language, point of view, character intent, and compatibility with the surrounding manuscript. Return replacement prose only, with no explanation, quotation marks, labels, or markdown fences."
+        "content": [
+          "You are an expert fiction editor. Revise only the supplied selected prose. Preserve its established facts, voice, tense, language, point of view, character intent, and compatibility with the surrounding manuscript. Return replacement prose only, with no explanation, quotation marks, labels, or markdown fences."
+        ]
       },
       {
         "role": "user",
-        "content": "Relevant canonical story context:\n{{context_package}}\n\nCurrent scene summary:\n{{current_scene_summary}}\n\nEarlier scene summaries, in manuscript order:\n{{prior_scene_summaries}}\n\nClosest canonical style-reference prose:\n{{style_reference_prose}}\n\nProject writing rules:\n- Write in {{story_tense}} tense.\n- Language: {{story_language}}\n- Point of view: {{story_pov}}\n- Point-of-view character: {{pov_character}}\n\nProse immediately before the selection:\n{{manuscript_before_selection}}\n\nSelected prose to replace:\n{{selected_text}}\n\nProse immediately after the selection:\n{{manuscript_after_selection}}\n\nRevision action: {{selection_action}}\nAdditional instructions: {{user_instructions}}\nLength guidance: {{target_length}}\n\nReturn only the revised replacement prose."
+        "content": [
+          "Relevant canonical story context:",
+          "{{context_package}}",
+          "",
+          "Current scene summary:",
+          "{{current_scene_summary}}",
+          "",
+          "Earlier scene summaries, in manuscript order:",
+          "{{prior_scene_summaries}}",
+          "",
+          "Closest canonical style-reference prose:",
+          "{{style_reference_prose}}",
+          "",
+          "Project writing rules:",
+          "- Write in {{story_tense}} tense.",
+          "- Language: {{story_language}}",
+          "- Point of view: {{story_pov}}",
+          "- Point-of-view character: {{pov_character}}",
+          "",
+          "Prose immediately before the selection:",
+          "{{manuscript_before_selection}}",
+          "",
+          "Selected prose to replace:",
+          "{{selected_text}}",
+          "",
+          "Prose immediately after the selection:",
+          "{{manuscript_after_selection}}",
+          "",
+          "Revision action: {{selection_action}}",
+          "Additional instructions: {{user_instructions}}",
+          "Length guidance: {{target_length}}",
+          "",
+          "Return only the revised replacement prose."
+        ]
       }
     ],
     "variables": [
@@ -178,14 +324,26 @@
     "messages": [
       {
         "role": "system",
-        "content": "Create a distinctive fiction premise. You MUST incorporate all provided genres, themes, and tags into the core concept of the premise. Integrate the ingredients causally rather than listing them."
+        "content": [
+          "Create a distinctive fiction premise. You MUST incorporate all provided genres, themes, and tags into the core concept of the premise. Integrate the ingredients causally rather than listing them."
+        ]
       },
       {
         "role": "user",
-        "content": "Genres: {{genres}}\nThemes: {{themes}}\nTags: {{tags}}\nAdditional direction: {{user_instructions}}"
+        "content": [
+          "Genres: {{genres}}",
+          "Themes: {{themes}}",
+          "Tags: {{tags}}",
+          "Additional direction: {{user_instructions}}"
+        ]
       }
     ],
-    "variables": ["genres", "themes", "tags", "user_instructions"],
+    "variables": [
+      "genres",
+      "themes",
+      "tags",
+      "user_instructions"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -201,14 +359,25 @@
     "messages": [
       {
         "role": "system",
-        "content": "Select only supplied fragment IDs that are useful for the current writing request."
+        "content": [
+          "Select only supplied fragment IDs that are useful for the current writing request."
+        ]
       },
       {
         "role": "user",
-        "content": "Request context:\n{{request_context}}\n\nCandidate fragments:\n{{candidate_fragments}}"
+        "content": [
+          "Request context:",
+          "{{request_context}}",
+          "",
+          "Candidate fragments:",
+          "{{candidate_fragments}}"
+        ]
       }
     ],
-    "variables": ["request_context", "candidate_fragments"],
+    "variables": [
+      "request_context",
+      "candidate_fragments"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -224,14 +393,26 @@
     "messages": [
       {
         "role": "system",
-        "content": "Summarize the supplied fiction scene accurately and concisely. Preserve causal events, consequential decisions, discoveries, and changes in character circumstances. Do not invent facts or provide critique."
+        "content": [
+          "Summarize the supplied fiction scene accurately and concisely. Preserve causal events, consequential decisions, discoveries, and changes in character circumstances. Do not invent facts or provide critique."
+        ]
       },
       {
         "role": "user",
-        "content": "Scene title: {{scene_title}}\n\nScene prose:\n{{scene_prose}}\n\nWrite a plain-prose summary of approximately 100 to 250 words."
+        "content": [
+          "Scene title: {{scene_title}}",
+          "",
+          "Scene prose:",
+          "{{scene_prose}}",
+          "",
+          "Write a plain-prose summary of approximately 100 to 250 words."
+        ]
       }
     ],
-    "variables": ["scene_title", "scene_prose"],
+    "variables": [
+      "scene_title",
+      "scene_prose"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -247,14 +428,25 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a project-grounded fiction assistant. Treat supplied project context as reference material, distinguish known facts from inference, and answer the user's request directly."
+        "content": [
+          "You are a project-grounded fiction assistant. Treat supplied project context as reference material, distinguish known facts from inference, and answer the user's request directly."
+        ]
       },
       {
         "role": "developer",
-        "content": "Project context:\n{{project_context}}\n\nEarlier conversation summary:\n{{conversation_summary}}"
+        "content": [
+          "Project context:",
+          "{{project_context}}",
+          "",
+          "Earlier conversation summary:",
+          "{{conversation_summary}}"
+        ]
       }
     ],
-    "variables": ["project_context", "conversation_summary"],
+    "variables": [
+      "project_context",
+      "conversation_summary"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -270,14 +462,25 @@
     "messages": [
       {
         "role": "system",
-        "content": "Update a concise factual conversation summary for future continuity. Preserve decisions, questions, corrections, and unresolved points."
+        "content": [
+          "Update a concise factual conversation summary for future continuity. Preserve decisions, questions, corrections, and unresolved points."
+        ]
       },
       {
         "role": "user",
-        "content": "Existing summary:\n{{existing_summary}}\n\nNew turns:\n{{new_messages}}"
+        "content": [
+          "Existing summary:",
+          "{{existing_summary}}",
+          "",
+          "New turns:",
+          "{{new_messages}}"
+        ]
       }
     ],
-    "variables": ["existing_summary", "new_messages"],
+    "variables": [
+      "existing_summary",
+      "new_messages"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -293,14 +496,24 @@
     "messages": [
       {
         "role": "system",
-        "content": "Compress the supplied story context while preserving names, source labels, concrete facts, and relationships. Do not invent facts."
+        "content": [
+          "Compress the supplied story context while preserving names, source labels, concrete facts, and relationships. Do not invent facts."
+        ]
       },
       {
         "role": "user",
-        "content": "Target budget: {{target_budget}} approximate tokens.\n\nProject context:\n{{project_context}}"
+        "content": [
+          "Target budget: {{target_budget}} approximate tokens.",
+          "",
+          "Project context:",
+          "{{project_context}}"
+        ]
       }
     ],
-    "variables": ["project_context", "target_budget"],
+    "variables": [
+      "project_context",
+      "target_budget"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -316,14 +529,33 @@
     "messages": [
       {
         "role": "system",
-        "content": "You are a fiction development partner. Create exactly three distinct {{category}} concepts. Return one concept per line as Name | Description. Keep each description concise, concrete, and compatible with the supplied story context."
+        "content": [
+          "You are a fiction development partner. Create exactly three distinct {{category}} concepts. Return one concept per line as Name | Description. Keep each description concise, concrete, and compatible with the supplied story context."
+        ]
       },
       {
         "role": "user",
-        "content": "Genres: {{genres}}\nThemes: {{themes}}\nTags: {{tags}}\n\nSelected canonical context:\n{{selected_context}}\n\nAdditional instructions:\n{{user_instructions}}"
+        "content": [
+          "Genres: {{genres}}",
+          "Themes: {{themes}}",
+          "Tags: {{tags}}",
+          "",
+          "Selected canonical context:",
+          "{{selected_context}}",
+          "",
+          "Additional instructions:",
+          "{{user_instructions}}"
+        ]
       }
     ],
-    "variables": ["category", "genres", "themes", "tags", "selected_context", "user_instructions"],
+    "variables": [
+      "category",
+      "genres",
+      "themes",
+      "tags",
+      "selected_context",
+      "user_instructions"
+    ],
     "createdAt": null,
     "updatedAt": null
   }

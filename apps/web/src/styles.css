@@ -1957,6 +1957,8 @@ label small {
 
 .selection-revision-panel {
   width: min(360px, calc(100vw - 24px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   gap: 12px;
   padding: 14px;

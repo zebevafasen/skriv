@@ -8,6 +8,18 @@ import themes from "./themes.json" with { type: "json" };
 
 const catalogKeys = ["genres", "themes", "tags"] as const;
 
+function authoredPromptContent(content: string | readonly string[]): string {
+  return typeof content === "string" ? content : content.join("\n");
+}
+
+const normalizedPrompts = prompts.map((prompt) => ({
+  ...prompt,
+  messages: prompt.messages.map((message) => ({
+    ...message,
+    content: authoredPromptContent(message.content),
+  })),
+}));
+
 function validateContentReferences(content: ContentPackage): ContentPackage {
   const catalogIds = Object.fromEntries(
     catalogKeys.map((key) => [key, new Set(content[key].map((item) => item.id))]),
@@ -64,7 +76,7 @@ export const basePackage: ContentPackage = validateContentReferences(contentPack
       },
     },
   ],
-  prompts,
+  prompts: normalizedPrompts,
 }));
 
 export function getBuiltinPrompt(workflow: WorkflowKey) {

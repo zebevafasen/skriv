@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { basePackage, getBuiltinPrompt, outlinePresets, validateBuiltinContent } from "./index.js";
+import authoredPrompts from "./prompts.json" with { type: "json" };
 
 describe("base content package", () => {
   it("validates and contains every implemented workflow", () => {
@@ -51,5 +52,16 @@ describe("base content package", () => {
       saveTheCat?.acts.flatMap((act) => act.chapters).flatMap((chapter) => chapter.scenes),
     ).toHaveLength(15);
     expect(saveTheCat?.acts[0]?.chapters[0]?.scenes[0]).toMatchObject({ title: "Opening Image" });
+  });
+
+  it("authors prompt messages as readable lines and normalizes them without changing content", () => {
+    for (const [promptIndex, prompt] of authoredPrompts.entries()) {
+      for (const [messageIndex, message] of prompt.messages.entries()) {
+        expect(Array.isArray(message.content)).toBe(true);
+        expect(basePackage.prompts[promptIndex]?.messages[messageIndex]?.content).toBe(
+          message.content.join("\n"),
+        );
+      }
+    }
   });
 });
