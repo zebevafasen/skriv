@@ -5,27 +5,35 @@ import authoredPrompts from "./prompts.json" with { type: "json" };
 describe("base content package", () => {
   it("validates and contains every implemented workflow", () => {
     expect(validateBuiltinContent().id).toBe("asterism.base");
-    expect(basePackage.genres).toHaveLength(35);
+    expect(basePackage.genres).toHaveLength(37);
     expect(basePackage.themes).toHaveLength(41);
-    expect(basePackage.tags).toHaveLength(806);
+    expect(basePackage.tags).toHaveLength(974);
     expect(basePackage.genres.map((genre) => genre.id)).not.toContain("genre.cozy_fantasy");
     expect(basePackage.genres.map((genre) => genre.id)).not.toContain("genre.romantic_comedy");
     expect(basePackage.tags.map((tag) => tag.id)).not.toEqual(
       expect.arrayContaining(["tag.second_person", "tag.multiple_pov", "tag.tense"]),
     );
     const themeLabels = new Set(basePackage.themes.map((theme) => theme.label.toLocaleLowerCase()));
-    expect(basePackage.tags.some((tag) => themeLabels.has(tag.label.toLocaleLowerCase()))).toBe(false);
+    expect(basePackage.tags.some((tag) => themeLabels.has(tag.label.toLocaleLowerCase()))).toBe(
+      false,
+    );
     expect(basePackage.prompts).toHaveLength(11);
     expect(basePackage.schemaVersion).toBe(2);
-    expect(basePackage.contentVersion).toBe(10);
+    expect(basePackage.contentVersion).toBe(11);
     expect(basePackage.ingredientPackCategories.map((category) => category.name)).toEqual([
       "Genres",
       "Themes",
+      "Characters & Relationships",
+      "Worlds & Settings",
+      "Plots & Structures",
+      "Tone & Texture",
     ]);
-    expect(basePackage.ingredientPackCollections).toHaveLength(18);
-    expect(basePackage.ingredientPacks).toHaveLength(63);
+    expect(basePackage.ingredientPackCollections).toHaveLength(34);
+    expect(basePackage.ingredientPacks).toHaveLength(95);
     expect(basePackage.ingredientPacks.map((pack) => pack.name)).toEqual(
-      "Epic Fantasy|Dark Fantasy|Sword & Sorcery|Urban Fantasy|Fairy Tales & Fables|Wuxia & Xianxia|Space Opera|Cyberpunk & Dystopian|Solarpunk|First Contact|Time & Alternate Realities|Contemporary Romance|Historical Romance|Paranormal Romance|Romantic Comedy|Classic Mystery|Cozy Mystery|Crime & Noir|Police Procedural|Heist & Caper|Gothic Horror|Psychological Horror|Folk Horror|Cosmic Horror|Hauntings & Occult|Monsters & Body Horror|Historical Drama|Historical Adventure|Alternate History|Western & Frontier|Literary Fiction|Slice of Life|Family & Social Drama|Satire|Action Thriller|Survival Adventure|Political Thriller|Superhero Adventure|Cozy Fantasy|Small-Town Comfort|Contemporary Erotica|Historical Erotica|Speculative Erotica|Consuming Ambition|Possessive Love|Pursuit of Perfection|Personal Vengeance|Cycles of Retaliation|Revenge vs Justice|Self-Discovery|Found Family|Exile & Displacement|Corruption & Complicity|Class & Prejudice|Freedom vs Duty|Love & Sacrifice|Betrayal & Reconciliation|Survival & Trauma|Redemption & Rebirth|Secrets & Truth|Memory & Legacy|Stewardship & Community|Technology & Humanity".split("|"),
+      "Epic Fantasy|Dark Fantasy|Sword & Sorcery|Urban Fantasy|Fairy Tales & Fables|Wuxia & Xianxia|Space Opera|Cyberpunk & Dystopian|Solarpunk|First Contact|Time & Alternate Realities|Contemporary Romance|Historical Romance|Paranormal Romance|Romantic Comedy|Classic Mystery|Cozy Mystery|Crime & Noir|Police Procedural|Heist & Caper|Gothic Horror|Psychological Horror|Folk Horror|Cosmic Horror|Hauntings & Occult|Monsters & Body Horror|Historical Drama|Historical Adventure|Alternate History|Western & Frontier|Literary Fiction|Slice of Life|Family & Social Drama|Satire|Action Thriller|Survival Adventure|Political Thriller|Superhero Adventure|Cozy Fantasy|Small-Town Comfort|Contemporary Erotica|Historical Erotica|Speculative Erotica|Consuming Ambition|Possessive Love|Pursuit of Perfection|Personal Vengeance|Cycles of Retaliation|Revenge vs Justice|Self-Discovery|Found Family|Exile & Displacement|Corruption & Complicity|Class & Prejudice|Freedom vs Duty|Love & Sacrifice|Betrayal & Reconciliation|Survival & Trauma|Redemption & Rebirth|Secrets & Truth|Memory & Legacy|Stewardship & Community|Technology & Humanity|Stage & Song|Sports & Competition|Unreliable Intimacy|Chorus of Voices|Rivals & Reluctant Allies|Chosen Bonds|Keepers of Knowledge|Working Hands|Disabled & Adaptive Lives|Across Generations|Remote Outposts|Roads, Rivers & Rails|Rule & Resistance|Community Economies|Living Magic|Forbidden Arts|Posthuman Futures|Deep-Space Working Lives|Hidden Inheritance|Institutional Conspiracy|Stranded Together|Disaster & Rescue|Rise & Fall|Second Chances|Fractured Chronology|Documents & Testimony|Warm & Tender|Eerie & Ominous|Intimate & Quiet|Operatic & Sweeping|Lyrical & Lush|Comic Registers".split(
+        "|",
+      ),
     );
     expect(basePackage.ingredientPacks.some((pack) => pack.id === "pack.all")).toBe(false);
     expect(getBuiltinPrompt("prose.continue").ownership).toBe("builtin");

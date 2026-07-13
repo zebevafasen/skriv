@@ -60,6 +60,12 @@
     "categoryId": "tag-category.genres"
   },
   {
+    "id": "tag-collection.genre.performance_competition",
+    "name": "Performance & Competition",
+    "description": "Stories driven by performance, training, creative collaboration, and competition.",
+    "categoryId": "tag-category.genres"
+  },
+  {
     "id": "tag-collection.theme.obsession",
     "name": "Obsession",
     "description": "Obsession packs built around distinct thematic pressures.",
@@ -106,5 +112,95 @@
     "name": "Nature & Technology",
     "description": "Nature & Technology packs built around distinct thematic pressures.",
     "categoryId": "tag-category.themes"
+  },
+  {
+    "id": "tag-collection.character.perspective",
+    "name": "Protagonists & Perspective",
+    "description": "Who carries the story and how closely the reader experiences their point of view.",
+    "categoryId": "tag-category.characters"
+  },
+  {
+    "id": "tag-collection.character.relationships",
+    "name": "Relationships & Dynamics",
+    "description": "Romantic, familial, platonic, professional, and adversarial bonds.",
+    "categoryId": "tag-category.characters"
+  },
+  {
+    "id": "tag-collection.character.roles",
+    "name": "Roles & Callings",
+    "description": "Occupations, vocations, social functions, and identities that generate story pressure.",
+    "categoryId": "tag-category.characters"
+  },
+  {
+    "id": "tag-collection.character.lived_experience",
+    "name": "Bodies & Lived Experience",
+    "description": "Embodiment, access, health, age, identity, and life circumstances.",
+    "categoryId": "tag-category.characters"
+  },
+  {
+    "id": "tag-collection.world.place",
+    "name": "Places & Journeys",
+    "description": "Locations, landscapes, built environments, and ways of moving through them.",
+    "categoryId": "tag-category.worlds"
+  },
+  {
+    "id": "tag-collection.world.society",
+    "name": "Societies & Institutions",
+    "description": "Governments, economies, communities, hierarchies, and collective systems.",
+    "categoryId": "tag-category.worlds"
+  },
+  {
+    "id": "tag-collection.world.magic",
+    "name": "Magic & Wonder",
+    "description": "Sources, costs, expressions, institutions, and consequences of the impossible.",
+    "categoryId": "tag-category.worlds"
+  },
+  {
+    "id": "tag-collection.world.science",
+    "name": "Science & Futures",
+    "description": "Scientific ideas, future technologies, altered humanity, and life beyond Earth.",
+    "categoryId": "tag-category.worlds"
+  },
+  {
+    "id": "tag-collection.plot.secrets",
+    "name": "Secrets & Schemes",
+    "description": "Conspiracies, hidden histories, deceptions, investigations, and intricate plans.",
+    "categoryId": "tag-category.plots"
+  },
+  {
+    "id": "tag-collection.plot.peril",
+    "name": "Peril & Survival",
+    "description": "Danger, isolation, rescue, disaster, pursuit, and pressure-driven stories.",
+    "categoryId": "tag-category.plots"
+  },
+  {
+    "id": "tag-collection.plot.change",
+    "name": "Change & Consequence",
+    "description": "Character trajectories, reversals, moral choices, rises, falls, and second chances.",
+    "categoryId": "tag-category.plots"
+  },
+  {
+    "id": "tag-collection.plot.form",
+    "name": "Story Shapes",
+    "description": "Chronology, viewpoint architecture, framing devices, and structural experiments.",
+    "categoryId": "tag-category.plots"
+  },
+  {
+    "id": "tag-collection.tone.mood",
+    "name": "Mood & Atmosphere",
+    "description": "Emotional weather, sensory atmosphere, and the story's dominant feeling.",
+    "categoryId": "tag-category.tone"
+  },
+  {
+    "id": "tag-collection.tone.energy",
+    "name": "Pace & Scale",
+    "description": "Narrative momentum, scope, intensity, and the size of the story's canvas.",
+    "categoryId": "tag-category.tone"
+  },
+  {
+    "id": "tag-collection.tone.style",
+    "name": "Style & Sensibility",
+    "description": "Prose texture, comic mode, aesthetic posture, and storytelling sensibility.",
+    "categoryId": "tag-category.tone"
   }
 ]

@@ -173,5 +173,15 @@
     "id": "genre.children",
     "label": "Children's Fiction",
     "description": "Stories written for children, with age-appropriate stakes, language, and imaginative scope."
+  },
+  {
+    "id": "genre.musical",
+    "label": "Musical",
+    "description": "Stories in which songs, performance, and musical expression are integral to the narrative form."
+  },
+  {
+    "id": "genre.sports",
+    "label": "Sports Fiction",
+    "description": "Stories centered on athletic competition, training, teamwork, and life shaped by sport."
   }
 ]
