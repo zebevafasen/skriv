@@ -7,13 +7,14 @@ import type {
   IngredientPackCatalog,
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookMarked, Dice5, Lock, Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { BookMarked, Check, ChevronDown, Dice5, Lock, Plus, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { ModelSelect } from "./ModelSelect.js";
 import { IngredientPackPicker } from "./IngredientPackPicker.js";
 import { IngredientPackCatalogManager } from "./IngredientPackCatalogManager.js";
+import { MentionTextarea } from "./MentionTextarea.js";
 
 type Value = { definitionId: string | null; label: string; locked: boolean };
 type Metadata = {
@@ -21,6 +22,12 @@ type Metadata = {
   genres: { kind: "selection"; values: Value[] };
   themes: { kind: "selection"; values: Value[] };
   tags: { kind: "selection"; values: Value[] };
+};
+type IdeationSavePayload = {
+  premise: string;
+  genres: Value[];
+  themes: Value[];
+  tags: Value[];
 };
 type Collection = {
   id: string;
@@ -37,7 +44,17 @@ type Definitions = {
   customDefinitions: CustomDefinition[];
 };
 
-export function IdeationPanel({ projectId }: { projectId: string }) {
+type IdeationMode = "premise" | "entity";
+
+export function IdeationPanel({
+  projectId,
+  entries,
+  onOpenCompendium,
+}: {
+  projectId: string;
+  entries: CompendiumEntry[];
+  onOpenCompendium: () => void;
+}) {
   const client = useQueryClient();
   const definitions = useQuery({
     queryKey: ["ideation-definitions"],
@@ -67,50 +84,83 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     queryKey: ["compendium-categories", projectId],
     queryFn: () => api<CompendiumCategory[]>(`/api/projects/${projectId}/compendium-categories`),
   });
-  const compendium = useQuery({
-    queryKey: ["compendium", projectId],
-    queryFn: () => api<CompendiumEntry[]>(`/api/projects/${projectId}/compendium`),
-  });
-  const [mode, setMode] = useState<"premise" | "entity">("premise");
+  const [mode, setMode] = useState<IdeationMode>("premise");
   const [genres, setGenres] = useState<Value[]>([]);
   const [themes, setThemes] = useState<Value[]>([]);
   const [tags, setTags] = useState<Value[]>([]);
   const [premise, setPremise] = useState("");
-  const [instructions, setInstructions] = useState("");
+  const [instructions, setInstructions] = useState<Record<IdeationMode, string>>({
+    premise: "",
+    entity: "",
+  });
+  const [contextEntryIds, setContextEntryIds] = useState<Record<IdeationMode, string[]>>({
+    premise: [],
+    entity: [],
+  });
   const [alternatives, setAlternatives] = useState<string[]>([]);
   const [model, setModel] = useState("");
   const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
   const [entityTypeId, setEntityTypeId] = useState("story.character");
-  const [entityContextIds, setEntityContextIds] = useState<string[]>([]);
-  const [entitySearch, setEntitySearch] = useState("");
   const [entityAlternatives, setEntityAlternatives] = useState<EntityAlternative[]>([]);
+  const referenceEntries = useMemo(() => entries.filter((entry) => !entry.singleton), [entries]);
+  const persistedValues = useMemo<IdeationSavePayload>(
+    () => ({ premise, genres, themes, tags }),
+    [genres, premise, tags, themes],
+  );
+  const persistedSnapshot = JSON.stringify(persistedValues);
+  const persistedSnapshotRef = useRef<string | null>(null);
+  const hydratedProjectRef = useRef<string | null>(null);
   useEffect(() => {
-    if (metadata.data) {
-      setGenres(metadata.data.genres?.values ?? []);
-      setThemes(metadata.data.themes?.values ?? []);
-      setTags(metadata.data.tags?.values ?? []);
-      setPremise(metadata.data.premise?.text ?? "");
-    }
-  }, [metadata.data]);
+    if (!metadata.data || hydratedProjectRef.current === projectId) return;
+    const loaded: IdeationSavePayload = {
+      genres: metadata.data.genres?.values ?? [],
+      themes: metadata.data.themes?.values ?? [],
+      tags: metadata.data.tags?.values ?? [],
+      premise: metadata.data.premise?.text ?? "",
+    };
+    hydratedProjectRef.current = projectId;
+    persistedSnapshotRef.current = JSON.stringify(loaded);
+    setGenres(loaded.genres);
+    setThemes(loaded.themes);
+    setTags(loaded.tags);
+    setPremise(loaded.premise);
+  }, [metadata.data, projectId]);
   useEffect(() => {
     if (!model && settings.data) {
       setModel(localStorage.getItem("asterism-latest-model") ?? settings.data.baseModel);
     }
   }, [model, settings.data]);
   const save = useMutation({
-    mutationFn: (payload: object) =>
+    mutationFn: (payload: IdeationSavePayload) =>
       api(`/api/projects/${projectId}/ideation`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["ideation", projectId] }),
+    onSuccess: async (_result, payload) => {
+      persistedSnapshotRef.current = JSON.stringify(payload);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["ideation", projectId] }),
+        client.invalidateQueries({ queryKey: ["compendium", projectId] }),
+      ]);
+    },
   });
+  useEffect(() => {
+    if (
+      persistedSnapshotRef.current === null ||
+      persistedSnapshotRef.current === persistedSnapshot
+    ) {
+      return;
+    }
+    const timeout = window.setTimeout(() => save.mutate(persistedValues), 700);
+    return () => window.clearTimeout(timeout);
+  }, [persistedSnapshot, persistedValues, save.mutate]);
   const generate = useMutation({
     mutationFn: () =>
       api<{ alternatives: string[] }>(`/api/projects/${projectId}/ideation/generate`, {
         method: "POST",
         body: JSON.stringify({
-          instructions,
+          instructions: instructions.premise,
+          contextEntryIds: contextEntryIds.premise,
           genres,
           themes,
           tags,
@@ -143,8 +193,8 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           body: JSON.stringify({
             mode: "entity",
             typeId: entityTypeId,
-            contextEntryIds: entityContextIds,
-            instructions,
+            contextEntryIds: contextEntryIds.entity,
+            instructions: instructions.entity,
             genres,
             themes,
             tags,
@@ -224,7 +274,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
     setThemes(choose(available.themes, rand(1, 3), themes));
     setTags(choose(available.tags, rand(3, 15), tags));
   };
-  const persistIngredients = () => save.mutate({ genres, themes, tags, premise });
+  const persistIngredients = () => save.mutate(persistedValues);
 
   return (
     <div className="workspace-panel ideation-panel">
@@ -235,6 +285,14 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
           <p>Combine constraints into a premise with its own gravity.</p>
         </div>
         <div className="button-row">
+          <button
+            type="button"
+            className="button ghost"
+            data-ideation-compendium-trigger
+            onClick={onOpenCompendium}
+          >
+            <BookMarked size={16} /> Compendium
+          </button>
           <button type="button" className="button ghost" onClick={randomize}>
             <Dice5 size={16} /> Randomize
           </button>
@@ -340,14 +398,18 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
                 models={models.data ?? []}
               />
             </div>
-            <label>
-              Project instructions
-              <textarea
-                value={instructions}
-                onChange={(event) => setInstructions(event.target.value)}
-                placeholder="Adult gothic tone; avoid chosen-one narratives."
-              />
-            </label>
+            <AdditionalInstructions
+              value={instructions.premise}
+              entries={referenceEntries}
+              selectedIds={contextEntryIds.premise}
+              placeholder="Adult gothic tone; let Evelyn complicate the central relationship."
+              onValueChange={(value) =>
+                setInstructions((current) => ({ ...current, premise: value }))
+              }
+              onSelectedIdsChange={(ids) =>
+                setContextEntryIds((current) => ({ ...current, premise: ids }))
+              }
+            />
             <button
               type="button"
               className="button primary full"
@@ -373,7 +435,7 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
                 placeholder="Your project premise will live here…"
               />
             </label>
-            <button type="button" className="button ghost" onClick={() => save.mutate({ premise })}>
+            <button type="button" className="button ghost" onClick={persistIngredients}>
               Save premise
             </button>
           </div>
@@ -398,46 +460,18 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
                 ))}
               </select>
             </label>
-            <label>
-              <span className="field-label">Optional Compendium context</span>
-              <input
-                value={entitySearch}
-                onChange={(event) => setEntitySearch(event.target.value)}
-                placeholder="Search entries…"
-              />
-            </label>
-            <div className="entity-context-list">
-              {(compendium.data ?? [])
-                .filter(
-                  (entry) =>
-                    !entry.singleton &&
-                    entry.name.toLocaleLowerCase().includes(entitySearch.toLocaleLowerCase()),
-                )
-                .map((entry) => (
-                  <label key={entry.id}>
-                    <input
-                      type="checkbox"
-                      checked={entityContextIds.includes(entry.id)}
-                      onChange={() =>
-                        setEntityContextIds((current) =>
-                          current.includes(entry.id)
-                            ? current.filter((id) => id !== entry.id)
-                            : [...current, entry.id],
-                        )
-                      }
-                    />{" "}
-                    {entry.name}
-                  </label>
-                ))}
-            </div>
-            <label>
-              Instructions
-              <textarea
-                value={instructions}
-                onChange={(event) => setInstructions(event.target.value)}
-                placeholder="What should this entity contribute to the story?"
-              />
-            </label>
+            <AdditionalInstructions
+              value={instructions.entity}
+              entries={referenceEntries}
+              selectedIds={contextEntryIds.entity}
+              placeholder="What should this entity contribute to the story?"
+              onValueChange={(value) =>
+                setInstructions((current) => ({ ...current, entity: value }))
+              }
+              onSelectedIdsChange={(ids) =>
+                setContextEntryIds((current) => ({ ...current, entity: ids }))
+              }
+            />
             <div className="form-field">
               <span>Entity model</span>
               <ModelSelect value={model} onChange={setModel} models={models.data ?? []} />
@@ -517,6 +551,147 @@ export function IdeationPanel({ projectId }: { projectId: string }) {
   );
 }
 
+function AdditionalInstructions({
+  value,
+  entries,
+  selectedIds,
+  placeholder,
+  onValueChange,
+  onSelectedIdsChange,
+}: {
+  value: string;
+  entries: CompendiumEntry[];
+  selectedIds: string[];
+  placeholder: string;
+  onValueChange: (value: string) => void;
+  onSelectedIdsChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const controlRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const selected = selectedIds
+    .map((id) => entries.find((entry) => entry.id === id))
+    .filter((entry): entry is CompendiumEntry => Boolean(entry));
+  const matching = entries.filter((entry) =>
+    `${entry.name} ${entry.aliases.join(" ")}`
+      .toLocaleLowerCase()
+      .includes(search.trim().toLocaleLowerCase()),
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+    const close = (event: PointerEvent | KeyboardEvent) => {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === "Escape") setOpen(false);
+        return;
+      }
+      if (!controlRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    window.addEventListener("keydown", close);
+    window.addEventListener("pointerdown", close);
+    return () => {
+      window.removeEventListener("keydown", close);
+      window.removeEventListener("pointerdown", close);
+    };
+  }, [open]);
+
+  const toggle = (id: string) =>
+    onSelectedIdsChange(
+      selectedIds.includes(id)
+        ? selectedIds.filter((entryId) => entryId !== id)
+        : [...selectedIds, id],
+    );
+
+  return (
+    <div className="form-field ideation-instructions-field">
+      <div className="ideation-instructions-heading">
+        <span>Additional instructions</span>
+        <div className="ideation-reference-control" ref={controlRef}>
+          <button
+            type="button"
+            className={`button ghost compact ideation-reference-trigger ${open ? "active" : ""}`}
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            onClick={() => setOpen((current) => !current)}
+          >
+            <Plus size={13} /> Reference
+            {selectedIds.length ? <b>{selectedIds.length}</b> : null}
+            <ChevronDown size={13} />
+          </button>
+          {open ? (
+            <div
+              className="ideation-reference-menu"
+              role="dialog"
+              aria-label="Add Compendium reference"
+            >
+              <div className="ideation-reference-menu-heading">
+                <strong>Add Compendium reference</strong>
+                <small>Pinned entries are supplied as canonical material.</small>
+              </div>
+              <input
+                ref={searchInputRef}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search entries…"
+                aria-label="Search Compendium references"
+              />
+              <div className="ideation-reference-options">
+                {matching.length ? (
+                  matching.map((entry) => (
+                    <label key={entry.id}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(entry.id)}
+                        onChange={() => toggle(entry.id)}
+                      />
+                      <span>{entry.name}</span>
+                      {selectedIds.includes(entry.id) ? <Check size={14} /> : null}
+                    </label>
+                  ))
+                ) : (
+                  <p>No matching entries.</p>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+      {selected.length ? (
+        <fieldset
+          className="ideation-reference-chips"
+          aria-label="Pinned Compendium references"
+        >
+          {selected.map((entry) => (
+            <button type="button" key={entry.id} onClick={() => toggle(entry.id)}>
+              {entry.name} <X size={12} />
+            </button>
+          ))}
+        </fieldset>
+      ) : null}
+      <MentionTextarea
+        wrapperClassName="ideation-instructions-input"
+        className="ideation-instructions-textarea"
+        value={value}
+        entries={entries}
+        onValueChange={onValueChange}
+        placeholder={placeholder}
+      />
+      <small>
+        Names and aliases from the Compendium are highlighted and resolved as reference material.
+      </small>
+    </div>
+  );
+}
+
+export function clearIngredientValues<T extends { locked: boolean }>(
+  values: T[],
+  includeLocked = false,
+): T[] {
+  return includeLocked ? [] : values.filter((value) => value.locked);
+}
+
 function UnifiedTagInput({
   title,
   kind,
@@ -537,6 +712,14 @@ function UnifiedTagInput({
   const [input, setInput] = useState("");
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const keepSuggestionsOpen = (scrollTop = suggestionsRef.current?.scrollTop ?? 0) => {
+    setInput("");
+    setOpen(true);
+    requestAnimationFrame(() => {
+      if (suggestionsRef.current) suggestionsRef.current.scrollTop = scrollTop;
+    });
+  };
   const matching = suggestions
     .filter(
       (item) =>
@@ -560,8 +743,7 @@ function UnifiedTagInput({
         ? { definitionId: existing.id, label: existing.label, locked: false }
         : await onCreate(kind, label);
       onChange([...values, value]);
-      setInput("");
-      setOpen(false);
+      keepSuggestionsOpen();
     } finally {
       setCreating(false);
     }
@@ -579,17 +761,37 @@ function UnifiedTagInput({
         <span className="field-label" style={{ margin: 0 }}>
           {title}
         </span>
-        {onRandomize && (
+        <div className="ingredient-group-actions">
+          {onRandomize ? (
+            <button
+              type="button"
+              className="button ghost ingredient-action"
+              onClick={onRandomize}
+              title={`Randomize ${title.toLocaleLowerCase()}`}
+            >
+              <Dice5 size={12} /> Randomize
+            </button>
+          ) : null}
           <button
             type="button"
-            className="button ghost"
-            style={{ minHeight: "24px", padding: "2px 8px", fontSize: "11px", gap: "4px" }}
-            onClick={onRandomize}
-            title={`Randomize ${title.toLocaleLowerCase()}`}
+            className="button ghost ingredient-action"
+            disabled={!values.some((value) => !value.locked)}
+            onClick={() => onChange(clearIngredientValues(values))}
+            title={`Clear unlocked ${title.toLocaleLowerCase()}`}
           >
-            <Dice5 size={12} /> Randomize
+            <X size={12} /> Clear
           </button>
-        )}
+          {values.some((value) => value.locked) ? (
+            <button
+              type="button"
+              className="button ghost ingredient-action"
+              onClick={() => onChange(clearIngredientValues(values, true))}
+              title={`Clear all ${title.toLocaleLowerCase()}, including locked values`}
+            >
+              <X size={12} /> Clear all
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="tag-input-shell">
         <div className="selected-tags">
@@ -642,19 +844,19 @@ function UnifiedTagInput({
           />
         </div>
         {open && (matching.length > 0 || input.trim()) ? (
-          <div className="tag-suggestions">
+          <div className="tag-suggestions" ref={suggestionsRef}>
             {matching.map((item) => (
               <button
                 type="button"
                 key={item.id}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
+                  const scrollTop = suggestionsRef.current?.scrollTop ?? 0;
                   onChange([
                     ...values,
                     { definitionId: item.id, label: item.label, locked: false },
                   ]);
-                  setInput("");
-                  setOpen(false);
+                  keepSuggestionsOpen(scrollTop);
                 }}
               >
                 {item.label}

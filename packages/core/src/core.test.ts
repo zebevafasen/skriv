@@ -2,6 +2,7 @@ import type { CompendiumEntry, ManuscriptTree, PromptDefinition, Scene } from "@
 import { describe, expect, it } from "vitest";
 import {
   discoverEntries,
+  discoverReferences,
   findMentions,
   manuscriptLabels,
   renderPrompt,
@@ -193,6 +194,39 @@ describe("context discovery", () => {
         includeSmartCandidates: true,
       })[0],
     ).toEqual(expect.objectContaining({ activationSource: "smart", priority: 40 }));
+  });
+
+  it("resolves untracked direct references and recurses from them", () => {
+    const nora = entry({ id: crypto.randomUUID(), name: "Nora" });
+    const julia = entry({
+      id: crypto.randomUUID(),
+      name: "Julia",
+      trackingEnabled: false,
+      aliases: ["Jules"],
+      content: { kind: "text", text: "Jules trusts Nora." },
+    });
+    const found = discoverReferences({ entries: [julia, nora], scanText: "Ask Jules for help." });
+    expect(found.map((item) => [item.entry.name, item.referenceSource])).toEqual([
+      ["Julia", "mentioned"],
+      ["Nora", "recursive"],
+    ]);
+  });
+
+  it("keeps Never include as a mention boundary but allows a deliberate pin", () => {
+    const secret = entry({
+      id: crypto.randomUUID(),
+      name: "The Secret",
+      trackingEnabled: false,
+      activationMode: "never",
+    });
+    expect(discoverReferences({ entries: [secret], scanText: "Use The Secret." })).toEqual([]);
+    expect(
+      discoverReferences({
+        entries: [secret],
+        scanText: "",
+        pinnedEntryIds: [secret.id],
+      })[0],
+    ).toEqual(expect.objectContaining({ entry: secret, referenceSource: "pinned" }));
   });
 });
 

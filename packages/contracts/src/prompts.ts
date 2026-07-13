@@ -99,7 +99,7 @@ export const workflowVariables: Record<z.infer<typeof workflowKeySchema>, readon
     "story_pov",
     "pov_character",
   ],
-  "ideation.premise": ["genres", "themes", "tags", "user_instructions"],
+  "ideation.premise": ["genres", "themes", "tags", "selected_context", "user_instructions"],
   "ideation.entity": [
     "category",
     "genres",

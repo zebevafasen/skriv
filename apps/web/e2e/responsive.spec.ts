@@ -135,6 +135,17 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "Ideation" }).click();
     await expect(page.locator(".ideation-panel")).toBeVisible();
     await expect(page.getByRole("button", { name: "Save ingredients" })).toBeVisible();
+    await page
+      .locator(".ideation-panel")
+      .getByRole("button", { name: "Compendium", exact: true })
+      .click();
+    const ideationCompendium = page.locator(".ideation-compendium-dialog");
+    await expect(ideationCompendium).toBeVisible();
+    const ideationCompendiumBox = await ideationCompendium.boundingBox();
+    expect(ideationCompendiumBox?.width).toBeGreaterThanOrEqual(389);
+    expect(ideationCompendiumBox?.height).toBeGreaterThanOrEqual(790);
+    await page.getByRole("button", { name: "Close Compendium" }).click();
+    await expect(ideationCompendium).toBeHidden();
     await expectNoDocumentOverflow(page);
 
     await page.getByRole("button", { name: "More" }).click();

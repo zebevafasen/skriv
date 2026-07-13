@@ -16,6 +16,20 @@ export type DiscoveredEntry = {
   priority: number;
 };
 
+export type ReferenceDiscoveryInput = {
+  entries: CompendiumEntry[];
+  scanText: string;
+  pinnedEntryIds?: string[];
+  maxDepth?: number;
+};
+
+export type DiscoveredReference = {
+  entry: CompendiumEntry;
+  referenceSource: "pinned" | "mentioned" | "recursive";
+  recursionDepth: number;
+  priority: number;
+};
+
 export function normalizeCompendiumContent(content: CompendiumContent): string {
   if (content.kind === "text") return content.text;
   if (content.kind === "selection") return content.values.map((value) => value.label).join(", ");
@@ -89,6 +103,71 @@ export function discoverEntries({
             )
           ) {
             next.push(found.get(entry.id) as DiscoveredEntry);
+          }
+        }
+      }
+    }
+    frontier = next;
+  }
+
+  return [...found.values()].sort(
+    (left, right) => right.priority - left.priority || left.recursionDepth - right.recursionDepth,
+  );
+}
+
+/**
+ * Resolves deliberate references for request-scoped context. Direct text matches
+ * ignore trackingEnabled, while recursive discovery retains the entry's normal
+ * matching rules. Pinned entries are an explicit override of activationMode.
+ */
+export function discoverReferences({
+  entries,
+  scanText,
+  pinnedEntryIds = [],
+  maxDepth = 2,
+}: ReferenceDiscoveryInput): DiscoveredReference[] {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const found = new Map<string, DiscoveredReference>();
+
+  const include = (
+    entry: CompendiumEntry,
+    referenceSource: DiscoveredReference["referenceSource"],
+    recursionDepth: number,
+    priority: number,
+  ) => {
+    const previous = found.get(entry.id);
+    if (!previous || priority > previous.priority) {
+      found.set(entry.id, { entry, referenceSource, recursionDepth, priority });
+      return !previous;
+    }
+    return false;
+  };
+
+  for (const entryId of new Set(pinnedEntryIds)) {
+    const entry = byId.get(entryId);
+    if (entry) include(entry, "pinned", 0, 120);
+  }
+  for (const match of findMentions(scanText, entries, { includeUntracked: true })) {
+    for (const entryId of match.entryIds) {
+      const entry = byId.get(entryId);
+      if (entry && entry.activationMode !== "never") include(entry, "mentioned", 0, 110);
+    }
+  }
+
+  let frontier = [...found.values()];
+  for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth += 1) {
+    const next: DiscoveredReference[] = [];
+    for (const source of frontier) {
+      for (const match of findMentions(normalizeEntry(source.entry), entries)) {
+        for (const entryId of match.entryIds) {
+          const entry = byId.get(entryId);
+          if (
+            entry &&
+            entry.id !== source.entry.id &&
+            entry.activationMode !== "never" &&
+            include(entry, "recursive", depth, 80 - depth * 10)
+          ) {
+            next.push(found.get(entry.id) as DiscoveredReference);
           }
         }
       }

@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from "react";
 
 const focusableSelector = [
-  "button:not([disabled])",
+  "button:not([disabled]):not([tabindex='-1'])",
   "a[href]",
   "input:not([disabled])",
   "select:not([disabled])",

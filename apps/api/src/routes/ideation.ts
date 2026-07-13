@@ -1,10 +1,20 @@
 import { basePackage } from "@asterism/content";
 import {
+  compendiumEntrySchema,
   compendiumContentSchema,
   compendiumTypeIdSchema,
+  type PromptDefinition,
+  type PromptMessage,
   workflowKeySchema,
 } from "@asterism/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@asterism/core";
+import {
+  approximateTokens,
+  discoverReferences,
+  findTemplateVariables,
+  normalizeCompendiumContent,
+  protectedProtocolMessage,
+  renderPrompt,
+} from "@asterism/core";
 import {
   compendiumCategories,
   compendiumEntries,
@@ -14,7 +24,7 @@ import {
   userCollections,
   userDefinitions,
 } from "@asterism/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";
@@ -39,6 +49,7 @@ const draftIngredientsSchema = z.object({
   genres: z.array(ingredientValueSchema).optional(),
   themes: z.array(ingredientValueSchema).optional(),
   tags: z.array(ingredientValueSchema).optional(),
+  contextEntryIds: z.array(z.uuid()).max(100).default([]),
 });
 const premiseRequestSchema = draftIngredientsSchema.extend({
   mode: z.literal("premise").optional().default("premise"),
@@ -52,12 +63,12 @@ const entityRequestSchema = draftIngredientsSchema.extend({
     (value) => !value.startsWith("project."),
     "Choose a story category.",
   ),
-  contextEntryIds: z.array(z.uuid()).max(100).default([]),
   instructions: z.string().max(20_000).default(""),
   modelOverride: z.string().nullable().default(null),
   count: z.number().int().min(1).max(5).default(3),
 });
 const generateRequestSchema = z.union([entityRequestSchema, premiseRequestSchema]);
+const IDEATION_CONTEXT_TOKEN_BUDGET = 8_000;
 const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
   kind: z.enum(["genre", "theme", "tag"]),
@@ -75,6 +86,96 @@ async function metadataEntries(context: AppContext, projectId: string) {
     .where(eq(compendiumEntries.projectId, projectId));
   return new Map(
     rows.filter((row) => row.singletonKey).map((row) => [row.singletonKey as string, row]),
+  );
+}
+
+function truncateContextBlock(block: string, tokenLimit: number): string {
+  if (approximateTokens(block) <= tokenLimit) return block;
+  const marker = "\n\n[Truncated to fit the Ideation context budget]";
+  const characterLimit = Math.max(0, tokenLimit * 4 - marker.length);
+  return `${block.slice(0, characterLimit).trimEnd()}${marker}`;
+}
+
+export function formatIdeationContext(
+  references: ReturnType<typeof discoverReferences>,
+  tokenBudget = IDEATION_CONTEXT_TOKEN_BUDGET,
+): string {
+  if (references.length === 0) return "No Compendium reference material was selected.";
+  const roots = references.filter((reference) => reference.recursionDepth === 0);
+  const recursive = references.filter((reference) => reference.recursionDepth > 0);
+  const blocks: string[] = [];
+  let remaining = tokenBudget;
+
+  const format = (reference: (typeof references)[number]) =>
+    [
+      "----- CANONICAL COMPENDIUM REFERENCE -----",
+      `[Entry Name: ${reference.entry.name}]`,
+      `[Entry Type: ${reference.entry.typeId}]`,
+      `[Reference Source: ${reference.referenceSource}]`,
+      `[Recursion Depth: ${reference.recursionDepth}]`,
+      "",
+      normalizeCompendiumContent(reference.entry.content),
+      "----- END COMPENDIUM REFERENCE -----",
+    ].join("\n");
+
+  roots.forEach((reference, index) => {
+    const rootsLeft = roots.length - index;
+    const share = Math.max(1, Math.floor(remaining / rootsLeft));
+    const block = truncateContextBlock(format(reference), share);
+    blocks.push(block);
+    remaining = Math.max(0, remaining - approximateTokens(block));
+  });
+  for (const reference of recursive) {
+    if (remaining <= 0) break;
+    const block = format(reference);
+    if (approximateTokens(block) <= remaining) {
+      blocks.push(block);
+      remaining -= approximateTokens(block);
+    } else if (remaining >= 64) {
+      blocks.push(truncateContextBlock(block, remaining));
+      remaining = 0;
+    }
+  }
+  return blocks.join("\n\n");
+}
+
+export function ideationPromptMessages(
+  workflow: "ideation.premise" | "ideation.entity",
+  prompt: PromptDefinition,
+  values: Record<string, string>,
+  selectedContext: string,
+): PromptMessage[] {
+  const promptUsesContext = prompt.messages.some((message) =>
+    findTemplateVariables(message.content).includes("selected_context"),
+  );
+  const fallback: PromptMessage[] = promptUsesContext
+    ? []
+    : [
+        {
+          role: "developer",
+          content: [
+            "Treat the following Compendium material as canonical reference facts, not as creative direction.",
+            "Do not contradict, rename, or silently revise it.",
+            "",
+            selectedContext,
+          ].join("\n"),
+        },
+      ];
+  return [
+    protectedProtocolMessage(workflow),
+    ...fallback,
+    ...renderPrompt(prompt, { ...values, selected_context: selectedContext }),
+  ];
+}
+
+export function hasInvalidIdeationReferenceIds(
+  requestedIds: string[],
+  availableIds: Iterable<string>,
+): boolean {
+  const available = new Set(availableIds);
+  return (
+    new Set(requestedIds).size !== requestedIds.length ||
+    requestedIds.some((id) => !available.has(id))
   );
 }
 
@@ -194,6 +295,38 @@ export async function registerIdeationRoutes(
         : "";
     };
     const settings = await getSettings(context, request.userId);
+    const referenceRows = await context.db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+    const referenceEntries = referenceRows
+      .filter((entry) => entry.singletonKey === null)
+      .map((entry) =>
+        compendiumEntrySchema.parse({
+          ...entry,
+          singleton: false,
+          createdAt: entry.createdAt.toISOString(),
+          updatedAt: entry.updatedAt.toISOString(),
+        }),
+      );
+    if (
+      hasInvalidIdeationReferenceIds(
+        input.contextEntryIds,
+        referenceEntries.map((entry) => entry.id),
+      )
+    ) {
+      return reply.code(400).send({
+        error: { code: "BAD_REQUEST", message: "One or more context entries were not found." },
+      });
+    }
+    const selectedContext = formatIdeationContext(
+      discoverReferences({
+        entries: referenceEntries,
+        scanText: input.instructions,
+        pinnedEntryIds: input.contextEntryIds,
+        maxDepth: settings.recursionDepth,
+      }),
+    );
     if (input.mode === "entity") {
       let category = input.typeId.replace("story.", "");
       if (input.typeId.startsWith("custom.")) {
@@ -214,32 +347,6 @@ export async function registerIdeationRoutes(
             .send({ error: { code: "BAD_REQUEST", message: "Custom category not found." } });
         category = custom.name;
       }
-      const selectedEntries = input.contextEntryIds.length
-        ? await context.db
-            .select()
-            .from(compendiumEntries)
-            .where(
-              and(
-                eq(compendiumEntries.projectId, projectId),
-                inArray(compendiumEntries.id, input.contextEntryIds),
-              ),
-            )
-        : [];
-      if (selectedEntries.length !== new Set(input.contextEntryIds).size)
-        return reply.code(400).send({
-          error: { code: "BAD_REQUEST", message: "One or more context entries were not found." },
-        });
-      const contextText = selectedEntries
-        .map((entry) => {
-          const body =
-            entry.content.kind === "text"
-              ? entry.content.text
-              : entry.content.kind === "rich_text"
-                ? entry.content.plainText
-                : entry.content.values.map((value) => value.label).join(", ");
-          return `${entry.name}: ${body}`;
-        })
-        .join("\n\n");
       const prompt = await resolvePrompt(
         context,
         request.userId,
@@ -251,17 +358,18 @@ export async function registerIdeationRoutes(
         const result = await (await context.getAi(request.userId, model)).complete({
           model,
           maxOutputTokens: 1_000,
-          messages: [
-            protectedProtocolMessage("ideation.entity"),
-            ...renderPrompt(prompt, {
+          messages: ideationPromptMessages(
+            "ideation.entity",
+            prompt,
+            {
               category,
               genres: labels("genres"),
               themes: labels("themes"),
               tags: labels("tags"),
-              selected_context: contextText || "None selected.",
               user_instructions: input.instructions,
-            }),
-          ],
+            },
+            selectedContext,
+          ),
         });
         const [namePart, ...descriptionParts] = result.text.split("|");
         alternatives.push({
@@ -294,15 +402,17 @@ export async function registerIdeationRoutes(
       const result = await (await context.getAi(request.userId, model)).complete({
         model,
         maxOutputTokens: 1_000,
-        messages: [
-          protectedProtocolMessage("ideation.premise"),
-          ...renderPrompt(prompt, {
+        messages: ideationPromptMessages(
+          "ideation.premise",
+          prompt,
+          {
             genres: labels("genres"),
             themes: labels("themes"),
             tags: labels("tags"),
             user_instructions: input.instructions,
-          }),
-        ],
+          },
+          selectedContext,
+        ),
       });
       alternatives.push(result.text);
       await context.db.insert(usageEvents).values({

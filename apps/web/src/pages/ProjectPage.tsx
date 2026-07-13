@@ -100,8 +100,10 @@ export function ProjectPage() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [scopeMenuOpen, setScopeMenuOpen] = useState(false);
+  const [ideationCompendiumOpen, setIdeationCompendiumOpen] = useState(false);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
   const scopePickerRef = useRef<HTMLDivElement>(null);
+  const ideationCompendiumCloseRef = useRef<HTMLButtonElement>(null);
   const [compendiumOpen, setCompendiumOpen] = useState(
     () => !window.matchMedia("(max-width: 900px)").matches,
   );
@@ -232,6 +234,28 @@ export function ProjectPage() {
       }),
     [navigate],
   );
+
+  const closeIdeationCompendium = useCallback(() => {
+    setIdeationCompendiumOpen(false);
+    void updateSearch({ entry: undefined });
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLButtonElement>("[data-ideation-compendium-trigger]")?.focus(),
+    );
+  }, [updateSearch]);
+
+  useEffect(() => {
+    if (!ideationCompendiumOpen) return;
+    requestAnimationFrame(() => ideationCompendiumCloseRef.current?.focus());
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeIdeationCompendium();
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [closeIdeationCompendium, ideationCompendiumOpen]);
+
+  useEffect(() => {
+    if (tab !== "ideation" && ideationCompendiumOpen) closeIdeationCompendium();
+  }, [closeIdeationCompendium, ideationCompendiumOpen, tab]);
 
   useEffect(() => {
     const sceneValid = !search.scene || allScenes.some((scene) => scene.id === search.scene);
@@ -785,9 +809,59 @@ export function ProjectPage() {
         </div>
       ) : null}
       {tab === "ideation" ? (
-        <DeferredWorkspace name="ideation">
-          <IdeationPanel projectId={projectId} />
-        </DeferredWorkspace>
+        <div className="ideation-workspace">
+          <DeferredWorkspace name="ideation">
+            <IdeationPanel
+              projectId={projectId}
+              entries={compendium.data ?? []}
+              onOpenCompendium={() => setIdeationCompendiumOpen(true)}
+            />
+          </DeferredWorkspace>
+          {ideationCompendiumOpen ? (
+            <div
+              className={`ideation-compendium-layer ${selectedEntryId ? "entry-open" : ""}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Compendium"
+              onKeyDown={trapFocusWithin}
+            >
+              <button
+                type="button"
+                className="ideation-compendium-dismiss"
+                aria-label="Dismiss Compendium overlay"
+                tabIndex={-1}
+                onClick={closeIdeationCompendium}
+              />
+              <section className="ideation-compendium-dialog">
+                <div className="ideation-compendium-toolbar">
+                  <strong>Compendium</strong>
+                  <button
+                    ref={ideationCompendiumCloseRef}
+                    type="button"
+                    className="icon-button"
+                    aria-label="Close Compendium"
+                    onClick={closeIdeationCompendium}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <CompendiumPanel
+                  projectId={projectId}
+                  entries={compendium.data ?? []}
+                  selectedEntryId={selectedEntryId}
+                  onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
+                />
+              </section>
+              <CompendiumEntryDrawer
+                projectId={projectId}
+                entry={(compendium.data ?? []).find((entry) => entry.id === selectedEntryId) ?? null}
+                entries={compendium.data ?? []}
+                mentionCount={selectedEntryMentionCount}
+                onClose={() => void updateSearch({ entry: undefined })}
+              />
+            </div>
+          ) : null}
+        </div>
       ) : null}
       {tab === "chat" ? (
         <div

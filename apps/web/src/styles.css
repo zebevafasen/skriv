@@ -4084,6 +4084,21 @@ label small {
   position: relative;
 }
 
+.ingredient-group-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ingredient-group-actions .ingredient-action {
+  min-height: 24px;
+  padding: 2px 8px;
+  gap: 4px;
+  font-size: 11px;
+}
+
 .selected-tags {
   min-height: 44px;
   display: flex;
@@ -4774,6 +4789,242 @@ label small {
 
 .ideation-panel {
   padding: 38px clamp(30px, 5vw, 75px);
+}
+
+.ideation-workspace {
+  position: relative;
+  min-height: calc(100vh - 156px);
+}
+
+.ideation-instructions-field {
+  gap: 8px;
+}
+
+.ideation-instructions-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ideation-reference-control {
+  position: relative;
+}
+
+.ideation-reference-trigger {
+  white-space: nowrap;
+}
+
+.ideation-reference-trigger b {
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--accent-bright);
+  color: #17130e;
+  font-size: 10px;
+}
+
+.ideation-reference-menu {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 7px);
+  right: 0;
+  width: min(330px, calc(100vw - 48px));
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #51493f;
+  border-radius: 12px;
+  background: #1b1916;
+  box-shadow: 0 20px 60px #000c;
+}
+
+.ideation-reference-menu-heading {
+  display: grid;
+  gap: 3px;
+  padding: 3px 3px 7px;
+}
+
+.ideation-reference-menu-heading small,
+.ideation-instructions-field > small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ideation-reference-options {
+  max-height: 250px;
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+}
+
+.ideation-reference-options label {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.ideation-reference-options label:hover,
+.ideation-reference-options label:focus-within {
+  background: #2a2722;
+}
+
+.ideation-reference-options label > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ideation-reference-options label svg {
+  color: var(--accent-bright);
+}
+
+.ideation-reference-options p {
+  margin: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ideation-reference-chips {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ideation-reference-chips button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: var(--surface-3);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.ideation-instructions-input,
+.ideation-instructions-input .mention-textarea-highlights,
+.ideation-instructions-input textarea {
+  min-height: 126px;
+}
+
+.ideation-instructions-input .mention-textarea-highlights,
+.ideation-instructions-input textarea {
+  margin: 0;
+  padding: 10px 12px;
+  overflow: auto;
+  font: inherit;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.ideation-instructions-input textarea {
+  resize: vertical;
+}
+
+.ideation-compendium-layer {
+  position: absolute;
+  z-index: 60;
+  inset: 0;
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  padding: 14px;
+}
+
+.ideation-compendium-dismiss {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: #090807a8;
+  backdrop-filter: blur(2px);
+  cursor: default;
+}
+
+.ideation-compendium-dialog {
+  position: sticky;
+  z-index: 1;
+  top: 14px;
+  width: min(390px, calc(100% - 28px));
+  height: min(720px, calc(100vh - 184px));
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #3e3932;
+  border-radius: 12px;
+  background: #12110f;
+  box-shadow: 0 24px 75px #000d;
+}
+
+.ideation-compendium-toolbar {
+  min-height: 49px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--border-soft);
+  background: #181715;
+}
+
+.ideation-compendium-toolbar strong {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ideation-compendium-dialog > .compendium-sidebar {
+  flex: 1;
+  height: auto;
+  border: 0;
+}
+
+.ideation-compendium-dialog > .compendium-sidebar .sidebar-tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .ideation-workspace {
+    min-height: calc(var(--visual-viewport-height, 100dvh) - 52px);
+  }
+
+  .ideation-compendium-layer {
+    position: fixed;
+    inset: 52px 0 0;
+    padding: 0;
+  }
+
+  .ideation-compendium-dialog {
+    position: relative;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .ideation-compendium-dialog > .compendium-sidebar {
+    display: flex;
+  }
 }
 
 .ideation-columns {

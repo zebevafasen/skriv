@@ -20,6 +20,17 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
   const projectId = page.url().split("/").at(-1);
   if (!projectId) throw new Error("Project ID was not present in the URL.");
+  const ingredientPacksResponse = await page.request.get("/api/ingredient-packs");
+  const ingredientPacks = (await ingredientPacksResponse.json()) as Array<{
+    id: string;
+    values: { tags: string[] };
+  }>;
+  const tagPack = ingredientPacks.find((pack) => pack.values.tags.length > 0);
+  if (!tagPack) throw new Error("Expected a built-in ingredient pack with tag suggestions.");
+  const importPackResponse = await page.request.post(
+    `/api/projects/${projectId}/ingredient-packs/${tagPack.id}/import`,
+  );
+  expect(importPackResponse.ok()).toBe(true);
 
   try {
     await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
@@ -99,12 +110,91 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(page.locator(".outline-compendium-chips", { hasText: "Evelyn" })).toBeVisible();
 
     await page.getByRole("button", { name: "Ideation" }).click();
+    const ideation = page.locator(".ideation-panel");
+    const premiseInstructions = page.getByPlaceholder(
+      "Adult gothic tone; let Evelyn complicate the central relationship.",
+    );
+    await premiseInstructions.fill("Let Evie complicate the central relationship.");
+    await expect(ideation.locator(".ideation-instructions-input mark", { hasText: "Evie" })).toBeVisible();
+    await ideation.getByRole("button", { name: /Reference/ }).click();
+    await page.locator(".ideation-reference-options label", { hasText: "Evelyn" }).click();
+    await expect(ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" })).toBeVisible();
+    await ideation.getByRole("button", { name: /Reference/ }).click();
+    await ideation.getByRole("button", { name: "Entity" }).click();
+    await page
+      .getByPlaceholder("What should this entity contribute to the story?")
+      .fill("Make this entity unsettling.");
+    await ideation.getByRole("button", { name: "Premise" }).click();
+    await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
+    await expect(ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" })).toBeVisible();
+
+    await ideation.getByRole("button", { name: "Compendium", exact: true }).click();
+    const ideationCompendium = page.locator(".ideation-compendium-dialog");
+    await expect(ideationCompendium).toBeVisible();
+    await ideationCompendium.locator(".entry-row", { hasText: "Evelyn" }).click();
+    await expect(page.getByRole("textbox", { name: "Entry name" })).toHaveValue("Evelyn");
+    await page.getByRole("button", { name: "Close entry" }).click();
+    await page.getByRole("button", { name: "Close Compendium" }).click();
+    await expect(ideationCompendium).toBeHidden();
+    await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
+
+    const tagGroup = ideation.locator(".unified-tags").filter({
+      has: page.locator(".field-label", { hasText: "Tags" }),
+    });
+    const tagInput = tagGroup.locator("input");
+    await tagInput.click();
+    const tagSuggestions = tagGroup.locator(".tag-suggestions");
+    await expect(tagSuggestions).toBeVisible();
+    const suggestionScrollTop = await tagSuggestions.evaluate((menu) => {
+      menu.scrollTop = Math.min(120, menu.scrollHeight - menu.clientHeight);
+      return menu.scrollTop;
+    });
+    expect(suggestionScrollTop).toBeGreaterThan(0);
+    const suggestedTagName = await tagSuggestions.evaluate((menu) => {
+      const menuRect = menu.getBoundingClientRect();
+      const visibleButton = [...menu.querySelectorAll("button")].find((button) => {
+        const buttonRect = button.getBoundingClientRect();
+        return buttonRect.top >= menuRect.top && buttonRect.bottom <= menuRect.bottom;
+      });
+      return visibleButton?.textContent?.trim();
+    });
+    if (!suggestedTagName) throw new Error("Expected a visible suggested tag");
+    await tagSuggestions.getByRole("button", { name: suggestedTagName, exact: true }).click();
+    await expect(tagSuggestions).toBeVisible();
+    await expect(tagInput).toBeFocused();
+    await expect
+      .poll(() => tagSuggestions.evaluate((menu) => menu.scrollTop))
+      .toBe(suggestionScrollTop);
+    await expect(page.locator(".selected-tag", { hasText: suggestedTagName })).toBeVisible();
+
     const customTag = "E2E Custom Tag";
-    const tagInput = page.getByPlaceholder("Type or choose tags…");
+    const persistedPremise = "A premise selected for persistence testing.";
+    const premiseSaved = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PATCH" && response.url().includes("/ideation"),
+    );
+    await page.getByRole("textbox", { name: "Active premise" }).fill(persistedPremise);
+    await premiseSaved;
     await tagInput.fill(customTag);
     await tagInput.press("Enter");
     await expect(page.locator(".selected-tag", { hasText: customTag })).toBeVisible();
+    const ingredientsSaved = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PATCH" && response.url().includes("/ideation"),
+    );
     await page.getByRole("button", { name: "Save ingredients" }).click();
+    await ingredientsSaved;
+
+    await ideation.getByRole("button", { name: "Compendium", exact: true }).click();
+    await expect(ideationCompendium.locator(".entry-row", { hasText: "Tags" })).toContainText(
+      customTag,
+    );
+    await page.getByRole("button", { name: "Close Compendium" }).click();
+    await page.reload();
+    await expect(page.locator(".selected-tag", { hasText: customTag })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Active premise" })).toHaveValue(
+      persistedPremise,
+    );
 
     await page.getByRole("button", { name: "Chat" }).click();
     await expect(page).toHaveURL(/tab=chat/);
