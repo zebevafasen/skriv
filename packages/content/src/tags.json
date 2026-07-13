@@ -42,607 +42,607 @@
   {
     "id": "tag.human_centric",
     "label": "Human-Centric",
-    "description": "Human-centric stories are stories that center on human characters and their experiences."
+    "description": "Focuses primarily on human characters, their experiences, and perspectives within a broader setting."
   },
   {
     "id": "tag.industrial",
     "label": "Industrial",
-    "description": "Industrial stories are stories that center on industry and industrialization."
+    "description": "Explores the rise of industry, factories, mass production, and their effects on society."
   },
   {
     "id": "tag.female_protagonist",
     "label": "Female Protagonist",
-    "description": "Female protagonist stories are stories that center on female characters as the main characters."
+    "description": "The narrative is driven by a female main character."
   },
   {
     "id": "tag.male_protagonist",
     "label": "Male Protagonist",
-    "description": "Male protagonist stories are stories that center on male characters as the main characters."
+    "description": "The narrative is driven by a male main character."
   },
   {
     "id": "tag.magic_system",
     "label": "Magic-System",
-    "description": "Magic-system stories are stories that center on magic systems."
+    "description": "Features a well-defined set of rules governing how magic works in the world."
   },
   {
     "id": "tag.steampunk",
     "label": "Steampunk",
-    "description": "Steampunk stories are stories that center on steam-powered technology and machinery."
+    "description": "A retrofuturistic setting inspired by 19th-century industrial steam-powered machinery."
   },
   {
     "id": "tag.cyberpunk",
     "label": "Cyberpunk",
-    "description": "Cyberpunk stories are stories that center on cybernetics and artificial intelligence."
+    "description": "A dystopian futuristic setting focusing on advanced technology, cybernetics, and societal decay."
   },
   {
     "id": "tag.high_fantasy",
     "label": "High-Fantasy",
-    "description": "High-fantasy stories are stories that center on magic and fantasy elements."
+    "description": "Set in a fully fictional alternate world with its own rules, often featuring prominent magic and mythical beings."
   },
   {
     "id": "tag.grimdark",
     "label": "Grimdark",
-    "description": "Grimdark stories are stories that center on dark and gritty themes."
+    "description": "A tone characterized by moral ambiguity, dystopian elements, and a bleak, violent worldview."
   },
   {
     "id": "tag.gothic",
     "label": "Gothic",
-    "description": "Gothic stories are stories that center on dark and mysterious themes."
+    "description": "Combines romance, horror, and mystery, often set in decaying, atmospheric environments."
   },
   {
     "id": "tag.erotic",
     "label": "Erotic",
-    "description": "Erotic stories are stories that center on erotic themes."
+    "description": "Contains explicit sexual themes and content intended to arouse."
   },
   {
     "id": "tag.slow_burn",
     "label": "Slow-Burn",
-    "description": "Slow-burn stories are stories that develop slowly over time."
+    "description": "Romance or plot development that builds tension gradually over a long period."
   },
   {
     "id": "tag.modern_day",
     "label": "Modern Day",
-    "description": "Modern-day stories are stories that take place in the present day."
+    "description": "Takes place in a contemporary setting, reflecting the current real world."
   },
   {
     "id": "tag.ancient",
     "label": "Ancient",
-    "description": "Ancient stories are stories that take place in ancient times."
+    "description": "Set in a time period corresponding to classical antiquity or earlier historical eras."
   },
   {
     "id": "tag.prehistoric",
     "label": "Prehistoric",
-    "description": "Prehistoric stories are stories that take place in prehistoric times."
+    "description": "Set before recorded history, often featuring early hominids, primitive survival, or dinosaurs."
   },
   {
     "id": "tag.victorian",
     "label": "Victorian",
-    "description": "Victorian stories are stories that take place in Victorian England."
+    "description": "Set during the reign of Queen Victoria (1837-1901), featuring its specific social mores and aesthetics."
   },
   {
     "id": "tag.colonial",
     "label": "Colonial",
-    "description": "Colonial stories are stories that take place during colonial times."
+    "description": "Set during an era of colonization, focusing on settlers, empires, or indigenous encounters."
   },
   {
     "id": "tag.western",
     "label": "Western",
-    "description": "Western stories are stories that take place in the American West."
+    "description": "Set in the American Old West, featuring cowboys, outlaws, and frontier justice."
   },
   {
     "id": "tag.wartime",
     "label": "Wartime",
-    "description": "Wartime stories are stories that take place during wartime."
+    "description": "The narrative is set against the backdrop of an active war or major conflict."
   },
   {
     "id": "tag.retrofuturistic",
     "label": "Retrofuturistic",
-    "description": "Retrofuturistic stories are stories that take place in a futuristic setting that is based on a past vision of the future."
+    "description": "Depicts a vision of the future as imagined by people from an earlier historical period."
   },
   {
     "id": "tag.post_apocalyptic",
     "label": "Post-Apocalyptic",
-    "description": "Post-apocalyptic stories are stories that take place after an apocalypse."
+    "description": "Takes place after a cataclysmic event has devastated civilization."
   },
   {
     "id": "tag.post_collapse",
     "label": "Post-Collapse",
-    "description": "Post-collapse stories are stories that take place after a societal collapse."
+    "description": "Explores the aftermath of a societal, economic, or political breakdown rather than total destruction."
   },
   {
     "id": "tag.near_future",
     "label": "Near-Future",
-    "description": "Near-future stories are stories that take place in the near future."
+    "description": "Set just a few years or decades ahead of the present, often extrapolating current trends."
   },
   {
     "id": "tag.far_future",
     "label": "Far-Future",
-    "description": "Far-future stories are stories that take place in the distant future."
+    "description": "Set thousands or millions of years ahead, often featuring unrecognizable societies and hyper-advanced technology."
   },
   {
     "id": "tag.spacefaring",
     "label": "Spacefaring",
-    "description": "Spacefaring stories are stories that take place in space."
+    "description": "Involves space travel, starships, and interstellar exploration as core elements."
   },
   {
     "id": "tag.globetrotting",
     "label": "Globetrotting",
-    "description": "Globetrotting stories are stories that take place in multiple locations around the world."
+    "description": "Features characters traveling across multiple countries or continents as part of their journey."
   },
   {
     "id": "tag.frontier",
     "label": "Frontier",
-    "description": "Frontier stories are stories that take place in the frontier."
+    "description": "Set on the edge of known civilization, focusing on exploration, survival, and lawlessness."
   },
   {
     "id": "tag.urban",
     "label": "Urban",
-    "description": "Urban stories are stories that take place in cities."
+    "description": "The setting is primarily a dense city environment, which deeply influences the plot."
   },
   {
     "id": "tag.rural",
     "label": "Rural",
-    "description": "Rural stories are stories that take place in the countryside."
+    "description": "The setting is primarily countryside or agricultural areas, isolated from urban centers."
   },
   {
     "id": "tag.isolated",
     "label": "Isolated",
-    "description": "Isolated stories are stories that take place in isolated locations."
+    "description": "Characters are cut off from the rest of the world, physically or socially."
   },
   {
     "id": "tag.underground",
     "label": "Underground",
-    "description": "Underground stories are stories that take place underground."
+    "description": "Takes place in subterranean environments such as caves, bunkers, or underground cities."
   },
   {
     "id": "tag.underwater",
     "label": "Underwater",
-    "description": "Underwater stories are stories that take place underwater."
+    "description": "Takes place in oceans, seas, or underwater habitats."
   },
   {
     "id": "tag.zero_gravity",
     "label": "Zero Gravity",
-    "description": "Zero-gravity stories are stories that take place in zero gravity."
+    "description": "Features environments without gravity, such as deep space or orbital stations."
   },
   {
     "id": "tag.low_gravity",
     "label": "Low Gravity",
-    "description": "Low-gravity stories are stories that take place in low gravity."
+    "description": "Set on worlds or stations with significantly less gravity than Earth, affecting movement and life."
   },
   {
     "id": "tag.floating_city",
     "label": "Floating City",
-    "description": "Floating-city stories are stories that take place in floating cities."
+    "description": "Features a metropolis built on water, in the clouds, or suspended in the air."
   },
   {
     "id": "tag.megacity",
     "label": "Megacity",
-    "description": "Megacity stories are stories that take place in megacities."
+    "description": "Set in a sprawling, densely populated urban area, often spanning multiple modern-day cities."
   },
   {
     "id": "tag.small_town",
     "label": "Small Town",
-    "description": "Small-town stories are stories that take place in small towns."
+    "description": "Set in a tight-knit, low-population community, where everyone knows everyone else."
   },
   {
     "id": "tag.single_location",
     "label": "Single Location",
-    "description": "Single-location stories are stories that take place in a single location."
+    "description": "The entire story unfolds within a single confined space, such as a house, vehicle, or room."
   },
   {
     "id": "tag.time_pressure",
     "label": "Time Pressure",
-    "description": "Time-pressure stories are stories that take place under time pressure."
+    "description": "Characters must achieve their goal before a strict, impending deadline."
   },
   {
     "id": "tag.road_trip",
     "label": "Road Trip",
-    "description": "Road-trip stories are stories that take place during a road trip."
+    "description": "The narrative revolves around a long journey by vehicle, focusing on the stops and character bonding."
   },
   {
     "id": "tag.alternate_history",
     "label": "Alternate History",
-    "description": "Alternate-history stories are stories that take place in an alternate history."
+    "description": "Explores a timeline where historical events occurred differently than in our reality."
   },
   {
     "id": "tag.alternate_world",
     "label": "Alternate World",
-    "description": "Alternate-world stories are stories that take place in an alternate world."
+    "description": "Takes place in a parallel dimension or a completely different version of reality."
   },
   {
     "id": "tag.parallel_worlds",
     "label": "Parallel Worlds",
-    "description": "Parallel-worlds stories are stories that take place in parallel worlds."
+    "description": "Involves characters traveling between or interacting with multiple alternate realities."
   },
   {
     "id": "tag.dying_world",
     "label": "Dying World",
-    "description": "Dying-world stories are stories that take place in a dying world."
+    "description": "Set on a planet or in a universe that is slowly reaching its end, facing inevitable destruction."
   },
   {
     "id": "tag.lost_civilization",
     "label": "Lost Civilization",
-    "description": "Lost-civilization stories are stories that take place in a lost civilization."
+    "description": "Involves the discovery or exploration of an ancient, forgotten society."
   },
   {
     "id": "tag.ruins",
     "label": "Ruins",
-    "description": "Ruins stories are stories that take place in ruins."
+    "description": "Features the decaying remnants of past structures, cities, or civilizations as a primary setting."
   },
   {
     "id": "tag.low_technology",
     "label": "Low Technology",
-    "description": "Low-technology stories are stories that take place in a low-technology setting."
+    "description": "Features a society that lacks advanced machinery, relying on simple tools or pre-industrial technology."
   },
   {
     "id": "tag.advanced_technology",
     "label": "Advanced Technology",
-    "description": "Advanced-technology stories are stories that take place in an advanced-technology setting."
+    "description": "Features highly sophisticated machinery, computing, and scientific achievements beyond current capabilities."
   },
   {
     "id": "tag.artificial_intelligence",
     "label": "Artificial Intelligence",
-    "description": "Artificial-intelligence stories are stories that feature artificial intelligence."
+    "description": "Involves sentient or highly capable machines, computers, or synthetic minds."
   },
   {
     "id": "tag.transhumanism",
     "label": "Transhumanism",
-    "description": "Transhumanism stories are stories that feature transhumanism."
+    "description": "Explores the physical and mental enhancement of humanity through technology, such as genetics or cybernetics."
   },
   {
     "id": "tag.cybernetics",
     "label": "Cybernetics",
-    "description": "Cybernetics stories are stories that feature cybernetics."
+    "description": "Features the integration of mechanical or electronic parts with biological organisms."
   },
   {
     "id": "tag.cyborgs",
     "label": "Cyborgs",
-    "description": "Cyborg stories are stories that feature cyborgs."
+    "description": "Focuses on beings that possess both organic and biomechatronic body parts."
   },
   {
     "id": "tag.androids",
     "label": "Androids",
-    "description": "Android stories are stories that feature androids."
+    "description": "Features robots designed to closely resemble and act like humans."
   },
   {
     "id": "tag.robots",
     "label": "Robots",
-    "description": "Robot stories are stories that feature robots."
+    "description": "Involves autonomous or semi-autonomous machines, often exploring their utility, rights, or dangers."
   },
   {
     "id": "tag.clockwork",
     "label": "Clockwork",
-    "description": "Clockwork stories are stories that feature clockwork technology."
+    "description": "Features intricate, gear-driven mechanisms, automatons, and mechanical devices."
   },
   {
     "id": "tag.alchemy",
     "label": "Alchemy",
-    "description": "Alchemy stories are stories that feature alchemy."
+    "description": "Involves early protoscience or magical disciplines focusing on transmutation and mystical chemistry."
   },
   {
     "id": "tag.gunpowder",
     "label": "Gunpowder",
-    "description": "Gunpowder stories are stories that feature gunpowder technology."
+    "description": "The setting includes early firearms, cannons, and explosives, often transitioning away from swords and bows."
   },
   {
     "id": "tag.rare_magic",
     "label": "Rare Magic",
-    "description": "Rare-magic stories are stories that feature rare magic."
+    "description": "Magic exists but is incredibly scarce, legendary, or restricted to a select few."
   },
   {
     "id": "tag.common_magic",
     "label": "Common Magic",
-    "description": "Common-magic stories are stories that feature common magic."
+    "description": "Magic is a ubiquitous part of daily life, widely practiced and integrated into society."
   },
   {
     "id": "tag.hard_magic",
     "label": "Hard Magic",
-    "description": "Hard-magic stories are stories that feature hard magic."
+    "description": "The magic system has strict, explicitly defined rules, limitations, and costs."
   },
   {
     "id": "tag.soft_magic",
     "label": "Soft Magic",
-    "description": "Soft-magic stories are stories that feature soft magic."
+    "description": "The magic system is mysterious, wondrous, and not bound by rigid, explained mechanics."
   },
   {
     "id": "tag.no_magic",
     "label": "No Magic",
-    "description": "No-magic stories are stories that feature no magic."
+    "description": "A strictly mundane setting where magic and the supernatural do not exist."
   },
   {
     "id": "tag.low_fantasy",
     "label": "Low-Fantasy",
-    "description": "Low-fantasy stories are stories that feature low fantasy."
+    "description": "A fantastical story set in a world closely resembling our own or featuring subdued, gritty magical elements."
   },
   {
     "id": "tag.hard_sci_fi",
     "label": "Hard Sci-Fi",
-    "description": "Hard-sci-fi stories are stories that feature hard sci-fi."
+    "description": "Science fiction grounded in scientific accuracy, plausible physics, and technological realism."
   },
   {
     "id": "tag.soft_sci_fi",
     "label": "Soft Sci-Fi",
-    "description": "Soft-sci-fi stories are stories that feature soft sci-fi."
+    "description": "Science fiction that prioritizes social sciences, philosophy, or narrative over strict scientific accuracy."
   },
   {
     "id": "tag.faster_than_light",
     "label": "Faster Than Light",
-    "description": "Faster-than-light stories are stories that feature faster-than-light travel."
+    "description": "Features technology that allows travel across the universe faster than the speed of light."
   },
   {
     "id": "tag.ensemble_cast",
     "label": "Ensemble Cast",
-    "description": "Ensemble-cast stories are stories that feature an ensemble cast."
+    "description": "Follows a large group of principal characters rather than a single primary protagonist."
   },
   {
     "id": "tag.antihero",
     "label": "Antihero",
-    "description": "Antihero stories are stories that feature an antihero."
+    "description": "The protagonist lacks conventional heroic qualities such as idealism or morality."
   },
   {
     "id": "tag.dialogue_heavy",
     "label": "Dialogue Heavy",
-    "description": "Dialogue-heavy stories are stories that feature heavy dialogue."
+    "description": "Relies heavily on conversations, banter, and verbal exchanges to drive the plot."
   },
   {
     "id": "tag.no_dialogue",
     "label": "No Dialogue",
-    "description": "No-dialogue stories are stories that feature no dialogue."
+    "description": "Told entirely without spoken words, relying on visuals, actions, and atmosphere."
   },
   {
     "id": "tag.dialogue_light",
     "label": "Dialogue Light",
-    "description": "Dialogue-light stories are stories that feature light dialogue."
+    "description": "Uses minimal conversation, prioritizing environmental storytelling or internal monologue."
   },
   {
     "id": "tag.grounded",
     "label": "Grounded",
-    "description": "Grounded stories are stories that are grounded in reality."
+    "description": "Keeps the narrative rooted in believable, down-to-earth scenarios and realistic character reactions."
   },
   {
     "id": "tag.realistic",
     "label": "Realistic",
-    "description": "Realistic stories are stories that are realistic."
+    "description": "Aims for a truthful representation of life, avoiding idealized or sensationalized elements."
   },
   {
     "id": "tag.surreal",
     "label": "Surreal",
-    "description": "Surreal stories are stories that are surreal."
+    "description": "Features bizarre, illogical, or dream-like elements that defy normal reality."
   },
   {
     "id": "tag.dreamlike",
     "label": "Dreamlike",
-    "description": "Dreamlike stories are stories that are dreamlike."
+    "description": "Has an ethereal, disjointed, or fluid quality, evoking the feeling of a dream."
   },
   {
     "id": "tag.hopeful",
     "label": "Hopeful",
-    "description": "Hopeful stories are stories that are hopeful."
+    "description": "Maintains an optimistic tone, suggesting that things will improve or good will prevail."
   },
   {
     "id": "tag.bleak",
     "label": "Bleak",
-    "description": "Bleak stories are stories that are bleak."
+    "description": "Maintains a pessimistic, depressing tone where situations rarely improve and despair is common."
   },
   {
     "id": "tag.low_stakes",
     "label": "Low-Stakes",
-    "description": "Low-stakes stories are stories that are low-stakes."
+    "description": "The conflict is personal, internal, or small-scale, not threatening the world at large."
   },
   {
     "id": "tag.high_stakes",
     "label": "High-Stakes",
-    "description": "High-stakes stories are stories that are high-stakes."
+    "description": "The conflict involves massive consequences, such as the fate of a nation, world, or universe."
   },
   {
     "id": "tag.cozy",
     "label": "Cozy",
-    "description": "Cozy stories are stories that are cozy."
+    "description": "Features a comforting, gentle, and warm atmosphere, often prioritizing comfort over intense conflict."
   },
   {
     "id": "tag.intimate",
     "label": "Intimate",
-    "description": "Intimate stories are stories that are intimate."
+    "description": "Focuses closely on deep personal relationships and character interiors rather than external action."
   },
   {
     "id": "tag.political_intrigue",
     "label": "Political Intrigue",
-    "description": "Political-intrigue stories are stories that feature political intrigue."
+    "description": "Involves scheming, power struggles, and maneuvering within governments or organizations."
   },
   {
     "id": "tag.court_intrigue",
     "label": "Court Intrigue",
-    "description": "Court-intrigue stories are stories that feature court intrigue."
+    "description": "Specifically focuses on the secrets, betrayals, and politics within a royal court or nobility."
   },
   {
     "id": "tag.forbidden_romance",
     "label": "Forbidden Romance",
-    "description": "Forbidden-romance stories are stories that feature forbidden romance."
+    "description": "A love story between characters who are kept apart by societal rules, rivalries, or laws."
   },
   {
     "id": "tag.morally_gray",
     "label": "Morally Gray",
-    "description": "Morally-gray stories are stories that feature morally gray characters."
+    "description": "Characters and situations exist in the ambiguous space between clear right and wrong."
   },
   {
     "id": "tag.chosen_one",
     "label": "Chosen One",
-    "description": "Chosen-one stories are stories that feature a chosen one."
+    "description": "A protagonist is prophesied or destined to achieve a monumental task or defeat a great evil."
   },
   {
     "id": "tag.heist",
     "label": "Heist",
-    "description": "Heist stories are stories that feature heists."
+    "description": "Focuses on the meticulous planning and execution of a complex theft or extraction."
   },
   {
     "id": "tag.monster_hunting",
     "label": "Monster Hunting",
-    "description": "Monster-hunting stories are stories that feature monster hunting."
+    "description": "The primary plot revolves around tracking down and defeating dangerous supernatural creatures."
   },
   {
     "id": "tag.survivalist",
     "label": "Survivalist",
-    "description": "Survivalist stories are stories that feature survivalists."
+    "description": "Focuses on the gritty, practical aspects of staying alive in a harsh or wilderness environment."
   },
   {
     "id": "tag.science_fantasy",
     "label": "Science Fantasy",
-    "description": "Science-fantasy stories are stories that feature science fantasy."
+    "description": "Blends elements of advanced sci-fi technology with magic and mythological tropes."
   },
   {
     "id": "tag.eldritch",
     "label": "Eldritch",
-    "description": "Eldritch stories are stories that feature eldritch horror."
+    "description": "Features cosmic horror, incomprehensible entities, and themes of sanity-shattering madness."
   },
   {
     "id": "tag.body_horror",
     "label": "Body Horror",
-    "description": "Body-horror stories are stories that feature body horror."
+    "description": "Focuses on grotesque or disturbing mutations, transformations, or violations of the human body."
   },
   {
     "id": "tag.folk_horror",
     "label": "Folk Horror",
-    "description": "Folk-horror stories are stories that feature folk horror."
+    "description": "Draws on rural traditions, pagan rituals, and the isolation of nature to create fear."
   },
   {
     "id": "tag.academia",
     "label": "Academia",
-    "description": "Academia stories are stories that feature academia."
+    "description": "Set primarily within a school, university, or scholarly institution, often focusing on learning or research."
   },
   {
     "id": "tag.military",
     "label": "Military",
-    "description": "Military stories are stories that feature military elements."
+    "description": "Focuses heavily on armed forces, tactical combat, soldier life, or military structure."
   },
   {
     "id": "tag.naval",
     "label": "Naval",
-    "description": "Naval stories are stories that feature naval elements."
+    "description": "Revolves around maritime combat, fleets, and life aboard naval vessels."
   },
   {
     "id": "tag.wilderness",
     "label": "Wilderness",
-    "description": "Wilderness stories are stories that feature wilderness elements."
+    "description": "Set in untamed natural environments where nature itself is often a primary obstacle."
   },
   {
     "id": "tag.religious_order",
     "label": "Religious Order",
-    "description": "Religious-order stories are stories that feature religious orders."
+    "description": "Focuses on monks, priests, cults, or organizations devoted to a faith or deity."
   },
   {
     "id": "tag.sex",
     "label": "Sex",
-    "description": "Sex stories are stories that feature sex."
+    "description": "Features sexual encounters as part of the narrative or character development."
   },
   {
     "id": "tag.nsfw",
     "label": "NSFW",
-    "description": "NSFW stories are stories that feature NSFW content."
+    "description": "Not Safe For Work; contains explicit violence, sexuality, or extreme themes intended for mature audiences."
   },
   {
     "id": "tag.violence",
     "label": "Violence",
-    "description": "Violence stories are stories that feature violence."
+    "description": "Features significant physical conflict, injury, or combat."
   },
   {
     "id": "tag.war",
     "label": "War",
-    "description": "War stories are stories that feature war."
+    "description": "Explores the large-scale armed conflict between nations or factions, including its impacts."
   },
   {
     "id": "tag.gifted_individual",
     "label": "Gifted Individual",
-    "description": "Gifted-individual stories are stories that feature gifted individuals."
+    "description": "Centers on a character with exceptional talent, intellect, or skill in a specific domain."
   },
   {
     "id": "tag.supernatural_abilities",
     "label": "Supernatural Abilities",
-    "description": "Supernatural-abilities stories are stories that feature supernatural abilities."
+    "description": "Characters possess powers that defy the laws of physics, such as telekinesis or telepathy."
   },
   {
     "id": "tag.superpowers",
     "label": "Superpowers",
-    "description": "Superpowers stories are stories that feature superpowers."
+    "description": "Features characters with extraordinary superhuman abilities, often in a comic-book style setting."
   },
   {
     "id": "tag.mutants",
     "label": "Mutants",
-    "description": "Mutant stories are stories that feature mutants."
+    "description": "Features individuals born with genetic anomalies that grant them unique physical traits or powers."
   },
   {
     "id": "tag.the_beauty_of_struggle",
     "label": "The Beauty Of Struggle",
-    "description": "The-beauty-of-struggle stories are stories that feature the beauty of struggle."
+    "description": "Highlights the nobility, growth, or aesthetic value found in overcoming hardship."
   },
   {
     "id": "tag.pirates",
     "label": "Pirates",
-    "description": "Pirate stories are stories that feature pirates."
+    "description": "Focuses on outlaws who plunder at sea, featuring ships, treasure, and naval clashes."
   },
   {
     "id": "tag.seafaring",
     "label": "Seafaring",
-    "description": "Seafaring stories are stories that feature seafaring."
+    "description": "The narrative revolves around life on the open ocean, sailing, and maritime adventures."
   },
   {
     "id": "tag.guilds",
     "label": "Guilds",
-    "description": "Guild stories are stories that feature guilds."
+    "description": "Features organized associations of merchants, artisans, or adventurers holding significant societal power."
   },
   {
     "id": "tag.mercenaries",
     "label": "Mercenaries",
-    "description": "Mercenary stories are stories that feature mercenaries."
+    "description": "Focuses on soldiers for hire who fight for profit rather than allegiance."
   },
   {
     "id": "tag.empire",
     "label": "Empire",
-    "description": "Empire stories are stories that feature empires."
+    "description": "Features a vast, powerful, and often expansionist multi-national state ruled by a central authority."
   },
   {
     "id": "tag.fallen_empire",
     "label": "Fallen Empire",
-    "description": "Fallen-empire stories are stories that feature fallen empires."
+    "description": "Set in the remnants of a once-great civilization, exploring its decline or aftermath."
   },
   {
     "id": "tag.rebellion",
     "label": "Rebellion",
-    "description": "Rebellion stories are stories that feature rebellion."
+    "description": "Focuses on an uprising or resistance movement against an established government or authority."
   },
   {
     "id": "tag.civil_war",
     "label": "Civil War",
-    "description": "Civil-war stories are stories that feature civil wars."
+    "description": "Explores a devastating conflict between organized groups within the same nation or state."
   },
   {
     "id": "tag.golden_age",
     "label": "Golden Age",
-    "description": "Golden-age stories are stories that feature a golden age."
+    "description": "Set during a peak era of peace, prosperity, and cultural or technological achievement."
   },
   {
     "id": "tag.shoulders_of_giants",
     "label": "Shoulders Of Giants",
-    "description": "Shoulders-of-giants stories are stories that feature shoulders of giants."
+    "description": "Features characters building upon the advanced discoveries, ruins, or legacy of a previous civilization."
   },
   {
     "id": "tag.lost_knowledge",
     "label": "Lost Knowledge",
-    "description": "Lost-knowledge stories are stories that feature lost knowledge."
+    "description": "Involves the search for or rediscovery of forgotten magic, history, or science."
   },
   {
     "id": "tag.kingdom",
     "label": "Kingdom",
-    "description": "Kingdom stories are stories that feature kingdoms."
+    "description": "Features a state ruled by a monarch, often involving feudal politics and knights."
   },
   {
     "id": "tag.lost_kingdom",
     "label": "Lost Kingdom",
-    "description": "Lost-kingdom stories are stories that feature lost kingdoms."
+    "description": "Focuses on a legendary, hidden, or destroyed realm waiting to be uncovered or restored."
   },
   {
     "id": "tag.exploration",
     "label": "Exploration",
-    "description": "Exploration stories are stories that feature exploration."
+    "description": "The primary focus is on venturing into the unknown, mapping new lands, or discovering the unfamiliar."
   },
   {
     "id": "tag.adventure",

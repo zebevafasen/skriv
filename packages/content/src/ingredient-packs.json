@@ -5,8 +5,18 @@
     "name": "Epic Fantasy",
     "description": "A focused epic fantasy pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.fantasy", "genre.epic_fantasy", "genre.adventure"],
-      "themes": ["theme.duty", "theme.sacrifice", "theme.power", "theme.hope", "theme.legacy"],
+      "genres": [
+        "genre.fantasy",
+        "genre.epic_fantasy",
+        "genre.adventure"
+      ],
+      "themes": [
+        "theme.duty",
+        "theme.sacrifice",
+        "theme.power",
+        "theme.hope",
+        "theme.legacy"
+      ],
       "tags": [
         "tag.quest",
         "tag.chosen_one",
@@ -59,7 +69,16 @@
         "tag.divine_magic",
         "tag.inherited_magic",
         "tag.sentient_artifact",
-        "tag.magical_bureaucracy"
+        "tag.magical_bureaucracy",
+        "tag.shoulders_of_giants",
+        "tag.gunpowder",
+        "tag.industrial",
+        "tag.shapeshifting_magic",
+        "tag.airship",
+        "tag.walled_city",
+        "tag.kraken",
+        "tag.sirens",
+        "tag.underground_city"
       ]
     }
   },
@@ -69,7 +88,11 @@
     "name": "Dark Fantasy",
     "description": "A focused dark fantasy pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.fantasy", "genre.dark_fantasy", "genre.horror"],
+      "genres": [
+        "genre.fantasy",
+        "genre.dark_fantasy",
+        "genre.horror"
+      ],
       "themes": [
         "theme.corruption",
         "theme.mortality",
@@ -133,7 +156,16 @@
         "tag.magical_illness",
         "tag.occultist",
         "tag.eerie",
-        "tag.ominous"
+        "tag.ominous",
+        "tag.empire",
+        "tag.fallen_empire",
+        "tag.shoulders_of_giants",
+        "tag.underground_city",
+        "tag.wasteland",
+        "tag.battlefield",
+        "tag.walled_city",
+        "tag.gunpowder",
+        "tag.industrial"
       ]
     }
   },
@@ -143,8 +175,18 @@
     "name": "Sword & Sorcery",
     "description": "A focused sword & sorcery pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.fantasy", "genre.sword_and_sorcery", "genre.action", "genre.adventure"],
-      "themes": ["theme.ambition", "theme.survival", "theme.freedom", "theme.power"],
+      "genres": [
+        "genre.fantasy",
+        "genre.sword_and_sorcery",
+        "genre.action",
+        "genre.adventure"
+      ],
+      "themes": [
+        "theme.ambition",
+        "theme.survival",
+        "theme.freedom",
+        "theme.power"
+      ],
       "tags": [
         "tag.mercenaries",
         "tag.dungeon",
@@ -197,7 +239,11 @@
         "tag.martial_arts",
         "tag.pirates",
         "tag.seafaring",
-        "tag.violence"
+        "tag.violence",
+        "tag.empire",
+        "tag.fallen_empire",
+        "tag.shoulders_of_giants",
+        "tag.wasteland"
       ]
     }
   },
@@ -207,8 +253,17 @@
     "name": "Urban Fantasy",
     "description": "A focused urban fantasy pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.urban_fantasy", "genre.fantasy", "genre.supernatural"],
-      "themes": ["theme.identity", "theme.belonging", "theme.power", "theme.community"],
+      "genres": [
+        "genre.urban_fantasy",
+        "genre.fantasy",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.belonging",
+        "theme.power",
+        "theme.community"
+      ],
       "tags": [
         "tag.floating_city",
         "tag.witches",
@@ -271,7 +326,12 @@
     "name": "Fairy Tales & Fables",
     "description": "A focused fairy tales & fables pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.fantasy", "genre.fairy_tale", "genre.fable", "genre.children"],
+      "genres": [
+        "genre.fantasy",
+        "genre.fairy_tale",
+        "genre.fable",
+        "genre.children"
+      ],
       "themes": [
         "theme.transformation",
         "theme.truth",
@@ -489,7 +549,11 @@
         "tag.interstellar_trade",
         "tag.alien_planet",
         "tag.alien_ecology",
-        "tag.salvage_crew"
+        "tag.salvage_crew",
+        "tag.zero_gravity",
+        "tag.low_gravity",
+        "tag.quantum_computing",
+        "tag.mutiny"
       ]
     }
   },
@@ -576,7 +640,10 @@
         "tag.digital_identity",
         "tag.surveillance_capitalism",
         "tag.synthetic_biology",
-        "tag.whistleblower"
+        "tag.whistleblower",
+        "tag.zero_gravity",
+        "tag.quantum_computing",
+        "tag.underground_city"
       ]
     }
   },
@@ -586,7 +653,11 @@
     "name": "Solarpunk",
     "description": "A focused solarpunk pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.science_fiction", "genre.speculative", "genre.slice_of_life"],
+      "genres": [
+        "genre.science_fiction",
+        "genre.speculative",
+        "genre.slice_of_life"
+      ],
       "themes": [
         "theme.environmental_stewardship",
         "theme.hope",
@@ -654,7 +725,10 @@
     "name": "First Contact",
     "description": "A focused first contact pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.science_fiction", "genre.speculative"],
+      "genres": [
+        "genre.science_fiction",
+        "genre.speculative"
+      ],
       "themes": [
         "theme.knowledge",
         "theme.prejudice",
@@ -713,7 +787,9 @@
         "tag.alien_ruins",
         "tag.research_station",
         "tag.spaceship",
-        "tag.testimony"
+        "tag.testimony",
+        "tag.zero_gravity",
+        "tag.low_gravity"
       ]
     }
   },
@@ -723,7 +799,10 @@
     "name": "Time & Alternate Realities",
     "description": "A focused time & alternate realities pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.science_fiction", "genre.speculative"],
+      "genres": [
+        "genre.science_fiction",
+        "genre.speculative"
+      ],
       "themes": [
         "theme.free_will",
         "theme.memory",
@@ -790,7 +869,10 @@
     "name": "Contemporary Romance",
     "description": "A focused contemporary romance pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.romance", "genre.slice_of_life"],
+      "genres": [
+        "genre.romance",
+        "genre.slice_of_life"
+      ],
       "themes": [
         "theme.love",
         "theme.trust",
@@ -844,7 +926,11 @@
         "tag.fake_dating",
         "tag.secret_baby",
         "tag.holiday_romance",
-        "tag.banter"
+        "tag.banter",
+        "tag.blended_family",
+        "tag.polycule",
+        "tag.codependent_relationship",
+        "tag.forbidden_friendship"
       ]
     }
   },
@@ -854,7 +940,10 @@
     "name": "Historical Romance",
     "description": "A focused historical romance pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.romance", "genre.historical_fiction"],
+      "genres": [
+        "genre.romance",
+        "genre.historical_fiction"
+      ],
       "themes": [
         "theme.love",
         "theme.duty",
@@ -925,7 +1014,11 @@
     "name": "Paranormal Romance",
     "description": "A focused paranormal romance pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.romance", "genre.paranormal", "genre.supernatural"],
+      "genres": [
+        "genre.romance",
+        "genre.paranormal",
+        "genre.supernatural"
+      ],
       "themes": [
         "theme.love",
         "theme.identity",
@@ -981,7 +1074,8 @@
         "tag.interspecies_romance",
         "tag.cursed_object",
         "tag.queer_romance",
-        "tag.magical_companion"
+        "tag.magical_companion",
+        "tag.shapeshifting_magic"
       ]
     }
   },
@@ -991,8 +1085,16 @@
     "name": "Romantic Comedy",
     "description": "A focused romantic comedy pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.romance", "genre.comedy"],
-      "themes": ["theme.love", "theme.friendship", "theme.trust", "theme.belonging"],
+      "genres": [
+        "genre.romance",
+        "genre.comedy"
+      ],
+      "themes": [
+        "theme.love",
+        "theme.friendship",
+        "theme.trust",
+        "theme.belonging"
+      ],
       "tags": [
         "tag.friends_to_lovers",
         "tag.rivals",
@@ -1044,8 +1146,15 @@
     "name": "Classic Mystery",
     "description": "A focused classic mystery pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.mystery"],
-      "themes": ["theme.truth", "theme.knowledge", "theme.justice", "theme.trust"],
+      "genres": [
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.truth",
+        "theme.knowledge",
+        "theme.justice",
+        "theme.trust"
+      ],
       "tags": [
         "tag.locked_room",
         "tag.puzzle_box",
@@ -1102,8 +1211,16 @@
     "name": "Cozy Mystery",
     "description": "A focused cozy mystery pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.mystery", "genre.slice_of_life"],
-      "themes": ["theme.community", "theme.truth", "theme.friendship", "theme.belonging"],
+      "genres": [
+        "genre.mystery",
+        "genre.slice_of_life"
+      ],
+      "themes": [
+        "theme.community",
+        "theme.truth",
+        "theme.friendship",
+        "theme.belonging"
+      ],
       "tags": [
         "tag.isolated_village",
         "tag.small_town",
@@ -1161,8 +1278,17 @@
     "name": "Crime & Noir",
     "description": "A focused crime & noir pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.crime", "genre.noir", "genre.mystery"],
-      "themes": ["theme.corruption", "theme.justice", "theme.identity", "theme.truth"],
+      "genres": [
+        "genre.crime",
+        "genre.noir",
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.corruption",
+        "theme.justice",
+        "theme.identity",
+        "theme.truth"
+      ],
       "tags": [
         "tag.detective",
         "tag.private_detective",
@@ -1222,8 +1348,16 @@
     "name": "Police Procedural",
     "description": "A focused police procedural pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.crime", "genre.mystery"],
-      "themes": ["theme.justice", "theme.responsibility", "theme.truth", "theme.corruption"],
+      "genres": [
+        "genre.crime",
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.justice",
+        "theme.responsibility",
+        "theme.truth",
+        "theme.corruption"
+      ],
       "tags": [
         "tag.investigation",
         "tag.cold_case",
@@ -1279,8 +1413,17 @@
     "name": "Heist & Caper",
     "description": "A focused heist & caper pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.crime", "genre.thriller", "genre.comedy"],
-      "themes": ["theme.trust", "theme.ambition", "theme.freedom", "theme.betrayal"],
+      "genres": [
+        "genre.crime",
+        "genre.thriller",
+        "genre.comedy"
+      ],
+      "themes": [
+        "theme.trust",
+        "theme.ambition",
+        "theme.freedom",
+        "theme.betrayal"
+      ],
       "tags": [
         "tag.murder",
         "tag.caper",
@@ -1349,7 +1492,10 @@
     "name": "Gothic Horror",
     "description": "A focused gothic horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.supernatural"],
+      "genres": [
+        "genre.horror",
+        "genre.supernatural"
+      ],
       "themes": [
         "theme.isolation",
         "theme.mortality",
@@ -1419,7 +1565,10 @@
     "name": "Psychological Horror",
     "description": "A focused psychological horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.psychological"],
+      "genres": [
+        "genre.horror",
+        "genre.psychological"
+      ],
       "themes": [
         "theme.trauma",
         "theme.identity",
@@ -1481,7 +1630,10 @@
     "name": "Folk Horror",
     "description": "A focused folk horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.supernatural"],
+      "genres": [
+        "genre.horror",
+        "genre.supernatural"
+      ],
       "themes": [
         "theme.community",
         "theme.faith",
@@ -1544,7 +1696,10 @@
     "name": "Cosmic Horror",
     "description": "A focused cosmic horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.science_fiction"],
+      "genres": [
+        "genre.horror",
+        "genre.science_fiction"
+      ],
       "themes": [
         "theme.knowledge",
         "theme.mortality",
@@ -1609,8 +1764,17 @@
     "name": "Hauntings & Occult",
     "description": "A focused hauntings & occult pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.paranormal", "genre.supernatural"],
-      "themes": ["theme.faith", "theme.grief", "theme.mortality", "theme.knowledge"],
+      "genres": [
+        "genre.horror",
+        "genre.paranormal",
+        "genre.supernatural"
+      ],
+      "themes": [
+        "theme.faith",
+        "theme.grief",
+        "theme.mortality",
+        "theme.knowledge"
+      ],
       "tags": [
         "tag.haunted_house",
         "tag.ghosts",
@@ -1666,7 +1830,10 @@
     "name": "Monsters & Body Horror",
     "description": "A focused monsters & body horror pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.horror", "genre.dark_fantasy"],
+      "genres": [
+        "genre.horror",
+        "genre.dark_fantasy"
+      ],
       "themes": [
         "theme.transformation",
         "theme.survival",
@@ -1727,7 +1894,10 @@
     "name": "Historical Drama",
     "description": "A focused historical drama pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.historical_fiction", "genre.drama"],
+      "genres": [
+        "genre.historical_fiction",
+        "genre.drama"
+      ],
       "themes": [
         "theme.legacy",
         "theme.class",
@@ -1785,8 +1955,17 @@
     "name": "Historical Adventure",
     "description": "A focused historical adventure pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.historical_fiction", "genre.adventure", "genre.action"],
-      "themes": ["theme.survival", "theme.freedom", "theme.duty", "theme.hope"],
+      "genres": [
+        "genre.historical_fiction",
+        "genre.adventure",
+        "genre.action"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.freedom",
+        "theme.duty",
+        "theme.hope"
+      ],
       "tags": [
         "tag.wartime",
         "tag.civil_war",
@@ -1828,7 +2007,14 @@
         "tag.high_stakes",
         "tag.fast_paced",
         "tag.disabled_protagonist",
-        "tag.neurodivergent_protagonist"
+        "tag.neurodivergent_protagonist",
+        "tag.mutiny",
+        "tag.blockade",
+        "tag.kraken",
+        "tag.sirens",
+        "tag.whales",
+        "tag.carnival",
+        "tag.circus"
       ]
     }
   },
@@ -1838,7 +2024,10 @@
     "name": "Alternate History",
     "description": "A focused alternate history pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.historical_fiction", "genre.speculative"],
+      "genres": [
+        "genre.historical_fiction",
+        "genre.speculative"
+      ],
       "themes": [
         "theme.free_will",
         "theme.power",
@@ -1915,7 +2104,11 @@
     "name": "Western & Frontier",
     "description": "A focused western & frontier pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.western", "genre.historical_fiction", "genre.adventure"],
+      "genres": [
+        "genre.western",
+        "genre.historical_fiction",
+        "genre.adventure"
+      ],
       "themes": [
         "theme.justice",
         "theme.community",
@@ -1973,7 +2166,10 @@
     "name": "Literary Fiction",
     "description": "A focused literary fiction pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.literary_fiction", "genre.drama"],
+      "genres": [
+        "genre.literary_fiction",
+        "genre.drama"
+      ],
       "themes": [
         "theme.identity",
         "theme.memory",
@@ -2034,7 +2230,11 @@
         "tag.sibling_bond",
         "tag.parental_loss",
         "tag.childhood_friends",
-        "tag.return_home"
+        "tag.return_home",
+        "tag.dysfunctional_family",
+        "tag.magical_realism",
+        "tag.cerebral",
+        "tag.philosophical"
       ]
     }
   },
@@ -2044,7 +2244,10 @@
     "name": "Slice of Life",
     "description": "A focused slice of life pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.slice_of_life", "genre.drama"],
+      "genres": [
+        "genre.slice_of_life",
+        "genre.drama"
+      ],
       "themes": [
         "theme.community",
         "theme.belonging",
@@ -2104,7 +2307,10 @@
     "name": "Family & Social Drama",
     "description": "A focused family & social drama pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.drama", "genre.literary_fiction"],
+      "genres": [
+        "genre.drama",
+        "genre.literary_fiction"
+      ],
       "themes": [
         "theme.class",
         "theme.legacy",
@@ -2152,7 +2358,12 @@
         "tag.queer_protagonist",
         "tag.disabled_protagonist",
         "tag.neurodivergent_protagonist",
-        "tag.ensemble_cast"
+        "tag.ensemble_cast",
+        "tag.dysfunctional_family",
+        "tag.blended_family",
+        "tag.polycule",
+        "tag.codependent_relationship",
+        "tag.forbidden_friendship"
       ]
     }
   },
@@ -2162,7 +2373,11 @@
     "name": "Satire",
     "description": "A focused satire pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.satire", "genre.comedy", "genre.literary_fiction"],
+      "genres": [
+        "genre.satire",
+        "genre.comedy",
+        "genre.literary_fiction"
+      ],
       "themes": [
         "theme.power",
         "theme.truth",
@@ -2216,8 +2431,16 @@
     "name": "Action Thriller",
     "description": "A focused action thriller pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.action", "genre.thriller"],
-      "themes": ["theme.survival", "theme.responsibility", "theme.justice", "theme.trust"],
+      "genres": [
+        "genre.action",
+        "genre.thriller"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.responsibility",
+        "theme.justice",
+        "theme.trust"
+      ],
       "tags": [
         "tag.cat_and_mouse",
         "tag.conspiracy",
@@ -2254,7 +2477,12 @@
         "tag.military",
         "tag.violence",
         "tag.rifle",
-        "tag.dagger"
+        "tag.dagger",
+        "tag.mutiny",
+        "tag.blockade",
+        "tag.frontline",
+        "tag.frenetic",
+        "tag.pulpy"
       ]
     }
   },
@@ -2264,8 +2492,17 @@
     "name": "Survival Adventure",
     "description": "A focused survival adventure pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.adventure", "genre.action", "genre.thriller"],
-      "themes": ["theme.survival", "theme.hope", "theme.community", "theme.responsibility"],
+      "genres": [
+        "genre.adventure",
+        "genre.action",
+        "genre.thriller"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.hope",
+        "theme.community",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.escape",
         "tag.cover_up",
@@ -2315,7 +2552,10 @@
         "tag.swamp",
         "tag.cave",
         "tag.hunting",
-        "tag.foraging"
+        "tag.foraging",
+        "tag.wasteland",
+        "tag.battlefield",
+        "tag.frontline"
       ]
     }
   },
@@ -2325,8 +2565,18 @@
     "name": "Political Thriller",
     "description": "A focused political thriller pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.thriller", "genre.political", "genre.crime"],
-      "themes": ["theme.power", "theme.corruption", "theme.truth", "theme.justice", "theme.duty"],
+      "genres": [
+        "genre.thriller",
+        "genre.political",
+        "genre.crime"
+      ],
+      "themes": [
+        "theme.power",
+        "theme.corruption",
+        "theme.truth",
+        "theme.justice",
+        "theme.duty"
+      ],
       "tags": [
         "tag.conspiracy",
         "tag.cover_up",
@@ -2385,7 +2635,11 @@
     "name": "Superhero Adventure",
     "description": "A focused superhero adventure pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.superhero", "genre.action", "genre.adventure"],
+      "genres": [
+        "genre.superhero",
+        "genre.action",
+        "genre.adventure"
+      ],
       "themes": [
         "theme.responsibility",
         "theme.justice",
@@ -2449,7 +2703,10 @@
     "name": "Cozy Fantasy",
     "description": "A focused cozy fantasy pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.fantasy", "genre.slice_of_life"],
+      "genres": [
+        "genre.fantasy",
+        "genre.slice_of_life"
+      ],
       "themes": [
         "theme.community",
         "theme.hope",
@@ -2516,7 +2773,11 @@
     "name": "Small-Town Comfort",
     "description": "A focused small-town comfort pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.slice_of_life", "genre.romance", "genre.comedy"],
+      "genres": [
+        "genre.slice_of_life",
+        "genre.romance",
+        "genre.comedy"
+      ],
       "themes": [
         "theme.community",
         "theme.friendship",
@@ -2586,8 +2847,17 @@
     "name": "Contemporary Erotica",
     "description": "A focused contemporary erotica pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.erotica", "genre.slice_of_life", "genre.romance"],
-      "themes": ["theme.identity", "theme.trust", "theme.love", "theme.freedom"],
+      "genres": [
+        "genre.erotica",
+        "genre.slice_of_life",
+        "genre.romance"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.trust",
+        "theme.love",
+        "theme.freedom"
+      ],
       "tags": [
         "tag.forbidden_romance",
         "tag.friends_to_lovers",
@@ -2637,7 +2907,11 @@
     "name": "Historical Erotica",
     "description": "A focused historical erotica pack of genres, themes, and story ingredients.",
     "values": {
-      "genres": ["genre.erotica", "genre.historical_fiction", "genre.romance"],
+      "genres": [
+        "genre.erotica",
+        "genre.historical_fiction",
+        "genre.romance"
+      ],
       "themes": [
         "theme.freedom",
         "theme.class",
@@ -2804,7 +3078,11 @@
     "description": "A focused consuming ambition pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.obsession", "theme.ambition", "theme.power"],
+      "themes": [
+        "theme.obsession",
+        "theme.ambition",
+        "theme.power"
+      ],
       "tags": [
         "tag.emotionally_intense",
         "tag.ring",
@@ -2841,7 +3119,11 @@
     "description": "A focused possessive love pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.obsession", "theme.love", "theme.trust"],
+      "themes": [
+        "theme.obsession",
+        "theme.love",
+        "theme.trust"
+      ],
       "tags": [
         "tag.love_triangle",
         "tag.unrequited_love",
@@ -2883,7 +3165,11 @@
     "description": "A focused pursuit of perfection pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.obsession", "theme.identity", "theme.transformation"],
+      "themes": [
+        "theme.obsession",
+        "theme.identity",
+        "theme.transformation"
+      ],
       "tags": [
         "tag.experimental",
         "tag.theater",
@@ -2927,7 +3213,11 @@
     "description": "A focused personal vengeance pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.revenge", "theme.justice", "theme.grief"],
+      "themes": [
+        "theme.revenge",
+        "theme.justice",
+        "theme.grief"
+      ],
       "tags": [
         "tag.murder",
         "tag.manhunt",
@@ -2969,7 +3259,11 @@
     "description": "A focused cycles of retaliation pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.revenge", "theme.legacy", "theme.betrayal"],
+      "themes": [
+        "theme.revenge",
+        "theme.legacy",
+        "theme.betrayal"
+      ],
       "tags": [
         "tag.wartime",
         "tag.civil_war",
@@ -3014,7 +3308,11 @@
     "description": "A focused revenge vs justice pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.revenge", "theme.justice", "theme.responsibility"],
+      "themes": [
+        "theme.revenge",
+        "theme.justice",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.locked_room",
         "tag.cold_case",
@@ -3057,7 +3355,11 @@
     "description": "A focused self-discovery pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.identity", "theme.transformation", "theme.coming_of_age"],
+      "themes": [
+        "theme.identity",
+        "theme.transformation",
+        "theme.coming_of_age"
+      ],
       "tags": [
         "tag.key",
         "tag.mirror",
@@ -3099,7 +3401,11 @@
     "description": "A focused found family pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.found_family", "theme.belonging", "theme.friendship"],
+      "themes": [
+        "theme.found_family",
+        "theme.belonging",
+        "theme.friendship"
+      ],
       "tags": [
         "tag.isolated_village",
         "tag.library",
@@ -3139,7 +3445,11 @@
     "description": "A focused exile & displacement pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.displacement", "theme.belonging", "theme.identity"],
+      "themes": [
+        "theme.displacement",
+        "theme.belonging",
+        "theme.identity"
+      ],
       "tags": [
         "tag.exile",
         "tag.diaspora",
@@ -3179,7 +3489,11 @@
     "description": "A focused corruption & complicity pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.corruption", "theme.power", "theme.responsibility"],
+      "themes": [
+        "theme.corruption",
+        "theme.power",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.detective",
         "tag.amateur_detective",
@@ -3220,7 +3534,11 @@
     "description": "A focused class & prejudice pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.class", "theme.prejudice", "theme.power"],
+      "themes": [
+        "theme.class",
+        "theme.prejudice",
+        "theme.power"
+      ],
       "tags": [
         "tag.regency",
         "tag.georgian",
@@ -3268,7 +3586,11 @@
     "description": "A focused freedom vs duty pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.freedom", "theme.duty", "theme.sacrifice"],
+      "themes": [
+        "theme.freedom",
+        "theme.duty",
+        "theme.sacrifice"
+      ],
       "tags": [
         "tag.war",
         "tag.kingdom",
@@ -3314,7 +3636,11 @@
     "description": "A focused love & sacrifice pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.love", "theme.sacrifice", "theme.duty"],
+      "themes": [
+        "theme.love",
+        "theme.sacrifice",
+        "theme.duty"
+      ],
       "tags": [
         "tag.second_chance_romance",
         "tag.arranged_marriage",
@@ -3365,7 +3691,11 @@
     "description": "A focused betrayal & reconciliation pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.betrayal", "theme.trust", "theme.reconciliation"],
+      "themes": [
+        "theme.betrayal",
+        "theme.trust",
+        "theme.reconciliation"
+      ],
       "tags": [
         "tag.friends_to_lovers",
         "tag.second_chance_romance",
@@ -3408,7 +3738,11 @@
     "description": "A focused survival & trauma pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.survival", "theme.trauma", "theme.hope"],
+      "themes": [
+        "theme.survival",
+        "theme.trauma",
+        "theme.hope"
+      ],
       "tags": [
         "tag.claustrophobic",
         "tag.ghost_town",
@@ -3454,7 +3788,11 @@
     "description": "A focused redemption & rebirth pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.redemption", "theme.transformation", "theme.responsibility"],
+      "themes": [
+        "theme.redemption",
+        "theme.transformation",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.exile",
         "tag.circular_structure",
@@ -3497,7 +3835,11 @@
     "description": "A focused secrets & truth pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.truth", "theme.knowledge", "theme.trust"],
+      "themes": [
+        "theme.truth",
+        "theme.knowledge",
+        "theme.trust"
+      ],
       "tags": [
         "tag.investigation",
         "tag.puzzle_box",
@@ -3542,7 +3884,11 @@
     "description": "A focused memory & legacy pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.memory", "theme.legacy", "theme.mortality"],
+      "themes": [
+        "theme.memory",
+        "theme.legacy",
+        "theme.mortality"
+      ],
       "tags": [
         "tag.diaspora",
         "tag.multigenerational",
@@ -3586,7 +3932,11 @@
     "description": "A focused stewardship & community pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.environmental_stewardship", "theme.community", "theme.nature"],
+      "themes": [
+        "theme.environmental_stewardship",
+        "theme.community",
+        "theme.nature"
+      ],
       "tags": [
         "tag.reconstruction",
         "tag.engineer",
@@ -3634,7 +3984,11 @@
     "description": "A focused technology & humanity pack of genres, themes, and story ingredients.",
     "values": {
       "genres": [],
-      "themes": ["theme.technology", "theme.identity", "theme.responsibility"],
+      "themes": [
+        "theme.technology",
+        "theme.identity",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.cyberpunk",
         "tag.human_centric",
@@ -3677,8 +4031,18 @@
     "name": "Stage & Song",
     "description": "Musical stories about performers, collaboration, ambition, and life around the stage.",
     "values": {
-      "genres": ["genre.musical", "genre.drama", "genre.comedy", "genre.romance"],
-      "themes": ["theme.ambition", "theme.identity", "theme.friendship", "theme.love"],
+      "genres": [
+        "genre.musical",
+        "genre.drama",
+        "genre.comedy",
+        "genre.romance"
+      ],
+      "themes": [
+        "theme.ambition",
+        "theme.identity",
+        "theme.friendship",
+        "theme.love"
+      ],
       "tags": [
         "tag.musician",
         "tag.actor",
@@ -3705,7 +4069,11 @@
     "name": "Sports & Competition",
     "description": "Athletic stories about training, rivalry, teamwork, pressure, defeat, and triumph.",
     "values": {
-      "genres": ["genre.sports", "genre.drama", "genre.action"],
+      "genres": [
+        "genre.sports",
+        "genre.drama",
+        "genre.action"
+      ],
       "themes": [
         "theme.ambition",
         "theme.friendship",
@@ -3742,7 +4110,11 @@
     "description": "A close, subjective voice whose account cannot be accepted at face value.",
     "values": {
       "genres": [],
-      "themes": ["theme.truth", "theme.identity", "theme.memory"],
+      "themes": [
+        "theme.truth",
+        "theme.identity",
+        "theme.memory"
+      ],
       "tags": [
         "tag.unreliable_narrator",
         "tag.unreliable_reality",
@@ -3763,7 +4135,11 @@
     "description": "An ensemble story built from contrasting viewpoints and partial truths.",
     "values": {
       "genres": [],
-      "themes": ["theme.community", "theme.truth", "theme.prejudice"],
+      "themes": [
+        "theme.community",
+        "theme.truth",
+        "theme.prejudice"
+      ],
       "tags": [
         "tag.ensemble_cast",
         "tag.parallel_narrative",
@@ -3785,7 +4161,11 @@
     "description": "Competitive or hostile characters forced into cooperation.",
     "values": {
       "genres": [],
-      "themes": ["theme.trust", "theme.ambition", "theme.friendship"],
+      "themes": [
+        "theme.trust",
+        "theme.ambition",
+        "theme.friendship"
+      ],
       "tags": [
         "tag.rivals",
         "tag.enemies_to_allies",
@@ -3809,7 +4189,12 @@
     "description": "Deep nontraditional bonds that become family, partnership, or home.",
     "values": {
       "genres": [],
-      "themes": ["theme.found_family", "theme.belonging", "theme.friendship", "theme.love"],
+      "themes": [
+        "theme.found_family",
+        "theme.belonging",
+        "theme.friendship",
+        "theme.love"
+      ],
       "tags": [
         "tag.platonic_soulmates",
         "tag.surrogate_siblings",
@@ -3833,7 +4218,11 @@
     "description": "Characters whose work preserves, interprets, maps, or uncovers knowledge.",
     "values": {
       "genres": [],
-      "themes": ["theme.knowledge", "theme.truth", "theme.legacy"],
+      "themes": [
+        "theme.knowledge",
+        "theme.truth",
+        "theme.legacy"
+      ],
       "tags": [
         "tag.scholar",
         "tag.librarian",
@@ -3859,7 +4248,11 @@
     "description": "Tradespeople, laborers, and makers whose practical work shapes the story.",
     "values": {
       "genres": [],
-      "themes": ["theme.class", "theme.community", "theme.responsibility"],
+      "themes": [
+        "theme.class",
+        "theme.community",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.factory_worker",
         "tag.miner",
@@ -3885,7 +4278,11 @@
     "description": "Disabled characters living full lives shaped by access, adaptation, community, and identity.",
     "values": {
       "genres": [],
-      "themes": ["theme.identity", "theme.community", "theme.responsibility"],
+      "themes": [
+        "theme.identity",
+        "theme.community",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.disabled_protagonist",
         "tag.disability",
@@ -3911,7 +4308,12 @@
     "description": "Lives connected across age, inheritance, memory, care, and family history.",
     "values": {
       "genres": [],
-      "themes": ["theme.legacy", "theme.memory", "theme.mortality", "theme.belonging"],
+      "themes": [
+        "theme.legacy",
+        "theme.memory",
+        "theme.mortality",
+        "theme.belonging"
+      ],
       "tags": [
         "tag.child_protagonist",
         "tag.elderly_protagonist",
@@ -3935,7 +4337,11 @@
     "description": "Small isolated communities at the edge of wilderness, knowledge, or survival.",
     "values": {
       "genres": [],
-      "themes": ["theme.isolation", "theme.community", "theme.survival"],
+      "themes": [
+        "theme.isolation",
+        "theme.community",
+        "theme.survival"
+      ],
       "tags": [
         "tag.research_station",
         "tag.frontier_settlement",
@@ -3962,7 +4368,11 @@
     "description": "Stories shaped by movement, transit, chance meetings, and the route itself.",
     "values": {
       "genres": [],
-      "themes": ["theme.freedom", "theme.transformation", "theme.belonging"],
+      "themes": [
+        "theme.freedom",
+        "theme.transformation",
+        "theme.belonging"
+      ],
       "tags": [
         "tag.road_trip",
         "tag.train_journey",
@@ -3989,7 +4399,12 @@
     "description": "Systems of rule confronted by dissent, reform, revolution, and competing legitimacy.",
     "values": {
       "genres": [],
-      "themes": ["theme.power", "theme.freedom", "theme.justice", "theme.corruption"],
+      "themes": [
+        "theme.power",
+        "theme.freedom",
+        "theme.justice",
+        "theme.corruption"
+      ],
       "tags": [
         "tag.monarchy",
         "tag.republic",
@@ -4016,7 +4431,11 @@
     "description": "Work, ownership, exchange, and survival organized at a human scale.",
     "values": {
       "genres": [],
-      "themes": ["theme.community", "theme.class", "theme.environmental_stewardship"],
+      "themes": [
+        "theme.community",
+        "theme.class",
+        "theme.environmental_stewardship"
+      ],
       "tags": [
         "tag.cooperative",
         "tag.mutual_aid",
@@ -4041,8 +4460,14 @@
     "name": "Living Magic",
     "description": "Magic that behaves like ecology, inheritance, weather, illness, or a living presence.",
     "values": {
-      "genres": ["genre.fantasy"],
-      "themes": ["theme.nature", "theme.transformation", "theme.responsibility"],
+      "genres": [
+        "genre.fantasy"
+      ],
+      "themes": [
+        "theme.nature",
+        "theme.transformation",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.wild_magic",
         "tag.nature_magic",
@@ -4067,8 +4492,15 @@
     "name": "Forbidden Arts",
     "description": "Taboo and criminalized magic pursued for power, survival, knowledge, or love.",
     "values": {
-      "genres": ["genre.fantasy", "genre.horror"],
-      "themes": ["theme.power", "theme.corruption", "theme.knowledge"],
+      "genres": [
+        "genre.fantasy",
+        "genre.horror"
+      ],
+      "themes": [
+        "theme.power",
+        "theme.corruption",
+        "theme.knowledge"
+      ],
       "tags": [
         "tag.forbidden_magic",
         "tag.criminalized_magic",
@@ -4093,8 +4525,15 @@
     "name": "Posthuman Futures",
     "description": "Bodies, minds, and identities transformed by biotechnology and computation.",
     "values": {
-      "genres": ["genre.science_fiction", "genre.speculative"],
-      "themes": ["theme.identity", "theme.technology", "theme.responsibility"],
+      "genres": [
+        "genre.science_fiction",
+        "genre.speculative"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.technology",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.posthuman",
         "tag.transhumanism",
@@ -4119,8 +4558,15 @@
     "name": "Deep-Space Working Lives",
     "description": "Ordinary labor, trade, salvage, and survival across an extraordinary frontier.",
     "values": {
-      "genres": ["genre.science_fiction", "genre.adventure"],
-      "themes": ["theme.class", "theme.community", "theme.survival"],
+      "genres": [
+        "genre.science_fiction",
+        "genre.adventure"
+      ],
+      "themes": [
+        "theme.class",
+        "theme.community",
+        "theme.survival"
+      ],
       "tags": [
         "tag.spaceship",
         "tag.salvage_crew",
@@ -4146,8 +4592,15 @@
     "name": "Hidden Inheritance",
     "description": "A legacy conceals identity, danger, disputed ownership, or a buried obligation.",
     "values": {
-      "genres": ["genre.mystery", "genre.drama"],
-      "themes": ["theme.legacy", "theme.truth", "theme.memory"],
+      "genres": [
+        "genre.mystery",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.legacy",
+        "theme.truth",
+        "theme.memory"
+      ],
       "tags": [
         "tag.inheritance_mystery",
         "tag.inheritance",
@@ -4172,8 +4625,16 @@
     "name": "Institutional Conspiracy",
     "description": "A powerful organization protects wrongdoing through secrecy, influence, and coercion.",
     "values": {
-      "genres": ["genre.thriller", "genre.mystery", "genre.crime"],
-      "themes": ["theme.truth", "theme.corruption", "theme.power"],
+      "genres": [
+        "genre.thriller",
+        "genre.mystery",
+        "genre.crime"
+      ],
+      "themes": [
+        "theme.truth",
+        "theme.corruption",
+        "theme.power"
+      ],
       "tags": [
         "tag.conspiracy",
         "tag.cover_up",
@@ -4198,8 +4659,16 @@
     "name": "Stranded Together",
     "description": "Characters must survive isolation while dependency intensifies their relationships.",
     "values": {
-      "genres": ["genre.adventure", "genre.thriller", "genre.romance"],
-      "themes": ["theme.survival", "theme.trust", "theme.community"],
+      "genres": [
+        "genre.adventure",
+        "genre.thriller",
+        "genre.romance"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.trust",
+        "theme.community"
+      ],
       "tags": [
         "tag.stranded",
         "tag.isolated",
@@ -4223,8 +4692,17 @@
     "name": "Disaster & Rescue",
     "description": "Communities and responders confront cascading danger under severe time pressure.",
     "values": {
-      "genres": ["genre.action", "genre.thriller", "genre.drama"],
-      "themes": ["theme.survival", "theme.sacrifice", "theme.hope", "theme.responsibility"],
+      "genres": [
+        "genre.action",
+        "genre.thriller",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.survival",
+        "theme.sacrifice",
+        "theme.hope",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.disaster_response",
         "tag.search_and_rescue",
@@ -4251,8 +4729,15 @@
     "name": "Rise & Fall",
     "description": "Ambition brings power, compromise, exposure, and the possibility of ruin.",
     "values": {
-      "genres": ["genre.drama"],
-      "themes": ["theme.ambition", "theme.power", "theme.corruption", "theme.legacy"],
+      "genres": [
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.ambition",
+        "theme.power",
+        "theme.corruption",
+        "theme.legacy"
+      ],
       "tags": [
         "tag.rise_to_power",
         "tag.fall_from_grace",
@@ -4277,7 +4762,12 @@
     "description": "Characters return, recover, repair harm, and decide who they will become next.",
     "values": {
       "genres": [],
-      "themes": ["theme.redemption", "theme.reconciliation", "theme.hope", "theme.responsibility"],
+      "themes": [
+        "theme.redemption",
+        "theme.reconciliation",
+        "theme.hope",
+        "theme.responsibility"
+      ],
       "tags": [
         "tag.redemption_arc",
         "tag.recovery",
@@ -4303,7 +4793,11 @@
     "description": "A story assembled across disrupted time, repetition, memory, and parallel strands.",
     "values": {
       "genres": [],
-      "themes": ["theme.memory", "theme.truth", "theme.free_will"],
+      "themes": [
+        "theme.memory",
+        "theme.truth",
+        "theme.free_will"
+      ],
       "tags": [
         "tag.nonlinear",
         "tag.reverse_chronology",
@@ -4327,7 +4821,11 @@
     "description": "A story constructed from records, correspondence, media, and competing accounts.",
     "values": {
       "genres": [],
-      "themes": ["theme.truth", "theme.knowledge", "theme.memory"],
+      "themes": [
+        "theme.truth",
+        "theme.knowledge",
+        "theme.memory"
+      ],
       "tags": [
         "tag.epistolary",
         "tag.diary",
@@ -4350,7 +4848,12 @@
     "description": "Emotionally safe, affectionate stories attentive to care and small acts of kindness.",
     "values": {
       "genres": [],
-      "themes": ["theme.love", "theme.community", "theme.friendship", "theme.hope"],
+      "themes": [
+        "theme.love",
+        "theme.community",
+        "theme.friendship",
+        "theme.hope"
+      ],
       "tags": [
         "tag.warm",
         "tag.tender",
@@ -4374,8 +4877,15 @@
     "name": "Eerie & Ominous",
     "description": "Quiet wrongness, gathering dread, and an atmosphere that promises danger.",
     "values": {
-      "genres": ["genre.horror", "genre.mystery"],
-      "themes": ["theme.isolation", "theme.truth", "theme.mortality"],
+      "genres": [
+        "genre.horror",
+        "genre.mystery"
+      ],
+      "themes": [
+        "theme.isolation",
+        "theme.truth",
+        "theme.mortality"
+      ],
       "tags": [
         "tag.eerie",
         "tag.ominous",
@@ -4399,8 +4909,16 @@
     "name": "Intimate & Quiet",
     "description": "Small-scale stories driven by observation, relationship, and subtle internal change.",
     "values": {
-      "genres": ["genre.literary_fiction", "genre.slice_of_life", "genre.drama"],
-      "themes": ["theme.identity", "theme.memory", "theme.belonging"],
+      "genres": [
+        "genre.literary_fiction",
+        "genre.slice_of_life",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.identity",
+        "theme.memory",
+        "theme.belonging"
+      ],
       "tags": [
         "tag.intimate",
         "tag.quiet",
@@ -4420,8 +4938,16 @@
     "name": "Operatic & Sweeping",
     "description": "Grand-scale stories of heightened emotion, spectacle, consequence, and history.",
     "values": {
-      "genres": ["genre.epic_fantasy", "genre.space_opera", "genre.drama"],
-      "themes": ["theme.power", "theme.sacrifice", "theme.legacy"],
+      "genres": [
+        "genre.epic_fantasy",
+        "genre.space_opera",
+        "genre.drama"
+      ],
+      "themes": [
+        "theme.power",
+        "theme.sacrifice",
+        "theme.legacy"
+      ],
       "tags": [
         "tag.operatic",
         "tag.sweeping",
@@ -4444,8 +4970,14 @@
     "name": "Lyrical & Lush",
     "description": "Language-forward storytelling rich in rhythm, image, atmosphere, and sensory detail.",
     "values": {
-      "genres": ["genre.literary_fiction"],
-      "themes": ["theme.memory", "theme.nature", "theme.mortality"],
+      "genres": [
+        "genre.literary_fiction"
+      ],
+      "themes": [
+        "theme.memory",
+        "theme.nature",
+        "theme.mortality"
+      ],
       "tags": [
         "tag.lyrical",
         "tag.atmospheric",
@@ -4465,8 +4997,15 @@
     "name": "Comic Registers",
     "description": "A palette of comic modes from dry wit to physical chaos and escalating farce.",
     "values": {
-      "genres": ["genre.comedy", "genre.satire"],
-      "themes": ["theme.truth", "theme.power", "theme.friendship"],
+      "genres": [
+        "genre.comedy",
+        "genre.satire"
+      ],
+      "themes": [
+        "theme.truth",
+        "theme.power",
+        "theme.friendship"
+      ],
       "tags": [
         "tag.humorous",
         "tag.witty",
