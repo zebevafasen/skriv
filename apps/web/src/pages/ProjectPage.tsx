@@ -722,6 +722,40 @@ export function ProjectPage() {
             </div>
 
             <div className="manuscript-view-content">
+              {scope ? (
+                <div className="manuscript-write-surface" hidden={view !== "write"}>
+                  <DeferredWorkspace name="editor">
+                    <ManuscriptEditor
+                      ref={editorRef}
+                      key={scopeValue(scope)}
+                      tree={tree.data}
+                      scope={scope}
+                      entries={compendium.data ?? []}
+                      baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
+                      models={
+                        models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]
+                      }
+                      onSaved={(updated) =>
+                        client.setQueryData<ManuscriptTree>(
+                          ["project-tree", projectId],
+                          (current) => (current ? updateSceneInTree(current, updated) : current),
+                        )
+                      }
+                      onOpenEntry={(entryIds, direct) => {
+                        if (direct && entryIds.length === 1)
+                          void updateSearch({ entry: entryIds[0] });
+                        else setPreviewEntryIds(entryIds);
+                      }}
+                      onSelectScope={(nextScope) => void changeScope(nextScope)}
+                      onSelectScene={selectScene}
+                    />
+                  </DeferredWorkspace>
+                </div>
+              ) : view === "write" ? (
+                <div className="empty-editor">
+                  <h2>Create a Scene to begin</h2>
+                </div>
+              ) : null}
               {view === "outline" ? (
                 <DeferredWorkspace name="outline">
                   <OutlineGrid
@@ -732,41 +766,12 @@ export function ProjectPage() {
                     onOpenEntry={setPreviewEntryIds}
                   />
                 </DeferredWorkspace>
-              ) : view === "notes" ? (
+              ) : null}
+              {view === "notes" ? (
                 <DeferredWorkspace name="notes">
                   <ProjectNotesPanel projectId={projectId} />
                 </DeferredWorkspace>
-              ) : scope ? (
-                <DeferredWorkspace name="editor">
-                  <ManuscriptEditor
-                    ref={editorRef}
-                    key={scopeValue(scope)}
-                    tree={tree.data}
-                    scope={scope}
-                    entries={compendium.data ?? []}
-                    baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
-                    models={
-                      models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]
-                    }
-                    onSaved={(updated) =>
-                      client.setQueryData<ManuscriptTree>(["project-tree", projectId], (current) =>
-                        current ? updateSceneInTree(current, updated) : current,
-                      )
-                    }
-                    onOpenEntry={(entryIds, direct) => {
-                      if (direct && entryIds.length === 1)
-                        void updateSearch({ entry: entryIds[0] });
-                      else setPreviewEntryIds(entryIds);
-                    }}
-                    onSelectScope={(nextScope) => void changeScope(nextScope)}
-                    onSelectScene={selectScene}
-                  />
-                </DeferredWorkspace>
-              ) : (
-                <div className="empty-editor">
-                  <h2>Create a Scene to begin</h2>
-                </div>
-              )}
+              ) : null}
             </div>
 
             <CompendiumEntryDrawer
