@@ -47,6 +47,7 @@ import {
   RefreshCw,
   RotateCcw,
   Sparkles,
+  Square,
   Trash2,
   Undo2,
   X,
@@ -911,9 +912,13 @@ export const ManuscriptEditor = forwardRef<
           controller.signal,
         );
       } catch (generationError) {
-        if (!controller.signal.aborted) setError(generationError);
-        activeRef.current = null;
-        setActive(null);
+        if (!controller.signal.aborted) {
+          setError(generationError);
+        }
+        if (activeRef.current?.status !== "complete") {
+          activeRef.current = null;
+          setActive(null);
+        }
       }
     },
     [editor, saveScene, visibleScenes],
@@ -978,6 +983,16 @@ export const ManuscriptEditor = forwardRef<
     setActive(null);
     setSelectionMenu(null);
     setSelectionPanel(null);
+  };
+  const stop = async () => {
+    if (!active) return;
+    const currentActive: ActiveGeneration = { ...active, status: "complete" };
+    activeRef.current = currentActive;
+    setActive(currentActive);
+    abortRef.current?.abort();
+    if (active.id) {
+      await api(`/api/generations/${active.id}/cancel`, { method: "POST" }).catch(() => undefined);
+    }
   };
   const regenerate = async () => {
     if (!active) return;
@@ -1775,9 +1790,14 @@ export const ManuscriptEditor = forwardRef<
           </span>
           <div>
             {active.status === "streaming" ? (
-              <button type="button" className="button ghost" onClick={cancel}>
-                <X size={15} /> Cancel
-              </button>
+              <>
+                <button type="button" className="button ghost" onClick={cancel}>
+                  <X size={15} /> Cancel
+                </button>
+                <button type="button" className="button ghost" onClick={stop}>
+                  <Square size={15} /> Stop
+                </button>
+              </>
             ) : (
               <>
                 <button type="button" className="button ghost" onClick={reject}>
