@@ -66,6 +66,10 @@ export const generationStreamEventSchema = z.discriminatedUnion("type", [
   }),
   streamBaseSchema.extend({ type: z.literal("generation.delta"), delta: z.string() }),
   streamBaseSchema.extend({
+    type: z.literal("generation.continuing"),
+    continuation: z.number().int().positive(),
+  }),
+  streamBaseSchema.extend({
     type: z.literal("generation.completed"),
     candidateText: z.string(),
     inputTokens: z.number().int().nonnegative().nullable(),

@@ -200,6 +200,7 @@ function SceneBeatView(props: NodeViewProps) {
                 <button
                   type="button"
                   className={targetLength === null ? "active" : ""}
+                  title="Write until the instructions are complete and the prose reaches a natural stopping point"
                   onClick={() => updateAttr("targetLength", null)}
                 >
                   No Limit

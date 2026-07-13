@@ -5,8 +5,14 @@ export type ModelDescriptor = {
   id: string;
   name: string;
   contextLength: number;
+  maxCompletionTokens: number;
   inputPricePerMillion: number | null;
   outputPricePerMillion: number | null;
+};
+
+export type CompletionStreamChunk = {
+  text: string;
+  finishReason: string | null;
 };
 
 export type CompletionRequest = {
@@ -18,10 +24,40 @@ export type CompletionRequest = {
 
 export type CompletionUsage = { inputTokens: number | null; outputTokens: number | null };
 
+type StreamTimeouts = {
+  firstByteMs?: number;
+  idleMs?: number;
+};
+
+const DEFAULT_FIRST_BYTE_TIMEOUT_MS = 120_000;
+const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 45_000;
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  onTimeout: () => void,
+  message: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          onTimeout();
+          reject(new Error(message));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export interface AIProvider {
   readonly name: string;
   listModels(signal?: AbortSignal): Promise<ModelDescriptor[]>;
-  stream(request: CompletionRequest): AsyncIterable<string>;
+  stream(request: CompletionRequest): AsyncIterable<CompletionStreamChunk>;
   complete(request: CompletionRequest): Promise<{ text: string; usage: CompletionUsage }>;
 }
 
@@ -30,6 +66,7 @@ const fakeModels: ModelDescriptor[] = [
     id: "asterism/fake-prose",
     name: "Asterism Fake Prose",
     contextLength: 32_768,
+    maxCompletionTokens: 16_384,
     inputPricePerMillion: 0,
     outputPricePerMillion: 0,
   },
@@ -37,6 +74,7 @@ const fakeModels: ModelDescriptor[] = [
     id: "asterism/fake-context",
     name: "Asterism Fake Context",
     contextLength: 32_768,
+    maxCompletionTokens: 4_096,
     inputPricePerMillion: 0,
     outputPricePerMillion: 0,
   },
@@ -51,7 +89,7 @@ export class FakeAIProvider implements AIProvider {
     return fakeModels;
   }
 
-  async *stream(request: CompletionRequest): AsyncIterable<string> {
+  async *stream(request: CompletionRequest): AsyncIterable<CompletionStreamChunk> {
     const userText =
       [...request.messages].reverse().find((message) => message.role === "user")?.content ?? "";
     const baseOutput = userText.includes("Target event:")
@@ -67,10 +105,10 @@ export class FakeAIProvider implements AIProvider {
         : `The next movement carried the moment forward with a distinct beat of its own. Detail ${index + 1} settled into the scene without breaking its voice or continuity.`,
     ).join("\n\n");
     const chunks = output.match(/[\s\S]{1,18}/g) ?? [output];
-    for (const chunk of chunks) {
+    for (const [index, chunk] of chunks.entries()) {
       if (request.signal?.aborted) throw new DOMException("Generation cancelled", "AbortError");
       if (this.delayMs > 0) await new Promise((resolve) => setTimeout(resolve, this.delayMs));
-      yield chunk;
+      yield { text: chunk, finishReason: index === chunks.length - 1 ? "stop" : null };
     }
   }
 
@@ -96,7 +134,7 @@ export class FakeAIProvider implements AIProvider {
       };
     }
     let text = "";
-    for await (const chunk of this.stream(request)) text += chunk;
+    for await (const chunk of this.stream(request)) text += chunk.text;
     return { text, usage: { inputTokens: 1, outputTokens: Math.ceil(text.length / 4) } };
   }
 }
@@ -107,6 +145,12 @@ const openRouterModelsSchema = z.object({
       id: z.string(),
       name: z.string().optional(),
       context_length: z.number().optional(),
+      top_provider: z
+        .object({
+          context_length: z.number().nullable().optional(),
+          max_completion_tokens: z.number().nullable().optional(),
+        })
+        .nullish(),
       pricing: z
         .object({ prompt: z.string().optional(), completion: z.string().optional() })
         .optional(),
@@ -128,6 +172,7 @@ export class OpenRouterProvider implements AIProvider {
     private readonly apiKey: string,
     private readonly baseUrl = "https://openrouter.ai/api/v1",
     private readonly appUrl = "http://localhost:5173",
+    private readonly streamTimeouts: StreamTimeouts = {},
   ) {}
 
   private headers(): HeadersInit {
@@ -149,7 +194,10 @@ export class OpenRouterProvider implements AIProvider {
     return parsed.data.map((model) => ({
       id: model.id,
       name: model.name ?? model.id,
-      contextLength: model.context_length ?? 32_768,
+      contextLength: model.top_provider?.context_length ?? model.context_length ?? 32_768,
+      maxCompletionTokens:
+        model.top_provider?.max_completion_tokens ??
+        Math.min(16_384, model.context_length ?? 32_768),
       inputPricePerMillion: model.pricing?.prompt ? Number(model.pricing.prompt) * 1_000_000 : null,
       outputPricePerMillion: model.pricing?.completion
         ? Number(model.pricing.completion) * 1_000_000
@@ -157,19 +205,43 @@ export class OpenRouterProvider implements AIProvider {
     }));
   }
 
-  async *stream(request: CompletionRequest): AsyncIterable<string> {
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({
-        model: request.model,
-        messages: request.messages,
-        max_tokens: request.maxOutputTokens,
-        stream: true,
-      }),
-      ...(request.signal ? { signal: request.signal } : {}),
-    });
+  async *stream(request: CompletionRequest): AsyncIterable<CompletionStreamChunk> {
+    const firstByteMs = this.streamTimeouts.firstByteMs ?? DEFAULT_FIRST_BYTE_TIMEOUT_MS;
+    const idleMs = this.streamTimeouts.idleMs ?? DEFAULT_STREAM_IDLE_TIMEOUT_MS;
+    const controller = new AbortController();
+    const forwardAbort = () => controller.abort(request.signal?.reason);
+    if (request.signal?.aborted) forwardAbort();
+    else request.signal?.addEventListener("abort", forwardAbort, { once: true });
+
+    let fetchTimedOut = false;
+    let response: Response;
+    try {
+      response = await withTimeout(
+        fetch(`${this.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify({
+            model: request.model,
+            messages: request.messages,
+            max_tokens: request.maxOutputTokens,
+            stream: true,
+          }),
+          signal: controller.signal,
+        }),
+        firstByteMs,
+        () => {
+          fetchTimedOut = true;
+          controller.abort();
+        },
+        "The AI provider did not start the response in time.",
+      );
+    } catch (error) {
+      request.signal?.removeEventListener("abort", forwardAbort);
+      if (fetchTimedOut) throw new Error("The AI provider did not start the response in time.");
+      throw error;
+    }
     if (!response.ok || !response.body) {
+      request.signal?.removeEventListener("abort", forwardAbort);
       throw new Error(
         `OpenRouter generation failed (${response.status}): ${await response.text()}`,
       );
@@ -177,20 +249,52 @@ export class OpenRouterProvider implements AIProvider {
 
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += value;
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const data = line.slice(6).trim();
-        if (!data || data === "[DONE]") continue;
-        const parsed = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
-        const delta = parsed.choices?.[0]?.delta?.content;
-        if (delta) yield delta;
+    let receivedBytes = false;
+    let finishReason: string | null = null;
+    try {
+      while (true) {
+        const timeoutMs = receivedBytes ? idleMs : firstByteMs;
+        const { done, value } = await withTimeout(
+          reader.read(),
+          timeoutMs,
+          () => controller.abort(),
+          receivedBytes
+            ? "The AI provider stopped sending data. Your partial draft was preserved."
+            : "The AI provider did not send any data in time.",
+        );
+        if (value) {
+          receivedBytes = true;
+          buffer += value;
+        }
+        const lines = buffer.split("\n");
+        buffer = done ? "" : (lines.pop() ?? "");
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (!data) continue;
+          if (data === "[DONE]") {
+            yield { text: "", finishReason: finishReason ?? "stop" };
+            return;
+          }
+          const parsed = JSON.parse(data) as {
+            error?: { message?: string };
+            choices?: Array<{ delta?: { content?: string }; finish_reason?: string | null }>;
+          };
+          if (parsed.error) {
+            throw new Error(parsed.error.message ?? "The AI provider reported a streaming error.");
+          }
+          const choice = parsed.choices?.[0];
+          if (choice?.finish_reason) finishReason = choice.finish_reason;
+          const delta = choice?.delta?.content;
+          if (delta) yield { text: delta, finishReason: null };
+        }
+        if (done) {
+          throw new Error("The AI provider stream ended unexpectedly. Your partial draft was preserved.");
+        }
       }
+    } finally {
+      request.signal?.removeEventListener("abort", forwardAbort);
+      await reader.cancel().catch(() => undefined);
     }
   }
 

@@ -94,7 +94,8 @@ export async function streamGeneration(
   onEvent: (event: GenerationStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  return streamNdjson<GenerationStreamEvent>(
+  let terminalEventReceived = false;
+  await streamNdjson<GenerationStreamEvent>(
     "/api/generations",
     {
       method: "POST",
@@ -103,6 +104,21 @@ export async function streamGeneration(
       ...(signal ? { signal } : {}),
     },
     "Generation could not start.",
-    onEvent,
+    (event) => {
+      if (
+        event.type === "generation.completed" ||
+        event.type === "generation.failed" ||
+        event.type === "generation.cancelled"
+      ) {
+        terminalEventReceived = true;
+      }
+      onEvent(event);
+    },
   );
+  if (!terminalEventReceived) {
+    throw new ApiError(
+      "The generation connection closed before completion. Your partial draft was preserved.",
+      0,
+    );
+  }
 }

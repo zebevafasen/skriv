@@ -6,8 +6,10 @@ import {
   type contextFragmentSchema,
   generationRequestSchema,
   generationStreamEventSchema,
+  type PromptMessage,
 } from "@asterism/contracts";
 import {
+  approximateTokens,
   budgetFragments,
   discoverEntries,
   protectedProtocolMessage,
@@ -31,11 +33,23 @@ import type { AppContext } from "../context.js";
 import { conflict, notFound, parseWith, serializeNdjson } from "../http.js";
 import { ownedScene } from "../ownership.js";
 import { resolvePrompt } from "./prompts.js";
-import { getSettings } from "./settings.js";
+import { getModelLimits, getSettings } from "./settings.js";
 
 const generationParams = z.object({ id: z.uuid() });
+const cancelGenerationInput = z
+  .object({ candidateText: z.string().max(2_000_000).optional() })
+  .default({});
 const selectedFragmentsSchema = z.object({ selectedFragmentIds: z.array(z.string()).max(500) });
 const activeControllers = new Map<string, AbortController>();
+const DEFAULT_MODEL_CONTEXT_LENGTH = 32_768;
+const DEFAULT_MODEL_COMPLETION_LIMIT = 16_384;
+const MAX_AUTOMATIC_CONTINUATIONS = 3;
+const MAX_TOTAL_AUTOMATIC_OUTPUT_TOKENS = 64_000;
+const CONTINUATION_TAIL_CHARACTER_LIMIT = 16_000;
+const CONTINUATION_BOUNDARY_BUFFER_SIZE = 512;
+const MINIMUM_BOUNDARY_OVERLAP = 20;
+const PARTIAL_PERSIST_CHARACTER_INTERVAL = 2_000;
+const PARTIAL_PERSIST_TIME_INTERVAL_MS = 2_000;
 const contextCache = new Map<
   string,
   {
@@ -192,6 +206,62 @@ export function recentSummaryContext(summaries: string[]): string {
   return selected.reverse().join("\n\n");
 }
 
+export function proseOutputTokenBudget(
+  messages: Array<{ content: string }>,
+  contextLength: number,
+  maxCompletionTokens: number,
+  targetLength: number | null,
+  lengthUnit: "words" | "paragraphs",
+): number {
+  const safeContextLength = Math.max(2_048, contextLength);
+  const inputTokens = messages.reduce(
+    (total, message) => total + approximateTokens(message.content) + 8,
+    16,
+  );
+  const safetyTokens = Math.max(1_024, Math.ceil(safeContextLength * 0.05));
+  const availableTokens = safeContextLength - inputTokens - safetyTokens;
+  if (availableTokens < 128) {
+    throw new Error(
+      "The prompt leaves too little model context for prose. Reduce the included context or choose a model with a larger context window.",
+    );
+  }
+  const requestedTokens =
+    targetLength === null
+      ? maxCompletionTokens
+      : Math.min(
+          maxCompletionTokens,
+          lengthUnit === "words" ? Math.ceil(targetLength * 1.6) : targetLength * 180,
+        );
+  return Math.max(128, Math.min(requestedTokens, availableTokens, maxCompletionTokens));
+}
+
+export function continuationMessages(
+  originalMessages: PromptMessage[],
+  candidateText: string,
+): PromptMessage[] {
+  const sliced = candidateText.slice(-CONTINUATION_TAIL_CHARACTER_LIMIT);
+  const firstParagraphBreak = sliced.indexOf("\n\n");
+  const tail = firstParagraphBreak > 0 ? sliced.slice(firstParagraphBreak + 2) : sliced;
+  return [
+    ...originalMessages,
+    { role: "assistant", content: tail },
+    {
+      role: "user",
+      content:
+        "Continue immediately after the previous prose. Do not recap, restart, or repeat its ending. " +
+        "The original instructions remain authoritative: complete anything still outstanding, then stop at the next natural stopping point.",
+    },
+  ];
+}
+
+export function trimRepeatedBoundary(existing: string, incoming: string): string {
+  const maximumOverlap = Math.min(2_000, existing.length, incoming.length);
+  for (let length = maximumOverlap; length >= MINIMUM_BOUNDARY_OVERLAP; length -= 1) {
+    if (existing.endsWith(incoming.slice(0, length))) return incoming.slice(length);
+  }
+  return incoming;
+}
+
 async function prosePlanningContext(
   context: AppContext,
   projectId: string,
@@ -260,7 +330,7 @@ export async function registerGenerationRoutes(
       );
       const targetLength =
         input.targetLength === null
-          ? "as much prose as the scene needs; there is no requested word or paragraph limit"
+          ? "write until the next natural stopping point after fully satisfying the user instructions; do not target a word or paragraph count"
           : `${input.targetLength} ${input.lengthUnit}`;
       const selectionAction =
         input.workflow === "prose.revise_selection"
@@ -333,6 +403,31 @@ export async function registerGenerationRoutes(
       async function* stream() {
         let sequence = 0;
         let candidateText = "";
+        let lastPersistedLength = 0;
+        let lastPersistedAt = Date.now();
+        async function appendDelta(delta: string) {
+          candidateText += delta;
+          const now = Date.now();
+          if (
+            candidateText.length - lastPersistedLength >= PARTIAL_PERSIST_CHARACTER_INTERVAL ||
+            now - lastPersistedAt >= PARTIAL_PERSIST_TIME_INTERVAL_MS
+          ) {
+            await context.db
+              .update(generations)
+              .set({ candidateText, ...touchUpdatedAt })
+              .where(eq(generations.id, generationRecord.id));
+            lastPersistedLength = candidateText.length;
+            lastPersistedAt = now;
+          }
+          return serializeNdjson(
+            generationStreamEventSchema.parse({
+              type: "generation.delta",
+              generationId: generationRecord.id,
+              sequence: sequence++,
+              delta,
+            }),
+          );
+        }
         const started = generationStreamEventSchema.parse({
           type: "generation.started",
           generationId: generationRecord.id,
@@ -342,30 +437,88 @@ export async function registerGenerationRoutes(
         });
         yield serializeNdjson(started);
         try {
-          const maxOutputTokens =
-            input.targetLength === null
-              ? 16_000
-              : Math.min(
-                  16_000,
-                  input.lengthUnit === "words"
-                    ? Math.ceil(input.targetLength * 1.6)
-                    : input.targetLength * 180,
-                );
-          for await (const delta of (await context.getAi(userId, model)).stream({
-            model,
-            messages,
-            maxOutputTokens,
-            signal: controller.signal,
-          })) {
-            candidateText += delta;
+          let modelLimits = {
+            contextLength: DEFAULT_MODEL_CONTEXT_LENGTH,
+            maxCompletionTokens: DEFAULT_MODEL_COMPLETION_LIMIT,
+          };
+          try {
+            const lookupSignal = AbortSignal.any([
+              controller.signal,
+              AbortSignal.timeout(8_000),
+            ]);
+            modelLimits = await getModelLimits(context, userId, model, lookupSignal);
+          } catch {
+            controller.signal.throwIfAborted();
+          }
+          const totalOutputLimit = Math.max(
+            MAX_TOTAL_AUTOMATIC_OUTPUT_TOKENS,
+            modelLimits.maxCompletionTokens,
+          );
+          let continuation = 0;
+          let passMessages = messages;
+          while (true) {
+            const remainingTotalTokens = totalOutputLimit - approximateTokens(candidateText);
+            if (remainingTotalTokens < 128) {
+              throw new Error(
+                "Asterism reached the overall automatic writing safety limit. Your draft was preserved; accept it and continue writing from there.",
+              );
+            }
+            const maxOutputTokens = Math.min(
+              remainingTotalTokens,
+              proseOutputTokenBudget(
+                passMessages,
+                modelLimits.contextLength,
+                modelLimits.maxCompletionTokens,
+                input.targetLength,
+                input.lengthUnit,
+              ),
+            );
+            let finishReason: string | null = null;
+            let boundaryBuffer = "";
+            let boundaryResolved = continuation === 0;
+            for await (const chunk of (await context.getAi(userId, model)).stream({
+              model,
+              messages: passMessages,
+              maxOutputTokens,
+              signal: controller.signal,
+            })) {
+              if (chunk.finishReason) finishReason = chunk.finishReason;
+              if (!chunk.text) continue;
+              let delta = chunk.text;
+              if (!boundaryResolved) {
+                boundaryBuffer += delta;
+                if (boundaryBuffer.length < CONTINUATION_BOUNDARY_BUFFER_SIZE) continue;
+                delta = trimRepeatedBoundary(candidateText, boundaryBuffer);
+                boundaryBuffer = "";
+                boundaryResolved = true;
+              }
+              if (delta) yield await appendDelta(delta);
+            }
+            if (!boundaryResolved && boundaryBuffer) {
+              const delta = trimRepeatedBoundary(candidateText, boundaryBuffer);
+              if (delta) yield await appendDelta(delta);
+            }
+            if (finishReason !== "length") break;
+            if (input.targetLength !== null) {
+              throw new Error(
+                "The model reached its output limit before the requested length. Your partial draft was preserved; accept it and continue writing from there.",
+              );
+            }
+            if (continuation >= MAX_AUTOMATIC_CONTINUATIONS) {
+              throw new Error(
+                "The model reached its output limit after several automatic continuations. Your draft was preserved; accept it and continue writing from there.",
+              );
+            }
+            continuation += 1;
             yield serializeNdjson(
               generationStreamEventSchema.parse({
-                type: "generation.delta",
+                type: "generation.continuing",
                 generationId: generationRecord.id,
                 sequence: sequence++,
-                delta,
+                continuation,
               }),
             );
+            passMessages = continuationMessages(messages, candidateText);
           }
           const outputTokens = Math.ceil(candidateText.length / 4);
           await context.db
@@ -395,7 +548,7 @@ export async function registerGenerationRoutes(
           if (controller.signal.aborted) {
             await context.db
               .update(generations)
-              .set({ status: "cancelled", ...touchUpdatedAt })
+              .set({ candidateText, status: "cancelled", ...touchUpdatedAt })
               .where(eq(generations.id, generationRecord.id));
             yield serializeNdjson(
               generationStreamEventSchema.parse({
@@ -408,7 +561,7 @@ export async function registerGenerationRoutes(
             const message = error instanceof Error ? error.message : "Generation failed.";
             await context.db
               .update(generations)
-              .set({ status: "failed", failureMessage: message, ...touchUpdatedAt })
+              .set({ candidateText, status: "failed", failureMessage: message, ...touchUpdatedAt })
               .where(eq(generations.id, generationRecord.id));
             yield serializeNdjson(
               generationStreamEventSchema.parse({
@@ -433,6 +586,7 @@ export async function registerGenerationRoutes(
 
   app.post("/api/generations/:id/cancel", async (request, reply) => {
     const { id } = parseWith(generationParams, request.params);
+    const input = parseWith(cancelGenerationInput, request.body ?? {});
     const [generation] = await context.db
       .select()
       .from(generations)
@@ -443,7 +597,11 @@ export async function registerGenerationRoutes(
     if (generation.status === "streaming") {
       await context.db
         .update(generations)
-        .set({ status: "cancelled", ...touchUpdatedAt })
+        .set({
+          status: "cancelled",
+          ...(input.candidateText === undefined ? {} : { candidateText: input.candidateText }),
+          ...touchUpdatedAt,
+        })
         .where(eq(generations.id, id));
     }
     return reply.code(204).send();
@@ -479,8 +637,15 @@ export async function registerGenerationRoutes(
       const owned = await ownedScene(context, request.userId, generation.sceneId);
       return owned?.scene ?? notFound(reply, "Scene not found.");
     }
-    if (generation.status !== "completed")
-      return conflict(reply, "Only a completed generation can be accepted.");
+    if (
+      generation.status !== "completed" &&
+      !(["failed", "cancelled"].includes(generation.status) && generation.candidateText.trim())
+    ) {
+      return conflict(
+        reply,
+        "Only a completed generation or a preserved partial draft can be accepted.",
+      );
+    }
     const owned = await ownedScene(context, request.userId, generation.sceneId);
     if (!owned) return notFound(reply, "Scene not found.");
     if (

@@ -32,17 +32,36 @@ const modelCache = new Map<
   }
 >();
 
-export async function getModels(context: AppContext, userId: string) {
+export async function getModels(context: AppContext, userId: string, signal?: AbortSignal) {
   const cached = modelCache.get(userId);
   if (cached && cached.expiresAt > Date.now()) return cached.models;
-  const models = await (await context.getAi(userId)).listModels();
+  const models = await (await context.getAi(userId)).listModels(signal);
   modelCache.set(userId, { expiresAt: Date.now() + 10 * 60 * 1_000, models });
   return models;
 }
 
-export async function getModelContextLength(context: AppContext, userId: string, model: string) {
-  const descriptor = (await getModels(context, userId)).find((item) => item.id === model);
+export async function getModelContextLength(
+  context: AppContext,
+  userId: string,
+  model: string,
+  signal?: AbortSignal,
+) {
+  const descriptor = (await getModels(context, userId, signal)).find((item) => item.id === model);
   return descriptor?.contextLength ?? 32_768;
+}
+
+export async function getModelLimits(
+  context: AppContext,
+  userId: string,
+  model: string,
+  signal?: AbortSignal,
+) {
+  const descriptor = (await getModels(context, userId, signal)).find((item) => item.id === model);
+  const contextLength = descriptor?.contextLength ?? 32_768;
+  return {
+    contextLength,
+    maxCompletionTokens: descriptor?.maxCompletionTokens ?? Math.min(16_384, contextLength),
+  };
 }
 
 export async function getSettings(context: AppContext, userId: string) {

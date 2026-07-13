@@ -94,6 +94,7 @@ type ActiveGeneration = {
   selection: { from: number; to: number } | null;
   contextFallback: boolean;
   previousText: string | null;
+  continuation: number;
 };
 
 type SelectionMenu = {
@@ -840,6 +841,7 @@ export const ManuscriptEditor = forwardRef<
             : null,
         contextFallback: false,
         previousText,
+        continuation: 0,
       };
       activeRef.current = nextActive;
       setActive(nextActive);
@@ -878,31 +880,49 @@ export const ManuscriptEditor = forwardRef<
           request,
           (event: GenerationStreamEvent) => {
             if (event.type === "generation.started") {
-              setActive((value) => (value ? { ...value, id: event.generationId } : value));
+              setActive((value) => {
+                const next = value ? { ...value, id: event.generationId } : value;
+                activeRef.current = next;
+                return next;
+              });
             } else if (event.type === "generation.delta") {
-              setActive((value) =>
-                value
+              setActive((value) => {
+                const next = value
                   ? {
                       ...value,
                       text: value.previousText === null ? value.text + event.delta : event.delta,
                       previousText: null,
                     }
-                  : value,
-              );
+                  : value;
+                activeRef.current = next;
+                return next;
+              });
+            } else if (event.type === "generation.continuing") {
+              setActive((value) => {
+                const next = value ? { ...value, continuation: event.continuation } : value;
+                activeRef.current = next;
+                return next;
+              });
             } else if (event.type === "generation.completed") {
-              setActive((value) =>
-                value
+              setActive((value) => {
+                const next = value
                   ? {
                       ...value,
                       text: event.candidateText,
-                      status: "complete",
+                      status: "complete" as const,
                       contextFallback: event.contextFallback,
                       previousText: null,
                     }
-                  : value,
-              );
+                  : value;
+                activeRef.current = next;
+                return next;
+              });
             } else if (event.type === "generation.failed") {
-              setActive((value) => (value ? { ...value, status: "failed" } : value));
+              setActive((value) => {
+                const next = value ? { ...value, status: "failed" as const } : value;
+                activeRef.current = next;
+                return next;
+              });
               setError(new Error(event.message));
             } else if (event.type === "generation.cancelled") {
               activeRef.current = null;
@@ -915,7 +935,12 @@ export const ManuscriptEditor = forwardRef<
         if (!controller.signal.aborted) {
           setError(generationError);
         }
-        if (activeRef.current?.status !== "complete") {
+        const current = activeRef.current;
+        if (current?.text.trim()) {
+          const failed = { ...current, status: "failed" as const };
+          activeRef.current = failed;
+          setActive(failed);
+        } else if (current?.status !== "complete") {
           activeRef.current = null;
           setActive(null);
         }
@@ -991,7 +1016,10 @@ export const ManuscriptEditor = forwardRef<
     setActive(currentActive);
     abortRef.current?.abort();
     if (active.id) {
-      await api(`/api/generations/${active.id}/cancel`, { method: "POST" }).catch(() => undefined);
+      await api(`/api/generations/${active.id}/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ candidateText: active.text }),
+      }).catch(() => undefined);
     }
   };
   const regenerate = async () => {
@@ -1780,7 +1808,11 @@ export const ManuscriptEditor = forwardRef<
             {active.status === "streaming" ? (
               <>
                 <RefreshCw className="spin" size={15} />
-                {active.previousText === null ? "Asterism is writing…" : "Asterism is rewriting…"}
+                {active.continuation > 0
+                  ? `Asterism is continuing… (${active.continuation + 1})`
+                  : active.previousText === null
+                    ? "Asterism is writing…"
+                    : "Asterism is rewriting…"}
               </>
             ) : active.status === "complete" ? (
               "Candidate ready"

@@ -434,17 +434,18 @@ function sendChatStream(
         options.history,
         options.content,
       );
-      for await (const delta of (await context.getAi(options.userId, options.thread.model)).stream({
+      for await (const chunk of (await context.getAi(options.userId, options.thread.model)).stream({
         model: options.thread.model,
         messages: built.messages,
         maxOutputTokens: built.maxOutputTokens,
         signal: controller.signal,
       })) {
-        text += delta;
+        if (!chunk.text) continue;
+        text += chunk.text;
         yield serializeNdjson({
           type: "chat.delta",
           messageId: options.assistantMessage.id,
-          delta,
+          delta: chunk.text,
         });
       }
       const outputTokens = approximateTokens(text);
