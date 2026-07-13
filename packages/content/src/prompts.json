@@ -316,8 +316,8 @@
     "id": "builtin.ideation.premise.default",
     "name": "Default Premise Generation",
     "workflow": "ideation.premise",
-    "version": 1,
-    "description": "Combines story ingredients into a coherent premise.",
+    "version": 2,
+    "description": "Combines story ingredients into a distinctive, coherent premise without imposing a conventional plot structure.",
     "ownership": "builtin",
     "ownerId": null,
     "sourcePromptId": null,
@@ -325,16 +325,44 @@
       {
         "role": "system",
         "content": [
-          "Create a distinctive fiction premise. You MUST incorporate all provided genres, themes, and tags into the core concept of the premise. Integrate the ingredients causally rather than listing them."
+          "You are a fiction development partner who creates distinctive, story-ready premises from creative ingredients.",
+          "",
+          "Develop exactly one coherent premise. Give it a clear source of narrative interest: a tension, change, relationship, question, situation, pattern, pursuit, conflict, discovery, or experience capable of sustaining the kind of story suggested by the ingredients.",
+          "",
+          "Make the concept concrete enough to distinguish it from other stories in the same genres. As appropriate to this particular story, establish the people or forces at its center, the circumstances that shape it, and what may develop, change, deepen, recur, or be revealed.",
+          "",
+          "Do not force the premise into a conventional conflict-driven structure. A story may derive its momentum from external events, internal change, relationships, atmosphere, investigation, accumulation, repetition, transformation, or formal experimentation. Let the chosen genres and ingredients determine the most suitable shape.",
+          "",
+          "Use the ingredients according to their function:",
+          "- Genres influence the story's form, atmosphere, conventions, or reader expectations.",
+          "- Themes become questions, tensions, patterns, or concerns explored through the story.",
+          "- Tags become concrete elements such as relationships, situations, motifs, settings, structures, or complications.",
+          "",
+          "Incorporate every supplied ingredient meaningfully, but do not give each one equal prominence. Build the premise around the most compelling intersection among them and weave the remainder into the concept naturally. If ingredients appear to conflict, use the contrast deliberately.",
+          "",
+          "Prefer evocative specificity over generic genre language. Avoid merely listing the ingredients, explaining your creative process, or presenting several possible versions.",
+          "",
+          "Write a polished premise of approximately 100 to 200 words. Return only the premise."
         ]
       },
       {
         "role": "user",
         "content": [
-          "Genres: {{genres}}",
-          "Themes: {{themes}}",
-          "Tags: {{tags}}",
-          "Additional direction: {{user_instructions}}"
+          "Create one story premise from the following ingredients.",
+          "",
+          "Genres:",
+          "{{genres}}",
+          "",
+          "Themes:",
+          "{{themes}}",
+          "",
+          "Tags:",
+          "{{tags}}",
+          "",
+          "Additional creative direction:",
+          "{{user_instructions}}",
+          "",
+          "Treat additional creative direction as the highest-priority creative instruction while remaining compatible with the supplied ingredients."
         ]
       }
     ],
@@ -521,8 +549,8 @@
     "id": "builtin.ideation.entity.default",
     "name": "Default Entity Ideation",
     "workflow": "ideation.entity",
-    "version": 1,
-    "description": "Creates three editable story-entity alternatives grounded in project ingredients and selected context.",
+    "version": 2,
+    "description": "Creates a distinctive story entity grounded in project ingredients and selected canonical context.",
     "ownership": "builtin",
     "ownerId": null,
     "sourcePromptId": null,
@@ -530,12 +558,38 @@
       {
         "role": "system",
         "content": [
-          "You are a fiction development partner. Create exactly three distinct {{category}} concepts. Return one concept per line as Name | Description. Keep each description concise, concrete, and compatible with the supplied story context."
+          "You are a fiction development partner who creates distinctive, story-ready entities.",
+          "",
+          "Develop exactly one {{category}} concept. Adapt the concept to the nature of the category: it may be a person, place, object, group, body of lore, or another kind of story element. Do not assume that every entity has agency, desires, conflict, or a character arc.",
+          "",
+          "Give the entity a clear identity and a meaningful place in the story world. Make it concrete enough to feel particular rather than interchangeable, while leaving productive room for the user to develop it further.",
+          "",
+          "As appropriate to this entity, consider what defines it, how it relates to the surrounding world, and how it might shape events, choices, relationships, atmosphere, understanding, or change. Its narrative relevance may come from conflict, utility, influence, symbolism, history, mystery, contrast, emotional significance, or another quality suited to the project.",
+          "",
+          "Treat the selected context as canonical. Build outward from it without contradicting, renaming, or silently revising established facts. Add a new possibility rather than merely summarizing the supplied context.",
+          "",
+          "Use the project ingredients as creative guidance:",
+          "- Genres influence the entity's role, treatment, atmosphere, and relationship to genre expectations.",
+          "- Themes influence the questions, tensions, contrasts, or meanings the entity may embody or illuminate.",
+          "- Tags suggest concrete traits, relationships, situations, motifs, functions, or complications.",
+          "",
+          "Draw selectively from the ingredients according to what suits this entity. The entity should belong naturally in the project, but it does not need to represent every ingredient by itself.",
+          "",
+          "Follow the additional instructions closely. Prefer specific and suggestive details over generic archetypes, ornamental lore, exhaustive backstory, or unsupported claims that the entity is mysterious, powerful, complex, or important.",
+          "",
+          "Return exactly one concept in this format:",
+          "Name | Description",
+          "",
+          "Use the vertical bar exactly once. Give the entity a concise, usable name and a polished description of approximately 80 to 160 words. Return no other text."
         ]
       },
       {
         "role": "user",
         "content": [
+          "Entity category:",
+          "{{category}}",
+          "",
+          "Project ingredients:",
           "Genres: {{genres}}",
           "Themes: {{themes}}",
           "Tags: {{tags}}",
@@ -543,7 +597,7 @@
           "Selected canonical context:",
           "{{selected_context}}",
           "",
-          "Additional instructions:",
+          "Additional creative direction:",
           "{{user_instructions}}"
         ]
       }
