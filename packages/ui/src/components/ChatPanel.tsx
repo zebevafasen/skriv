@@ -645,7 +645,7 @@ export function ChatPanel({
             (thread.data.messages ?? []).at(-1)?.status === "completed" &&
             !streaming && (
               <button
-                className="button ghost"
+                className="button ghost chat-footer-action"
                 type="button"
                 disabled={!aiConfigured}
                 title={aiConfigured ? "Regenerate response" : "Configure OpenRouter in Settings"}
@@ -669,7 +669,7 @@ export function ChatPanel({
             )}
           {streaming ? (
             <button
-              className="button"
+              className="button chat-footer-action"
               type="button"
               onClick={() => {
                 controller.current?.abort();
@@ -680,7 +680,7 @@ export function ChatPanel({
             </button>
           ) : (
             <button
-              className="button primary"
+              className="button primary chat-footer-action"
               type="button"
               disabled={!aiConfigured || !draft.trim()}
               title={aiConfigured ? "Send message" : "Configure OpenRouter in Settings"}

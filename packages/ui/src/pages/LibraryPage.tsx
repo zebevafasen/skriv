@@ -32,6 +32,10 @@ export function projectArtworkHue(projectId: string) {
   return (hash >>> 0) % 360;
 }
 
+export function projectArtworkSeed(project: Pick<Project, "id" | "settings">) {
+  return project.settings.coverArtworkSeed || project.id;
+}
+
 export function LibraryPage() {
   const [query, setQuery] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -197,28 +201,35 @@ export function LibraryPage() {
         />
       ) : null}
       <section className="project-grid" aria-label="Projects">
-        {filtered.map((project) => (
-          <Link
-            key={project.id}
-            to="/projects/$projectId"
-            params={{ projectId: project.id }}
-            className="project-card"
-          >
-            <div
-              className={`project-art art-${projectArtworkVariant(project.id)}`}
-              style={{ "--art-hue": projectArtworkHue(project.id) } as React.CSSProperties}
-            ></div>
-            <div className="project-card-body">
-              <h2>{project.title}</h2>
-              <p>
-                <BookOpen size={14} /> Edited {new Date(project.updatedAt).toLocaleDateString()}
-              </p>
-              <span>
-                Open manuscript <ArrowRight size={14} />
-              </span>
-            </div>
-          </Link>
-        ))}
+        {filtered.map((project) => {
+          const artworkSeed = projectArtworkSeed(project);
+          return (
+            <Link
+              key={project.id}
+              to="/projects/$projectId"
+              params={{ projectId: project.id }}
+              className="project-card"
+            >
+              <div
+                className={`project-art art-${projectArtworkVariant(artworkSeed)}`}
+                style={{ "--art-hue": projectArtworkHue(artworkSeed) } as React.CSSProperties}
+              >
+                {project.settings.coverDataUrl ? (
+                  <img src={project.settings.coverDataUrl} alt="" />
+                ) : null}
+              </div>
+              <div className="project-card-body">
+                <h2>{project.title}</h2>
+                <p>
+                  <BookOpen size={14} /> Edited {new Date(project.updatedAt).toLocaleDateString()}
+                </p>
+                <span>
+                  Open manuscript <ArrowRight size={14} />
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </section>
       {creating ? (
         <div className="modal-backdrop">

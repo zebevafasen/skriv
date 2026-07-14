@@ -26,10 +26,32 @@ function project(): ProjectArchiveV5 {
 
 describe("portable schema-v5 archives", () => {
   it("round trips a checksummed project", async () => {
-    const bytes = await encodeProjectArchive(project(), [], "test");
+    const archivedProject = project();
+    archivedProject.project.settings.coverArtworkSeed = archivedProject.project.id;
+    archivedProject.assets = [
+      {
+        path: "assets/cover.png",
+        mime: "image/png",
+        target: { kind: "cover" },
+      },
+    ];
+    const cover = new Uint8Array([137, 80, 78, 71]);
+    const bytes = await encodeProjectArchive(
+      archivedProject,
+      [{ path: "assets/cover.png", mime: "image/png", bytes: cover }],
+      "test",
+    );
     const decoded = await decodeProjectArchive(bytes);
     expect(decoded.project.project.title).toBe("Portable story");
-    expect(decoded.manifest.entries.map((entry) => entry.path)).toEqual(["project.json"]);
+    expect(decoded.project.project.settings.coverArtworkSeed).toBe(archivedProject.project.id);
+    expect(decoded.project.assets).toEqual(archivedProject.assets);
+    expect(decoded.assets).toEqual([
+      { path: "assets/cover.png", mime: "image/png", bytes: cover },
+    ]);
+    expect(decoded.manifest.entries.map((entry) => entry.path)).toEqual([
+      "project.json",
+      "assets/cover.png",
+    ]);
   });
 
   it("rejects traversal paths before extraction", async () => {

@@ -660,11 +660,11 @@ label small {
   inset: 0;
   width: 100%;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 8px;
   padding: 10px 12px;
   background: #111111;
-  color: var(--text);
+  color: transparent;
   font: inherit;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -672,7 +672,7 @@ label small {
   pointer-events: none;
 }
 .mention-textarea-highlights mark {
-  color: inherit;
+  color: transparent;
   background: transparent;
   text-decoration: underline dotted var(--accent-bright) 1.5px;
   text-underline-offset: 3px;
@@ -681,9 +681,9 @@ label small {
   position: relative;
   z-index: 1;
   background: transparent;
-  color: transparent;
+  color: var(--text);
   caret-color: var(--text);
-  -webkit-text-fill-color: transparent;
+  -webkit-text-fill-color: currentColor;
 }
 .mention-textarea textarea::placeholder {
   color: var(--muted);
@@ -722,8 +722,13 @@ label small {
 }
 .chat-composer-footer {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
+}
+.chat-footer-action,
+.model-select-trigger {
+  height: 40px;
+  min-height: 40px;
 }
 .chat-model {
   width: min(300px, 55%);
@@ -892,6 +897,12 @@ label small {
       transparent 0 11px,
       hsla(calc(var(--art-hue, 18) + 20), 74%, 59%, 0.1) 12px 13px
     );
+}
+
+.project-art > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .art-1 {

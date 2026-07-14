@@ -145,7 +145,14 @@ async function loadArchiveProject(db: LocalDatabase, projectId: string): Promise
   }
   return projectArchiveV5Schema.parse({
     schemaVersion: 5,
-    project: { ...project, settings: { ...project.settings, coverDataUrl: null } },
+    project: {
+      ...project,
+      settings: {
+        ...project.settings,
+        coverDataUrl: null,
+        coverArtworkSeed: project.settings.coverArtworkSeed || project.id,
+      },
+    },
     manuscript: actRows.map((act) => ({
       ...act,
       chapters: chapterRows
@@ -313,6 +320,8 @@ async function importV5(db: LocalDatabase, raw: unknown, nativeAssets: NativeAss
         settings: {
           ...archive.project.settings,
           coverDataUrl: cover ? (assetMap.get(cover.path) ?? null) : null,
+          coverArtworkSeed:
+            archive.project.settings.coverArtworkSeed || archive.project.id,
           povCharacterEntryId: remap(entryMap, archive.project.settings.povCharacterEntryId),
         },
       })

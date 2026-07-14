@@ -86,7 +86,11 @@ export async function loadHostedProjectArchive(
     project: {
       id: project.id,
       title: project.title,
-      settings: { ...project.settings, coverDataUrl: null },
+      settings: {
+        ...project.settings,
+        coverDataUrl: null,
+        coverArtworkSeed: project.settings.coverArtworkSeed || project.id,
+      },
       createdAt: iso(project.createdAt),
       updatedAt: iso(project.updatedAt),
     },
@@ -188,6 +192,7 @@ export async function importHostedProjectArchive(
       settings: {
         ...projectSettingsSchema.parse(archive.project.settings),
         coverDataUrl: cover ? (assetMap.get(cover.path) ?? null) : null,
+        coverArtworkSeed: archive.project.settings.coverArtworkSeed || archive.project.id,
         povCharacterEntryId: mapped(entryMap, archive.project.settings.povCharacterEntryId),
       },
     }).returning();

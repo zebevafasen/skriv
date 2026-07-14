@@ -85,6 +85,7 @@ export const projectSettingsSchema = z.object({
   series: z.string().max(100).default(""),
   seriesIndex: z.string().max(50).default(""),
   coverDataUrl: z.string().nullable().default(null),
+  coverArtworkSeed: z.string().max(300).optional(),
   tense: z.enum(["Past", "Present"]).default("Past"),
   language: storyLanguageSchema.default("General English"),
   povType: z

@@ -130,6 +130,7 @@ export function ModelSelect({
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       <button
         ref={triggerRef}
+        className="model-select-trigger"
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
