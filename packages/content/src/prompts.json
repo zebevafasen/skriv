@@ -87,7 +87,8 @@
           "When writing:",
           "- Follow the requested beat closely.",
           "- Do not continue beyond the requested material or invent unrelated developments.",
-          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.",
+          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line unless otherwise specified in the user instructions.",
+          "- Avoid overly flowery language or verbose descriptions unless otherwise specified in the user instructions.",
           "- Stop once the requested material is complete; do not add filler merely to reach the target length."
         ]
       },
@@ -109,7 +110,9 @@
       },
       {
         "role": "assistant",
-        "content": ["{{style_reference_prose}}"]
+        "content": [
+          "{{style_reference_prose}}"
+        ]
       },
       {
         "role": "user",
@@ -161,7 +164,8 @@
           "When writing:",
           "- Follow the requested beat closely.",
           "- Do not continue beyond the requested material or invent unrelated developments.",
-          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line.",
+          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line unless otherwise specified in the user instructions.",
+          "- Avoid overly flowery language or verbose descriptions unless otherwise specified in the user instructions.",
           "- Stop once the requested material is complete; do not add filler merely to reach the target length."
         ]
       },
@@ -180,7 +184,9 @@
       },
       {
         "role": "assistant",
-        "content": ["{{style_reference_prose}}"]
+        "content": [
+          "{{style_reference_prose}}"
+        ]
       },
       {
         "role": "user",
@@ -239,7 +245,9 @@
           "When writing:",
           "- Progress naturally toward the target event without forcing it immediately.",
           "- Follow the requested beat closely and do not continue beyond it.",
-          "- Do not invent unrelated developments, manufacture an ending, add foreshadowing, or write a summary-style closing line.",
+          "- Do not continue beyond the requested material or invent unrelated developments.",
+          "- Do not manufacture a scene ending, epilogue, foreshadowing, or summary-style closing line unless otherwise specified in the user instructions.",
+          "- Avoid overly flowery language or verbose descriptions unless otherwise specified in the user instructions.",
           "- Stop once the target event or requested material is reached; do not add filler merely to reach the target length."
         ]
       },
@@ -258,7 +266,9 @@
       },
       {
         "role": "assistant",
-        "content": ["{{style_reference_prose}}"]
+        "content": [
+          "{{style_reference_prose}}"
+        ]
       },
       {
         "role": "user",
@@ -425,7 +435,13 @@
         ]
       }
     ],
-    "variables": ["genres", "themes", "tags", "selected_context", "user_instructions"],
+    "variables": [
+      "genres",
+      "themes",
+      "tags",
+      "selected_context",
+      "user_instructions"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -456,7 +472,10 @@
         ]
       }
     ],
-    "variables": ["request_context", "candidate_fragments"],
+    "variables": [
+      "request_context",
+      "candidate_fragments"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -488,7 +507,10 @@
         ]
       }
     ],
-    "variables": ["scene_title", "scene_prose"],
+    "variables": [
+      "scene_title",
+      "scene_prose"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -519,7 +541,10 @@
         ]
       }
     ],
-    "variables": ["project_context", "conversation_summary"],
+    "variables": [
+      "project_context",
+      "conversation_summary"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -550,7 +575,10 @@
         ]
       }
     ],
-    "variables": ["existing_summary", "new_messages"],
+    "variables": [
+      "existing_summary",
+      "new_messages"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -580,7 +608,10 @@
         ]
       }
     ],
-    "variables": ["project_context", "target_budget"],
+    "variables": [
+      "project_context",
+      "target_budget"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -611,10 +642,18 @@
       },
       {
         "role": "user",
-        "content": ["Story language: {{story_language}}", "", "Chosen premise:", "{{premise}}"]
+        "content": [
+          "Story language: {{story_language}}",
+          "",
+          "Chosen premise:",
+          "{{premise}}"
+        ]
       }
     ],
-    "variables": ["premise", "story_language"],
+    "variables": [
+      "premise",
+      "story_language"
+    ],
     "createdAt": null,
     "updatedAt": null
   },
@@ -675,7 +714,14 @@
         ]
       }
     ],
-    "variables": ["category", "genres", "themes", "tags", "selected_context", "user_instructions"],
+    "variables": [
+      "category",
+      "genres",
+      "themes",
+      "tags",
+      "selected_context",
+      "user_instructions"
+    ],
     "createdAt": null,
     "updatedAt": null
   }
