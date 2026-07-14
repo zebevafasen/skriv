@@ -188,7 +188,6 @@ describe("shared contracts", () => {
       version: 1,
       description: "Default",
       ownership: "builtin",
-      ownerId: null,
       sourcePromptId: null,
       messages: [{ role: "user", content: "{{context_package}}" }],
       variables: ["context_package"],

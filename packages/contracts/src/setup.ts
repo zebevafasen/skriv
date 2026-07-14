@@ -56,10 +56,12 @@ export const ingredientPackCatalogSchema = z.object({
   packs: z.array(ingredientPackSchema),
 });
 
-export const projectIngredientPackSchema = ingredientPackSchema.omit({ collectionId: true }).extend({
-  sourcePackId: z.string().min(1),
-  importedAt: timestampSchema,
-});
+export const projectIngredientPackSchema = ingredientPackSchema
+  .omit({ collectionId: true })
+  .extend({
+    sourcePackId: z.string().min(1),
+    importedAt: timestampSchema,
+  });
 
 export const createIngredientPackInputSchema = ingredientPackSchema
   .pick({ collectionId: true, name: true, description: true, values: true })
@@ -69,11 +71,13 @@ export const updateIngredientPackInputSchema = createIngredientPackInputSchema.p
 export const createIngredientPackCategoryInputSchema = ingredientPackCategorySchema
   .pick({ name: true, description: true })
   .partial({ description: true });
-export const updateIngredientPackCategoryInputSchema = createIngredientPackCategoryInputSchema.partial();
+export const updateIngredientPackCategoryInputSchema =
+  createIngredientPackCategoryInputSchema.partial();
 export const createIngredientPackCollectionInputSchema = ingredientPackCollectionSchema
   .pick({ categoryId: true, name: true, description: true })
   .partial({ description: true });
-export const updateIngredientPackCollectionInputSchema = createIngredientPackCollectionInputSchema.partial();
+export const updateIngredientPackCollectionInputSchema =
+  createIngredientPackCollectionInputSchema.partial();
 export const syncProjectIngredientPacksInputSchema = z
   .object({
     ingredientPackIds: z.array(z.string().min(1)).max(250).optional(),

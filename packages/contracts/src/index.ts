@@ -1,3 +1,4 @@
+export * from "./archives.js";
 export * from "./chat.js";
 export * from "./compendium.js";
 export * from "./generation.js";

@@ -105,7 +105,6 @@ describe("manuscript labels", () => {
     const tree: ManuscriptTree = {
       project: {
         id: projectId,
-        workspaceId: crypto.randomUUID(),
         title: "Story",
         settings: {
           author: "",
@@ -238,7 +237,6 @@ describe("prompt registry primitives", () => {
     version: 1,
     description: "",
     ownership: "builtin",
-    ownerId: null,
     sourcePromptId: null,
     messages: [{ role: "user", content: "After: {{manuscript_after_cursor}}" }],
     variables: ["manuscript_after_cursor"],

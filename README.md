@@ -1,115 +1,68 @@
 # Asterism
 
-Asterism is a full-stack, AI-assisted long-form fiction workspace. It combines a continuous Scene-based manuscript editor, a draggable planning Outline, streamed prose generation, AI-assisted Scene summaries, a navigable Compendium, grounded Smart Context, editable workflow prompts, story ideation, and persistent project-grounded Chat.
+Asterism is a private Windows desktop application for planning and writing long-form fiction. Projects, manuscript Scenes, revisions, notes, Compendium entries, ideation data, prompts, and Chat history are stored locally. No account, hosted service, Docker installation, or database server is required.
 
-## Prerequisites
+AI features are optional. They connect to OpenRouter only when you explicitly generate text, summarize a Scene, or send a Chat message. The OpenRouter key is stored in Windows Credential Manager and is never returned to the React application.
 
-Before starting, make sure you have installed:
-1. **[Node.js 24 LTS](https://nodejs.org/)**: This is required to run the JavaScript code.
-2. **[Docker Desktop](https://www.docker.com/products/docker-desktop/)**: Docker is a tool that lets this app run its own isolated database without you having to manually install or configure a database server on your computer. You must have Docker Desktop installed, and you must actually **open the Docker Desktop application** and let it run in the background on your computer before continuing.
+## Install the beta
 
-*Note: You don't need to install `pnpm` manually, the setup steps below will handle that for you using Node's built-in `corepack`.*
+The Windows x64 CI build produces an unsigned current-user NSIS installer. Windows may show a SmartScreen warning because this beta is not code-signed. The installer does not require administrator access and installs the normal WebView2 bootstrapper when necessary.
 
-## Step-by-Step Local Setup
+All non-AI writing features work offline after installation.
 
-### One-click Windows startup
+## Local data and recovery
 
-On Windows, double-click `START_ASTERISM.bat` in the project folder. It starts Docker Desktop
-when needed, waits for PostgreSQL, applies database migrations, and starts the app. Keep the
-terminal window open while using Asterism; press `Ctrl+C` in it to stop the development servers.
+The canonical database is:
 
-For manual setup, use the steps below.
-
-Open your terminal (or Command Prompt) in the project folder and run the following commands in order:
-
-1. **Enable the package manager** (this allows you to use the `pnpm` command):
-   ```bash
-   corepack enable
-   ```
-
-2. **Install all the necessary project files and dependencies**:
-   ```bash
-   pnpm install
-   ```
-
-3. **Create your local configuration file**:
-   *(Note: You only need to run this command the very first time you set up the project. Do not run it again later or it will overwrite your saved settings!)*
-   ```bash
-   copy .env.example .env
-   ```
-
-4. **Start the database** (this uses Docker, so make sure the Docker Desktop app is currently open and running!):
-   ```bash
-   pnpm infra:up
-   ```
-
-5. **Set up the database structure** (this creates the necessary tables):
-   ```bash
-   pnpm db:migrate
-   ```
-
-6. **Start the app!**
-   ```bash
-   pnpm dev
-   ```
-
-Once you see a message saying the server is ready, open your web browser and go to `http://localhost:5173`. 
-
-### Setting up the AI
-
-By default, the app uses a "fake" AI that just replies with dummy text so you can test the app without an API key. 
-
-To use real AI features:
-1. Create an account on [OpenRouter](https://openrouter.ai/) and generate an API Key.
-2. Open Asterism and choose **Settings** in the main navigation.
-3. Paste the key into **OpenRouter API key** and choose **Save key**. Asterism validates the key before saving it.
-4. Choose the OpenRouter models you want for writing and Smart Context, then save the AI settings.
-
-The key is encrypted in PostgreSQL with `CREDENTIAL_ENCRYPTION_KEY`; the plaintext is never returned to the browser. Set that environment value to a private random secret in hosted environments. `OPENROUTER_API_KEY` remains available as a server-wide fallback for deployments that do not want per-user keys.
-
-## Commands
-
-```bash
-pnpm dev          # Run web and API with hot reload
-pnpm typecheck    # Strict TypeScript validation
-pnpm lint         # Biome lint and formatting check
-pnpm test         # Deterministic unit tests
-pnpm test:e2e     # Playwright private-beta workflow
-pnpm build        # Production builds
-pnpm db:generate  # Generate a migration after schema changes
-pnpm db:migrate   # Apply committed migrations
-pnpm infra:down   # Stop local infrastructure
+```text
+%LOCALAPPDATA%\Asterism\asterism.sqlite3
 ```
 
-Pull requests run the same typecheck, lint, unit-test, build, clean-migration, and Playwright gates in GitHub Actions.
+Asterism creates two kinds of backups beneath `%LOCALAPPDATA%\Asterism\backups`:
+
+- Portable `.asterism` project archives after project changes, on a 15-minute maximum frequency, on clean close, and immediately before deletion. The newest 10 and one daily point for 30 days are retained.
+- Internal SQLite safety snapshots before migration and for manual/daily recovery. Seven recent and four weekly points are retained.
+
+Use **Settings → Backups** to back up immediately, open the backup folder, or restore an internal database snapshot. Export any project as a portable `.asterism` archive for independent recovery or transfer to another computer. Legacy schema-v4 JSON project exports remain importable.
+
+Project archives never contain the OpenRouter key, global application preferences, global custom prompts/catalogs, transient generations, or telemetry.
+
+## Development
+
+Windows 10/11 x64 is the supported development and release platform. Install:
+
+- Node.js 24 and pnpm 11
+- stable Rust with `rustfmt` and `clippy`
+- Visual Studio 2022 Build Tools with the Desktop development with C++ workload
+- Microsoft Edge WebView2 Runtime
+
+Then run:
+
+```powershell
+pnpm install
+pnpm desktop:dev
+```
+
+Useful commands:
+
+```powershell
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm test:native
+pnpm desktop:check
+pnpm desktop:build
+pnpm desktop:e2e
+```
+
+`desktop:e2e` also requires `cargo install tauri-driver --locked`.
 
 ## Repository layout
 
-- `apps/web` — React, Vite, TanStack Query/Router, and Tiptap UI.
-- `apps/api` — Fastify modular backend, authentication, persistence, context, and generation orchestration.
-- `packages/contracts` — shared Zod transport and content contracts.
-- `packages/core` — prompt rendering, mention matching, recursive discovery, segmentation, and budgeting.
-- `packages/content` — immutable, versioned built-in prompts and ideation definitions.
-- `packages/ai` — OpenRouter and deterministic fake-provider adapters.
-- `packages/db` — Drizzle schema and migrations.
-- `packages/config` — validated server environment configuration.
+- `apps/desktop` — Vite entry point, Tauri configuration, Rust commands, security capabilities, and NSIS packaging.
+- `packages/ui` — React editor and all reusable writing surfaces.
+- `packages/application` — typed application boundary and platform-neutral export logic.
+- `packages/local-store` — SQLite schema, migrations, repositories/workflows, streaming orchestration, archives, and backup scheduling.
+- `packages/contracts`, `packages/core`, `packages/content` — validation contracts, pure writing/context helpers, and bundled defaults.
 
-## Authentication and invitations
-
-Hosted environments disable the development bypass and require a Better Auth session. When `INVITE_ONLY=true`, signup also requires an unexpired invitation token passed by the signup screen. Authenticated beta users can create invitation records through the API; the plaintext token is returned only once.
-
-Every Project query is scoped through Workspace membership. New accounts receive a Personal Workspace on their first authenticated application request.
-
-## Data safety
-
-Scene saves use optimistic versions, including when several locked Scene blocks are displayed in one continuous editor. Manual/editor saves and accepted generations create restore points, generation candidates remain outside canonical Tiptap documents until acceptance, and sibling reordering preserves stable hierarchy IDs. Project export is available from `GET /api/projects/:id/export`.
-
-Major project workspace state is URL-addressable. Tabs, manuscript scope, selected Scenes, Chat threads, and Compendium entries survive refresh and browser history navigation.
-
-See [operations](docs/operations.md) for deployment, backup, and recovery guidance.
-
-## Personal Vercel deployment
-
-Asterism can be deployed as one Vercel project, with the Vite frontend and Fastify API sharing
-the same domain. Use a hosted PostgreSQL database; the recommended personal setup is Neon in
-the Frankfurt region. Follow the complete [Vercel deployment guide](docs/vercel.md).
+See [desktop operations](docs/operations.md) and the [desktop design specification](Asterism_Design_Specification_v5.md) for recovery, security, and release details.

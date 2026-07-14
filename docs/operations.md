@@ -1,61 +1,35 @@
-# Private-beta operations
+# Desktop operations
 
-## Continuous integration
+## Quality and release pipeline
 
-`.github/workflows/ci.yml` is the merge-quality baseline. Its quality job runs frozen installation, typecheck, Biome validation, unit tests, and the production build. Its E2E job starts clean PostgreSQL, applies every committed migration, and runs Playwright in Chromium. Configure both jobs as required branch-protection checks.
+`.github/workflows/ci.yml` runs on Windows and performs frozen dependency installation, TypeScript checks, Biome linting, unit tests, Rust formatting/clippy/tests, a Tauri/NSIS release build, and WebdriverIO desktop E2E tests. The unsigned x64 current-user NSIS installer is uploaded as the `asterism-windows-x64-beta` artifact.
 
-## Environment separation
+No database service or server environment variables are used. Release builds contain no deterministic fake AI provider and make no background network or telemetry requests.
 
-For personal use, deploy the repository as one Vercel project so the Vite frontend, Fastify API,
-authentication cookies, and `/api` routes share one origin. Use a Neon database in the same region
-as the Vercel Function. See [Personal Vercel deployment](vercel.md) for the exact setup.
+## Database startup and migrations
 
-For a future multi-user beta, use separate Neon databases for preview and production. Preview
-deployments must not share the production database.
+The Rust layer opens `%LOCALAPPDATA%\Asterism\asterism.sqlite3` with foreign keys, WAL journaling, normal synchronous mode, and a five-second busy timeout. SQL migrations are compiled into the binary.
 
-Required production variables:
+Before an existing database is migrated, Asterism creates a SQLite snapshot with `VACUUM INTO`. If startup or migration fails, the normal application is not mounted. A recovery screen presents existing snapshots and the backup folder; restoring a snapshot closes the connection, copies a pre-restore safety point, replaces the database, and restarts the process.
 
-```text
-NODE_ENV=production
-WEB_ORIGIN=https://your-web-host
-DATABASE_URL=postgresql://...
-BETTER_AUTH_URL=https://your-web-host
-BETTER_AUTH_SECRET=<at least 32 high-entropy characters>
-DEV_AUTH_BYPASS=false
-INVITE_ONLY=true
-CREDENTIAL_ENCRYPTION_KEY=<a separate high-entropy secret>
-AI_PROVIDER=fake
-```
+Do not manually modify the live database. For diagnostics, first close Asterism and copy the database plus its `-wal` and `-shm` files, or use **Back up now** while the application is open.
 
-## Release checklist
+## Project archives
 
-1. Run `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`, and `pnpm build`.
-2. Apply migrations to the preview database and complete the manuscript-generation smoke test.
-3. Confirm that registration without an invitation returns 403.
-4. Confirm that two beta accounts cannot read each other's Projects.
-5. Verify streamed generation, cancellation, acceptance, restore history, and export.
-6. Apply migrations to production before deploying the API.
+`.asterism` is a ZIP archive with `manifest.json`, `project.json`, and optional `assets/` entries. The importer rejects unsupported versions, unsafe/duplicate paths, checksum or size mismatches, more than 250 MiB uncompressed content, and assets above 20 MiB. All content is validated before it is written, and import creates a new project with remapped project-owned identifiers.
 
-## Backup and restore
+When investigating a failed import, preserve the original archive. Never extract an untrusted archive over a user directory; the application reads entries in memory and does not extract paths directly.
 
-- Enable the hosted PostgreSQL provider's point-in-time recovery before inviting testers.
-- Take a logical `pg_dump` before every production migration.
-- Test restoration into a separate database; do not test by overwriting production.
-- Retain exported Projects separately from database backups when a tester requests a portable copy.
-- After restoration, run migration status checks and verify Scene versions, Compendium entry revisions, Prompt bindings, and authentication sessions.
+## OpenRouter credentials and traffic
 
-Example logical backup:
+The key is stored by the Windows credential store under service `com.zebevafasen.asterism` and account `openrouter-api-key`. React receives only `configured`, `source`, and the last four characters. Key validation, model discovery, streaming completion requests, and cancellation are implemented in Rust.
 
-```bash
-pg_dump --format=custom --no-owner --file=asterism.dump "$DATABASE_URL"
-```
+Removing the credential in Settings deletes the Windows credential. Portable and internal backups do not contain it.
 
-Example restoration into an empty verification database:
+## Beta release checklist
 
-```bash
-pg_restore --clean --if-exists --no-owner --dbname="$RESTORE_DATABASE_URL" asterism.dump
-```
-
-## Serverless portability
-
-The API owns provider and NDJSON stream normalization behind framework-neutral contracts. If hosted generation duration exceeds the selected serverless limits, move only `apps/api` to a long-running Node host and update the web API origin; the database, browser contracts, and provider adapters do not need redesign.
+1. Run `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm test:native`.
+2. Run `pnpm desktop:build` on Windows x64.
+3. Install the generated NSIS package as the current user on a clean Windows 10 or 11 VM.
+4. Verify offline project creation/edit/restart, v4 import, v5 round trip, backup creation/restore, missing-key guidance, AI cancellation, and uninstall behavior.
+5. Record the installer SHA-256 alongside the beta release artifact.

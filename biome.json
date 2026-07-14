@@ -7,11 +7,15 @@
       "!!**/dist",
       "!!**/coverage",
       "!!**/.turbo",
-      "!!**/test-results",
-      "!!**/playwright-report",
+      "!!**/.rustup",
+      "!!**/.cargo",
+      "!!**/.tmp",
+      "!!**/target",
       "!!**/.vercel",
       "!!**/.vercel-build",
-      "!!packages/db/drizzle/meta"
+      "!!**/test-results",
+      "!!apps/desktop/src-tauri/gen",
+      "!!apps/desktop/src-tauri/icons"
     ]
   },
   "formatter": {

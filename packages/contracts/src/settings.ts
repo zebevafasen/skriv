@@ -56,7 +56,7 @@ export const editorSettingsSchema = z.object({
 export const updateEditorSettingsInputSchema = editorSettingsSchema.partial();
 export const openRouterCredentialStatusSchema = z.object({
   configured: z.boolean(),
-  source: z.enum(["user", "server", "none"]),
+  source: z.enum(["keychain", "none"]),
   lastFour: z.string().length(4).nullable(),
 });
 export const updateOpenRouterCredentialSchema = z.object({

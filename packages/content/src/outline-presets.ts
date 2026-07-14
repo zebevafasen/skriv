@@ -20,9 +20,20 @@ export const outlinePresets: OutlinePreset[] = [
           {
             title: "The Setup",
             scenes: [
-              { title: "Opening Situation", summary: "Establish the protagonist, their ordinary world, and the story's central tension." },
-              { title: "Inciting Incident", summary: "Disrupt the ordinary world with an event the protagonist cannot ignore." },
-              { title: "First Plot Point", summary: "Force a consequential choice that commits the protagonist to the main conflict." },
+              {
+                title: "Opening Situation",
+                summary:
+                  "Establish the protagonist, their ordinary world, and the story's central tension.",
+              },
+              {
+                title: "Inciting Incident",
+                summary: "Disrupt the ordinary world with an event the protagonist cannot ignore.",
+              },
+              {
+                title: "First Plot Point",
+                summary:
+                  "Force a consequential choice that commits the protagonist to the main conflict.",
+              },
             ],
           },
         ],
@@ -33,10 +44,24 @@ export const outlinePresets: OutlinePreset[] = [
           {
             title: "Rising Action",
             scenes: [
-              { title: "First Pinch Point", summary: "Demonstrate the antagonist's power and tighten the central conflict." },
-              { title: "Midpoint", summary: "Deliver a revelation, reversal, or apparent victory that changes the protagonist's approach." },
-              { title: "Second Pinch Point", summary: "Escalate the cost of failure and close off easy solutions." },
-              { title: "Crisis", summary: "Bring the protagonist to their lowest point and demand a final commitment." },
+              {
+                title: "First Pinch Point",
+                summary: "Demonstrate the antagonist's power and tighten the central conflict.",
+              },
+              {
+                title: "Midpoint",
+                summary:
+                  "Deliver a revelation, reversal, or apparent victory that changes the protagonist's approach.",
+              },
+              {
+                title: "Second Pinch Point",
+                summary: "Escalate the cost of failure and close off easy solutions.",
+              },
+              {
+                title: "Crisis",
+                summary:
+                  "Bring the protagonist to their lowest point and demand a final commitment.",
+              },
             ],
           },
         ],
@@ -47,8 +72,16 @@ export const outlinePresets: OutlinePreset[] = [
           {
             title: "Climax and Resolution",
             scenes: [
-              { title: "Climax", summary: "Resolve the central conflict through the protagonist's decisive final action." },
-              { title: "Denouement", summary: "Show the consequences of the climax and establish the story's new equilibrium." },
+              {
+                title: "Climax",
+                summary:
+                  "Resolve the central conflict through the protagonist's decisive final action.",
+              },
+              {
+                title: "Denouement",
+                summary:
+                  "Show the consequences of the climax and establish the story's new equilibrium.",
+              },
             ],
           },
         ],
@@ -66,11 +99,29 @@ export const outlinePresets: OutlinePreset[] = [
           {
             title: "The Ordinary World",
             scenes: [
-              { title: "Opening Image", summary: "Present a visual snapshot of the protagonist's world before the story transforms it." },
-              { title: "Theme Stated", summary: "Hint at the lesson or truth the protagonist will need to understand." },
-              { title: "Setup", summary: "Establish the protagonist, their flaws, relationships, stakes, and unresolved needs." },
-              { title: "Catalyst", summary: "Disrupt the status quo with the event that sets the central story in motion." },
-              { title: "Debate", summary: "Let the protagonist resist, question, or prepare for the path ahead." },
+              {
+                title: "Opening Image",
+                summary:
+                  "Present a visual snapshot of the protagonist's world before the story transforms it.",
+              },
+              {
+                title: "Theme Stated",
+                summary: "Hint at the lesson or truth the protagonist will need to understand.",
+              },
+              {
+                title: "Setup",
+                summary:
+                  "Establish the protagonist, their flaws, relationships, stakes, and unresolved needs.",
+              },
+              {
+                title: "Catalyst",
+                summary:
+                  "Disrupt the status quo with the event that sets the central story in motion.",
+              },
+              {
+                title: "Debate",
+                summary: "Let the protagonist resist, question, or prepare for the path ahead.",
+              },
             ],
           },
         ],
@@ -81,18 +132,44 @@ export const outlinePresets: OutlinePreset[] = [
           {
             title: "Promise of the Premise",
             scenes: [
-              { title: "Break into Two", summary: "Have the protagonist make a proactive choice and enter the story's unfamiliar second act." },
-              { title: "B Story", summary: "Introduce a relationship or secondary thread that carries the theme." },
-              { title: "Fun and Games", summary: "Explore the central premise through escalating successes, failures, and discoveries." },
-              { title: "Midpoint", summary: "Raise the stakes with a major reversal, false victory, or false defeat." },
+              {
+                title: "Break into Two",
+                summary:
+                  "Have the protagonist make a proactive choice and enter the story's unfamiliar second act.",
+              },
+              {
+                title: "B Story",
+                summary: "Introduce a relationship or secondary thread that carries the theme.",
+              },
+              {
+                title: "Fun and Games",
+                summary:
+                  "Explore the central premise through escalating successes, failures, and discoveries.",
+              },
+              {
+                title: "Midpoint",
+                summary: "Raise the stakes with a major reversal, false victory, or false defeat.",
+              },
             ],
           },
           {
             title: "Pressure and Collapse",
             scenes: [
-              { title: "Bad Guys Close In", summary: "Increase external pressure and internal conflict as the protagonist's approach stops working." },
-              { title: "All Is Lost", summary: "Deliver the apparent defeat and strip away the protagonist's remaining certainty." },
-              { title: "Dark Night of the Soul", summary: "Let the protagonist confront the meaning of their failure and find the seed of a new answer." },
+              {
+                title: "Bad Guys Close In",
+                summary:
+                  "Increase external pressure and internal conflict as the protagonist's approach stops working.",
+              },
+              {
+                title: "All Is Lost",
+                summary:
+                  "Deliver the apparent defeat and strip away the protagonist's remaining certainty.",
+              },
+              {
+                title: "Dark Night of the Soul",
+                summary:
+                  "Let the protagonist confront the meaning of their failure and find the seed of a new answer.",
+              },
             ],
           },
         ],
@@ -103,9 +180,20 @@ export const outlinePresets: OutlinePreset[] = [
           {
             title: "The Finale",
             scenes: [
-              { title: "Break into Three", summary: "Combine the main-story lesson and B-story insight into a new plan." },
-              { title: "Finale", summary: "Execute the final plan, overcome escalating obstacles, and resolve the central conflict." },
-              { title: "Final Image", summary: "Mirror the opening image to show how the protagonist or world has changed." },
+              {
+                title: "Break into Three",
+                summary: "Combine the main-story lesson and B-story insight into a new plan.",
+              },
+              {
+                title: "Finale",
+                summary:
+                  "Execute the final plan, overcome escalating obstacles, and resolve the central conflict.",
+              },
+              {
+                title: "Final Image",
+                summary:
+                  "Mirror the opening image to show how the protagonist or world has changed.",
+              },
             ],
           },
         ],

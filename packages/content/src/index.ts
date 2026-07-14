@@ -47,7 +47,9 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
   const collectionIds = new Set<string>();
   for (const collection of content.ingredientPackCollections) {
     if (collectionIds.has(collection.id)) {
-      throw new Error(`Duplicate ingredient pack collection id in ${content.id}: ${collection.id}.`);
+      throw new Error(
+        `Duplicate ingredient pack collection id in ${content.id}: ${collection.id}.`,
+      );
     }
     if (!categoryIds.has(collection.categoryId)) {
       throw new Error(`Unknown category for ingredient pack collection ${collection.id}.`);

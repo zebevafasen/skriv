@@ -1,0 +1,26 @@
+{
+  "name": "@asterism/application",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./exporter": "./src/exporter.ts"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@asterism/contracts": "workspace:*",
+    "docx": "9.7.1",
+    "pdf-lib": "1.17.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

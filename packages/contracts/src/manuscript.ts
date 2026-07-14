@@ -102,7 +102,6 @@ export const projectSettingsSchema = z.object({
 
 export const projectSchema = z.object({
   id: idSchema,
-  workspaceId: idSchema,
   title: z.string().min(1).max(300),
   settings: projectSettingsSchema,
   createdAt: timestampSchema,
