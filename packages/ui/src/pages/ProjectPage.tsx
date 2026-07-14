@@ -271,7 +271,7 @@ export function ProjectPage() {
       replace = false,
     ) =>
       navigate({
-        search: (previous) => {
+        search: (previous: Record<string, unknown>) => {
           const next = { ...previous };
           for (const [key, value] of Object.entries(changes)) {
             if (value === undefined || value === "manuscript" || value === "write")

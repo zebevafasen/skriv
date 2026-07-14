@@ -1,0 +1,1 @@
+ALTER TABLE "editor_settings" ALTER COLUMN "font_size" SET DEFAULT 18;

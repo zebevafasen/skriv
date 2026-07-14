@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "pnpm build:vercel",
+  "outputDirectory": "apps/web/dist",
+  "regions": ["fra1"],
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": ".vercel-build/**",
+      "maxDuration": 60,
+      "supportsCancellation": true
+    }
+  },
+  "crons": [
+    { "path": "/api/internal/archive-transfers/cleanup", "schedule": "17 3 * * *" }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index?__asterism_path=$1" },
+    { "source": "/((?!api(?:/|$)).*)", "destination": "/index.html" }
+  ]
+}

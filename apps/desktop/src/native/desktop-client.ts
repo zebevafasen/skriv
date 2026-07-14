@@ -54,22 +54,6 @@ export function createDesktopClient(): DesktopClient {
       if (path === "/api/models" && (init?.method ?? "GET") === "GET") {
         return invokeApp<T>("list_models");
       }
-      if (path === "/api/backups/database" && (init?.method ?? "GET") === "GET") {
-        return invokeApp<T>("list_database_snapshots");
-      }
-      if (path === "/api/backups/projects" && init?.method === "POST") {
-        return Promise.all([dispatcher.backupAll(), invokeApp("create_database_snapshot")]).then(
-          ([, snapshot]) => snapshot as T,
-        );
-      }
-      if (path === "/api/backups/open" && init?.method === "POST") {
-        return invokeApp<T>("open_backup_folder");
-      }
-      if (path === "/api/backups/database/restore" && init?.method === "POST") {
-        return invokeApp<T>("restore_database_snapshot", {
-          request: body<{ name: string }>(init),
-        });
-      }
       return dispatcher.request<T>(path, init);
     },
   };
@@ -90,6 +74,23 @@ export function createDesktopClient(): DesktopClient {
       importProject() {
         return dispatcher.importProject();
       },
+    },
+    {
+      platform: "desktop",
+      accounts: false,
+      invitations: false,
+      localBackups: true,
+      nativeFileDialogs: true,
+    },
+    {
+      databaseSnapshots: () => invokeApp("list_database_snapshots"),
+      backupNow: () =>
+        Promise.all([dispatcher.backupAll(), invokeApp("create_database_snapshot")]).then(
+          ([, snapshot]) => snapshot,
+        ),
+      openBackupFolder: () => invokeApp("open_backup_folder"),
+      restoreDatabaseSnapshot: (name) =>
+        invokeApp("restore_database_snapshot", { request: { name } }),
     },
   );
   return {

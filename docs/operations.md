@@ -1,35 +1,29 @@
-# Desktop operations
+# Unified operations
 
-## Quality and release pipeline
+## Product boundaries
 
-`.github/workflows/ci.yml` runs on Windows and performs frozen dependency installation, TypeScript checks, Biome linting, unit tests, Rust formatting/clippy/tests, a Tauri/NSIS release build, and WebdriverIO desktop E2E tests. The unsigned x64 current-user NSIS installer is uploaded as the `asterism-windows-x64-beta` artifact.
+Web and desktop share features and archive contracts but never share a live store. PostgreSQL records remain account/workspace scoped. Desktop records remain in `%LOCALAPPDATA%\Asterism\asterism.sqlite3`. Shared UI calls only `AsterismClient`; a shared feature change must update and test both adapters.
 
-No database service or server environment variables are used. Release builds contain no deterministic fake AI provider and make no background network or telemetry requests.
+## CI and merge gate
 
-## Database startup and migrations
+`Unified CI` has required `quality`, `web-e2e`, and `windows` jobs. It builds the hosted output and unsigned current-user NSIS installer without releasing either artifact. Protect `main` with these checks, the Vercel preview check, and explicit owner approval. Auto-merge stays disabled for unification.
 
-The Rust layer opens `%LOCALAPPDATA%\Asterism\asterism.sqlite3` with foreign keys, WAL journaling, normal synchronous mode, and a five-second busy timeout. SQL migrations are compiled into the binary.
+Before the merge:
 
-Before an existing database is migrated, Asterism creates a SQLite snapshot with `VACUUM INTO`. If startup or migration fails, the normal application is not mounted. A recovery screen presents existing snapshots and the backup folder; restoring a snapshot closes the connection, copies a pre-restore safety point, replaces the database, and restarts the process.
+1. Apply generated additive migrations to staging PostgreSQL.
+2. Deploy a preview with staging-only database, Blob, authentication, encryption, and AI secrets.
+3. Install the CI desktop artifact and run the parity checklist on Windows.
+4. Transfer a v5 archive desktop → web and web → desktop, including images, revisions, and Chat.
+5. Verify responsive mobile browser behavior and desktop offline non-AI behavior.
+6. Confirm production was untouched and obtain written approval.
+7. Back up production PostgreSQL, rerun checks, and merge with a merge commit.
 
-Do not manually modify the live database. For diagnostics, first close Asterism and copy the database plus its `-wal` and `-shm` files, or use **Back up now** while the application is open.
+## Hosted migrations and archives
 
-## Project archives
+Deployment builds never run `drizzle push` or mutate a database. Generate migrations with `pnpm db:generate`; rehearse them with `pnpm db:migrate` against staging.
 
-`.asterism` is a ZIP archive with `manifest.json`, `project.json`, and optional `assets/` entries. The importer rejects unsupported versions, unsafe/duplicate paths, checksum or size mismatches, more than 250 MiB uncompressed content, and assets above 20 MiB. All content is validated before it is written, and import creates a new project with remapped project-owned identifiers.
+Hosted v5 archives use an environment-specific private Vercel Blob store. Import issues a 15-minute exact-path signed PUT URL; finalization validates ZIP paths, limits, checksums, and Zod content, imports in one PostgreSQL transaction with remapped identifiers, and deletes the Blob in `finally`. Export builds the same format and returns a 15-minute signed GET URL. A daily authenticated cron removes stale rows and blobs.
 
-When investigating a failed import, preserve the original archive. Never extract an untrusted archive over a user directory; the application reads entries in memory and does not extract paths directly.
+## Desktop recovery
 
-## OpenRouter credentials and traffic
-
-The key is stored by the Windows credential store under service `com.zebevafasen.asterism` and account `openrouter-api-key`. React receives only `configured`, `source`, and the last four characters. Key validation, model discovery, streaming completion requests, and cancellation are implemented in Rust.
-
-Removing the credential in Settings deletes the Windows credential. Portable and internal backups do not contain it.
-
-## Beta release checklist
-
-1. Run `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm test:native`.
-2. Run `pnpm desktop:build` on Windows x64.
-3. Install the generated NSIS package as the current user on a clean Windows 10 or 11 VM.
-4. Verify offline project creation/edit/restart, v4 import, v5 round trip, backup creation/restore, missing-key guidance, AI cancellation, and uninstall behavior.
-5. Record the installer SHA-256 alongside the beta release artifact.
+The desktop database uses foreign keys, WAL, compiled migrations, and safety snapshots. Portable project snapshots are retained locally after dirty mutations and clean close. The desktop OpenRouter key is stored under service `com.zebevafasen.asterism`; hosted credentials are separately encrypted and user scoped. Credentials are excluded from archives.

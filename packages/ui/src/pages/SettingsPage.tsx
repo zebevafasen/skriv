@@ -1,3 +1,4 @@
+import { AppError } from "@asterism/application";
 import type { AiSettings } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { asterism } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { useAppDialog } from "../components/DialogProvider.js";
@@ -18,7 +20,9 @@ import { ModelSelect } from "../components/ModelSelect.js";
 type Model = { id: string; name: string; contextLength: number };
 type DatabaseSnapshot = { name: string; createdAt: string; size: number };
 
-export function SettingsPage() {
+export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode }) {
+  const app = asterism();
+  const backups = app.backups;
   const client = useQueryClient();
   const dialog = useAppDialog();
   const settings = useQuery({
@@ -36,7 +40,8 @@ export function SettingsPage() {
   });
   const snapshots = useQuery({
     queryKey: ["database-snapshots"],
-    queryFn: () => asterism().settings.databaseSnapshots() as Promise<DatabaseSnapshot[]>,
+    queryFn: () => backups?.databaseSnapshots() as Promise<DatabaseSnapshot[]>,
+    enabled: backups !== null,
   });
   const [draft, setDraft] = useState<AiSettings | null>(null);
   const [openRouterKey, setOpenRouterKey] = useState("");
@@ -71,21 +76,39 @@ export function SettingsPage() {
     },
   });
   const backupNow = useMutation({
-    mutationFn: () => asterism().settings.backupNow(),
+    mutationFn: () =>
+      backups?.backupNow() ??
+      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
   });
   const openBackupFolder = useMutation({
-    mutationFn: () => asterism().settings.openBackupFolder(),
+    mutationFn: () =>
+      backups?.openBackupFolder() ??
+      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
   });
   const restoreSnapshot = useMutation({
-    mutationFn: (name: string) => asterism().settings.restoreDatabaseSnapshot(name),
+    mutationFn: (name: string) =>
+      backups?.restoreDatabaseSnapshot(name) ??
+      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
   });
+  const credentialSummary = credential.data?.configured
+    ? credential.data.source === "keychain"
+      ? `Configured in Windows Credential Manager ·••••${credential.data.lastFour ?? ""}`
+      : credential.data.source === "user"
+        ? `Configured for your account ·••••${credential.data.lastFour ?? ""}`
+        : "Configured by the hosted server"
+    : app.capabilities.platform === "desktop"
+      ? "No key configured. All non-AI writing features remain available offline."
+      : "No key configured. All non-AI writing features remain available.";
 
   return (
     <div className="page settings-page">
       <section className="page-heading">
         <p className="eyebrow">Configuration</p>
         <h1>Settings</h1>
-        <p>Configure private AI access, writing models, and local recovery.</p>
+        <p>
+          Configure private AI access and writing models
+          {app.capabilities.localBackups ? ", plus local recovery" : ""}.
+        </p>
       </section>
       {settings.error || models.error || credential.error ? (
         <ErrorNotice error={settings.error ?? models.error ?? credential.error} />
@@ -95,20 +118,22 @@ export function SettingsPage() {
           <div className="settings-note">
             <ShieldCheck size={20} />
             <div>
-              <strong>Your key stays in Windows Credential Manager</strong>
+              <strong>
+                {app.capabilities.platform === "desktop"
+                  ? "Your key stays in Windows Credential Manager"
+                  : "Your key is encrypted and scoped to your account"}
+              </strong>
               <p>
-                OpenRouter requests run in the native process. The UI never receives the saved key.
+                {app.capabilities.platform === "desktop"
+                  ? "OpenRouter requests run in the native process. The UI never receives the saved key."
+                  : "OpenRouter requests run on the hosted API. Saved plaintext is never returned to the browser."}
               </p>
             </div>
           </div>
           <div className="credential-field">
             <div>
               <label htmlFor="openrouter-key">OpenRouter API key</label>
-              <p>
-                {credential.data?.configured
-                  ? `Configured in the keychain ·••••${credential.data.lastFour ?? ""}`
-                  : "No key configured. All non-AI writing features remain available offline."}
-              </p>
+              <p>{credentialSummary}</p>
             </div>
             <div className="credential-input-row">
               <KeyRound size={17} />
@@ -128,7 +153,7 @@ export function SettingsPage() {
               >
                 {saveCredential.isPending ? "Validating…" : "Save key"}
               </button>
-              {credential.data?.source === "keychain" ? (
+              {credential.data?.source === "keychain" || credential.data?.source === "user" ? (
                 <button
                   type="button"
                   className="button danger"
@@ -200,7 +225,7 @@ export function SettingsPage() {
         <div className="loading">Loading settings…</div>
       )}
 
-      <section className="settings-card">
+      {backups ? <section className="settings-card">
         <div>
           <p className="eyebrow">Local recovery</p>
           <h2>Backups</h2>
@@ -246,7 +271,8 @@ export function SettingsPage() {
             }
           />
         ) : null}
-      </section>
+      </section> : null}
+      {extraSection}
     </div>
   );
 }

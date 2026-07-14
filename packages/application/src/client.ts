@@ -27,8 +27,13 @@ import type {
 
 export type AppErrorCode =
   | "BAD_REQUEST"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"
+  | "RATE_LIMITED"
+  | "NETWORK_ERROR"
+  | "UNSUPPORTED"
   | "VALIDATION_ERROR"
   | "PROVIDER_ERROR"
   | "CREDENTIAL_ERROR"
@@ -69,6 +74,13 @@ export type ModelOption = {
   maxCompletionTokens: number | null;
 };
 export type DatabaseSnapshot = { name: string; createdAt: string; size: number };
+export type PlatformCapabilities = {
+  platform: "web" | "desktop";
+  accounts: boolean;
+  invitations: boolean;
+  localBackups: boolean;
+  nativeFileDialogs: boolean;
+};
 export type DefinitionKind = "genre" | "theme" | "tag";
 export type CustomDefinition = { id: string; kind: DefinitionKind; label: string };
 export type IdeationCollection = {
@@ -207,6 +219,9 @@ export type SettingsClient = {
   credential(): Promise<OpenRouterCredentialStatus>;
   saveCredential(apiKey: string): Promise<OpenRouterCredentialStatus>;
   deleteCredential(): Promise<void>;
+};
+
+export type BackupsClient = {
   databaseSnapshots(): Promise<DatabaseSnapshot[]>;
   backupNow(): Promise<unknown>;
   openBackupFolder(): Promise<void>;
@@ -253,6 +268,7 @@ export type ArchivesClient = {
 };
 
 export type AsterismClient = {
+  capabilities: PlatformCapabilities;
   projects: ProjectsClient;
   manuscript: ManuscriptClient;
   notes: NotesClient;
@@ -260,6 +276,7 @@ export type AsterismClient = {
   ideation: IdeationClient;
   prompts: PromptsClient;
   settings: SettingsClient;
+  backups: BackupsClient | null;
   generation: GenerationClient;
   chat: ChatClient;
   archives: ArchivesClient;
@@ -295,8 +312,11 @@ export function createAsterismClient(
   transport: RequestTransport,
   streams: StreamingAdapters,
   archives: ArchivesClient,
+  capabilities: PlatformCapabilities,
+  backups: BackupsClient | null,
 ): AsterismClient {
   return {
+    capabilities,
     projects: {
       list: () => request(transport, "/api/projects"),
       create: (input) => request(transport, "/api/projects", "POST", input),
@@ -393,12 +413,8 @@ export function createAsterismClient(
       credential: () => request(transport, "/api/settings/openrouter"),
       saveCredential: (apiKey) => request(transport, "/api/settings/openrouter", "PUT", { apiKey }),
       deleteCredential: () => request(transport, "/api/settings/openrouter", "DELETE"),
-      databaseSnapshots: () => request(transport, "/api/backups/database"),
-      backupNow: () => request(transport, "/api/backups/projects", "POST"),
-      openBackupFolder: () => request(transport, "/api/backups/open", "POST"),
-      restoreDatabaseSnapshot: (name) =>
-        request(transport, "/api/backups/database/restore", "POST", { name }),
     },
+    backups,
     generation: {
       start: streams.generation,
       accept: (id, input) => request(transport, `/api/generations/${id}/accept`, "POST", input),

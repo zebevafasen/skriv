@@ -1,68 +1,53 @@
 # Asterism
 
-Asterism is a private Windows desktop application for planning and writing long-form fiction. Projects, manuscript Scenes, revisions, notes, Compendium entries, ideation data, prompts, and Chat history are stored locally. No account, hosted service, Docker installation, or database server is required.
+Asterism is developed as two independent writing products from one shared codebase:
 
-AI features are optional. They connect to OpenRouter only when you explicitly generate text, summarize a Scene, or send a Chat message. The OpenRouter key is stored in Windows Credential Manager and is never returned to the React application.
+- **Web** is a responsive hosted private beta with accounts, invitations, PostgreSQL, encrypted per-user OpenRouter credentials, and Vercel deployment.
+- **Desktop** is a Windows-first Tauri application with no accounts, local SQLite storage, Windows Credential Manager, native file dialogs, and automatic local backups.
+- **Shared** packages contain the editor, writing UI, contracts, prompts, context logic, application client, archive codec, and manuscript exporters.
 
-## Install the beta
-
-The Windows x64 CI build produces an unsigned current-user NSIS installer. Windows may show a SmartScreen warning because this beta is not code-signed. The installer does not require administrator access and installs the normal WebView2 bootstrapper when necessary.
-
-All non-AI writing features work offline after installation.
-
-## Local data and recovery
-
-The canonical database is:
-
-```text
-%LOCALAPPDATA%\Asterism\asterism.sqlite3
-```
-
-Asterism creates two kinds of backups beneath `%LOCALAPPDATA%\Asterism\backups`:
-
-- Portable `.asterism` project archives after project changes, on a 15-minute maximum frequency, on clean close, and immediately before deletion. The newest 10 and one daily point for 30 days are retained.
-- Internal SQLite safety snapshots before migration and for manual/daily recovery. Seven recent and four weekly points are retained.
-
-Use **Settings → Backups** to back up immediately, open the backup folder, or restore an internal database snapshot. Export any project as a portable `.asterism` archive for independent recovery or transfer to another computer. Legacy schema-v4 JSON project exports remain importable.
-
-Project archives never contain the OpenRouter key, global application preferences, global custom prompts/catalogs, transient generations, or telemetry.
+The two stores do not synchronize. A checksummed schema-v5 `.asterism` archive is the deliberate project-transfer format. Both products import and export it; legacy schema-v4 JSON is import-only.
 
 ## Development
 
-Windows 10/11 x64 is the supported development and release platform. Install:
-
-- Node.js 24 and pnpm 11
-- stable Rust with `rustfmt` and `clippy`
-- Visual Studio 2022 Build Tools with the Desktop development with C++ workload
-- Microsoft Edge WebView2 Runtime
-
-Then run:
+Install Node.js 24 and pnpm 11. Hosted development also needs Docker; desktop development needs stable Rust, Visual Studio C++ Build Tools, and WebView2.
 
 ```powershell
 pnpm install
-pnpm desktop:dev
+pnpm infra:up
+pnpm db:migrate
+pnpm web:dev
 ```
 
-Useful commands:
+Desktop development uses `pnpm desktop:dev`.
+
+Common verification commands:
 
 ```powershell
 pnpm typecheck
 pnpm lint
 pnpm test
+pnpm build
+pnpm build:vercel
+pnpm web:e2e
 pnpm test:native
-pnpm desktop:check
 pnpm desktop:build
 pnpm desktop:e2e
 ```
 
-`desktop:e2e` also requires `cargo install tauri-driver --locked`.
-
 ## Repository layout
 
-- `apps/desktop` — Vite entry point, Tauri configuration, Rust commands, security capabilities, and NSIS packaging.
-- `packages/ui` — React editor and all reusable writing surfaces.
-- `packages/application` — typed application boundary and platform-neutral export logic.
-- `packages/local-store` — SQLite schema, migrations, repositories/workflows, streaming orchestration, archives, and backup scheduling.
-- `packages/contracts`, `packages/core`, `packages/content` — validation contracts, pure writing/context helpers, and bundled defaults.
+- `apps/web` — Vite shell, authenticated HTTP/NDJSON client, login, invitations, and browser file transfer.
+- `apps/api` — Fastify, Better Auth, ownership isolation, hosted AI orchestration, archive transfers, and Vercel handler.
+- `apps/desktop` — Vite/Tauri shell, Rust native services, security capabilities, and NSIS packaging.
+- `packages/ui` — shared React writing experience.
+- `packages/application` — typed client boundary, archive codec, workflows, and exporters.
+- `packages/db` — PostgreSQL schema and generated hosted migrations.
+- `packages/local-store` — SQLite desktop implementation and local backup scheduling.
+- `packages/contracts`, `packages/core`, `packages/content`, `packages/ai` — platform-neutral schemas and writing logic.
 
-See [desktop operations](docs/operations.md) and the [desktop design specification](Asterism_Design_Specification_v5.md) for recovery, security, and release details.
+## Release safety
+
+`main` remains the production web baseline until the integration branch passes Unified CI, produces a staging Vercel preview and Windows installer, completes the manual parity/archive checklist, and receives explicit written approval. Auto-merge is not permitted. The final integration must use one merge commit after a production PostgreSQL backup.
+
+See [operations](docs/operations.md), [Vercel deployment](docs/vercel.md), and the [design specification](Asterism_Design_Specification_v5.md).

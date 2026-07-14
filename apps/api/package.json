@@ -1,0 +1,38 @@
+{
+  "name": "@asterism/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@asterism/ai": "workspace:*",
+    "@asterism/application": "workspace:*",
+    "@asterism/config": "workspace:*",
+    "@asterism/content": "workspace:*",
+    "@asterism/contracts": "workspace:*",
+    "@asterism/core": "workspace:*",
+    "@asterism/db": "workspace:*",
+    "@fastify/cors": "11.3.0",
+    "@fastify/rate-limit": "11.1.0",
+    "@fastify/sensible": "6.0.4",
+    "@vercel/blob": "^2.4.0",
+    "better-auth": "1.6.23",
+    "docx": "^9.7.1",
+    "drizzle-orm": "0.45.2",
+    "fastify": "5.10.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "8.22.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/pg": "8.20.0",
+    "tsx": "4.23.0"
+  }
+}

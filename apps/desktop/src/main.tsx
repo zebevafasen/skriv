@@ -1,5 +1,5 @@
 import { configureAsterismClient } from "@asterism/application";
-import { flushPendingPersistence, queryClient, router } from "@asterism/ui";
+import { createAsterismRouter, flushPendingPersistence } from "@asterism/ui";
 import "@asterism/ui/styles.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
@@ -71,6 +71,7 @@ function RecoveryScreen({ error }: { error: string }) {
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found.");
 const reactRoot = createRoot(root);
+const { queryClient, router } = createAsterismRouter();
 
 async function start() {
   const status = await invoke<DatabaseStatus>("database_status");

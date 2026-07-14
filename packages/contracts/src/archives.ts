@@ -18,6 +18,32 @@ import { projectNoteSchema } from "./notes.js";
 import { ingredientPackValuesSchema } from "./packages.js";
 import { idSchema, timestampSchema } from "./primitives.js";
 
+export const archivePathSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (path) =>
+      !path.startsWith("/") &&
+      !path.includes("\\") &&
+      path.split("/").every((segment) => segment !== "" && segment !== "." && segment !== ".."),
+    "Archive paths must be relative and cannot contain traversal segments.",
+  );
+
+export const projectArchiveManifestEntrySchema = z.object({
+  path: archivePathSchema,
+  size: z.number().int().nonnegative(),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  mime: z.string().min(1).nullable().optional(),
+});
+
+export const projectArchiveManifestV5Schema = z.object({
+  format: z.literal("asterism-project"),
+  schemaVersion: z.literal(5),
+  applicationVersion: z.string().min(1),
+  exportedAt: timestampSchema,
+  entries: z.array(projectArchiveManifestEntrySchema).min(1),
+});
+
 export const archiveAssetReferenceSchema = z.object({
   path: z.string().regex(/^assets\/[A-Za-z0-9._/-]+$/),
   mime: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
@@ -154,4 +180,6 @@ export const legacyProjectArchiveV4Schema = z.object({
 });
 
 export type ProjectArchiveV5 = z.infer<typeof projectArchiveV5Schema>;
+export type ProjectArchiveManifestV5 = z.infer<typeof projectArchiveManifestV5Schema>;
+export type ProjectArchiveManifestEntry = z.infer<typeof projectArchiveManifestEntrySchema>;
 export type LegacyProjectArchiveV4 = z.infer<typeof legacyProjectArchiveV4Schema>;

@@ -2,6 +2,8 @@
 
 ## Product boundary
 
+> **Unified product amendment (2026-07-14):** This specification now sits inside a two-product monorepo. The desktop boundary below remains authoritative for Tauri. The responsive hosted product adds `apps/web`, `apps/api`, PostgreSQL, Better Auth, invitations, and environment-isolated private Vercel Blob transfers. Both shells inject `AsterismClient` and fixed `PlatformCapabilities`; shared UI never probes platform globals. Their stores remain independent and schema-v5 `.asterism` archives are the only supported transfer mechanism.
+
 Asterism is a Windows-first, single-user desktop writing environment. Human-authored project state is canonical and local. The installed application requires neither Node.js nor a database server and remains fully useful offline. OpenRouter is the only release AI provider and is contacted only for an explicit AI action.
 
 The supported writing surface includes Projects, the continuous Scene manuscript editor, Outline and hierarchy reordering, optimistic Scene saves and revisions, Notes, Compendium, Ideation, ingredient catalogs, customizable Prompts, provisional generation acceptance/rejection, project-grounded Chat, and project import/export.
@@ -14,7 +16,7 @@ The supported writing surface includes Projects, the continuous Scene manuscript
 - `packages/local-store` owns SQLite mappings, writing workflows, archive projection/import, AI orchestration, and automatic project backup scheduling.
 - `packages/contracts`, `packages/core`, and `packages/content` own Zod contracts, pure context/prompt helpers, and bundled content.
 
-The previous HTTP server, browser deployment, authentication, workspaces, invitations, PostgreSQL schema, Vercel integration, and container configuration are not part of v5.
+Hosted-only identities, ownership, deployment, and PostgreSQL records remain internal to the web/API platform and are never exposed through platform-neutral project or prompt contracts. Desktop-only recovery is exposed through the nullable `BackupsClient` capability.
 
 ## Persistence model
 
