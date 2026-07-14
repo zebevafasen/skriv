@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { asterism } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { ModelSelect } from "./ModelSelect.js";
-import { IngredientPackPicker } from "./IngredientPackPicker.js";
+import { IngredientPackPickerModal, IngredientPackPicker } from "./IngredientPackPicker.js";
 import { IngredientPackCatalogManager } from "./IngredientPackCatalogManager.js";
 import { MentionTextarea } from "./MentionTextarea.js";
 
@@ -128,6 +128,7 @@ export function IdeationPanel({
   const [alternatives, setAlternatives] = useState<string[]>([]);
   const [model, setModel] = useState("");
   const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
+  const [ingredientPackPickerOpen, setIngredientPackPickerOpen] = useState(false);
   const [entityTypeId, setEntityTypeId] = useState("story.character");
   const [entityAlternatives, setEntityAlternatives] = useState<EntityAlternative[]>([]);
   const [developmentStage, setDevelopmentStage] = useState<"idle" | "choice" | "review" | "setup">(
@@ -742,16 +743,64 @@ export function IdeationPanel({
           <section className="ingredient-group">
             <div className="ingredient-pack-section-heading">
               <h3>Ingredient packs</h3>
-              <button
-                type="button"
-                className="button ghost compact"
-                disabled={genres.length === 0 && themes.length === 0 && tags.length === 0}
-                onClick={() => setIngredientPackManagerOpen(true)}
-              >
-                Save as ingredient pack
-              </button>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="button ghost compact"
+                  onClick={() => setIngredientPackPickerOpen(true)}
+                >
+                  Browse ingredient packs
+                </button>
+                <button
+                  type="button"
+                  className="button ghost compact"
+                  disabled={genres.length === 0 && themes.length === 0 && tags.length === 0}
+                  onClick={() => setIngredientPackManagerOpen(true)}
+                >
+                  Save as ingredient pack
+                </button>
+              </div>
             </div>
-            <IngredientPackPicker
+            
+            {importedIngredientPacks.data?.length ? (
+              <IngredientPackPicker
+                catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
+                selectedIds={
+                  new Set((importedIngredientPacks.data ?? []).map((pack) => pack.sourcePackId))
+                }
+                definitions={[
+                  ...(definitions.data?.package.genres.map((item) => ({
+                    ...item,
+                    kind: "genre" as const,
+                  })) ?? []),
+                  ...(definitions.data?.package.themes.map((item) => ({
+                    ...item,
+                    kind: "theme" as const,
+                  })) ?? []),
+                  ...(definitions.data?.package.tags.map((item) => ({
+                    ...item,
+                    kind: "tag" as const,
+                  })) ?? []),
+                  ...(definitions.data?.customDefinitions ?? []),
+                ]}
+                archivedIngredientPacks={(importedIngredientPacks.data ?? []).filter(
+                  (snapshot) =>
+                    !(ingredientPackCatalog.data?.packs ?? []).some(
+                      (pack) => pack.id === snapshot.sourcePackId,
+                    ),
+                )}
+                disabled={syncIngredientPacks.isPending}
+                onSelectionChange={(packIds) => syncIngredientPacks.mutate(packIds)}
+                hideToolbar={true}
+                selectedOnly={true}
+              />
+            ) : (
+              <p className="ingredient-pack-empty">No ingredient packs selected.</p>
+            )}
+
+            <IngredientPackPickerModal
+              open={ingredientPackPickerOpen}
+              onClose={() => setIngredientPackPickerOpen(false)}
               catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
               selectedIds={
                 new Set((importedIngredientPacks.data ?? []).map((pack) => pack.sourcePackId))
@@ -779,7 +828,10 @@ export function IdeationPanel({
               )}
               disabled={syncIngredientPacks.isPending}
               onSelectionChange={(packIds) => syncIngredientPacks.mutate(packIds)}
-              onManage={() => setIngredientPackManagerOpen(true)}
+              onManage={() => {
+                setIngredientPackPickerOpen(false);
+                setIngredientPackManagerOpen(true);
+              }}
             />
           </section>
         </div>

@@ -3,7 +3,7 @@ import type {
   IngredientPack,
   IngredientPackCatalog,
 } from "@asterism/contracts";
-import { Check, ChevronDown, Minus, Search, Settings2 } from "lucide-react";
+import { Check, ChevronDown, Minus, Search, Settings2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export type IngredientDefinition = {
@@ -83,6 +83,8 @@ export function IngredientPackPicker({
   archivedIngredientPacks = [],
   disabled = false,
   onManage,
+  hideToolbar = false,
+  selectedOnly = false,
 }: {
   catalog: IngredientPackCatalog;
   selectedIds: ReadonlySet<string>;
@@ -91,6 +93,8 @@ export function IngredientPackPicker({
   archivedIngredientPacks?: ProjectIngredientPack[];
   disabled?: boolean;
   onManage?: () => void;
+  hideToolbar?: boolean;
+  selectedOnly?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [ownership, setOwnership] = useState<"all" | "builtin" | "user">("all");
@@ -128,6 +132,7 @@ export function IngredientPackPicker({
         .map((collection) => {
           const allPacks = catalog.packs.filter((pack) => pack.collectionId === collection.id);
           const filteredPacks = allPacks.filter((pack) => {
+            if (selectedOnly && !selectedIds.has(pack.id)) return false;
             if (ownership !== "all" && pack.ownership !== ownership) return false;
             return ingredientPackMatchesSearch(
               pack,
@@ -169,7 +174,8 @@ export function IngredientPackPicker({
   return (
     <fieldset className="ingredient-pack-browser">
       <legend>Ingredient packs</legend>
-      <div className="ingredient-pack-toolbar">
+      {!hideToolbar ? (
+        <div className="ingredient-pack-toolbar">
         <div className="ingredient-pack-search">
           <Search size={14} aria-hidden="true" />
           <input
@@ -202,7 +208,8 @@ export function IngredientPackPicker({
             <Settings2 size={14} /> Manage
           </button>
         ) : null}
-      </div>
+        </div>
+      ) : null}
       <div className="ingredient-category-list">
         {visibleCategories.map(({ category, collections, allPacks }) => {
           const categoryPackIds = allPacks.map((pack) => pack.id);
@@ -366,7 +373,36 @@ export function IngredientPackPicker({
   );
 }
 
-function IngredientPackCard({
+export function IngredientPackPickerModal({
+  open,
+  onClose,
+  ...props
+}: { open: boolean; onClose: () => void } & React.ComponentProps<typeof IngredientPackPicker>) {
+  if (!open) return null;
+  return (
+    <div className="modal-backdrop ingredient-pack-picker-backdrop">
+      <div
+        className="modal ingredient-pack-picker-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ingredient-pack-picker-title"
+      >
+        <header>
+          <div>
+            <p className="eyebrow">Ingredient catalog</p>
+            <h2 id="ingredient-pack-picker-title">Browse ingredient packs</h2>
+          </div>
+          <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </header>
+        <IngredientPackPicker {...props} />
+      </div>
+    </div>
+  );
+}
+
+export function IngredientPackCard({
   pack,
   selected,
   disabled,

@@ -965,10 +965,22 @@ label small {
   font: 500 30px var(--serif);
 }
 
-.library-page .modal {
+.library-page .modal,
+.ingredient-pack-picker-modal {
   width: min(720px, calc(100% - 30px));
   max-height: calc(100vh - 40px);
   overflow: auto;
+}
+
+.ingredient-pack-picker-modal > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.ingredient-pack-picker-modal > header h2 {
+  margin-bottom: 0;
 }
 
 .new-project-fields {
@@ -1131,6 +1143,9 @@ label small {
 }
 
 /* Hierarchical ingredient-pack catalog */
+.ingredient-pack-section-heading {
+  margin-bottom: 16px;
+}
 .ingredient-pack-browser {
   display: grid;
   gap: 12px;
@@ -1147,10 +1162,16 @@ label small {
   clip-path: inset(50%);
 }
 .ingredient-pack-toolbar {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+.ingredient-pack-toolbar > * {
+  flex-shrink: 0;
+}
+.ingredient-pack-toolbar > .ingredient-pack-search {
+  flex: 1 1 200px;
 }
 .ingredient-pack-search {
   display: flex;
@@ -1345,8 +1366,8 @@ label small {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: start;
-  gap: 9px;
-  padding: 11px;
+  gap: 8px;
+  padding: 8px 10px;
   border: 0;
   background: transparent;
   color: var(--text);
@@ -1369,7 +1390,7 @@ label small {
 }
 .ingredient-pack-preview-toggle {
   width: 100%;
-  padding: 6px 10px;
+  padding: 5px 9px;
   border: 0;
   border-top: 1px solid #2d2d2d;
   background: #11111188;
