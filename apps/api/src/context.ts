@@ -10,8 +10,7 @@ export type AppContext = {
   db: Database;
   pool: Pool;
   env: ServerEnv;
-  defaultAi: AIProvider;
-  fakeAi: AIProvider;
+  defaultAi: AIProvider | null;
   getAi: (userId: string, model?: string) => Promise<AIProvider>;
   auth: AuthInstance;
 };

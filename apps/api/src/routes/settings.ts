@@ -1,3 +1,4 @@
+import type { ModelDescriptor } from "@asterism/ai";
 import {
   aiSettingsSchema,
   editorSettingsSchema,
@@ -18,8 +19,8 @@ import {
 import { parseWith } from "../http.js";
 
 const defaults = aiSettingsSchema.parse({
-  baseModel: "asterism/fake-prose",
-  contextModel: "asterism/fake-context",
+  baseModel: "openrouter/auto",
+  contextModel: "openrouter/auto",
   smartContextEnabled: true,
   recursionDepth: 2,
 });
@@ -28,7 +29,7 @@ const modelCache = new Map<
   string,
   {
     expiresAt: number;
-    models: Awaited<ReturnType<AppContext["defaultAi"]["listModels"]>>;
+    models: ModelDescriptor[];
   }
 >();
 
@@ -123,10 +124,16 @@ export async function registerSettingsRoutes(
 
   app.get("/api/settings/openrouter", async (request) => {
     const credential = await getOpenRouterCredential(context, request.userId);
+    const testAi = context.env.NODE_ENV === "test" && context.defaultAi?.name === "fake";
     return openRouterCredentialStatusSchema.parse({
-      configured: Boolean(credential || context.env.OPENROUTER_API_KEY),
-      source: credential ? "user" : context.env.OPENROUTER_API_KEY ? "server" : "none",
-      lastFour: credential?.secretLastFour ?? (context.env.OPENROUTER_API_KEY.slice(-4) || null),
+      configured: Boolean(credential || context.env.OPENROUTER_API_KEY || testAi),
+      source: credential
+        ? "user"
+        : context.env.OPENROUTER_API_KEY || testAi
+          ? "server"
+          : "none",
+      lastFour:
+        credential?.secretLastFour ?? (context.env.OPENROUTER_API_KEY.slice(-4) || null),
     });
   });
 

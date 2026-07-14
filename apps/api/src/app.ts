@@ -1,4 +1,4 @@
-import { createAIProvider, FakeAIProvider } from "@asterism/ai";
+import { createAIProvider } from "@asterism/ai";
 import { AppError } from "@asterism/application";
 import { loadServerEnv, type ServerEnv } from "@asterism/config";
 import { validateBuiltinContent } from "@asterism/content";
@@ -30,22 +30,26 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   validateBuiltinContent();
   const { db, pool } = createDatabase(env.DATABASE_URL);
   const auth = createAuth(db, env);
-  const defaultAi = createAIProvider({
-    provider: env.AI_PROVIDER,
-    fakeDelayMs: env.FAKE_AI_DELAY_MS,
-    apiKey: env.OPENROUTER_API_KEY,
-    baseUrl: env.OPENROUTER_BASE_URL,
-    appUrl: env.WEB_ORIGIN,
-  });
-  const fakeAi = new FakeAIProvider(env.FAKE_AI_DELAY_MS);
+  const defaultAi =
+    env.AI_PROVIDER === "fake" || env.OPENROUTER_API_KEY
+      ? createAIProvider({
+          provider: env.AI_PROVIDER,
+          fakeDelayMs: env.FAKE_AI_DELAY_MS,
+          apiKey: env.OPENROUTER_API_KEY,
+          baseUrl: env.OPENROUTER_BASE_URL,
+          appUrl: env.WEB_ORIGIN,
+        })
+      : null;
   const context: AppContext = {
     db,
     pool,
     env,
     auth: auth as AppContext["auth"],
     defaultAi,
-    fakeAi,
-    getAi: async () => defaultAi,
+    getAi: async () => {
+      if (defaultAi) return defaultAi;
+      throw new AppError("Configure OpenRouter in Settings.", "CREDENTIAL_ERROR");
+    },
   };
   context.getAi = createProviderResolver(context);
   const app = Fastify({
@@ -66,7 +70,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
 
   app.get("/api/health", async () => ({
     status: "ok",
-    provider: defaultAi.name,
+    provider: defaultAi?.name ?? "openrouter",
     contentPackage: "asterism.base",
   }));
   await registerProjectRoutes(app, context);
