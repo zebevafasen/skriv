@@ -138,7 +138,7 @@ export function ModelSelect({
           alignItems: "center",
           justifyContent: "space-between",
           width: "100%",
-          background: "#12110f",
+          background: "#111111",
           border: "1px solid var(--border)",
           borderRadius: "8px",
           padding: "10px 12px",
@@ -177,8 +177,8 @@ export function ModelSelect({
               maxHeight: menuLayout.maxHeight,
               transform: menuLayout.transform,
               zIndex: 200,
-              background: "#201e1a",
-              border: "1px solid #534736",
+              background: "#1e1e1e",
+              border: "1px solid #494949",
               borderRadius: "10px",
               boxShadow: "0 24px 70px #000c",
               display: "flex",
@@ -195,7 +195,7 @@ export function ModelSelect({
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
                   width: "100%",
-                  background: "#12110f",
+                  background: "#111111",
                   border: "1px solid var(--border)",
                   borderRadius: "6px",
                   padding: "8px 10px",
@@ -231,11 +231,11 @@ export function ModelSelect({
                         width: "100%",
                         border: 0,
                         textAlign: "left",
-                        background: isSelected ? "#2a2117" : "transparent",
+                        background: isSelected ? "#232323" : "transparent",
                         color: isSelected ? "var(--accent-bright)" : "var(--text)",
                       }}
                       onMouseEnter={(e) => {
-                        if (!isSelected) e.currentTarget.style.background = "#211e1a";
+                        if (!isSelected) e.currentTarget.style.background = "#1e1e1e";
                       }}
                       onMouseLeave={(e) => {
                         if (!isSelected) e.currentTarget.style.background = "transparent";

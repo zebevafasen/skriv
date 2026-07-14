@@ -24,10 +24,16 @@ type DefinitionsResponse = {
 
 type CreatedProject = { project: Project; initialSceneId: string };
 
-export function projectArtworkVariant(projectId: string, variants = 5) {
+export function projectArtworkVariant(projectId: string, variants = 9) {
   let hash = 0x811c9dc5;
   for (const character of projectId) hash = Math.imul(hash ^ character.charCodeAt(0), 0x01000193);
   return (hash >>> 0) % variants;
+}
+
+export function projectArtworkHue(projectId: string) {
+  let hash = 0x517cc1b7;
+  for (const character of projectId) hash = Math.imul(hash ^ character.charCodeAt(0), 0x01000193);
+  return (hash >>> 0) % 360;
 }
 
 export function LibraryPage() {
@@ -237,8 +243,10 @@ export function LibraryPage() {
             params={{ projectId: project.id }}
             className="project-card"
           >
-            <div className={`project-art art-${projectArtworkVariant(project.id)}`}>
-              <Sparkles size={20} />
+            <div
+              className={`project-art art-${projectArtworkVariant(project.id)}`}
+              style={{ "--art-hue": projectArtworkHue(project.id) } as React.CSSProperties}
+            >
             </div>
             <div className="project-card-body">
               <h2>{project.title}</h2>

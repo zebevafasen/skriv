@@ -6,6 +6,6 @@ describe("project artwork", () => {
     const id = "1c03c58d-9df3-4fe7-bd3c-7cb8ed13f510";
     expect(projectArtworkVariant(id)).toBe(projectArtworkVariant(id));
     expect(projectArtworkVariant(id)).toBeGreaterThanOrEqual(0);
-    expect(projectArtworkVariant(id)).toBeLessThan(5);
+    expect(projectArtworkVariant(id)).toBeLessThan(9);
   });
 });
