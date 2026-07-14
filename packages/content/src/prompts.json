@@ -30,7 +30,6 @@
           "Canonical project context:",
           "{{context_package}}",
           "",
-          "First Scene title: {{scene_title}}",
           "First Scene planning summary: {{scene_summary}}",
           "",
           "Opening direction:",
