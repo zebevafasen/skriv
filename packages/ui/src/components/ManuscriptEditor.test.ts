@@ -1,6 +1,20 @@
 import type { ManuscriptTree, Scene } from "@asterism/contracts";
 import { describe, expect, it } from "vitest";
 import { compositeDocument, selectionReplacementContent } from "../editor/manuscriptDocument.js";
+import { candidateControlsLayout } from "../utils/manuscript.js";
+
+describe("candidate controls layout", () => {
+  it("tracks the center of the manuscript editor when its sidebar changes", () => {
+    expect(candidateControlsLayout({ left: 0, width: 1_440 })).toEqual({
+      centerX: 720,
+      editorWidth: 1_440,
+    });
+    expect(candidateControlsLayout({ left: 380, width: 1_060 })).toEqual({
+      centerX: 910,
+      editorWidth: 1_060,
+    });
+  });
+});
 
 const scene = (id: string, title: string, position: number): Scene => ({
   id,

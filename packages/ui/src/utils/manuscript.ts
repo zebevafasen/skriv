@@ -1,5 +1,12 @@
 import type { ManuscriptTree, Scene } from "@asterism/contracts";
 
+export function candidateControlsLayout(editorBounds: { left: number; width: number }) {
+  return {
+    centerX: editorBounds.left + editorBounds.width / 2,
+    editorWidth: editorBounds.width,
+  };
+}
+
 export function updateSceneInTree(tree: ManuscriptTree, updated: Scene): ManuscriptTree {
   return {
     ...tree,

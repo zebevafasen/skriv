@@ -2695,10 +2695,10 @@ label small {
 
 .candidate-controls {
   position: fixed;
-  left: 50%;
+  left: var(--candidate-controls-center-x, 50%);
   bottom: 14px;
   z-index: 15;
-  width: min(650px, calc(100% - 40px));
+  width: min(650px, calc(var(--candidate-controls-editor-width, 100%) - 40px));
   margin: 0;
   transform: translateX(-50%);
   display: flex;
@@ -6697,7 +6697,7 @@ button.mobile-only-tab {
   }
 
   .candidate-controls {
-    width: calc(100% - 24px);
+    width: calc(var(--candidate-controls-editor-width, 100%) - 24px);
     padding: 10px;
   }
 

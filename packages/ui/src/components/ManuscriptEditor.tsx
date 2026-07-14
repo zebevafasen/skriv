@@ -78,7 +78,7 @@ import {
   selectionReplacementContent,
 } from "../editor/manuscriptDocument.js";
 import { trapFocusWithin } from "../utils/focus.js";
-import { updateSceneInTree } from "../utils/manuscript.js";
+import { candidateControlsLayout, updateSceneInTree } from "../utils/manuscript.js";
 import { ErrorNotice } from "./AppShell.js";
 import {
   EditorActionsContext,
@@ -558,6 +558,7 @@ export const ManuscriptEditor = forwardRef<
   const [selectionMenu, setSelectionMenu] = useState<SelectionMenu | null>(null);
   const [selectionPanel, setSelectionPanel] = useState<SelectionPanel | null>(null);
   const [active, setActive] = useState<ActiveGeneration | null>(null);
+  const hasActiveGeneration = active !== null;
   const [activeSceneId, setActiveSceneId] = useState(visibleScenes[0]?.id ?? "");
   const [error, setError] = useState<unknown>(null);
   const [conflicts, setConflicts] = useState<Set<string>>(() => new Set());
@@ -818,6 +819,25 @@ export const ManuscriptEditor = forwardRef<
     );
     editor.setEditable(!active);
   }, [active, editor]);
+  useEffect(() => {
+    if (!hasActiveGeneration) return;
+    const frame = editorColumnRef.current;
+    const controls = candidateControlsRef.current;
+    if (!frame || !controls) return;
+    const syncControlsLayout = () => {
+      const layout = candidateControlsLayout(frame.getBoundingClientRect());
+      controls.style.setProperty("--candidate-controls-center-x", `${layout.centerX}px`);
+      controls.style.setProperty("--candidate-controls-editor-width", `${layout.editorWidth}px`);
+    };
+    syncControlsLayout();
+    const resizeObserver = new ResizeObserver(syncControlsLayout);
+    resizeObserver.observe(frame);
+    window.addEventListener("resize", syncControlsLayout);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", syncControlsLayout);
+    };
+  }, [hasActiveGeneration]);
   useEffect(() => {
     if (!active || !editor) return;
     const frame = editorColumnRef.current;
