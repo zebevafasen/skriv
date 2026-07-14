@@ -2,9 +2,11 @@ import { projectSettingsSchema } from "@asterism/contracts";
 import { describe, expect, it } from "vitest";
 import {
   projectArtworkHue,
+  projectArtworkSecondaryHue,
   projectArtworkSeed,
   projectArtworkVariant,
-} from "./LibraryPage.js";
+  projectArtworkVariants,
+} from "../utils/projectArtwork.js";
 
 describe("project artwork", () => {
   it("is stable and remains within the available variants", () => {
@@ -14,7 +16,7 @@ describe("project artwork", () => {
     ).toBe(id);
     expect(projectArtworkVariant(id)).toBe(projectArtworkVariant(id));
     expect(projectArtworkVariant(id)).toBeGreaterThanOrEqual(0);
-    expect(projectArtworkVariant(id)).toBeLessThan(9);
+    expect(projectArtworkVariant(id)).toBeLessThan(projectArtworkVariants.length);
   });
 
   it("uses the archived artwork seed after an import assigns a new project id", () => {
@@ -34,6 +36,9 @@ describe("project artwork", () => {
     );
     expect(projectArtworkHue(projectArtworkSeed(imported))).toBe(
       projectArtworkHue(projectArtworkSeed(original)),
+    );
+    expect(projectArtworkSecondaryHue(projectArtworkSeed(imported))).toBe(
+      projectArtworkSecondaryHue(projectArtworkSeed(original)),
     );
   });
 });

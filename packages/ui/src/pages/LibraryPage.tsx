@@ -20,21 +20,7 @@ type DefinitionsResponse = {
 
 type CreatedProject = { project: Project; initialSceneId: string | null };
 
-export function projectArtworkVariant(projectId: string, variants = 9) {
-  let hash = 0x811c9dc5;
-  for (const character of projectId) hash = Math.imul(hash ^ character.charCodeAt(0), 0x01000193);
-  return (hash >>> 0) % variants;
-}
-
-export function projectArtworkHue(projectId: string) {
-  let hash = 0x517cc1b7;
-  for (const character of projectId) hash = Math.imul(hash ^ character.charCodeAt(0), 0x01000193);
-  return (hash >>> 0) % 360;
-}
-
-export function projectArtworkSeed(project: Pick<Project, "id" | "settings">) {
-  return project.settings.coverArtworkSeed || project.id;
-}
+import { projectArtworkVariant, projectArtworkHue, projectArtworkSecondaryHue, projectArtworkSeed, projectArtworkVariants } from "../utils/projectArtwork.js";
 
 export function LibraryPage() {
   const [query, setQuery] = useState("");
@@ -211,8 +197,8 @@ export function LibraryPage() {
               className="project-card"
             >
               <div
-                className={`project-art art-${projectArtworkVariant(artworkSeed)}`}
-                style={{ "--art-hue": projectArtworkHue(artworkSeed) } as React.CSSProperties}
+                className="project-art"
+                style={{ "--art-hue": projectArtworkHue(artworkSeed), "--art-secondary-hue": projectArtworkSecondaryHue(artworkSeed), ...projectArtworkVariants[projectArtworkVariant(artworkSeed)] } as React.CSSProperties}
               >
                 {project.settings.coverDataUrl ? (
                   <img src={project.settings.coverDataUrl} alt="" />
