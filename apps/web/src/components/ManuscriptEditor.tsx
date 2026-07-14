@@ -64,6 +64,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { api, streamGeneration } from "../api.js";
 import {
   AsterismDecorations,
@@ -515,6 +516,7 @@ export const ManuscriptEditor = forwardRef<
     scope: ManuscriptScope;
     entries: CompendiumEntry[];
     baseModel: string;
+    headerActionsTarget?: HTMLElement | null;
     models: Array<{ id: string; name: string }>;
     onSaved: (scene: Scene) => void;
     onOpenEntry: (entryIds: string[], direct: boolean) => void;
@@ -529,6 +531,7 @@ export const ManuscriptEditor = forwardRef<
     scope,
     entries,
     baseModel,
+    headerActionsTarget = null,
     models,
     onSaved,
     onOpenEntry,
@@ -543,6 +546,10 @@ export const ManuscriptEditor = forwardRef<
   const visibleScenes = useMemo(() => scenesForScope(tree, scope), [tree, scope]);
   const scopeKey = `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
   const [typographyOpen, setTypographyOpen] = useState(false);
+  const [typographyMenuPosition, setTypographyMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [mobileNavigatorOpen, setMobileNavigatorOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [editorSettings, setEditorSettings] = useState<EditorSettings>(editorSettingsDefaults);
@@ -569,7 +576,7 @@ export const ManuscriptEditor = forwardRef<
   const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorColumnRef = useRef<HTMLDivElement>(null);
   const candidateControlsRef = useRef<HTMLDivElement>(null);
-  const typographyControlRef = useRef<HTMLDivElement>(null);
+  const typographyAnchorRef = useRef<HTMLButtonElement>(null);
   const mobileNavigatorCloseRef = useRef<HTMLButtonElement>(null);
   const mobileToolsCloseRef = useRef<HTMLButtonElement>(null);
   const consumedFirstSceneIntentRef = useRef<string | null>(null);
@@ -587,6 +594,26 @@ export const ManuscriptEditor = forwardRef<
       queryClient.setQueryData(["editor-settings"], value);
     },
   });
+
+  const positionTypographyMenu = useCallback((anchor = typographyAnchorRef.current) => {
+    if (!anchor || window.matchMedia("(max-width: 700px)").matches) return;
+    const rect = anchor.getBoundingClientRect();
+    const width = Math.min(320, window.innerWidth - 16);
+    setTypographyMenuPosition({
+      top: rect.bottom + 8,
+      left: Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width)),
+    });
+  }, []);
+
+  const toggleTypographyMenu = (anchor: HTMLButtonElement) => {
+    typographyAnchorRef.current = anchor;
+    if (typographyOpen) {
+      setTypographyOpen(false);
+      return;
+    }
+    positionTypographyMenu(anchor);
+    setTypographyOpen(true);
+  };
 
   const saveScene = useCallback(async (editor: Editor, sceneId: string) => {
     const extracted = extractScene(editor, sceneId);
@@ -751,12 +778,22 @@ export const ManuscriptEditor = forwardRef<
   useEffect(() => {
     if (!typographyOpen) return;
     const closeOnOutsidePress = (event: PointerEvent) => {
-      if (!typographyControlRef.current?.contains(event.target as globalThis.Node))
+      if (!(event.target as Element).closest(".typography-control, .typography-menu"))
         setTypographyOpen(false);
     };
     document.addEventListener("pointerdown", closeOnOutsidePress, true);
     return () => document.removeEventListener("pointerdown", closeOnOutsidePress, true);
   }, [typographyOpen]);
+  useEffect(() => {
+    if (!typographyOpen || window.matchMedia("(max-width: 700px)").matches) return;
+    const reposition = () => positionTypographyMenu();
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
+    return () => {
+      window.removeEventListener("resize", reposition);
+      window.removeEventListener("scroll", reposition, true);
+    };
+  }, [positionTypographyMenu, typographyOpen]);
   useEffect(() => {
     const closeOverlays = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || activeRef.current) return;
@@ -1169,14 +1206,58 @@ export const ManuscriptEditor = forwardRef<
       className={`editor-column continuous-editor-column ${active ? "has-candidate-controls" : ""}`}
       style={editorStyle}
     >
-      <div className="editor-header manuscript-scope-header">
-        <div style={{ width: "100%", textAlign: "center" }}>
-          <h2>{scopeDisplayLabel}</h2>
-        </div>
-      </div>
+      {headerActionsTarget
+        ? createPortal(
+            <div className="workspace-editor-actions">
+              <button
+                type="button"
+                aria-label="Undo"
+                disabled={!editor?.can().chain().focus().undo().run()}
+                onClick={() => editor?.chain().focus().undo().run()}
+              >
+                <Undo2 size={15} />
+              </button>
+              <button
+                type="button"
+                aria-label="Redo"
+                disabled={!editor?.can().chain().focus().redo().run()}
+                onClick={() => editor?.chain().focus().redo().run()}
+              >
+                <Redo2 size={15} />
+              </button>
+              <button type="button" className="workspace-history" onClick={loadHistory}>
+                <History size={14} /> <span>History</span>
+              </button>
+              <div className="typography-control workspace-typography-control">
+                <button
+                  type="button"
+                  ref={typographyAnchorRef}
+                  className={typographyOpen ? "active" : ""}
+                  aria-label="Typography settings"
+                  aria-expanded={typographyOpen}
+                  onClick={(event) => toggleTypographyMenu(event.currentTarget)}
+                >
+                  Aa
+                </button>
+              </div>
+              <button
+                type="button"
+                className="workspace-ai-command"
+                onClick={() => {
+                  const latestModel = localStorage.getItem("asterism-latest-model");
+                  const attrs = latestModel ? { modelOverride: latestModel } : {};
+                  editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
+                }}
+              >
+                <Sparkles size={15} /> <span>AI</span>
+              </button>
+            </div>,
+            headerActionsTarget,
+          )
+        : null}
       <div className="editor-body">
         <div className="editor-frame continuous-editor-frame">
-          <div className="editor-toolbar">
+          <div className="editor-toolbar mobile-editor-toolbar">
             <button
               type="button"
               className="mobile-editor-context"
@@ -1229,7 +1310,7 @@ export const ManuscriptEditor = forwardRef<
               <History size={14} /> History
             </button>
             <span className="editor-toolbar-spacer" />
-            <div ref={typographyControlRef} className="typography-control desktop-editor-tool">
+            <div className="typography-control desktop-editor-tool">
               <button
                 type="button"
                 className={typographyOpen ? "active" : ""}
@@ -1239,8 +1320,21 @@ export const ManuscriptEditor = forwardRef<
               >
                 Aa
               </button>
-              {typographyOpen ? (
-                <div className="typography-menu">
+              {typographyOpen
+                ? createPortal(
+                    <div
+                      className="typography-menu typography-menu-portal"
+                      style={
+                        typographyMenuPosition
+                          ? {
+                              position: "fixed",
+                              top: typographyMenuPosition.top,
+                              right: "auto",
+                              left: typographyMenuPosition.left,
+                            }
+                          : undefined
+                      }
+                    >
                   <div className="typography-menu-heading">
                     <strong>Typography</strong>
                     <button
@@ -1369,8 +1463,10 @@ export const ManuscriptEditor = forwardRef<
                       <option value="right">Right</option>
                     </select>
                   </label>
-                </div>
-              ) : null}
+                    </div>,
+                    document.body,
+                  )
+                : null}
             </div>
             <button
               type="button"
@@ -1400,51 +1496,6 @@ export const ManuscriptEditor = forwardRef<
             </EditorActionsContext.Provider>
           </StructureActionsContext.Provider>
         </div>
-        <nav className="editor-side-nav">
-          {tree.acts.map((act) => {
-            const actScenes = visibleScenes.filter((s) =>
-              act.chapters.some((c) => c.scenes.some((cs) => cs.id === s.id)),
-            );
-            if (actScenes.length === 0) return null;
-            return (
-              <div key={act.id} className="nav-act">
-                <span className="nav-act-title">{structureLabels.acts.get(act.id)?.label}</span>
-                {act.chapters.map((chapter) => {
-                  const chapterScenes = visibleScenes.filter((s) =>
-                    chapter.scenes.some((cs) => cs.id === s.id),
-                  );
-                  if (chapterScenes.length === 0) return null;
-                  return (
-                    <div key={chapter.id} className="nav-chapter">
-                      <span className="nav-chapter-title">
-                        {structureLabels.chapters.get(chapter.id)?.label}
-                      </span>
-                      {chapter.scenes.map((scene) => {
-                        if (!visibleScenes.some((s) => s.id === scene.id)) return null;
-                        return (
-                          <button
-                            key={scene.id}
-                            type="button"
-                            className={`nav-scene ${scene.id === activeSceneId ? "active" : ""}`}
-                            onClick={() => {
-                              onSelectScene(scene.id);
-                              const el = document.querySelector(`[data-scene-id="${scene.id}"]`);
-                              if (el) {
-                                el.scrollIntoView({ behavior: "smooth", block: "start" });
-                              }
-                            }}
-                          >
-                            {structureLabels.scenes.get(scene.id)?.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </nav>
       </div>
       {mobileNavigatorOpen ? (
         <div className="mobile-sheet-backdrop">
@@ -1594,6 +1645,7 @@ export const ManuscriptEditor = forwardRef<
                 type="button"
                 onClick={() => {
                   setMobileToolsOpen(false);
+                  setTypographyMenuPosition(null);
                   setTypographyOpen(true);
                 }}
               >

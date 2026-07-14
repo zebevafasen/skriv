@@ -24,6 +24,60 @@ async function expectNoDocumentOverflow(page: Page) {
     );
 }
 
+async function expectElementScrolls(
+  page: Page,
+  scrollSelector: string,
+  contentSelector = scrollSelector,
+) {
+  await expect(page.locator(scrollSelector)).toBeVisible();
+  const result = await page.evaluate(
+    ({ scrollSelector, contentSelector }) => {
+      const scroller = document.querySelector<HTMLElement>(scrollSelector);
+      const content = document.querySelector<HTMLElement>(contentSelector);
+      if (!scroller || !content) throw new Error(`Missing scroll audit target: ${scrollSelector}`);
+
+      const spacer = document.createElement("div");
+      spacer.setAttribute("aria-hidden", "true");
+      spacer.style.height = "1400px";
+      spacer.style.minHeight = "1400px";
+      spacer.style.flex = "0 0 1400px";
+      spacer.style.gridColumn = "1 / -1";
+      content.append(spacer);
+
+      scroller.scrollTop = scroller.scrollHeight;
+      const metrics = {
+        clientHeight: scroller.clientHeight,
+        overflowY: getComputedStyle(scroller).overflowY,
+        scrollHeight: scroller.scrollHeight,
+        scrollTop: scroller.scrollTop,
+      };
+      spacer.remove();
+      scroller.scrollTop = 0;
+      return metrics;
+    },
+    { scrollSelector, contentSelector },
+  );
+
+  expect(["auto", "scroll"]).toContain(result.overflowY);
+  expect(result.scrollHeight).toBeGreaterThan(result.clientHeight);
+  expect(result.scrollTop).toBeGreaterThan(0);
+}
+
+async function expectDocumentScrolls(page: Page) {
+  const scrollY = await page.evaluate(() => {
+    const spacer = document.createElement("div");
+    spacer.setAttribute("aria-hidden", "true");
+    spacer.style.height = "1400px";
+    document.body.append(spacer);
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    const result = window.scrollY;
+    spacer.remove();
+    window.scrollTo(0, 0);
+    return result;
+  });
+  expect(scrollY).toBeGreaterThan(0);
+}
+
 for (const viewport of viewports) {
   test(`${viewport.name} keeps global pages inside the viewport`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -32,6 +86,7 @@ for (const viewport of viewports) {
       await page.goto(path);
       await expect(page.locator(".topbar")).toBeVisible();
       await expectNoDocumentOverflow(page);
+      await expectDocumentScrolls(page);
     }
 
     await page.goto("/");
@@ -56,6 +111,13 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await expect(page.getByRole("button", { name: "Write" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Back to projects" })).toBeHidden();
     await expect(page.getByRole("navigation", { name: "Project workspace" })).toBeVisible();
+    const mobileNavigation = page.getByRole("navigation", { name: "Project workspace" });
+    await expect(mobileNavigation.getByRole("button")).toHaveCount(6);
+    const mobileNavigationWidths = await mobileNavigation.evaluate((element) => ({
+      client: element.clientWidth,
+      scroll: element.scrollWidth,
+    }));
+    expect(mobileNavigationWidths.scroll).toBe(mobileNavigationWidths.client);
     await expect(page.locator(".topbar")).toBeHidden();
     await expect(page.locator(".project-bar")).toBeHidden();
     await expect(page.locator(".manuscript-viewbar")).toBeHidden();
@@ -150,6 +212,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
 
     await page.getByRole("button", { name: "More" }).click();
     await expect(page.locator(".mobile-project-menu")).toBeVisible();
+    await expect(page.locator(".mobile-project-menu").getByRole("button", { name: "Notes" })).toBeVisible();
     await page.getByRole("button", { name: "Project settings" }).click();
     await expect(page.locator(".project-settings-panel")).toBeVisible();
     await expectNoDocumentOverflow(page);
@@ -186,4 +249,139 @@ test("responsive controls retain touch-friendly targets", async ({ page }) => {
   const createButton = page.getByRole("button", { name: "Create story" });
   const createButtonBox = await createButton.boundingBox();
   expect(createButtonBox?.height).toBeGreaterThanOrEqual(44);
+});
+
+test("writing-first desktop workspace reclaims the canvas and persists the Compendium", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create story" }).click();
+  await page.getByPlaceholder("The Last Ember").fill(`Writing First ${Date.now()}`);
+  await page.getByRole("button", { name: "Create project" }).click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
+  const projectId = page.url().split("/").at(-1);
+  if (!projectId) throw new Error("Project ID was not present in the URL.");
+
+  try {
+    const header = page.locator(".workspace-header");
+    await expect(header).toBeVisible();
+    await expect(page.locator(".topbar")).toBeHidden();
+    await expect(page.locator(".project-bar")).toBeHidden();
+    await expect(page.locator(".manuscript-viewbar")).toBeHidden();
+    await expect(page.locator(".editor-side-nav")).toHaveCount(0);
+    expect((await header.boundingBox())?.height).toBe(56);
+
+    const compendium = page.locator(".compendium-sidebar");
+    await expect(compendium).toBeVisible();
+    expect((await compendium.boundingBox())?.width).toBe(320);
+    const compendiumWidths = await compendium.evaluate((element) => ({
+      client: element.clientWidth,
+      scroll: element.scrollWidth,
+    }));
+    expect(compendiumWidths.scroll).toBe(compendiumWidths.client);
+    await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Typography settings" })).toBeVisible();
+    await expectNoDocumentOverflow(page);
+
+    const typographyButton = page.getByRole("button", { name: "Typography settings" });
+    await typographyButton.click();
+    const typographyMenu = page.locator(".typography-menu-portal");
+    await expect(typographyMenu).toBeVisible();
+    const [typographyButtonBox, typographyMenuBox] = await Promise.all([
+      typographyButton.boundingBox(),
+      typographyMenu.boundingBox(),
+    ]);
+    const typographyButtonBottom =
+      (typographyButtonBox?.y ?? 0) + (typographyButtonBox?.height ?? 0);
+    const typographyButtonRight =
+      (typographyButtonBox?.x ?? 0) + (typographyButtonBox?.width ?? 0);
+    const typographyMenuRight =
+      (typographyMenuBox?.x ?? 0) + (typographyMenuBox?.width ?? 0);
+    expect(typographyMenuBox?.y).toBeGreaterThanOrEqual(typographyButtonBottom);
+    expect(Math.abs(typographyMenuRight - typographyButtonRight)).toBeLessThan(2);
+    expect(await typographyMenu.evaluate((element) => getComputedStyle(element).zIndex)).toBe("1000");
+    await typographyButton.click();
+
+    await page.getByRole("button", { name: "Manuscript navigator" }).click();
+    const navigator = page.getByRole("listbox", { name: "Manuscript hierarchy" });
+    await expect(navigator).toBeVisible();
+    await expect(navigator.getByRole("option")).toHaveCount(4);
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: "Collapse Compendium" }).click();
+    await expect(compendium).toBeHidden();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("asterism:workspace:compendium-open")))
+      .toBe("false");
+    await page.reload();
+    await expect(compendium).toBeHidden();
+
+    await page.getByRole("button", { name: "Open Compendium" }).click();
+    await expect(compendium).toBeVisible();
+
+    await page.setViewportSize({ width: 768, height: 900 });
+    await expect(compendium).toBeHidden();
+    await page.getByRole("button", { name: "Open Compendium" }).click();
+    await expect(compendium).toBeVisible();
+    await expect(page.locator(".manuscript-main")).toBeVisible();
+    await expect(page.locator(".tablet-sidebar-backdrop")).toBeVisible();
+    await page.locator(".tablet-sidebar-backdrop").click({ position: { x: 700, y: 100 } });
+    await expect(compendium).toBeHidden();
+    await expectNoDocumentOverflow(page);
+  } finally {
+    await page.request.delete(`/api/projects/${projectId}`);
+  }
+});
+
+test("every project workspace exposes a working vertical scroll container", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 720 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create story" }).click();
+  await page.getByPlaceholder("The Last Ember").fill(`Scroll Audit ${Date.now()}`);
+  await page.getByRole("button", { name: "Create project" }).click();
+  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
+  const projectUrl = page.url().split("?")[0];
+  const projectId = projectUrl.split("/").at(-1);
+  if (!projectId) throw new Error("Project ID was not present in the URL.");
+
+  try {
+    for (const viewport of [
+      { width: 1440, height: 720 },
+      { width: 768, height: 720 },
+      { width: 390, height: 700 },
+    ]) {
+      await page.setViewportSize(viewport);
+
+      await page.goto(projectUrl);
+      await expectElementScrolls(page, ".continuous-editor-column");
+
+      await page.goto(`${projectUrl}?view=outline`);
+      await expectElementScrolls(page, ".outline-grid");
+
+      await page.goto(`${projectUrl}?view=notes`);
+      if ((await page.locator(".notebook-editor").count()) === 0)
+        await page.getByRole("button", { name: "Create note" }).click();
+      await expect(page.locator(".notebook-editor")).toBeVisible();
+      await expectElementScrolls(
+        page,
+        viewport.width <= 700 ? ".notebook-editor-content" : ".notebook-main",
+      );
+
+      await page.goto(`${projectUrl}?tab=ideation`);
+      await expectElementScrolls(page, ".ideation-panel");
+
+      await page.goto(`${projectUrl}?tab=chat`);
+      await expectElementScrolls(page, ".chat-home");
+
+      await page.goto(`${projectUrl}?tab=settings`);
+      await expectElementScrolls(page, ".settings-content");
+
+      await page.goto(`${projectUrl}?tab=compendium`);
+      await expectElementScrolls(page, ".compendium-sidebar");
+      await expectNoDocumentOverflow(page);
+    }
+  } finally {
+    await page.request.delete(`/api/projects/${projectId}`);
+  }
 });

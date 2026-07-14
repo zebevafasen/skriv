@@ -3,10 +3,13 @@ import { findMentions, manuscriptLabels } from "@asterism/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
+  ArrowLeft,
   BookMarked,
   BookOpenText,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FileText,
   Layers3,
@@ -14,6 +17,8 @@ import {
   Lightbulb,
   MessageCircle,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Settings,
   StickyNote,
@@ -71,6 +76,12 @@ const ProjectSettingsPanel = lazy(() =>
 type Tab = "manuscript" | "compendium" | "ideation" | "chat" | "settings";
 type ManuscriptView = "write" | "outline" | "notes";
 type Model = { id: string; name: string };
+const compendiumPreferenceKey = "asterism:workspace:compendium-open";
+
+function preferredCompendiumState(): boolean {
+  if (window.matchMedia("(max-width: 1023px)").matches) return false;
+  return localStorage.getItem(compendiumPreferenceKey) !== "false";
+}
 
 function DeferredWorkspace({ name, children }: { name: string; children: ReactNode }) {
   return (
@@ -107,11 +118,11 @@ export function ProjectPage() {
   const [firstSceneGenerationIntent, setFirstSceneGenerationIntent] =
     useState<FirstSceneGenerationIntent | null>(null);
   const moreCloseRef = useRef<HTMLButtonElement>(null);
-  const scopePickerRef = useRef<HTMLDivElement>(null);
+  const moreControlRef = useRef<HTMLDivElement>(null);
+  const workspaceScopePickerRef = useRef<HTMLDivElement>(null);
   const ideationCompendiumCloseRef = useRef<HTMLButtonElement>(null);
-  const [compendiumOpen, setCompendiumOpen] = useState(
-    () => !window.matchMedia("(max-width: 900px)").matches,
-  );
+  const [compendiumOpen, setCompendiumOpen] = useState(preferredCompendiumState);
+  const [editorHeaderTarget, setEditorHeaderTarget] = useState<HTMLDivElement | null>(null);
   const view: ManuscriptView = search.view ?? "write";
   const scope = parseScope(search.scope);
   const selectedEntryId = search.entry ?? null;
@@ -143,12 +154,24 @@ export function ProjectPage() {
 
   useEffect(() => {
     if (!moreOpen) return;
-    requestAnimationFrame(() => moreCloseRef.current?.focus());
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMoreOpen(false);
+    requestAnimationFrame(() => {
+      if (window.matchMedia("(max-width: 700px)").matches) moreCloseRef.current?.focus();
+      else moreControlRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    });
+    const close = (event: KeyboardEvent | PointerEvent) => {
+      if (event instanceof KeyboardEvent) {
+        if (event.key === "Escape") setMoreOpen(false);
+        return;
+      }
+      if (window.matchMedia("(max-width: 700px)").matches) return;
+      if (!moreControlRef.current?.contains(event.target as Node)) setMoreOpen(false);
     };
     window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+    window.addEventListener("pointerdown", close);
+    return () => {
+      window.removeEventListener("keydown", close);
+      window.removeEventListener("pointerdown", close);
+    };
   }, [moreOpen]);
 
   useEffect(() => {
@@ -158,10 +181,11 @@ export function ProjectPage() {
         if (event.key === "Escape") setScopeMenuOpen(false);
         return;
       }
-      if (!scopePickerRef.current?.contains(event.target as Node)) setScopeMenuOpen(false);
+      if (!workspaceScopePickerRef.current?.contains(event.target as Node))
+        setScopeMenuOpen(false);
     };
     requestAnimationFrame(() =>
-      scopePickerRef.current
+      workspaceScopePickerRef.current
         ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"]')
         ?.focus(),
     );
@@ -174,19 +198,28 @@ export function ProjectPage() {
   }, [scopeMenuOpen]);
 
   useEffect(() => {
-    const mobileQuery = window.matchMedia("(max-width: 900px)");
-    const handleViewportChange = (event: MediaQueryListEvent) => setCompendiumOpen(!event.matches);
-    mobileQuery.addEventListener("change", handleViewportChange);
-    return () => mobileQuery.removeEventListener("change", handleViewportChange);
+    const compactQuery = window.matchMedia("(max-width: 1023px)");
+    const handleViewportChange = () => setCompendiumOpen(preferredCompendiumState());
+    compactQuery.addEventListener("change", handleViewportChange);
+    return () => compactQuery.removeEventListener("change", handleViewportChange);
   }, []);
   useEffect(() => {
     if (
       (tab === "chat" || tab === "compendium") &&
-      window.matchMedia("(max-width: 900px)").matches
+      window.matchMedia("(max-width: 1023px)").matches
     ) {
       setCompendiumOpen(false);
     }
   }, [tab]);
+
+  const toggleCompendium = () => {
+    setCompendiumOpen((current) => {
+      const next = !current;
+      if (!window.matchMedia("(max-width: 1023px)").matches)
+        localStorage.setItem(compendiumPreferenceKey, String(next));
+      return next;
+    });
+  };
   const [previewEntryIds, setPreviewEntryIds] = useState<string[]>([]);
   const editorRef = useRef<ManuscriptEditorHandle | null>(null);
   const tree = useQuery({
@@ -428,6 +461,8 @@ export function ProjectPage() {
       <nav className="mobile-project-nav" aria-label="Project workspace">
         <button
           type="button"
+          aria-label="Write"
+          title="Write"
           className={tab === "manuscript" && view === "write" ? "active" : ""}
           aria-current={tab === "manuscript" && view === "write" ? "page" : undefined}
           onClick={async () => {
@@ -435,10 +470,12 @@ export function ProjectPage() {
             await updateSearch({ tab: undefined, view: undefined });
           }}
         >
-          <BookOpenText size={16} /> Write
+          <BookOpenText size={17} />
         </button>
         <button
           type="button"
+          aria-label="Outline"
+          title="Outline"
           className={tab === "manuscript" && view === "outline" ? "active" : ""}
           aria-current={tab === "manuscript" && view === "outline" ? "page" : undefined}
           onClick={async () => {
@@ -446,21 +483,12 @@ export function ProjectPage() {
             await updateSearch({ tab: undefined, view: "outline" });
           }}
         >
-          <FileText size={16} /> Outline
+          <FileText size={17} />
         </button>
         <button
           type="button"
-          className={tab === "manuscript" && view === "notes" ? "active" : ""}
-          aria-current={tab === "manuscript" && view === "notes" ? "page" : undefined}
-          onClick={async () => {
-            await editorRef.current?.flush();
-            await updateSearch({ tab: undefined, view: "notes" });
-          }}
-        >
-          <StickyNote size={16} /> Notes
-        </button>
-        <button
-          type="button"
+          aria-label="Compendium"
+          title="Compendium"
           className={tab === "compendium" ? "active" : ""}
           aria-current={tab === "compendium" ? "page" : undefined}
           onClick={async () => {
@@ -468,10 +496,12 @@ export function ProjectPage() {
             await updateSearch({ tab: "compendium", view: undefined });
           }}
         >
-          <BookMarked size={16} /> Compendium
+          <BookMarked size={17} />
         </button>
         <button
           type="button"
+          aria-label="Chat"
+          title="Chat"
           className={tab === "chat" ? "active" : ""}
           aria-current={tab === "chat" ? "page" : undefined}
           onClick={async () => {
@@ -479,10 +509,12 @@ export function ProjectPage() {
             await updateSearch({ tab: "chat", view: undefined });
           }}
         >
-          <MessageCircle size={16} /> Chat
+          <MessageCircle size={17} />
         </button>
         <button
           type="button"
+          aria-label="Ideation"
+          title="Ideation"
           className={tab === "ideation" ? "active" : ""}
           aria-current={tab === "ideation" ? "page" : undefined}
           onClick={async () => {
@@ -490,133 +522,349 @@ export function ProjectPage() {
             await updateSearch({ tab: "ideation", view: undefined });
           }}
         >
-          <Lightbulb size={16} /> Ideation
+          <Lightbulb size={17} />
         </button>
         <button
           type="button"
-          className={tab === "settings" || moreOpen ? "active" : ""}
+          aria-label="More"
+          title="More"
+          className={tab === "settings" || view === "notes" || moreOpen ? "active" : ""}
           aria-expanded={moreOpen}
           aria-haspopup="dialog"
           onClick={() => setMoreOpen(true)}
         >
-          <MoreHorizontal size={17} /> More
+          <MoreHorizontal size={18} />
         </button>
       </nav>
 
-      <div className="project-bar">
-        <div className="project-title-row">
-          <p className="eyebrow">Project</p>
-          <div className="project-title-actions">
-            <h1>{tree.data.project.title}</h1>
-            <button
-              type="button"
-              title="Rename Project"
-              onClick={async () => {
-                const title = (
-                  await dialog.prompt({
-                    title: "Rename Project",
-                    label: "Project title",
-                    initialValue: tree.data.project.title,
-                  })
-                )?.trim();
-                if (!title || title === tree.data?.project.title) return;
-                await api(`/api/projects/${projectId}`, {
-                  method: "PATCH",
-                  body: JSON.stringify({ title }),
-                });
-                await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
-              }}
-            >
-              <Pencil size={12} />
-            </button>
-            <button
-              type="button"
-              title="Delete Project"
-              onClick={async () => {
-                const acts = tree.data.acts.length;
-                const chapters = tree.data.acts.reduce((sum, act) => sum + act.chapters.length, 0);
-                const scenes = allScenes.length;
-                if (
-                  !(await dialog.confirm({
-                    title: `Delete “${tree.data.project.title}”?`,
-                    body: `This permanently deletes ${acts} acts, ${chapters} chapters, ${scenes} scenes, Compendium entries, Chat history, and generation history. This cannot be undone.`,
-                    confirmLabel: "Delete Project",
-                    destructive: true,
-                  }))
-                )
-                  return;
-                await api(`/api/projects/${projectId}`, { method: "DELETE" });
-                window.location.assign("/");
-              }}
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="button ghost project-export"
-          onClick={() => setExportOpen(true)}
-        >
-          <Download size={15} /> Export
-        </button>
-        <nav className="project-tabs">
+      <header className="workspace-header">
+        <div className="workspace-project-identity">
+          <Link to="/" className="workspace-home" aria-label="Back to projects">
+            <ArrowLeft size={17} />
+          </Link>
           <button
             type="button"
-            className={tab === "manuscript" ? "active" : ""}
-            onClick={() => void updateSearch({ tab: undefined })}
+            className="workspace-sidebar-toggle"
+            aria-label={compendiumOpen ? "Collapse Compendium" : "Open Compendium"}
+            aria-pressed={compendiumOpen}
+            onClick={toggleCompendium}
           >
-            <BookOpenText size={16} /> Manuscript
+            {compendiumOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
+          </button>
+          <span className="workspace-project-title" title={tree.data.project.title}>
+            {tree.data.project.title}
+          </span>
+        </div>
+
+        <nav className="workspace-view-tabs" aria-label="Project views">
+          <button
+            type="button"
+            className={tab === "manuscript" && view === "write" ? "active" : ""}
+            onClick={async () => {
+              await editorRef.current?.flush();
+              await updateSearch({ tab: undefined, view: undefined });
+            }}
+          >
+            <BookOpenText size={16} /> <span>Write</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "manuscript" && view === "outline" ? "active" : ""}
+            onClick={async () => {
+              await editorRef.current?.flush();
+              await updateSearch({ tab: undefined, view: "outline" });
+            }}
+          >
+            <FileText size={16} /> <span>Outline</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "manuscript" && view === "notes" ? "active" : ""}
+            onClick={async () => {
+              await editorRef.current?.flush();
+              await updateSearch({ tab: undefined, view: "notes" });
+            }}
+          >
+            <StickyNote size={16} /> <span>Notes</span>
           </button>
           <button
             type="button"
             className={tab === "chat" ? "active" : ""}
             onClick={async () => {
               await editorRef.current?.flush();
-              setCompendiumOpen(false);
-              await updateSearch({ tab: "chat" });
+              await updateSearch({ tab: "chat", view: undefined });
             }}
           >
-            <MessageCircle size={16} /> Chat
+            <MessageCircle size={16} /> <span>Chat</span>
           </button>
           <button
             type="button"
             className={tab === "ideation" ? "active" : ""}
             onClick={async () => {
               await editorRef.current?.flush();
-              await updateSearch({ tab: "ideation" });
+              await updateSearch({ tab: "ideation", view: undefined });
             }}
           >
-            <Lightbulb size={16} /> Ideation
+            <Lightbulb size={16} /> <span>Ideation</span>
           </button>
-          <button
-            type="button"
-            className={tab === "settings" ? "active" : ""}
-            onClick={async () => {
-              await editorRef.current?.flush();
-              await updateSearch({ tab: "settings" });
-            }}
-          >
-            <Settings size={16} /> Settings
+        </nav>
+
+        <div className="workspace-context">
+          {tab === "manuscript" && view === "write" && scope ? (
+            <>
+              <div className="workspace-scene-stepper">
+                <button
+                  type="button"
+                  aria-label="Previous Scene"
+                  disabled={!selectedLocation || allScenes[0]?.id === selectedLocation.scene.id}
+                  onClick={() => {
+                    const index = allScenes.findIndex(
+                      (scene) => scene.id === selectedLocation?.scene.id,
+                    );
+                    const previous = index > 0 ? allScenes[index - 1] : undefined;
+                    if (previous) void selectScene(previous.id);
+                  }}
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next Scene"
+                  disabled={!selectedLocation || allScenes.at(-1)?.id === selectedLocation.scene.id}
+                  onClick={() => {
+                    const index = allScenes.findIndex(
+                      (scene) => scene.id === selectedLocation?.scene.id,
+                    );
+                    const next =
+                      index >= 0 && index < allScenes.length - 1
+                        ? allScenes[index + 1]
+                        : undefined;
+                    if (next) void selectScene(next.id);
+                  }}
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+              <div
+                ref={workspaceScopePickerRef}
+                className="manuscript-scope-picker workspace-scope-picker"
+              >
+                <button
+                  type="button"
+                  className={`manuscript-scope-trigger ${scopeMenuOpen ? "open" : ""}`}
+                  aria-label="Manuscript navigator"
+                  aria-haspopup="listbox"
+                  aria-expanded={scopeMenuOpen}
+                  onClick={() => setScopeMenuOpen((current) => !current)}
+                >
+                  <span className="manuscript-scope-trigger-copy">
+                    <strong>{scopeLabel.primary}</strong>
+                    <small>{scopeLabel.secondary}</small>
+                  </span>
+                  <ChevronDown size={15} aria-hidden="true" />
+                </button>
+                {scopeMenuOpen ? (
+                  <div
+                    className="manuscript-scope-menu workspace-scope-menu"
+                    role="listbox"
+                    aria-label="Manuscript hierarchy"
+                    onKeyDown={handleScopeMenuKeyDown}
+                  >
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={scope.kind === "story"}
+                      className="manuscript-scope-option featured"
+                      onClick={() => void chooseScope({ kind: "story" })}
+                    >
+                      <Layers3 size={16} aria-hidden="true" />
+                      <span>
+                        <strong>Everything</strong>
+                        <small>Full manuscript</small>
+                      </span>
+                      {scope.kind === "story" ? <Check size={15} aria-hidden="true" /> : null}
+                    </button>
+                    {tree.data.acts.map((act) => (
+                      <fieldset
+                        key={act.id}
+                        className="manuscript-scope-group"
+                        aria-label={structureLabels?.acts.get(act.id)?.label ?? "Act"}
+                      >
+                        <legend className="manuscript-scope-group-label">
+                          {structureLabels?.acts.get(act.id)?.label ?? "Act"}
+                        </legend>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={scope.kind === "act" && scope.id === act.id}
+                          className="manuscript-scope-option nested"
+                          onClick={() => void chooseScope({ kind: "act", id: act.id })}
+                        >
+                          <span>
+                            <strong>Full Act</strong>
+                            <small>{act.chapters.length} chapters</small>
+                          </span>
+                          {scope.kind === "act" && scope.id === act.id ? (
+                            <Check size={15} aria-hidden="true" />
+                          ) : null}
+                        </button>
+                        {act.chapters.map((chapter) => (
+                          <div className="workspace-scope-chapter" key={chapter.id}>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={scope.kind === "chapter" && scope.id === chapter.id}
+                              className="manuscript-scope-option nested"
+                              onClick={() => void chooseScope({ kind: "chapter", id: chapter.id })}
+                            >
+                              <span>
+                                <strong>
+                                  {structureLabels?.chapters.get(chapter.id)?.label ?? "Chapter"}
+                                </strong>
+                                <small>{chapter.scenes.length} scenes</small>
+                              </span>
+                              {scope.kind === "chapter" && scope.id === chapter.id ? (
+                                <Check size={15} aria-hidden="true" />
+                              ) : null}
+                            </button>
+                            {chapter.scenes.map((scene) => (
+                              <button
+                                type="button"
+                                role="option"
+                                aria-selected={scope.kind === "scene" && scope.id === scene.id}
+                                className="manuscript-scope-option scene-option"
+                                key={scene.id}
+                                onClick={() => void chooseScope({ kind: "scene", id: scene.id })}
+                              >
+                                <span>
+                                  <strong>
+                                    {structureLabels?.scenes.get(scene.id)?.label ?? "Scene"}
+                                  </strong>
+                                </span>
+                                {scope.kind === "scene" && scope.id === scene.id ? (
+                                  <Check size={15} aria-hidden="true" />
+                                ) : null}
+                              </button>
+                            ))}
+                          </div>
+                        ))}
+                      </fieldset>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div className="manuscript-scope-stats workspace-scope-stats" aria-live="polite">
+                <strong>{new Intl.NumberFormat().format(scopedWordCount)} words</strong>
+                <span>
+                  {scopedPageCount} {scopedPageCount === 1 ? "page" : "pages"} ·{" "}
+                  {scopedReadMinutes} min read
+                </span>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <div className="workspace-actions">
+          <div className="workspace-editor-slot" ref={setEditorHeaderTarget} />
+          <button type="button" className="workspace-export" onClick={() => setExportOpen(true)}>
+            <Download size={15} /> <span>Export</span>
           </button>
-          {(tab === "manuscript" || tab === "chat") && (
+          <div className="workspace-more-control" ref={moreControlRef}>
             <button
               type="button"
-              className={`mobile-only-tab ${compendiumOpen ? "active" : ""}`}
-              aria-pressed={compendiumOpen}
-              aria-label={compendiumOpen ? "Show manuscript" : "Show compendium"}
-              onClick={() => setCompendiumOpen(!compendiumOpen)}
+              className={moreOpen ? "active" : ""}
+              aria-label="Project menu"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((current) => !current)}
             >
-              <BookMarked size={16} /> Compendium
+              <MoreHorizontal size={17} />
             </button>
-          )}
-        </nav>
-      </div>
+            {moreOpen ? (
+              <div className="workspace-more-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={async () => {
+                    setMoreOpen(false);
+                    await editorRef.current?.flush();
+                    await updateSearch({ tab: "settings", view: undefined });
+                  }}
+                >
+                  <Settings size={16} /> Project settings
+                </button>
+                <a href="/prompts" role="menuitem">
+                  <FileText size={16} /> Prompts
+                </a>
+                <a href="/settings" role="menuitem">
+                  <Settings size={16} /> App settings
+                </a>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={async () => {
+                    setMoreOpen(false);
+                    const title = (
+                      await dialog.prompt({
+                        title: "Rename Project",
+                        label: "Project title",
+                        initialValue: tree.data.project.title,
+                      })
+                    )?.trim();
+                    if (!title || title === tree.data?.project.title) return;
+                    await api(`/api/projects/${projectId}`, {
+                      method: "PATCH",
+                      body: JSON.stringify({ title }),
+                    });
+                    await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
+                  }}
+                >
+                  <Pencil size={16} /> Rename project
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="danger"
+                  onClick={async () => {
+                    setMoreOpen(false);
+                    const acts = tree.data.acts.length;
+                    const chapters = tree.data.acts.reduce(
+                      (sum, act) => sum + act.chapters.length,
+                      0,
+                    );
+                    if (
+                      !(await dialog.confirm({
+                        title: `Delete “${tree.data.project.title}”?`,
+                        body: `This permanently deletes ${acts} acts, ${chapters} chapters, ${allScenes.length} scenes, Compendium entries, Chat history, and generation history. This cannot be undone.`,
+                        confirmLabel: "Delete Project",
+                        destructive: true,
+                      }))
+                    )
+                      return;
+                    await api(`/api/projects/${projectId}`, { method: "DELETE" });
+                    window.location.assign("/");
+                  }}
+                >
+                  <Trash2 size={16} /> Delete project
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </header>
 
       {tab === "manuscript" || tab === "compendium" ? (
         <div
           className={`manuscript-layout ${compendiumOpen || tab === "compendium" ? "compendium-open" : ""} ${tab === "compendium" ? "mobile-compendium-view" : ""} ${selectedEntryId ? "entry-open" : ""}`}
         >
+          {compendiumOpen ? (
+            <button
+              type="button"
+              className="tablet-sidebar-backdrop"
+              aria-label="Close Compendium"
+              onClick={() => setCompendiumOpen(false)}
+            />
+          ) : null}
           <CompendiumPanel
             projectId={projectId}
             entries={compendium.data ?? []}
@@ -624,163 +872,6 @@ export function ProjectPage() {
             onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
           />
           <div className="manuscript-main">
-            <div className="manuscript-viewbar">
-              <div className="manuscript-view-tabs">
-                <button
-                  type="button"
-                  className={view === "write" ? "active" : ""}
-                  onClick={() => void updateSearch({ view: undefined })}
-                >
-                  Write
-                </button>
-                <button
-                  type="button"
-                  className={view === "outline" ? "active" : ""}
-                  onClick={async () => {
-                    await editorRef.current?.flush();
-                    await updateSearch({ view: "outline" });
-                  }}
-                >
-                  Outline
-                </button>
-                <button
-                  type="button"
-                  className={view === "notes" ? "active" : ""}
-                  onClick={async () => {
-                    await editorRef.current?.flush();
-                    await updateSearch({ view: "notes" });
-                  }}
-                >
-                  Notes
-                </button>
-              </div>
-              {view === "write" && scope ? (
-                <div className="manuscript-scope-controls">
-                  <span className="manuscript-scope-label">Viewing</span>
-                  <div ref={scopePickerRef} className="manuscript-scope-picker">
-                    <button
-                      type="button"
-                      className={`manuscript-scope-trigger ${scopeMenuOpen ? "open" : ""}`}
-                      aria-label="Viewing mode"
-                      aria-haspopup="listbox"
-                      aria-expanded={scopeMenuOpen}
-                      onClick={() => setScopeMenuOpen((current) => !current)}
-                    >
-                      <span className="manuscript-scope-trigger-copy">
-                        <strong>{scopeLabel.primary}</strong>
-                        <small>{scopeLabel.secondary}</small>
-                      </span>
-                      <ChevronDown size={15} aria-hidden="true" />
-                    </button>
-                    {scopeMenuOpen ? (
-                      <div
-                        className="manuscript-scope-menu"
-                        role="listbox"
-                        aria-label="Manuscript viewing scope"
-                        onKeyDown={handleScopeMenuKeyDown}
-                      >
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={scope.kind === "story"}
-                          className="manuscript-scope-option featured"
-                          onClick={() => void chooseScope({ kind: "story" })}
-                        >
-                          <Layers3 size={16} aria-hidden="true" />
-                          <span>
-                            <strong>Everything</strong>
-                            <small>Full manuscript</small>
-                          </span>
-                          {scope.kind === "story" ? <Check size={15} aria-hidden="true" /> : null}
-                        </button>
-                        {selectedSceneId && selectedLocation ? (
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={scope.kind === "scene" && scope.id === selectedSceneId}
-                            className="manuscript-scope-option featured"
-                            onClick={() => void chooseScope({ kind: "scene", id: selectedSceneId })}
-                          >
-                            <BookOpenText size={16} aria-hidden="true" />
-                            <span>
-                              <strong>Current Scene</strong>
-                              <small>
-                                {structureLabels?.scenes.get(selectedLocation.scene.id)?.label}
-                              </small>
-                            </span>
-                            {scope.kind === "scene" && scope.id === selectedSceneId ? (
-                              <Check size={15} aria-hidden="true" />
-                            ) : null}
-                          </button>
-                        ) : null}
-                        {tree.data.acts.map((act) => (
-                          <fieldset
-                            key={act.id}
-                            className="manuscript-scope-group"
-                            aria-label={structureLabels?.acts.get(act.id)?.label ?? "Act"}
-                          >
-                            <legend className="manuscript-scope-group-label">
-                              {structureLabels?.acts.get(act.id)?.label ?? "Act"}
-                            </legend>
-                            <button
-                              type="button"
-                              role="option"
-                              aria-selected={scope.kind === "act" && scope.id === act.id}
-                              className="manuscript-scope-option nested"
-                              onClick={() => void chooseScope({ kind: "act", id: act.id })}
-                            >
-                              <span>
-                                <strong>Full Act</strong>
-                                <small>
-                                  {act.chapters.length}{" "}
-                                  {act.chapters.length === 1 ? "chapter" : "chapters"}
-                                </small>
-                              </span>
-                              {scope.kind === "act" && scope.id === act.id ? (
-                                <Check size={15} aria-hidden="true" />
-                              ) : null}
-                            </button>
-                            {act.chapters.map((chapter) => (
-                              <button
-                                type="button"
-                                role="option"
-                                aria-selected={scope.kind === "chapter" && scope.id === chapter.id}
-                                className="manuscript-scope-option nested"
-                                key={chapter.id}
-                                onClick={() =>
-                                  void chooseScope({ kind: "chapter", id: chapter.id })
-                                }
-                              >
-                                <span>
-                                  <strong>
-                                    {structureLabels?.chapters.get(chapter.id)?.label ?? "Chapter"}
-                                  </strong>
-                                  <small>
-                                    {chapter.scenes.length}{" "}
-                                    {chapter.scenes.length === 1 ? "scene" : "scenes"}
-                                  </small>
-                                </span>
-                                {scope.kind === "chapter" && scope.id === chapter.id ? (
-                                  <Check size={15} aria-hidden="true" />
-                                ) : null}
-                              </button>
-                            ))}
-                          </fieldset>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="manuscript-scope-stats" aria-live="polite">
-                    <strong>{new Intl.NumberFormat().format(scopedWordCount)} words</strong>
-                    <span>
-                      {scopedPageCount} {scopedPageCount === 1 ? "page" : "pages"} ·{" "}
-                      {scopedReadMinutes} min read
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
             <div className="manuscript-view-content">
               {scope ? (
                 <div className="manuscript-write-surface" hidden={view !== "write"}>
@@ -792,6 +883,7 @@ export function ProjectPage() {
                       scope={scope}
                       entries={compendium.data ?? []}
                       baseModel={settings.data?.baseModel ?? "asterism/fake-prose"}
+                      headerActionsTarget={editorHeaderTarget}
                       models={
                         models.data ?? [{ id: "asterism/fake-prose", name: "Asterism Fake Prose" }]
                       }
@@ -912,6 +1004,14 @@ export function ProjectPage() {
         <div
           className={`manuscript-layout chat-layout ${compendiumOpen ? "compendium-open" : ""} ${selectedEntryId ? "entry-open" : ""}`}
         >
+          {compendiumOpen ? (
+            <button
+              type="button"
+              className="tablet-sidebar-backdrop"
+              aria-label="Close Compendium"
+              onClick={() => setCompendiumOpen(false)}
+            />
+          ) : null}
           <CompendiumPanel
             projectId={projectId}
             entries={compendium.data ?? []}
@@ -983,6 +1083,17 @@ export function ProjectPage() {
               </button>
             </header>
             <div className="mobile-project-menu-grid">
+              <button
+                type="button"
+                className={tab === "manuscript" && view === "notes" ? "active" : ""}
+                onClick={async () => {
+                  setMoreOpen(false);
+                  await editorRef.current?.flush();
+                  await updateSearch({ tab: undefined, view: "notes" });
+                }}
+              >
+                <StickyNote size={17} /> Notes
+              </button>
               <button
                 type="button"
                 onClick={async () => {

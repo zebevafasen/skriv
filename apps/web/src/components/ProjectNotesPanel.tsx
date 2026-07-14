@@ -205,7 +205,7 @@ function NoteEditor({
           </button>
         </div>
       ) : null}
-      <EditorContent editor={editor} />
+      <EditorContent className="notebook-editor-content" editor={editor} />
       {selectionMenu ? (
         <div
           className="note-format-menu"

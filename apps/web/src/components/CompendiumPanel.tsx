@@ -249,11 +249,6 @@ export function CompendiumPanel({
 
   return (
     <aside className="entry-list compendium-sidebar">
-      <div className="sidebar-tabs">
-        <button type="button" className="active">
-          <BookMarked size={14} /> Compendium
-        </button>
-      </div>
       <div className="compendium-sidebar-toolbar">
         <label className="entry-search">
           <Search size={15} />
