@@ -10,7 +10,7 @@ import {
 } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Plus, Search, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, BookOpen, Plus, Search, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
