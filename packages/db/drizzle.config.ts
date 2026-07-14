@@ -13,7 +13,7 @@ export default defineConfig({
   schema: "./src/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgresql://asterism:asterism@localhost:5433/asterism",
+    url: (process.env.DATABASE_URL ?? "postgresql://asterism:asterism@localhost:5433/asterism").replace("sslmode=require", "sslmode=verify-full"),
   },
   strict: true,
   verbose: true,

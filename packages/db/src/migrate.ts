@@ -9,8 +9,9 @@ config({ path: resolve(__dirname, "../../../.env") });
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { createDatabase } from "./index.js";
 
-const connectionString =
-  process.env.DATABASE_URL ?? "postgresql://asterism:asterism@localhost:5433/asterism";
+const connectionString = (
+  process.env.DATABASE_URL ?? "postgresql://asterism:asterism@localhost:5433/asterism"
+).replace("sslmode=require", "sslmode=verify-full");
 const { db, pool } = createDatabase(connectionString);
 
 await migrate(db, { migrationsFolder: fileURLToPath(new URL("../drizzle", import.meta.url)) });
