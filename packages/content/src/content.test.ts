@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { basePackage, getBuiltinPrompt, outlinePresets, validateBuiltinContent } from "./index.js";
 import authoredPrompts from "./prompts.json" with { type: "json" };
+import { builtinLabelPacks } from "./label-packs.js";
 
 describe("base content package", () => {
   it("validates and contains every implemented workflow", () => {
@@ -59,6 +60,14 @@ describe("base content package", () => {
       saveTheCat?.acts.flatMap((act) => act.chapters).flatMap((chapter) => chapter.scenes),
     ).toHaveLength(15);
     expect(saveTheCat?.acts[0]?.chapters[0]?.scenes[0]).toMatchObject({ title: "Opening Image" });
+  });
+
+  it("ships project label packs without Compendium amber", () => {
+    expect(builtinLabelPacks.map((pack) => pack.name)).toEqual(["Status", "Time"]);
+    expect(builtinLabelPacks.every((pack) => pack.selectionMode === "single")).toBe(true);
+    expect(
+      builtinLabelPacks.flatMap((pack) => pack.labels).every((label) => label.color !== "amber"),
+    ).toBe(true);
   });
 
   it("authors prompt messages as readable lines and normalizes them without changing content", () => {

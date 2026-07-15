@@ -1,25 +1,35 @@
-import { type CompendiumEntry, type Project, storyLanguages } from "@asterism/contracts";
+import {
+  type CompendiumEntry,
+  type Project,
+  type Scene,
+  storyLanguages,
+} from "@asterism/contracts";
 import { useQueryClient } from "@tanstack/react-query";
-import { Book, Image as ImageIcon, Info, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Book, Image as ImageIcon, Info, Layers3, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { asterism } from "../api.js";
 import { useAppDialog } from "./DialogProvider.js";
+import { LabelPackManager } from "./LabelPackManager.js";
 
 export function ProjectSettingsPanel({
   projectId,
   project,
   entries,
+  scenes,
 }: {
   projectId: string;
   project: Project;
   entries: CompendiumEntry[];
+  scenes: Scene[];
 }) {
   const [activeTab, setActiveTab] = useState<"metadata" | "writing">("metadata");
+  const [labelManagerOpen, setLabelManagerOpen] = useState(false);
   const dialog = useAppDialog();
   const client = useQueryClient();
   const [authorDraft, setAuthorDraft] = useState(project.settings.author);
   const authorFocused = useRef(false);
   const authorProjectId = useRef(project.id);
+  const legacyLabels = useMemo(() => scenes.flatMap((scene) => scene.metadata.labels), [scenes]);
 
   useEffect(() => {
     const projectChanged = authorProjectId.current !== project.id;
@@ -218,33 +228,28 @@ export function ProjectSettingsPanel({
               <section className="settings-card">
                 <h3>LABELS/MARKERS</h3>
                 <p className="card-description">
-                  Use these to organize your scenes by status, subplot, etc. You can also prefix
-                  them with a group (e.g. "Status: Draft").
+                  Visual markers for organizing scenes at a glance. Labels are never included in AI
+                  context.
                 </p>
-                <div className="labels-placeholder">
-                  <div className="labels-actions">
-                    <button type="button" className="button ghost" disabled>
-                      + Add Label
-                    </button>
-                    <button type="button" className="button ghost" disabled>
-                      Sort Labels
-                    </button>
-                    <button type="button" className="button ghost icon-only" disabled>
-                      <Trash2 size={14} />
-                    </button>
+                <div className="project-label-summary">
+                  <Layers3 size={22} />
+                  <div>
+                    <strong>
+                      {project.settings.labelPacks.filter((pack) => pack.ownership === "user")
+                        .length + 2}{" "}
+                      label packs
+                    </strong>
+                    <span>
+                      Status and Time are built in. My Labels is always ready for quick additions.
+                    </span>
                   </div>
-                  <div className="labels-presets">
-                    <span className="preset-title">Presets</span>
-                    <p className="hint">We have some presets for you to get started:</p>
-                    <div className="preset-buttons">
-                      <button type="button" className="button ghost" disabled>
-                        Scene status
-                      </button>
-                      <button type="button" className="button ghost" disabled>
-                        Temporal setting
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => setLabelManagerOpen(true)}
+                  >
+                    Manage labels
+                  </button>
                 </div>
               </section>
             </div>
@@ -284,8 +289,8 @@ export function ProjectSettingsPanel({
                     <h4>Language</h4>
                   </div>
                   <p className="card-description">
-                    This is the language of your novel. It is used for language-aware writing
-                    tools, AI instructions, and hyphenation.
+                    This is the language of your novel. It is used for language-aware writing tools,
+                    AI instructions, and hyphenation.
                   </p>
                   <select
                     value={project.settings.language}
@@ -364,6 +369,14 @@ export function ProjectSettingsPanel({
           </div>
         )}
       </div>
+      <LabelPackManager
+        open={labelManagerOpen}
+        projectId={projectId}
+        configuredPacks={project.settings.labelPacks}
+        legacyLabels={legacyLabels}
+        onClose={() => setLabelManagerOpen(false)}
+        onSaved={() => client.invalidateQueries({ queryKey: ["project-tree", projectId] })}
+      />
     </div>
   );
 }

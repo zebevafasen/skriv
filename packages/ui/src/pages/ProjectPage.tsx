@@ -1066,6 +1066,7 @@ export function ProjectPage() {
             projectId={projectId}
             project={tree.data.project}
             entries={compendium.data ?? []}
+            scenes={allScenes}
           />
         </DeferredWorkspace>
       ) : null}

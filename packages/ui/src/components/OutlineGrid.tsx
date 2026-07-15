@@ -1,9 +1,12 @@
 import type {
+  CompendiumCategory,
   CompendiumEntry,
   CreateManuscriptItemInput,
   ManuscriptTree,
   Scene,
+  SceneLabelDefinition,
   SceneLabelColor,
+  SceneLabelPack,
   SceneMetadata,
 } from "@asterism/contracts";
 import { findMentions, manuscriptLabels } from "@asterism/core";
@@ -26,41 +29,41 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
   ExternalLink,
   GripVertical,
   MoreVertical,
   Plus,
+  Settings2,
   Sparkles,
+  Tags,
   Trash2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { asterism } from "../api.js";
+import {
+  editableLabelColors,
+  findLabelDefinition,
+  projectLabelLibrary,
+  safeLabelColor,
+} from "../utils/sceneLabelPacks.js";
 import { updateSceneInTree } from "../utils/manuscript.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
+import { LabelPackManager } from "./LabelPackManager.js";
 
-const labelColors: SceneLabelColor[] = [
-  "amber",
-  "orange",
-  "red",
-  "rose",
-  "pink",
-  "violet",
-  "purple",
-  "indigo",
-  "blue",
-  "cyan",
-  "teal",
-  "green",
-  "lime",
-  "yellow",
-  "stone",
-  "slate",
-];
+const compendiumTypeOrder = [
+  "story.character",
+  "story.location",
+  "story.object",
+  "story.faction",
+  "story.lore",
+  "story.other",
+] as const;
 
 function wordCount(text: string): number {
   return text.trim() ? text.trim().split(/\s+/u).length : 0;
@@ -104,9 +107,11 @@ function SceneCard({
   scene,
   displayLabel,
   entries,
-  labelSuggestions,
+  labelPacks,
   onOpenScene,
   onOpenEntry,
+  onManageLabels,
+  onCreateQuickLabel,
   onUpdated,
   onRename,
   onDelete,
@@ -116,21 +121,36 @@ function SceneCard({
   scene: Scene;
   displayLabel: string;
   entries: CompendiumEntry[];
-  labelSuggestions: Array<{ text: string; color: SceneLabelColor }>;
+  labelPacks: SceneLabelPack[];
   onOpenScene: (sceneId: string) => void;
   onOpenEntry: (entryIds: string[]) => void;
+  onManageLabels: () => void;
+  onCreateQuickLabel: (
+    name: string,
+    color: SceneLabelColor,
+  ) => Promise<{ pack: SceneLabelPack; definition: SceneLabelDefinition }>;
   onUpdated: (scene: Scene) => void;
   onRename: () => void;
   onDelete: () => void;
   dragHandle: ReactNode;
 }) {
   const [metadata, setMetadata] = useState(scene.metadata);
-  const [labelInput, setLabelInput] = useState("");
-  const [labelColor, setLabelColor] = useState<SceneLabelColor>("amber");
+  const [labelMenuOpen, setLabelMenuOpen] = useState(false);
+  const [labelMenuPosition, setLabelMenuPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
+  const [quickLabelName, setQuickLabelName] = useState("");
+  const [quickLabelColor, setQuickLabelColor] = useState<SceneLabelColor>("blue");
   const [saveState, setSaveState] = useState<"saved" | "saving" | "conflict">("saved");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const labelMenuRef = useRef<HTMLDivElement>(null);
+  const labelButtonRef = useRef<HTMLButtonElement>(null);
+  const labelPopoverRef = useRef<HTMLDivElement>(null);
   const version = useRef(scene.version);
   const metadataRef = useRef(scene.metadata);
 
@@ -140,6 +160,61 @@ function SceneCard({
     metadataRef.current = scene.metadata;
     setMetadata(scene.metadata);
   }, [scene]);
+
+  useEffect(() => {
+    if (!labelMenuOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!labelMenuRef.current?.contains(target) && !labelPopoverRef.current?.contains(target)) {
+        setLabelMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLabelMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [labelMenuOpen]);
+
+  useEffect(() => {
+    if (!labelMenuOpen) {
+      setLabelMenuPosition(null);
+      return;
+    }
+
+    const positionMenu = () => {
+      const button = labelButtonRef.current;
+      if (!button) return;
+
+      const rect = button.getBoundingClientRect();
+      const edge = 12;
+      const gap = 8;
+      const width = Math.min(330, window.innerWidth - edge * 2);
+      const spaceAbove = Math.max(0, rect.top - edge - gap);
+      const spaceBelow = Math.max(0, window.innerHeight - rect.bottom - edge - gap);
+      const openBelow = spaceBelow >= spaceAbove;
+      const maxHeight = Math.min(410, openBelow ? spaceBelow : spaceAbove);
+      const left = Math.min(
+        Math.max(edge, rect.left),
+        Math.max(edge, window.innerWidth - width - edge),
+      );
+      const top = openBelow ? rect.bottom + gap : Math.max(edge, rect.top - gap - maxHeight);
+
+      setLabelMenuPosition({ top, left, width, maxHeight });
+    };
+
+    positionMenu();
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+    };
+  }, [labelMenuOpen]);
 
   const persist = async (next: SceneMetadata = metadataRef.current, updateUi = true) => {
     if (timer.current) clearTimeout(timer.current);
@@ -187,25 +262,35 @@ function SceneCard({
     [],
   );
 
-  const mentionedIds = useMemo(
-    () => [...new Set(findMentions(scene.plainText, entries).flatMap((match) => match.entryIds))],
-    [entries, scene.plainText],
-  );
-  const characters = entries.filter((entry) => entry.typeId === "story.character");
-  const locations = entries.filter((entry) => entry.typeId === "story.location");
+  const mentionedIds = useMemo(() => {
+    const ids = new Set(findMentions(scene.plainText, entries).flatMap((match) => match.entryIds));
+    return entries.filter((entry) => ids.has(entry.id)).map((entry) => entry.id);
+  }, [entries, scene.plainText]);
 
-  const addLabel = (raw: string, color = labelColor) => {
-    const text = raw.trim();
-    if (!text || metadata.labels.length >= 24) return;
-    if (
-      metadata.labels.some((label) => label.text.toLocaleLowerCase() === text.toLocaleLowerCase())
-    )
-      return;
+  const toggleLabel = (pack: SceneLabelPack, definition: SceneLabelDefinition) => {
+    const active = metadata.labels.some((label) => {
+      const resolved = findLabelDefinition(labelPacks, label);
+      return resolved?.definition.id === definition.id;
+    });
+    const packDefinitionIds = new Set(pack.labels.map((label) => label.id));
+    const withoutPack = metadata.labels.filter((label) => {
+      const resolved = findLabelDefinition(labelPacks, label);
+      return !resolved || !packDefinitionIds.has(resolved.definition.id);
+    });
     changeMetadata({
       ...metadata,
-      labels: [...metadata.labels, { id: crypto.randomUUID(), text, color }],
+      labels: active
+        ? withoutPack
+        : [
+            ...withoutPack,
+            {
+              id: crypto.randomUUID(),
+              definitionId: definition.id,
+              text: definition.name,
+              color: definition.color,
+            },
+          ],
     });
-    setLabelInput("");
   };
 
   return (
@@ -222,6 +307,7 @@ function SceneCard({
         <strong>{displayLabel}</strong>
         <span>{wordCount(scene.plainText)} words</span>
         <button
+          ref={labelButtonRef}
           type="button"
           className="icon-button"
           aria-label={`Rename ${displayLabel}`}
@@ -244,106 +330,6 @@ function SceneCard({
         onChange={(event) => changeMetadata({ ...metadata, summary: event.target.value })}
         placeholder="Add summary…"
       />
-      <div className="outline-scene-meta-grid">
-        <label>
-          <span>Status</span>
-          <select
-            value={metadata.status}
-            onChange={(event) =>
-              changeMetadata({
-                ...metadata,
-                status: event.target.value as SceneMetadata["status"],
-              })
-            }
-          >
-            <option value="draft">Draft</option>
-            <option value="revising">Revising</option>
-            <option value="complete">Complete</option>
-          </select>
-        </label>
-        <label>
-          <span>POV</span>
-          <select
-            value={metadata.povEntryId ?? ""}
-            onChange={(event) =>
-              changeMetadata({ ...metadata, povEntryId: event.target.value || null })
-            }
-          >
-            <option value="">None</option>
-            {characters.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Location</span>
-          <select
-            value={metadata.locationEntryId ?? ""}
-            onChange={(event) =>
-              changeMetadata({ ...metadata, locationEntryId: event.target.value || null })
-            }
-          >
-            <option value="">None</option>
-            {locations.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Add character</span>
-          <select
-            value=""
-            onChange={(event) => {
-              if (
-                !event.target.value ||
-                metadata.presentCharacterEntryIds.includes(event.target.value)
-              )
-                return;
-              changeMetadata({
-                ...metadata,
-                presentCharacterEntryIds: [
-                  ...metadata.presentCharacterEntryIds,
-                  event.target.value,
-                ],
-              });
-            }}
-          >
-            <option value="">Choose…</option>
-            {characters.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {metadata.presentCharacterEntryIds.length ? (
-        <div className="outline-character-chips">
-          {metadata.presentCharacterEntryIds.map((id) => {
-            const entry = entries.find((candidate) => candidate.id === id);
-            return entry ? (
-              <button
-                type="button"
-                key={id}
-                onClick={() =>
-                  changeMetadata({
-                    ...metadata,
-                    presentCharacterEntryIds: metadata.presentCharacterEntryIds.filter(
-                      (candidate) => candidate !== id,
-                    ),
-                  })
-                }
-              >
-                {entry.name} ×
-              </button>
-            ) : null;
-          })}
-        </div>
-      ) : null}
       {mentionedIds.length ? (
         <div className="outline-compendium-chips">
           {mentionedIds.map((id) => {
@@ -356,61 +342,152 @@ function SceneCard({
           })}
         </div>
       ) : null}
-      <div className="outline-labels">
-        {metadata.labels.map((label) => (
-          <button
-            type="button"
-            key={label.id}
-            className={`scene-label color-${label.color}`}
-            title="Remove label"
-            onClick={() =>
-              changeMetadata({
-                ...metadata,
-                labels: metadata.labels.filter((candidate) => candidate.id !== label.id),
-              })
-            }
-          >
-            {label.text} ×
-          </button>
-        ))}
-      </div>
-      <div className="outline-label-input">
-        <input
-          value={labelInput}
-          list={`scene-labels-${scene.id}`}
-          placeholder="Add label…"
-          onChange={(event) => setLabelInput(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              const suggestion = labelSuggestions.find(
-                (candidate) =>
-                  candidate.text.toLocaleLowerCase() === labelInput.toLocaleLowerCase(),
-              );
-              addLabel(labelInput, suggestion?.color ?? labelColor);
-            }
-          }}
-        />
-        <datalist id={`scene-labels-${scene.id}`}>
-          {labelSuggestions.map((label) => (
-            <option value={label.text} key={label.text} />
-          ))}
-        </datalist>
-        <select
-          aria-label="Label color"
-          className={`label-color-select color-${labelColor}`}
-          value={labelColor}
-          onChange={(event) => setLabelColor(event.target.value as SceneLabelColor)}
+      {metadata.labels.length ? (
+        <div className="outline-labels">
+          {metadata.labels.map((label) => {
+            const resolved = findLabelDefinition(labelPacks, label);
+            const name = resolved?.definition.name ?? label.text;
+            const color = safeLabelColor(resolved?.definition.color ?? label.color);
+            return (
+              <button
+                type="button"
+                key={label.id}
+                className={`scene-label color-${color}`}
+                title="Remove label"
+                onClick={() =>
+                  changeMetadata({
+                    ...metadata,
+                    labels: metadata.labels.filter((candidate) => candidate.id !== label.id),
+                  })
+                }
+              >
+                {name} <span aria-hidden="true">×</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      <div className="outline-label-actions" ref={labelMenuRef}>
+        <button
+          type="button"
+          className="button ghost outline-label-button"
+          aria-haspopup="menu"
+          aria-expanded={labelMenuOpen}
+          onClick={() => setLabelMenuOpen((current) => !current)}
         >
-          {labelColors.map((color) => (
-            <option key={color} value={color}>
-              {color}
-            </option>
-          ))}
-        </select>
-        <button type="button" className="icon-button" onClick={() => addLabel(labelInput)}>
-          <Plus size={13} />
+          <Tags size={12} /> Label
+          {metadata.labels.length ? <span>{metadata.labels.length}</span> : null}
         </button>
+        {labelMenuOpen && labelMenuPosition
+          ? createPortal(
+              <div
+                ref={labelPopoverRef}
+                className="outline-label-menu"
+                role="menu"
+                aria-label={`Labels for ${displayLabel}`}
+                style={labelMenuPosition}
+              >
+                <header>
+                  <strong>Add a label</strong>
+                  <span>One choice per pack</span>
+                </header>
+                <div className="outline-label-menu-packs">
+                  {labelPacks.map((pack) => (
+                    <section key={pack.id}>
+                      <div>
+                        <strong>{pack.name}</strong>
+                        <small>{pack.ownership === "builtin" ? "BUILTIN" : "CUSTOM"}</small>
+                      </div>
+                      {pack.labels.length ? (
+                        <div className="outline-label-options">
+                          {pack.labels.map((definition) => {
+                            const active = metadata.labels.some(
+                              (label) =>
+                                findLabelDefinition(labelPacks, label)?.definition.id ===
+                                definition.id,
+                            );
+                            return (
+                              <button
+                                type="button"
+                                role="menuitemcheckbox"
+                                aria-checked={active}
+                                className={`scene-label color-${safeLabelColor(definition.color)}${active ? " active" : ""}`}
+                                key={definition.id}
+                                onClick={() => toggleLabel(pack, definition)}
+                              >
+                                {definition.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p>No labels yet.</p>
+                      )}
+                    </section>
+                  ))}
+                </div>
+                <div className="outline-quick-label">
+                  <input
+                    value={quickLabelName}
+                    maxLength={60}
+                    placeholder="Quick label…"
+                    onChange={(event) => setQuickLabelName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && quickLabelName.trim()) {
+                        event.preventDefault();
+                        void onCreateQuickLabel(quickLabelName, quickLabelColor).then(
+                          ({ pack, definition }) => {
+                            toggleLabel(pack, definition);
+                            setQuickLabelName("");
+                          },
+                          setError,
+                        );
+                      }
+                    }}
+                  />
+                  <select
+                    aria-label="Quick label color"
+                    value={quickLabelColor}
+                    onChange={(event) => setQuickLabelColor(event.target.value as SceneLabelColor)}
+                  >
+                    {editableLabelColors.map((color) => (
+                      <option value={color} key={color}>
+                        {color}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="Create quick label"
+                    disabled={!quickLabelName.trim()}
+                    onClick={() =>
+                      void onCreateQuickLabel(quickLabelName, quickLabelColor).then(
+                        ({ pack, definition }) => {
+                          toggleLabel(pack, definition);
+                          setQuickLabelName("");
+                        },
+                        setError,
+                      )
+                    }
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="outline-manage-labels"
+                  onClick={() => {
+                    setLabelMenuOpen(false);
+                    onManageLabels();
+                  }}
+                >
+                  <Settings2 size={14} /> Manage labels and packs
+                </button>
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
       <footer>
         <span className={`outline-save-state ${saveState}`}>{saveState}</span>
@@ -471,8 +548,13 @@ export function OutlineGrid({
 }) {
   const dialog = useAppDialog();
   const client = useQueryClient();
+  const categories = useQuery({
+    queryKey: ["compendium-categories", projectId],
+    queryFn: () => asterism().compendium.categories(projectId),
+  });
   const [collapsedActs, setCollapsedActs] = useState<Set<string>>(() => new Set());
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(() => new Set());
+  const [labelManagerOpen, setLabelManagerOpen] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const hierarchyKeyboardCoordinates = useCallback<KeyboardCoordinateGetter>(
     (event, args) => {
@@ -514,17 +596,37 @@ export function OutlineGrid({
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: hierarchyKeyboardCoordinates }),
   );
-  const labelSuggestions = useMemo(() => {
-    const labels = new Map<string, { text: string; color: SceneLabelColor }>();
-    for (const scene of tree.acts.flatMap((act) =>
-      act.chapters.flatMap((chapter) => chapter.scenes),
-    )) {
-      for (const label of scene.metadata.labels) {
-        labels.set(label.text.toLocaleLowerCase(), { text: label.text, color: label.color });
+  const allScenes = useMemo(
+    () => tree.acts.flatMap((act) => act.chapters.flatMap((chapter) => chapter.scenes)),
+    [tree],
+  );
+  const legacyLabels = useMemo(
+    () => allScenes.flatMap((scene) => scene.metadata.labels),
+    [allScenes],
+  );
+  const labelLibrary = useMemo(
+    () => projectLabelLibrary(tree.project.settings.labelPacks, legacyLabels),
+    [legacyLabels, tree.project.settings.labelPacks],
+  );
+  const orderedEntries = useMemo(() => {
+    const typeRank = (typeId: string, customCategories: CompendiumCategory[]) => {
+      const standard = compendiumTypeOrder.indexOf(typeId as (typeof compendiumTypeOrder)[number]);
+      if (standard >= 0) return standard;
+      if (typeId.startsWith("custom.")) {
+        const custom = customCategories.findIndex(
+          (category) => category.id === typeId.slice("custom.".length),
+        );
+        if (custom >= 0) return compendiumTypeOrder.length + custom;
       }
-    }
-    return [...labels.values()];
-  }, [tree]);
+      return compendiumTypeOrder.length + customCategories.length + 1;
+    };
+    return [...entries].sort((left, right) => {
+      const rank =
+        typeRank(left.typeId, categories.data ?? []) -
+        typeRank(right.typeId, categories.data ?? []);
+      return rank || left.name.localeCompare(right.name);
+    });
+  }, [categories.data, entries]);
   const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
   const hierarchyCollisionDetection = useCallback<CollisionDetection>(
     (args) => {
@@ -550,6 +652,26 @@ export function OutlineGrid({
 
   const setTree = (next: ManuscriptTree) =>
     client.setQueryData<ManuscriptTree>(["project-tree", projectId], next);
+  const createQuickLabel = async (name: string, color: SceneLabelColor) => {
+    const normalized = name.trim().toLocaleLowerCase();
+    const existing = labelLibrary.allPacks
+      .flatMap((pack) => pack.labels.map((definition) => ({ pack, definition })))
+      .find(({ definition }) => definition.name.toLocaleLowerCase() === normalized);
+    if (existing) return existing;
+    const definition: SceneLabelDefinition = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      color: safeLabelColor(color),
+    };
+    const userPacks = labelLibrary.userPacks.map((pack) =>
+      pack.id === "user.default" ? { ...pack, labels: [...pack.labels, definition] } : pack,
+    );
+    await asterism().projects.update(projectId, { settings: { labelPacks: userPacks } });
+    await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
+    const pack = userPacks.find((candidate) => candidate.id === "user.default");
+    if (!pack) throw new Error("The default label pack is unavailable.");
+    return { pack, definition };
+  };
   const reorder = async (
     operation: (orderedIds: string[]) => Promise<void>,
     ids: string[],
@@ -881,10 +1003,12 @@ export function OutlineGrid({
                                                       structureLabels.scenes.get(scene.id)?.label ??
                                                       "Scene"
                                                     }
-                                                    entries={entries}
-                                                    labelSuggestions={labelSuggestions}
+                                                    entries={orderedEntries}
+                                                    labelPacks={labelLibrary.allPacks}
                                                     onOpenScene={onOpenScene}
                                                     onOpenEntry={onOpenEntry}
+                                                    onManageLabels={() => setLabelManagerOpen(true)}
+                                                    onCreateQuickLabel={createQuickLabel}
                                                     onUpdated={(updated) =>
                                                       setTree(updateSceneInTree(tree, updated))
                                                     }
@@ -949,6 +1073,14 @@ export function OutlineGrid({
           </div>
         </SortableContext>
       </DndContext>
+      <LabelPackManager
+        open={labelManagerOpen}
+        projectId={projectId}
+        configuredPacks={tree.project.settings.labelPacks}
+        legacyLabels={legacyLabels}
+        onClose={() => setLabelManagerOpen(false)}
+        onSaved={() => client.invalidateQueries({ queryKey: ["project-tree", projectId] })}
+      />
     </section>
   );
 }

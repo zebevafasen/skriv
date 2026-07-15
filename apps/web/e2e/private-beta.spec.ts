@@ -53,8 +53,9 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(firstCard.locator(".outline-save-state")).toHaveText("saved", {
       timeout: 5_000,
     });
-    await firstCard.getByPlaceholder("Add label…").fill("Foreshadowing");
-    await firstCard.getByPlaceholder("Add label…").press("Enter");
+    await firstCard.getByRole("button", { name: "Label" }).click();
+    await firstCard.getByPlaceholder("Quick label…").fill("Foreshadowing");
+    await firstCard.getByPlaceholder("Quick label…").press("Enter");
     await expect(firstCard.getByText(/Foreshadowing/)).toBeVisible();
     await firstCard.getByRole("button", { name: "Summarize" }).click();
     await expect(summary).toContainText("decisive change", { timeout: 5_000 });
@@ -116,10 +117,14 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       "Adult gothic tone; let Evelyn complicate the central relationship.",
     );
     await premiseInstructions.fill("Let Evie complicate the central relationship.");
-    await expect(ideation.locator(".ideation-instructions-input mark", { hasText: "Evie" })).toBeVisible();
+    await expect(
+      ideation.locator(".ideation-instructions-input mark", { hasText: "Evie" }),
+    ).toBeVisible();
     await ideation.getByRole("button", { name: /Reference/ }).click();
     await page.locator(".ideation-reference-options label", { hasText: "Evelyn" }).click();
-    await expect(ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" })).toBeVisible();
+    await expect(
+      ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
+    ).toBeVisible();
     await ideation.getByRole("button", { name: /Reference/ }).click();
     await ideation.getByRole("button", { name: "Entity" }).click();
     await page
@@ -127,7 +132,9 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       .fill("Make this entity unsettling.");
     await ideation.getByRole("button", { name: "Premise" }).click();
     await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
-    await expect(ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" })).toBeVisible();
+    await expect(
+      ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
+    ).toBeVisible();
 
     await ideation.getByRole("button", { name: "Compendium", exact: true }).click();
     const ideationCompendium = page.locator(".ideation-compendium-dialog");
@@ -171,8 +178,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     const customTag = "E2E Custom Tag";
     const persistedPremise = "A premise selected for persistence testing.";
     const premiseSaved = page.waitForResponse(
-      (response) =>
-        response.request().method() === "PATCH" && response.url().includes("/ideation"),
+      (response) => response.request().method() === "PATCH" && response.url().includes("/ideation"),
     );
     await page.getByRole("textbox", { name: "Active premise" }).fill(persistedPremise);
     await premiseSaved;
@@ -180,8 +186,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await tagInput.press("Enter");
     await expect(page.locator(".selected-tag", { hasText: customTag })).toBeVisible();
     const ingredientsSaved = page.waitForResponse(
-      (response) =>
-        response.request().method() === "PATCH" && response.url().includes("/ideation"),
+      (response) => response.request().method() === "PATCH" && response.url().includes("/ideation"),
     );
     await page.getByRole("button", { name: "Save ingredients" }).click();
     await ingredientsSaved;

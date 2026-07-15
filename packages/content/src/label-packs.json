@@ -1,0 +1,36 @@
+[
+  {
+    "id": "builtin.status",
+    "name": "Status",
+    "description": "Track where a scene is in the writing process.",
+    "ownership": "builtin",
+    "protected": true,
+    "selectionMode": "single",
+    "labels": [
+      { "id": "builtin.status.idea", "name": "Idea", "color": "violet" },
+      { "id": "builtin.status.planned", "name": "Planned", "color": "blue" },
+      { "id": "builtin.status.draft", "name": "Draft", "color": "slate" },
+      { "id": "builtin.status.revising", "name": "Revising", "color": "orange" },
+      { "id": "builtin.status.needs-work", "name": "Needs work", "color": "red" },
+      { "id": "builtin.status.ready", "name": "Ready", "color": "teal" },
+      { "id": "builtin.status.complete", "name": "Complete", "color": "green" }
+    ]
+  },
+  {
+    "id": "builtin.time",
+    "name": "Time",
+    "description": "Mark the scene's place in the story timeline.",
+    "ownership": "builtin",
+    "protected": true,
+    "selectionMode": "single",
+    "labels": [
+      { "id": "builtin.time.past", "name": "Past", "color": "indigo" },
+      { "id": "builtin.time.present", "name": "Present", "color": "cyan" },
+      { "id": "builtin.time.future", "name": "Future", "color": "violet" },
+      { "id": "builtin.time.flashback", "name": "Flashback", "color": "rose" },
+      { "id": "builtin.time.flash-forward", "name": "Flash-forward", "color": "purple" },
+      { "id": "builtin.time.memory", "name": "Memory", "color": "pink" },
+      { "id": "builtin.time.dream", "name": "Dream", "color": "blue" }
+    ]
+  }
+]

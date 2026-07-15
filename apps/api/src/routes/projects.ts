@@ -81,7 +81,7 @@ function projectResponse(project: typeof projects.$inferSelect) {
   return {
     id: project.id,
     title: project.title,
-    settings: project.settings,
+    settings: projectSettingsSchema.parse(project.settings),
     createdAt: timestamp(project.createdAt),
     updatedAt: timestamp(project.updatedAt),
   };
@@ -125,7 +125,9 @@ export async function registerProjectRoutes(
     if (selectedPacks.some((pack) => !pack)) {
       return reply
         .code(400)
-        .send({ error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." } });
+        .send({
+          error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." },
+        });
     }
     const validSelectedPacks = [
       ...new Map(

@@ -9,6 +9,7 @@ import {
   generationRequestSchema,
   manuscriptExportOptionsSchema,
   promptDefinitionSchema,
+  projectSettingsSchema,
   sceneMetadataSchema,
   selectionActionSchema,
   ingredientPackSchema,
@@ -17,6 +18,13 @@ import {
 } from "./index.js";
 
 describe("shared contracts", () => {
+  it("provides a project-scoped default label pack", () => {
+    const settings = projectSettingsSchema.parse({});
+    expect(settings.labelPacks).toEqual([
+      expect.objectContaining({ id: "user.default", name: "My Labels", ownership: "user" }),
+    ]);
+  });
+
   it("validates advanced project setup and export options", () => {
     expect(
       createProjectInputSchema.parse({

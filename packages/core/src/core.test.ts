@@ -116,6 +116,7 @@ describe("manuscript labels", () => {
           povType: "3rd Person (Limited)",
           povCharacterEntryId: null,
           notes: "",
+          labelPacks: [],
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

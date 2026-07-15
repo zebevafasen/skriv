@@ -348,6 +348,9 @@ importers:
       '@asterism/application':
         specifier: workspace:*
         version: link:../application
+      '@asterism/content':
+        specifier: workspace:*
+        version: link:../content
       '@asterism/contracts':
         specifier: workspace:*
         version: link:../contracts

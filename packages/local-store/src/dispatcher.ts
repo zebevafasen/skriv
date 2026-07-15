@@ -182,7 +182,7 @@ async function loadProjectTree(db: LocalDatabase, projectId: string) {
         .orderBy(asc(scenes.position))
     : [];
   return {
-    project,
+    project: { ...project, settings: projectSettingsSchema.parse(project.settings) },
     acts: actRows.map((act) => ({
       ...act,
       chapters: chapterRows
@@ -418,7 +418,11 @@ async function copyCompendiumEntries(
 
 async function handleProjects(db: LocalDatabase, method: string, path: string, body: unknown) {
   if (path === "/api/projects" && method === "GET") {
-    return db.select().from(projects).orderBy(desc(projects.updatedAt));
+    const rows = await db.select().from(projects).orderBy(desc(projects.updatedAt));
+    return rows.map((project) => ({
+      ...project,
+      settings: projectSettingsSchema.parse(project.settings),
+    }));
   }
   if (path === "/api/projects" && method === "POST") return createProject(db, body);
 
