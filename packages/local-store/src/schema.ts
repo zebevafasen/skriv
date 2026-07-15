@@ -238,6 +238,15 @@ export const editorSettings = sqliteTable("editor_settings", {
   updatedAt: text("updated_at").notNull().default(now),
 });
 
+export const appSettings = sqliteTable("app_settings", {
+  id: integer("id").primaryKey().default(1),
+  theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia"] })
+    .$type<import("@asterism/contracts").AppSettings["theme"]>()
+    .notNull()
+    .default("system"),
+  updatedAt: text("updated_at").notNull().default(now),
+});
+
 export const generations = sqliteTable("generations", {
   id: text("id").primaryKey(),
   sceneId: text("scene_id")

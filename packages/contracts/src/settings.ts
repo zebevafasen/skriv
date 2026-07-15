@@ -62,6 +62,14 @@ export const openRouterCredentialStatusSchema = z.object({
 export const updateOpenRouterCredentialSchema = z.object({
   apiKey: z.string().trim().min(10).max(500),
 });
+
+export const appThemeSchema = z.enum(["system", "light", "dark", "midnight", "ocean", "forest", "sepia"]);
+export const appSettingsSchema = z.object({
+  theme: appThemeSchema.default("system"),
+});
+export const updateAppSettingsInputSchema = appSettingsSchema.partial();
+
 export type AiSettings = z.infer<typeof aiSettingsSchema>;
 export type EditorSettings = z.infer<typeof editorSettingsSchema>;
+export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type OpenRouterCredentialStatus = z.infer<typeof openRouterCredentialStatusSchema>;

@@ -2,10 +2,12 @@ import { AppError } from "@asterism/application";
 import { basePackage } from "@asterism/content";
 import {
   aiSettingsSchema,
+  appSettingsSchema,
   createPromptInputSchema,
   editorSettingsSchema,
   promptDefinitionSchema,
   updateAiSettingsInputSchema,
+  updateAppSettingsInputSchema,
   updateEditorSettingsInputSchema,
   updatePromptInputSchema,
   workflowKeySchema,
@@ -16,6 +18,7 @@ import { z } from "zod";
 import type { LocalDatabase } from "./database.js";
 import {
   aiSettings,
+  appSettings,
   editorSettings,
   promptDefinitions,
   touchUpdatedAt,
@@ -63,6 +66,27 @@ export async function handleSettingsAndPrompts(
         .insert(aiSettings)
         .values({ id: 1, ...next })
         .onConflictDoUpdate({ target: aiSettings.id, set: { ...next, ...touchUpdatedAt } });
+      return next;
+    }
+  }
+
+  if (path === "/api/settings/app") {
+    const [currentRow] = await db
+      .select()
+      .from(appSettings)
+      .where(eq(appSettings.id, 1))
+      .limit(1);
+    const current = appSettingsSchema.parse(currentRow ?? {});
+    if (method === "GET") return current;
+    if (method === "PATCH") {
+      const next = appSettingsSchema.parse({
+        ...current,
+        ...updateAppSettingsInputSchema.parse(body),
+      });
+      await db
+        .insert(appSettings)
+        .values({ id: 1, ...next })
+        .onConflictDoUpdate({ target: appSettings.id, set: { ...next, ...touchUpdatedAt } });
       return next;
     }
   }

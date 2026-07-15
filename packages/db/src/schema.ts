@@ -359,6 +359,17 @@ export const aiSettings = pgTable("ai_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const appSettings = pgTable("app_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia"] })
+    .$type<import("@asterism/contracts").AppSettings["theme"]>()
+    .notNull()
+    .default("system"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const editorSettings = pgTable("editor_settings", {
   userId: text("user_id")
     .primaryKey()

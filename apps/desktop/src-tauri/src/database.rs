@@ -13,6 +13,7 @@ use crate::error::{NativeError, NativeResult};
 static MIGRATOR: sqlx::migrate::Migrator =
     sqlx::migrate!("../../../packages/local-store/migrations");
 
+
 pub struct DatabaseState {
     pub connection: Mutex<Option<SqliteConnection>>,
     pub path: PathBuf,

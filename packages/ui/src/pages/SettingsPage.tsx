@@ -1,5 +1,5 @@
 import { AppError } from "@asterism/application";
-import type { AiSettings } from "@asterism/contracts";
+import type { AiSettings, AppSettings } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FolderOpen,
@@ -25,6 +25,10 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
   const backups = app.backups;
   const client = useQueryClient();
   const dialog = useAppDialog();
+  const appSettings = useQuery({
+    queryKey: ["app-settings"],
+    queryFn: () => asterism().settings.app(),
+  });
   const settings = useQuery({
     queryKey: ["ai-settings"],
     queryFn: () => asterism().settings.ai(),
@@ -44,10 +48,24 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
     enabled: backups !== null,
   });
   const [draft, setDraft] = useState<AiSettings | null>(null);
+  const [appDraft, setAppDraft] = useState<AppSettings | null>(null);
   const [openRouterKey, setOpenRouterKey] = useState("");
+  
   useEffect(() => {
     if (settings.data) setDraft(settings.data);
   }, [settings.data]);
+
+  useEffect(() => {
+    if (appSettings.data) setAppDraft(appSettings.data);
+  }, [appSettings.data]);
+
+  const saveApp = useMutation({
+    mutationFn: (value: AppSettings) => asterism().settings.updateApp(value),
+    onSuccess: async (value) => {
+      setAppDraft(value);
+      await client.invalidateQueries({ queryKey: ["app-settings"] });
+    },
+  });
 
   const save = useMutation({
     mutationFn: (value: AiSettings) => asterism().settings.updateAi(value),
@@ -110,11 +128,42 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
           {app.capabilities.localBackups ? ", plus local recovery" : ""}.
         </p>
       </section>
-      {settings.error || models.error || credential.error ? (
-        <ErrorNotice error={settings.error ?? models.error ?? credential.error} />
+      {appSettings.error || settings.error || models.error || credential.error ? (
+        <ErrorNotice error={appSettings.error ?? settings.error ?? models.error ?? credential.error} />
       ) : null}
+      
+      {appDraft ? (
+        <section className="settings-card">
+          <div className="settings-heading">
+            <h2>App Appearance</h2>
+          </div>
+          <div className="form-field">
+            <span>Theme</span>
+            <select
+              value={appDraft.theme}
+              onChange={(e) => setAppDraft({ ...appDraft, theme: e.target.value as AppSettings["theme"] })}
+            >
+              <option value="system">System Default</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="midnight">Midnight</option>
+              <option value="ocean">Ocean</option>
+              <option value="forest">Forest</option>
+              <option value="sepia">Sepia</option>
+            </select>
+          </div>
+          <button type="button" className="button primary" onClick={() => saveApp.mutate(appDraft)}>
+            <Save size={16} /> Save appearance
+          </button>
+          {saveApp.error ? <ErrorNotice error={saveApp.error} /> : null}
+        </section>
+      ) : null}
+
       {draft ? (
         <section className="settings-card">
+          <div className="settings-heading">
+            <h2>AI Assistant</h2>
+          </div>
           <div className="settings-note">
             <ShieldCheck size={20} />
             <div>

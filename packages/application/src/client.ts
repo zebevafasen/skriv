@@ -1,5 +1,6 @@
 import type {
   AiSettings,
+  AppSettings,
   ChatContextSource,
   ChatStreamEvent,
   ChatThread,
@@ -212,6 +213,8 @@ export type PromptsClient = {
 };
 
 export type SettingsClient = {
+  app(): Promise<AppSettings>;
+  updateApp(input: Partial<AppSettings>): Promise<AppSettings>;
   ai(): Promise<AiSettings>;
   updateAi(input: Partial<AiSettings>): Promise<AiSettings>;
   editor(): Promise<EditorSettings>;
@@ -407,6 +410,8 @@ export function createAsterismClient(
         request(transport, "/api/prompt-bindings", "PUT", { workflow, promptId }),
     },
     settings: {
+      app: () => request(transport, "/api/settings/app"),
+      updateApp: (input) => request(transport, "/api/settings/app", "PATCH", input),
       ai: () => request(transport, "/api/settings/ai"),
       updateAi: (input) => request(transport, "/api/settings/ai", "PATCH", input),
       editor: () => request(transport, "/api/settings/editor"),

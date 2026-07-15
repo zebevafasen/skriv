@@ -1,10 +1,28 @@
 import { AppError } from "@asterism/application";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { BookOpenText, Library, Settings, Sparkles } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { asterism } from "../api.js";
 import { DialogProvider } from "./DialogProvider.js";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const appSettings = useQuery({
+    queryKey: ["app-settings"],
+    queryFn: () => asterism().settings.app(),
+  });
+
+  useEffect(() => {
+    if (appSettings.data?.theme) {
+      const theme = appSettings.data.theme;
+      if (theme === "system") {
+        document.documentElement.removeAttribute("data-theme");
+      } else {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+    }
+  }, [appSettings.data?.theme]);
+
   return (
     <DialogProvider>
       <div className="app-shell">
