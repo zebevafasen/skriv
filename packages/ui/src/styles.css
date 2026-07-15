@@ -4333,8 +4333,8 @@ label small {
   position: absolute;
   z-index: 80;
   top: calc(100% + 6px);
-  right: auto;
-  left: 0;
+  right: 0;
+  left: auto;
   width: 230px;
   display: grid;
   gap: 2px;
