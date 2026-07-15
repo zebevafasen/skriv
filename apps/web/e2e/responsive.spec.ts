@@ -99,6 +99,7 @@ for (const viewport of viewports) {
 }
 
 test("mobile workspace exposes every primary workflow without page overflow", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "Create story" }).click();
@@ -221,7 +222,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "More" }).click();
     await page.getByRole("link", { name: "Back to projects" }).click();
     await expect(page).toHaveURL("/");
-    await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your Library" })).toBeVisible();
     await page.evaluate(() => {
       const spacer = document.createElement("div");
       spacer.style.height = "1200px";

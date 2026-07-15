@@ -16,7 +16,7 @@ async function candidateFollowsSceneBeat(page: Page): Promise<boolean> {
 
 test("regenerates prose at the original position and accepts the replacement", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Library" })).toBeVisible();
   await page.request.patch("/api/settings/ai", {
     data: {
       baseModel: "skriv/fake-prose",

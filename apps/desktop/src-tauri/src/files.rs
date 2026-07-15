@@ -315,10 +315,7 @@ pub async fn write_project_backup(
     std::fs::create_dir_all(&directory)?;
     let bytes = build_archive_bytes(request.application_version, request.project, request.assets)?;
     let timestamp = Utc::now().format("%Y%m%dT%H%M%S%.3fZ");
-    let path = directory.join(format!(
-        "{timestamp}-{}.skriv",
-        safe_title(&request.title)
-    ));
+    let path = directory.join(format!("{timestamp}-{}.skriv", safe_title(&request.title)));
     std::fs::write(path, bytes)?;
     retain_project_backups(&directory)
 }

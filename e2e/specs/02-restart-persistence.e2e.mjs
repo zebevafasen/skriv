@@ -1,6 +1,6 @@
 describe("restart persistence", () => {
   it("loads the project created by the previous desktop session", async () => {
-    const libraryHeading = await $("h1=Your stories");
+    const libraryHeading = await $("h1=Your Library");
     await libraryHeading.waitForDisplayed({
       timeout: 30_000,
       timeoutMsg: `Skriv did not reach the library. Body: ${await $("body").getText()}`,
