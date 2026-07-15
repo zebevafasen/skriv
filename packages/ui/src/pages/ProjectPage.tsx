@@ -36,7 +36,6 @@ import {
   useState,
 } from "react";
 import { asterism } from "../api.js";
-import { registerPersistenceFlusher } from "../persistence.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
@@ -46,8 +45,10 @@ import type {
   ManuscriptEditorHandle,
 } from "../components/ManuscriptEditor.js";
 import { type ManuscriptScope, scenesForScope } from "../editor/manuscriptDocument.js";
+import { registerPersistenceFlusher } from "../persistence.js";
 import { trapFocusWithin } from "../utils/focus.js";
 import { updateSceneInTree } from "../utils/manuscript.js";
+import { recordProjectAccess } from "../utils/projectAccess.js";
 
 const ChatPanel = lazy(() =>
   import("../components/ChatPanel.js").then((module) => ({ default: module.ChatPanel })),
@@ -127,6 +128,8 @@ export function ProjectPage() {
   const view: ManuscriptView = search.view ?? "write";
   const scope = parseScope(search.scope);
   const selectedEntryId = search.entry ?? null;
+
+  useEffect(() => recordProjectAccess(projectId), [projectId]);
 
   useEffect(() => {
     const viewport = window.visualViewport;

@@ -42,6 +42,7 @@ function NoteEditor({
   const saveQueue = useRef<Promise<ProjectNote | null>>(Promise.resolve(null));
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
+  const nativeSpellcheck = asterism().capabilities.platform !== "desktop";
 
   const persist = useCallback(
     (payload: object) => {
@@ -78,7 +79,9 @@ function NoteEditor({
       Placeholder.configure({ placeholder: "Start writing this note..." }),
     ],
     content: note.document as JSONContent,
-    editorProps: { attributes: { class: "notebook-prose", spellcheck: "true" } },
+    editorProps: {
+      attributes: { class: "notebook-prose", spellcheck: String(nativeSpellcheck) },
+    },
     onSelectionUpdate({ editor: current }) {
       const { from, to, empty } = current.state.selection;
       if (empty || !current.state.doc.textBetween(from, to, " ").trim()) {

@@ -26,9 +26,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Settings size={17} /> Settings
             </Link>
           </nav>
-          <div className="profile-dot" title="Local Writer">
-            LW
-          </div>
         </header>
         <main>{children}</main>
       </div>

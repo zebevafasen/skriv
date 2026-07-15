@@ -14,6 +14,7 @@ describe("offline project lifecycle", () => {
     await browser.waitUntil(async () => (await browser.getUrl()).includes("/projects/"));
     await expect($("body")).toHaveText(expect.stringContaining("E2E Northern Lights"));
     const editor = await $(".ProseMirror");
+    expect(await editor.getAttribute("spellcheck")).toBe("false");
     const firstParagraph = await $(".continuous-scene-content p");
     await firstParagraph.waitForClickable();
     await firstParagraph.click();

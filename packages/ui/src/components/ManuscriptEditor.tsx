@@ -545,6 +545,11 @@ export const ManuscriptEditor = forwardRef<
   ref,
 ) {
   const queryClient = useQueryClient();
+  // WebView2 selects its native spelling dictionary from the host Windows
+  // language packs, not Asterism's per-project language. When they differ it
+  // can underline nearly every word, so keep native spellcheck in the browser
+  // product and disable the unreliable WebView2 layer on desktop.
+  const nativeSpellcheck = asterism().capabilities.platform !== "desktop";
   const visibleScenes = useMemo(() => scenesForScope(tree, scope), [tree, scope]);
   const scopeKey = `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
   const [typographyOpen, setTypographyOpen] = useState(false);
@@ -661,7 +666,10 @@ export const ManuscriptEditor = forwardRef<
       ],
       content: compositeDocument(tree, scope),
       editorProps: {
-        attributes: { class: "manuscript-prose continuous-editor-prose", spellcheck: "true" },
+        attributes: {
+          class: "manuscript-prose continuous-editor-prose",
+          spellcheck: String(nativeSpellcheck),
+        },
         handleTextInput(view, _from, _to, text) {
           if (text !== "/") return false;
           const sceneBeat = view.state.schema.nodes.sceneBeat;

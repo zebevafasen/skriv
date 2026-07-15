@@ -1,29 +1,66 @@
-import {
-  type ContentPackage,
-  type Project,
-  type ProjectDefaults,
-  storyLanguages,
-} from "@asterism/contracts";
+import { type Project, type ProjectDefaults, storyLanguages } from "@asterism/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Plus, Search, Upload } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  BookOpen,
+  LayoutGrid,
+  List,
+  Plus,
+  Search,
+  Upload,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { asterism } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
-import { IngredientPackPicker } from "../components/IngredientPackPicker.js";
-import { IngredientPackCatalogManager } from "../components/IngredientPackCatalogManager.js";
-
-type DefinitionsResponse = {
-  package: ContentPackage;
-  customDefinitions: Array<{ id: string; kind: "genre" | "theme" | "tag"; label: string }>;
-};
+import { readProjectAccessHistory } from "../utils/projectAccess.js";
+import {
+  projectArtworkHue,
+  projectArtworkSecondaryHue,
+  projectArtworkSeed,
+  projectArtworkVariant,
+  projectArtworkVariants,
+} from "../utils/projectArtwork.js";
+import {
+  filterAndSortProjects,
+  type ProjectSortDirection,
+  type ProjectSortField,
+} from "../utils/projectLibrary.js";
 
 type CreatedProject = { project: Project; initialSceneId: string | null };
+type LibraryView = "grid" | "list";
 
-import { projectArtworkVariant, projectArtworkHue, projectArtworkSecondaryHue, projectArtworkSeed, projectArtworkVariants } from "../utils/projectArtwork.js";
+function formatRelativeTime(value: string): string {
+  const elapsedSeconds = Math.round((new Date(value).getTime() - Date.now()) / 1_000);
+  const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+    ["year", 31_536_000],
+    ["month", 2_592_000],
+    ["week", 604_800],
+    ["day", 86_400],
+    ["hour", 3_600],
+    ["minute", 60],
+  ];
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  for (const [unit, seconds] of units) {
+    if (Math.abs(elapsedSeconds) >= seconds)
+      return formatter.format(Math.round(elapsedSeconds / seconds), unit);
+  }
+  return "just now";
+}
+
+function directionLabel(field: ProjectSortField, direction: ProjectSortDirection): string {
+  if (field === "date") return direction === "ascending" ? "Oldest first" : "Recent first";
+  return direction === "ascending" ? "A–Z" : "Z–A";
+}
 
 export function LibraryPage() {
   const [query, setQuery] = useState("");
+  const [sortField, setSortField] = useState<ProjectSortField>("date");
+  const [sortDirection, setSortDirection] = useState<ProjectSortDirection>("descending");
+  const [libraryView, setLibraryView] = useState<LibraryView>("grid");
+  const [accessHistory] = useState(readProjectAccessHistory);
   const [newTitle, setNewTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [language, setLanguage] = useState<ProjectDefaults["language"]>("General English");
@@ -31,8 +68,6 @@ export function LibraryPage() {
   const [outlineChoice, setOutlineChoice] = useState("blank");
   const [copyProjectId, setCopyProjectId] = useState("");
   const [copyEntryIds, setCopyEntryIds] = useState<string[]>([]);
-  const [ingredientPackIds, setIngredientPackIds] = useState<string[]>([]);
-  const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const defaultsInitialized = useRef(false);
   const authorTouched = useRef(false);
@@ -45,14 +80,6 @@ export function LibraryPage() {
   const defaults = useQuery({
     queryKey: ["project-defaults"],
     queryFn: () => asterism().projects.defaults(),
-  });
-  const ingredientPackCatalog = useQuery({
-    queryKey: ["ingredient-pack-catalog"],
-    queryFn: () => asterism().ideation.catalog(),
-  });
-  const definitions = useQuery({
-    queryKey: ["ideation-definitions"],
-    queryFn: () => asterism().ideation.definitions() as Promise<DefinitionsResponse>,
   });
   const sourceEntries = useQuery({
     queryKey: ["compendium", copyProjectId],
@@ -98,7 +125,6 @@ export function LibraryPage() {
         title: newTitle.trim(),
         author,
         language,
-        ingredientPackIds,
         outline:
           outlineChoice === "copy"
             ? { kind: "project", projectId: copyProjectId }
@@ -125,11 +151,22 @@ export function LibraryPage() {
     },
   });
   const filtered = useMemo(
+    () => filterAndSortProjects(projects.data ?? [], query, sortField, sortDirection),
+    [projects.data, query, sortDirection, sortField],
+  );
+  const recentProjects = useMemo(
     () =>
-      (projects.data ?? []).filter((project) =>
-        project.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
-      ),
-    [projects.data, query],
+      (projects.data ?? [])
+        .flatMap((project) => {
+          const lastOpenedAt = accessHistory[project.id];
+          return lastOpenedAt ? [{ project, lastOpenedAt }] : [];
+        })
+        .sort(
+          (left, right) =>
+            new Date(right.lastOpenedAt).getTime() - new Date(left.lastOpenedAt).getTime(),
+        )
+        .slice(0, 3),
+    [accessHistory, projects.data],
   );
   const copyableEntries = (sourceEntries.data ?? []).filter((entry) => !entry.singleton);
   const customCategoryNames = new Map(
@@ -152,41 +189,136 @@ export function LibraryPage() {
   return (
     <div className="page library-page">
       <section className="page-heading">
-        <p className="eyebrow">Your private library</p>
-        <h1>Your stories</h1>
-        <p>Every world begins somewhere. Continue a manuscript or begin weaving something new.</p>
+        <h1>Your Library</h1>
       </section>
+      {recentProjects.length ? (
+        <section className="recent-projects" aria-labelledby="recent-projects-title">
+          <div className="library-section-heading">
+            <h2 className="eyebrow" id="recent-projects-title">
+              Jump back in
+            </h2>
+          </div>
+          <div className="recent-project-grid">
+            {recentProjects.map(({ project, lastOpenedAt }) => (
+              <Link
+                key={project.id}
+                to="/projects/$projectId"
+                params={{ projectId: project.id }}
+                className="recent-project-card"
+              >
+                <div>
+                  <h3>{project.title}</h3>
+                  <p>{project.settings?.author || "Unknown author"}</p>
+                </div>
+                <span title={new Date(lastOpenedAt).toLocaleString()}>
+                  Last used {formatRelativeTime(lastOpenedAt)}
+                </span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <div className="library-section-heading projects-heading">
+        <h2 className="eyebrow">Collection</h2>
+        {!projects.isLoading ? (
+          <span>
+            {projects.data?.length ?? 0} {(projects.data?.length ?? 0) === 1 ? "story" : "stories"}
+          </span>
+        ) : null}
+      </div>
       <div className="library-actions">
-        <button type="button" className="button primary" onClick={() => setCreating(true)}>
-          <Plus size={18} /> Create story
-        </button>
-        <button
-          type="button"
-          className="button ghost"
-          onClick={() => importProject.mutate()}
-          disabled={importProject.isPending}
-        >
-          <Upload size={18} /> {importProject.isPending ? "Importing..." : "Import story"}
-        </button>
+        <div className="library-action-buttons">
+          <button type="button" className="button primary" onClick={() => setCreating(true)}>
+            <Plus size={18} /> Create story
+          </button>
+          <button
+            type="button"
+            className="button ghost"
+            onClick={() => importProject.mutate()}
+            disabled={importProject.isPending}
+          >
+            <Upload size={18} /> {importProject.isPending ? "Importing..." : "Import story"}
+          </button>
+        </div>
         <label className="search-field">
           <Search size={18} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search your stories…"
+            placeholder="Search by title, author or series…"
+            aria-label="Search projects by title, author or series"
           />
         </label>
+      </div>
+      <div className="library-controls">
+        <label className="sort-control">
+          <span>Sort by</span>
+          <select
+            value={sortField}
+            onChange={(event) => {
+              const nextField = event.target.value as ProjectSortField;
+              setSortField(nextField);
+              setSortDirection(nextField === "date" ? "descending" : "ascending");
+            }}
+          >
+            <option value="date">Last modified</option>
+            <option value="name">Name</option>
+            <option value="series" disabled>
+              Series (coming soon)
+            </option>
+            <option value="author">Author</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className="sort-direction-button"
+          onClick={() =>
+            setSortDirection((current) => (current === "ascending" ? "descending" : "ascending"))
+          }
+          aria-label={`Current order: ${directionLabel(sortField, sortDirection)}. Change sort direction`}
+          title={`Current order: ${directionLabel(sortField, sortDirection)}`}
+        >
+          {sortDirection === "ascending" ? <ArrowUp size={17} /> : <ArrowDown size={17} />}
+          {directionLabel(sortField, sortDirection)}
+        </button>
+        <fieldset className="view-control">
+          <legend>View as</legend>
+          <div className="view-toggle">
+            <button
+              type="button"
+              className={libraryView === "grid" ? "active" : ""}
+              aria-label="Grid view"
+              aria-pressed={libraryView === "grid"}
+              onClick={() => setLibraryView("grid")}
+            >
+              <LayoutGrid size={17} />
+            </button>
+            <button
+              type="button"
+              className={libraryView === "list" ? "active" : ""}
+              aria-label="List view"
+              aria-pressed={libraryView === "list"}
+              onClick={() => setLibraryView("list")}
+            >
+              <List size={18} />
+            </button>
+          </div>
+        </fieldset>
       </div>
       {projects.error ? <ErrorNotice error={projects.error} /> : null}
       {importProject.error ? <ErrorNotice error={importProject.error} /> : null}
       {projects.isLoading ? <div className="loading">Gathering your stories…</div> : null}
-      {!projects.isLoading && filtered.length === 0 ? (
+      {!projects.isLoading && filtered.length === 0 && !query.trim() ? (
         <EmptyState
           title="A blank shelf"
           body="Create your first story and Asterism will prepare its opening scene."
         />
       ) : null}
-      <section className="project-grid" aria-label="Projects">
+      {!projects.isLoading && filtered.length === 0 && query.trim() ? (
+        <EmptyState title="No stories found" body="Try a different title, author, or series." />
+      ) : null}
+      <section className={`project-grid ${libraryView}-view`} aria-label="Projects">
         {filtered.map((project) => {
           const artworkSeed = projectArtworkSeed(project);
           return (
@@ -198,7 +330,13 @@ export function LibraryPage() {
             >
               <div
                 className="project-art"
-                style={{ "--art-hue": projectArtworkHue(artworkSeed), "--art-secondary-hue": projectArtworkSecondaryHue(artworkSeed), ...projectArtworkVariants[projectArtworkVariant(artworkSeed)] } as React.CSSProperties}
+                style={
+                  {
+                    "--art-hue": projectArtworkHue(artworkSeed),
+                    "--art-secondary-hue": projectArtworkSecondaryHue(artworkSeed),
+                    ...projectArtworkVariants[projectArtworkVariant(artworkSeed)],
+                  } as React.CSSProperties
+                }
               >
                 {project.settings.coverDataUrl ? (
                   <img src={project.settings.coverDataUrl} alt="" />
@@ -206,8 +344,12 @@ export function LibraryPage() {
               </div>
               <div className="project-card-body">
                 <h2>{project.title}</h2>
-                <p>
-                  <BookOpen size={14} /> Edited {new Date(project.updatedAt).toLocaleDateString()}
+                <p className="project-byline">{project.settings?.author || "Unknown author"}</p>
+                {project.settings?.series ? (
+                  <p className="project-series">{project.settings.series}</p>
+                ) : null}
+                <p className="project-modified">
+                  <BookOpen size={14} /> Modified {new Date(project.updatedAt).toLocaleDateString()}
                 </p>
                 <span>
                   Open manuscript <ArrowRight size={14} />
@@ -304,36 +446,6 @@ export function LibraryPage() {
                       empty Scenes.
                     </p>
                   ) : null}
-                </section>
-                <section>
-                  <h3>Ingredient packs</h3>
-                  {ingredientPackCatalog.error ? (
-                    <ErrorNotice error={ingredientPackCatalog.error} />
-                  ) : (
-                    <IngredientPackPicker
-                      catalog={
-                        ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }
-                      }
-                      selectedIds={new Set(ingredientPackIds)}
-                      definitions={[
-                        ...(definitions.data?.package.genres.map((item) => ({
-                          ...item,
-                          kind: "genre" as const,
-                        })) ?? []),
-                        ...(definitions.data?.package.themes.map((item) => ({
-                          ...item,
-                          kind: "theme" as const,
-                        })) ?? []),
-                        ...(definitions.data?.package.tags.map((item) => ({
-                          ...item,
-                          kind: "tag" as const,
-                        })) ?? []),
-                        ...(definitions.data?.customDefinitions ?? []),
-                      ]}
-                      onSelectionChange={setIngredientPackIds}
-                      onManage={() => setIngredientPackManagerOpen(true)}
-                    />
-                  )}
                 </section>
                 <section>
                   <h3>Copy from another project</h3>
@@ -439,30 +551,6 @@ export function LibraryPage() {
           </form>
         </div>
       ) : null}
-      <IngredientPackCatalogManager
-        open={ingredientPackManagerOpen}
-        catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
-        definitions={[
-          ...(definitions.data?.package.genres.map((item) => ({
-            ...item,
-            kind: "genre" as const,
-          })) ?? []),
-          ...(definitions.data?.package.themes.map((item) => ({
-            ...item,
-            kind: "theme" as const,
-          })) ?? []),
-          ...(definitions.data?.package.tags.map((item) => ({ ...item, kind: "tag" as const })) ??
-            []),
-          ...(definitions.data?.customDefinitions ?? []),
-        ]}
-        onClose={() => setIngredientPackManagerOpen(false)}
-        onChanged={async () => {
-          await Promise.all([
-            client.invalidateQueries({ queryKey: ["ingredient-pack-catalog"] }),
-            client.invalidateQueries({ queryKey: ["ideation-definitions"] }),
-          ]);
-        }}
-      />
     </div>
   );
 }

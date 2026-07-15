@@ -284,8 +284,8 @@ export function ProjectSettingsPanel({
                     <h4>Language</h4>
                   </div>
                   <p className="card-description">
-                    This is the language of your novel. It will be used for spell checking and
-                    hyphenation.
+                    This is the language of your novel. It is used for language-aware writing
+                    tools, AI instructions, and hyphenation.
                   </p>
                   <select
                     value={project.settings.language}
