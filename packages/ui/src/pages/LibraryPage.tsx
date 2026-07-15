@@ -439,10 +439,12 @@ export function LibraryPage() {
                 <p className="project-modified">
                   <BookOpen size={14} /> Modified {new Date(project.updatedAt).toLocaleDateString()}
                 </p>
-                <span>
-                  Open Project <ArrowRight size={14} />
-                </span>
-                <ProjectCardMenu project={project} />
+                <div className="project-card-actions">
+                  <span>
+                    Open Project <ArrowRight size={14} />
+                  </span>
+                  <ProjectCardMenu project={project} />
+                </div>
               </div>
             </Link>
           );
