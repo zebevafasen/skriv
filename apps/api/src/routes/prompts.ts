@@ -190,6 +190,17 @@ export async function registerPromptRoutes(
     return userPromptResponse(updated);
   });
 
+  app.delete("/api/prompts/:id", async (request, reply) => {
+    const { id } = parseWith(promptParams, request.params);
+    const [removed] = await context.db
+      .delete(promptDefinitions)
+      .where(and(eq(promptDefinitions.id, id), eq(promptDefinitions.ownerId, request.userId)))
+      .returning({ id: promptDefinitions.id });
+    if (!removed)
+      return notFound(reply, "User prompt not found. Built-in prompts cannot be deleted.");
+    return reply.code(204).send();
+  });
+
   app.put("/api/prompt-bindings", async (request, reply) => {
     const input = parseWith(bindInputSchema, request.body);
     if (input.promptId)

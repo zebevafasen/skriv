@@ -352,7 +352,7 @@ export function LibraryPage() {
                   <BookOpen size={14} /> Modified {new Date(project.updatedAt).toLocaleDateString()}
                 </p>
                 <span>
-                  Open manuscript <ArrowRight size={14} />
+                  Open Project <ArrowRight size={14} />
                 </span>
               </div>
             </Link>
@@ -495,14 +495,14 @@ export function LibraryPage() {
                                 setCopyEntryIds((current) =>
                                   group.entries.every((entry) => current.includes(entry.id))
                                     ? current.filter(
-                                        (id) => !group.entries.some((entry) => entry.id === id),
-                                      )
+                                      (id) => !group.entries.some((entry) => entry.id === id),
+                                    )
                                     : [
-                                        ...new Set([
-                                          ...current,
-                                          ...group.entries.map((entry) => entry.id),
-                                        ]),
-                                      ],
+                                      ...new Set([
+                                        ...current,
+                                        ...group.entries.map((entry) => entry.id),
+                                      ]),
+                                    ],
                                 )
                               }
                             />{" "}

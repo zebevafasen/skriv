@@ -2,8 +2,20 @@ import { describe, expect, it } from "vitest";
 import { createAsterismClient, type PlatformCapabilities } from "./client.js";
 
 const platforms: PlatformCapabilities[] = [
-  { platform: "web", accounts: true, invitations: true, localBackups: false, nativeFileDialogs: false },
-  { platform: "desktop", accounts: false, invitations: false, localBackups: true, nativeFileDialogs: true },
+  {
+    platform: "web",
+    accounts: true,
+    invitations: true,
+    localBackups: false,
+    nativeFileDialogs: false,
+  },
+  {
+    platform: "desktop",
+    accounts: false,
+    invitations: false,
+    localBackups: true,
+    nativeFileDialogs: true,
+  },
 ];
 
 describe.each(platforms)("AsterismClient $platform conformance", (capabilities) => {
@@ -30,12 +42,14 @@ describe.each(platforms)("AsterismClient $platform conformance", (capabilities) 
     );
     await client.projects.list();
     await client.notes.list("project-id");
+    await client.prompts.remove("prompt-id");
     await client.settings.credential();
     expect(client.capabilities).toEqual(capabilities);
     expect(Boolean(client.backups)).toBe(capabilities.localBackups);
     expect(operations).toEqual([
       "GET /api/projects",
       "GET /api/projects/project-id/notes",
+      "DELETE /api/prompts/prompt-id",
       "GET /api/settings/openrouter",
     ]);
   });

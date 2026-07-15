@@ -207,6 +207,7 @@ export type PromptsClient = {
   copy(promptId: string): Promise<PromptDefinition>;
   create(input: JsonInput): Promise<PromptDefinition>;
   update(promptId: string, input: JsonInput): Promise<PromptDefinition>;
+  remove(promptId: string): Promise<void>;
   bind(workflow: WorkflowKey, promptId: string | null): Promise<void>;
 };
 
@@ -401,6 +402,7 @@ export function createAsterismClient(
       copy: (id) => request(transport, `/api/prompts/${id}/copy`, "POST"),
       create: (input) => request(transport, "/api/prompts", "POST", input),
       update: (id, input) => request(transport, `/api/prompts/${id}`, "PATCH", input),
+      remove: (id) => request(transport, `/api/prompts/${id}`, "DELETE"),
       bind: (workflow, promptId) =>
         request(transport, "/api/prompt-bindings", "PUT", { workflow, promptId }),
     },

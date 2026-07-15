@@ -185,6 +185,20 @@ export async function handleSettingsAndPrompts(
     return promptResponse(updated);
   }
 
+  if (promptMatch && method === "DELETE") {
+    const [removed] = await db
+      .delete(promptDefinitions)
+      .where(eq(promptDefinitions.id, promptMatch[1] as string))
+      .returning({ id: promptDefinitions.id });
+    if (!removed) {
+      throw new AppError(
+        "Custom prompt not found. Built-in prompts cannot be deleted.",
+        "NOT_FOUND",
+      );
+    }
+    return undefined;
+  }
+
   if (path === "/api/prompt-bindings" && method === "PUT") {
     const input = bindingSchema.parse(body);
     let builtinPromptId: string | null = null;
