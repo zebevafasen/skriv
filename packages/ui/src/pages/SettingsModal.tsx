@@ -164,6 +164,7 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                     <option value="ocean">Ocean</option>
                     <option value="forest">Forest</option>
                     <option value="sepia">Sepia</option>
+                    <option value="parchment">Parchment</option>
                   </select>
                 </div>
                 <button type="button" className="button primary" onClick={() => saveApp.mutate(appDraft)}>

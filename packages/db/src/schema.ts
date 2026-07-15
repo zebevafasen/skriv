@@ -363,7 +363,7 @@ export const appSettings = pgTable("app_settings", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
-  theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia"] })
+  theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia", "parchment"] })
     .$type<import("@skriv/contracts").AppSettings["theme"]>()
     .notNull()
     .default("system"),

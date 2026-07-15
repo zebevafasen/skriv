@@ -63,7 +63,7 @@ export const updateOpenRouterCredentialSchema = z.object({
   apiKey: z.string().trim().min(10).max(500),
 });
 
-export const appThemeSchema = z.enum(["system", "light", "dark", "midnight", "ocean", "forest", "sepia"]);
+export const appThemeSchema = z.enum(["system", "light", "dark", "midnight", "ocean", "forest", "sepia", "parchment"]);
 export const appSettingsSchema = z.object({
   theme: appThemeSchema.default("system"),
 });
