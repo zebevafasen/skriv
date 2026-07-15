@@ -1,5 +1,14 @@
 import type { CompendiumCategory, CompendiumEntry } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { JSONContent } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { findMentions } from "@skriv/core";
 import {
   BookMarked,
   Box,
@@ -21,7 +30,109 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
-import { MentionTextarea } from "./MentionTextarea.js";
+
+const MentionsHighlighter = Extension.create<{ entries: CompendiumEntry[] }>({
+  name: "mentionsHighlighter",
+  addOptions() {
+    return { entries: [] };
+  },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey("mentionsHighlighter"),
+        state: {
+          init() {
+            return DecorationSet.empty;
+          },
+          apply: (tr) => {
+            const doc = tr.doc;
+            const decorations: Decoration[] = [];
+            doc.descendants((node, pos) => {
+              if (node.isText && node.text) {
+                const matches = findMentions(node.text, this.options.entries, {
+                  includeUntracked: true,
+                });
+                for (const match of matches) {
+                  decorations.push(
+                    Decoration.inline(pos + match.from, pos + match.to, {
+                      nodeName: "mark",
+                      class: "compendium-mention",
+                    }),
+                  );
+                }
+              }
+            });
+            return DecorationSet.create(doc, decorations);
+          },
+        },
+        props: {
+          decorations(state) {
+            return this.getState(state);
+          },
+        },
+      }),
+    ];
+  },
+});
+
+function CompendiumDescriptionEditor({
+  draft,
+  setDraft,
+  mentionEntries,
+}: {
+  draft: CompendiumEntry;
+  setDraft: (draft: CompendiumEntry) => void;
+  mentionEntries: CompendiumEntry[];
+}) {
+  const documentRef = useRef<string | null>(
+    draft.content.kind === "rich_text" ? JSON.stringify(draft.content.document) : null,
+  );
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false }),
+      Underline,
+      Placeholder.configure({ placeholder: "Write a description…" }),
+      MentionsHighlighter.configure({ entries: mentionEntries }),
+    ],
+    content: draft.content.kind === "rich_text" ? (draft.content.document as JSONContent) : (draft.content.kind === "text" ? draft.content.text : ""),
+    editorProps: {
+      attributes: { class: "compendium-description-prose" },
+    },
+    onUpdate({ editor: current }) {
+      const document = current.getJSON();
+      const stringified = JSON.stringify(document);
+      if (stringified === documentRef.current) return;
+      documentRef.current = stringified;
+      setDraft({
+        ...draft,
+        content: {
+          kind: "rich_text",
+          plainText: current.getText({ blockSeparator: "\n\n" }),
+          document,
+        },
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (editor) {
+      const extension = editor.extensionManager.extensions.find(
+        (e) => e.name === "mentionsHighlighter",
+      );
+      if (extension) {
+        extension.options.entries = mentionEntries;
+        editor.view.dispatch(editor.state.tr);
+      }
+    }
+  }, [editor, mentionEntries]);
+
+  return (
+    <div className="compendium-description-editor">
+      <EditorContent editor={editor} />
+    </div>
+  );
+}
 
 const storyTypes = [
   { id: "story.character", label: "Character", icon: UserRound },
@@ -983,14 +1094,10 @@ export function CompendiumEntryDrawer({
               <label className="drawer-field description-field" htmlFor="compendium-description">
                 <strong>Description</strong>
                 <small>Write the information the AI should know about this entry.</small>
-                <MentionTextarea
-                  id="compendium-description"
-                  value={description}
-                  entries={mentionEntries}
-                  onValueChange={(value) =>
-                    setDraft({ ...draft, content: { kind: "text", text: value } })
-                  }
-                  placeholder="Write a description…"
+                <CompendiumDescriptionEditor
+                  draft={draft}
+                  setDraft={setDraft}
+                  mentionEntries={mentionEntries}
                 />
                 <span className="word-count">
                   {wordCount} {wordCount === 1 ? "word" : "words"}

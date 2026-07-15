@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Info,
   MessageCircle,
   Pencil,
   Plus,
@@ -38,7 +39,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { ApiError, skriv } from "../api.js";
 import { CompendiumMentionText } from "./CompendiumMentionText.js";
 import { useAppDialog } from "./DialogProvider.js";
-import { MentionTextarea } from "./MentionTextarea.js";
+import { ChatEditor } from "./ChatEditor.js";
 import { ModelSelect } from "./ModelSelect.js";
 
 const sourceKey = (source: ChatContextSource) =>
@@ -109,16 +110,14 @@ function MentionComposer({
   value: string;
   entries: CompendiumEntry[];
   onChange: (value: string) => void;
-  onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement>;
+  onKeyDown: React.KeyboardEventHandler<HTMLDivElement>;
 }) {
   return (
-    <MentionTextarea
+    <ChatEditor
       wrapperClassName="chat-input-layer"
       value={value}
       entries={entries}
-      spellCheck={false}
-      onValueChange={onChange}
-      placeholder="Ask anything about this project..."
+      onChange={onChange}
       onKeyDown={onKeyDown}
     />
   );
@@ -486,7 +485,45 @@ export function ChatPanel({
           {(thread.data.messages ?? []).map((message) => (
             <article key={message.id} className={`chat-message ${message.role}`}>
               <div className="chat-message-meta">
-                <strong>{message.role === "user" ? "You" : "Skriv"}</strong>
+                <strong className="chat-message-author">
+                  {message.role === "user" ? "You" : "Skriv"}
+                  {message.role === "assistant" && message.model && (
+                    <span title={`Model: ${message.model}`} className="chat-info-icon" style={{ marginLeft: 6, opacity: 0.5 }}>
+                      <Info size={12} />
+                    </span>
+                  )}
+                  {message.role === "user" && (
+                    <span 
+                      title={thread.data.contextSources.length > 0 ? `Context:\n${
+                        Array.from(
+                          thread.data.contextSources.reduce((map, source) => {
+                            let found = false;
+                            for (const group of contextGroups) {
+                              const option = group.items.find((o) => sourceKey(o.source) === sourceKey(source));
+                              if (option) {
+                                const list = map.get(group.label) || [];
+                                list.push(option.label);
+                                map.set(group.label, list);
+                                found = true;
+                                break;
+                              }
+                            }
+                            if (!found) {
+                              const list = map.get("Other") || [];
+                              list.push(source.kind);
+                              map.set("Other", list);
+                            }
+                            return map;
+                          }, new Map<string, string[]>())
+                        ).map(([group, labels]) => `${group}:\n  ${labels.join("\n  ")}`).join("\n\n")
+                      }` : "Context:\nNone"} 
+                      className="chat-info-icon" 
+                      style={{ marginLeft: 6, opacity: 0.5 }}
+                    >
+                      <Info size={12} />
+                    </span>
+                  )}
+                </strong>
                 <button
                   type="button"
                   title="Copy"
@@ -499,8 +536,16 @@ export function ChatPanel({
               <RichMessage message={message} entries={entries} onOpenEntry={onOpenEntry} />
               {message.status !== "completed" && (
                 <small>
-                  {message.status}
-                  {message.failureMessage ? ` · ${message.failureMessage}` : ""}
+                  {message.status === "streaming" ? (
+                    <span className="chat-typing-indicator" title="Streaming...">
+                      <span /><span /><span />
+                    </span>
+                  ) : (
+                    <>
+                      {message.status}
+                      {message.failureMessage ? ` · ${message.failureMessage}` : ""}
+                    </>
+                  )}
                 </small>
               )}
             </article>
@@ -621,7 +666,6 @@ export function ChatPanel({
             if (
               event.key === "Enter" &&
               !event.shiftKey &&
-              !event.nativeEvent.isComposing &&
               window.matchMedia("(pointer: fine)").matches
             ) {
               event.preventDefault();

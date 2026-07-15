@@ -67,12 +67,12 @@ fn consume_sse_line(
     channel: &Channel<StreamEvent>,
     input_tokens: &mut Option<u64>,
     output_tokens: &mut Option<u64>,
-) -> NativeResult<()> {
+) -> NativeResult<bool> {
     let Some(data) = line.strip_prefix("data:").map(str::trim) else {
-        return Ok(());
+        return Ok(true);
     };
     if data.is_empty() || data == "[DONE]" {
-        return Ok(());
+        return Ok(false);
     }
     let payload: JsonValue = serde_json::from_str(data).map_err(|error| {
         NativeError::Provider(format!("Invalid OpenRouter stream event: {error}"))
@@ -99,7 +99,7 @@ fn consume_sse_line(
         *input_tokens = usage.get("prompt_tokens").and_then(JsonValue::as_u64);
         *output_tokens = usage.get("completion_tokens").and_then(JsonValue::as_u64);
     }
-    Ok(())
+    Ok(true)
 }
 
 #[tauri::command]
@@ -164,25 +164,31 @@ pub async fn openrouter_stream(
     let mut input_tokens = None;
     let mut output_tokens = None;
     let stream_result: NativeResult<()> = async {
-        loop {
+        'stream: loop {
             tokio::select! {
                 () = cancellation.cancelled() => {
                     return Err(NativeError::Cancelled("AI operation cancelled.".into()));
                 }
-                item = stream.next() => {
-                    let Some(item) = item else { break };
+                item = tokio::time::timeout(Duration::from_secs(60), stream.next()) => {
+                    let Ok(item) = item else { break 'stream; }; // Handle timeout
+                    let Some(item) = item else { break 'stream; };
                     let bytes = item.map_err(|error| NativeError::Provider(error.to_string()))?;
                     buffer.push_str(&String::from_utf8_lossy(&bytes));
                     while let Some(newline) = buffer.find('\n') {
                         let line = buffer[..newline].trim_end_matches('\r').to_owned();
                         buffer.drain(..=newline);
-                        consume_sse_line(&line, &on_event, &mut input_tokens, &mut output_tokens)?;
+                        if !consume_sse_line(&line, &on_event, &mut input_tokens, &mut output_tokens)? {
+                            break 'stream;
+                        }
+                    }
+                    if buffer.trim() == "data: [DONE]" {
+                        break 'stream;
                     }
                 }
             }
         }
         if !buffer.trim().is_empty() {
-            consume_sse_line(
+            let _ = consume_sse_line(
                 buffer.trim(),
                 &on_event,
                 &mut input_tokens,

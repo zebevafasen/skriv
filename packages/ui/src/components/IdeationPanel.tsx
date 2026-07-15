@@ -112,7 +112,7 @@ export function IdeationPanel({
     queryKey: ["compendium-categories", projectId],
     queryFn: () => skriv().compendium.categories(projectId),
   });
-  const [mode, setMode] = useState<IdeationMode>("premise");
+  const [mode] = useState<IdeationMode>("premise");
   const [genres, setGenres] = useState<Value[]>([]);
   const [themes, setThemes] = useState<Value[]>([]);
   const [tags, setTags] = useState<Value[]>([]);
@@ -675,22 +675,6 @@ export function IdeationPanel({
           </button>
         </div>
       </div>
-      <nav className="ideation-mode-tabs" aria-label="Ideation mode">
-        <button
-          type="button"
-          className={mode === "premise" ? "active" : ""}
-          onClick={() => setMode("premise")}
-        >
-          <Sparkles size={15} /> Premise
-        </button>
-        <button
-          type="button"
-          className={mode === "entity" ? "active" : ""}
-          onClick={() => setMode("entity")}
-        >
-          <BookMarked size={15} /> Entity
-        </button>
-      </nav>
       {definitions.error ||
         metadata.error ||
         ingredientPackCatalog.error ||

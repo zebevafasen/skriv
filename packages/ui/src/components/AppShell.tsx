@@ -23,6 +23,20 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [appSettings.data?.theme]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.ctrlKey || e.metaKey) {
+        const key = e.key.toLowerCase();
+        if (key === "c") document.execCommand("copy");
+        else if (key === "x") document.execCommand("cut");
+        else if (key === "v") document.execCommand("paste");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <DialogProvider>
       <div className="app-shell">

@@ -372,8 +372,6 @@ export function ProjectPage() {
     () => scopedScenes.reduce((total, scene) => total + countWords(scene.plainText), 0),
     [scopedScenes],
   );
-  const scopedPageCount = scopedWordCount ? Math.ceil(scopedWordCount / 250) : 0;
-  const scopedReadMinutes = scopedWordCount ? Math.max(1, Math.ceil(scopedWordCount / 200)) : 0;
   const scopeLabel = useMemo(() => {
     if (scope.kind === "story") return { primary: "Everything", secondary: "Full manuscript" };
     if (scope.kind === "act") {
@@ -769,8 +767,7 @@ export function ProjectPage() {
               <div className="manuscript-scope-stats workspace-scope-stats" aria-live="polite">
                 <strong>{new Intl.NumberFormat().format(scopedWordCount)} words</strong>
                 <span>
-                  {scopedPageCount} {scopedPageCount === 1 ? "page" : "pages"} · {scopedReadMinutes}{" "}
-                  min read
+                  {scope.kind === "story" ? "Full Manuscript" : scopeLabel.primary}
                 </span>
               </div>
             </>

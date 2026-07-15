@@ -6,8 +6,10 @@ import {
   ArrowRight,
   ArrowUp,
   BookOpen,
+  Dices,
   LayoutGrid,
   List,
+  MoreHorizontal,
   Plus,
   Search,
   Upload,
@@ -15,6 +17,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
+import { useAppDialog } from "../components/DialogProvider.js";
 import { readProjectAccessHistory } from "../utils/projectAccess.js";
 import {
   projectArtworkHue,
@@ -28,6 +31,7 @@ import {
   type ProjectSortDirection,
   type ProjectSortField,
 } from "../utils/projectLibrary.js";
+import { generateRandomTitle } from "../utils/titleGenerator.js";
 
 type CreatedProject = { project: Project; initialSceneId: string | null };
 type LibraryView = "grid" | "list";
@@ -53,6 +57,90 @@ function formatRelativeTime(value: string): string {
 function directionLabel(field: ProjectSortField, direction: ProjectSortDirection): string {
   if (field === "date") return direction === "ascending" ? "Oldest first" : "Recent first";
   return direction === "ascending" ? "A–Z" : "Z–A";
+}
+
+function ProjectCardMenu({ project }: { project: Project }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const dialog = useAppDialog();
+  const client = useQueryClient();
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [open]);
+
+  const handleRename = async () => {
+    setOpen(false);
+    const newTitle = await dialog.prompt({
+      title: "Rename Project",
+      label: "Title",
+      initialValue: project.title,
+    });
+    if (newTitle && newTitle !== project.title) {
+      await skriv().projects.update(project.id, { title: newTitle });
+      await client.invalidateQueries({ queryKey: ["projects"] });
+    }
+  };
+
+  const handleRegenerateCover = async () => {
+    setOpen(false);
+    if (project.settings?.coverDataUrl) {
+      const confirmed = await dialog.confirm({
+        title: "Replace custom cover?",
+        body: "This project has a custom cover image. Regenerating the cover will replace it with a generated gradient. Are you sure?",
+        confirmLabel: "Replace",
+        destructive: true,
+      });
+      if (!confirmed) return;
+    }
+    await skriv().projects.update(project.id, { 
+      settings: { 
+        coverDataUrl: null,
+        coverArtworkSeed: crypto.randomUUID()
+      } 
+    });
+    await client.invalidateQueries({ queryKey: ["projects"] });
+  };
+
+  const handleDelete = async () => {
+    setOpen(false);
+    const confirmed = await dialog.confirm({
+      title: "Delete Novel?",
+      body: "This cannot be undone.",
+      destructive: true,
+      confirmLabel: "Delete",
+    });
+    if (confirmed) {
+      await skriv().projects.remove(project.id);
+      await client.invalidateQueries({ queryKey: ["projects"] });
+    }
+  };
+
+  return (
+    <div className="project-card-menu" ref={menuRef} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+      <button 
+        type="button" 
+        className="icon-button" 
+        onClick={() => setOpen(!open)}
+        aria-label="Project options"
+      >
+        <MoreHorizontal size={18} />
+      </button>
+      {open && (
+        <div className="project-card-dropdown">
+          <button type="button" onClick={handleRename}>Rename</button>
+          <button type="button" onClick={handleRegenerateCover}>Regenerate cover</button>
+          <hr className="dropdown-divider" />
+          <button type="button" className="danger" onClick={handleDelete}>Delete</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function LibraryPage() {
@@ -354,6 +442,7 @@ export function LibraryPage() {
                 <span>
                   Open Project <ArrowRight size={14} />
                 </span>
+                <ProjectCardMenu project={project} />
               </div>
             </Link>
           );
@@ -375,11 +464,21 @@ export function LibraryPage() {
             <div className="new-project-fields">
               <label>
                 <span>Title</span>
-                <input
-                  value={newTitle}
-                  onChange={(event) => setNewTitle(event.target.value)}
-                  placeholder="The Last Ember"
-                />
+                <div className="title-input-group">
+                  <input
+                    value={newTitle}
+                    onChange={(event) => setNewTitle(event.target.value)}
+                    placeholder="The Last Ember"
+                  />
+                  <button 
+                    type="button" 
+                    className="button ghost icon-only" 
+                    title="Surprise me!" 
+                    onClick={() => setNewTitle(generateRandomTitle())}
+                  >
+                    <Dices size={16} />
+                  </button>
+                </div>
               </label>
               <label>
                 <span>Author / pen name</span>

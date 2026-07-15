@@ -22,8 +22,8 @@ import {
 import Italic from "@tiptap/extension-italic";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
-import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Plugin } from "@tiptap/pm/state";
+import { Fragment, Slice, type Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Plugin, AllSelection, TextSelection } from "@tiptap/pm/state";
 import {
   EditorContent,
   NodeViewContent,
@@ -487,6 +487,114 @@ function extractScene(editor: Editor, sceneId: string) {
   };
 }
 
+function findSceneBlock(doc: any, pos: number) {
+  const resolved = doc.resolve(pos);
+  for (let d = resolved.depth; d > 0; d--) {
+    const node = resolved.node(d);
+    if (node?.type?.name === "sceneBlock") return node;
+  }
+  return null;
+}
+
+const CrossSceneSelectionHandler = Extension.create({
+  name: "crossSceneSelectionHandler",
+  addKeyboardShortcuts() {
+    const handleDelete = ({ editor }: { editor: Editor }) => {
+      const { state, view } = editor;
+      const { selection } = state;
+      if (selection.empty) return false;
+
+      let crossesScenes = false;
+      if (selection instanceof AllSelection) {
+        crossesScenes = true;
+      } else {
+        const startScene = findSceneBlock(state.doc, selection.from);
+        const endScene = findSceneBlock(state.doc, selection.to);
+        if (startScene !== endScene) crossesScenes = true;
+      }
+
+      if (!crossesScenes) return false;
+
+      const tr = state.tr;
+      const rangesToDelete: { from: number; to: number }[] = [];
+      state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+        if (node.isTextblock) {
+          const from = Math.max(pos + 1, selection.from);
+          const to = Math.min(pos + node.nodeSize - 1, selection.to);
+          if (from < to) rangesToDelete.push({ from, to });
+        }
+      });
+
+      for (let i = rangesToDelete.length - 1; i >= 0; i--) {
+        const range = rangesToDelete[i]!;
+        tr.delete(range.from, range.to);
+      }
+
+      tr.setSelection(TextSelection.create(tr.doc, selection.from));
+
+      if (tr.docChanged) {
+        view.dispatch(tr);
+        return true;
+      }
+      return false;
+    };
+
+    return {
+      "Mod-a": ({ editor }) => {
+        editor.view.dispatch(editor.state.tr.setSelection(new AllSelection(editor.state.doc)));
+        return true;
+      },
+      Backspace: handleDelete,
+      Delete: handleDelete,
+    };
+  },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          handleTextInput(view, _from, _to, text) {
+            const { state } = view;
+            const { selection } = state;
+            if (selection.empty) return false;
+
+            let crossesScenes = false;
+            if (selection instanceof AllSelection) {
+              crossesScenes = true;
+            } else {
+              const startScene = findSceneBlock(state.doc, selection.from);
+              const endScene = findSceneBlock(state.doc, selection.to);
+              if (startScene !== endScene) crossesScenes = true;
+            }
+
+            if (!crossesScenes) return false;
+
+            const tr = state.tr;
+            const rangesToDelete: { from: number; to: number }[] = [];
+            state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+              if (node.isTextblock) {
+                const from = Math.max(pos + 1, selection.from);
+                const to = Math.min(pos + node.nodeSize - 1, selection.to);
+                if (from < to) rangesToDelete.push({ from, to });
+              }
+            });
+
+            for (let i = rangesToDelete.length - 1; i >= 0; i--) {
+              const range = rangesToDelete[i]!;
+              tr.delete(range.from, range.to);
+            }
+
+            tr.insertText(text, selection.from);
+            tr.setSelection(TextSelection.create(tr.doc, selection.from + text.length));
+
+            view.dispatch(tr);
+            return true;
+          },
+        },
+      }),
+    ];
+  },
+});
+
 function refreshMentionDecorations(editor: Editor, entries: CompendiumEntry[]) {
   const mentions: Array<{ from: number; to: number; entryIds: string[] }> = [];
   editor.state.doc.descendants((node, position) => {
@@ -647,6 +755,7 @@ export const ManuscriptEditor = forwardRef<
   const editor = useEditor(
     {
       extensions: [
+        CrossSceneSelectionHandler,
         StarterKit.configure({
           document: false,
           heading: { levels: [1, 2, 3] },
@@ -676,7 +785,10 @@ export const ManuscriptEditor = forwardRef<
           if (!sceneBeat) return false;
           const latestModel = localStorage.getItem("skriv-latest-model");
           const attrs = latestModel ? { modelOverride: latestModel } : {};
-          view.dispatch(view.state.tr.replaceSelectionWith(sceneBeat.create(attrs)));
+          const fragment = view.state.schema.nodes.paragraph
+            ? Fragment.from([sceneBeat.create(attrs), view.state.schema.nodes.paragraph.create()])
+            : Fragment.from(sceneBeat.create(attrs));
+          view.dispatch(view.state.tr.replaceSelection(new Slice(fragment, 0, 0)));
           return true;
         },
         handleKeyDown(view, event) {
@@ -686,7 +798,10 @@ export const ManuscriptEditor = forwardRef<
             if (!sceneBeat) return false;
             const latestModel = localStorage.getItem("skriv-latest-model");
             const attrs = latestModel ? { modelOverride: latestModel } : {};
-            view.dispatch(view.state.tr.replaceSelectionWith(sceneBeat.create(attrs)));
+            const fragment = view.state.schema.nodes.paragraph
+              ? Fragment.from([sceneBeat.create(attrs), view.state.schema.nodes.paragraph.create()])
+              : Fragment.from(sceneBeat.create(attrs));
+            view.dispatch(view.state.tr.replaceSelection(new Slice(fragment, 0, 0)));
             return true;
           }
           return false;
@@ -947,11 +1062,10 @@ export const ManuscriptEditor = forwardRef<
           position,
           "\n\n",
         ),
-        manuscriptAfterCursor: editor.state.doc.textBetween(
-          selectionEnd,
-          extracted.contentEnd,
-          "\n\n",
-        ),
+        manuscriptAfterCursor:
+          options.workflow !== "prose.revise_selection"
+            ? ""
+            : editor.state.doc.textBetween(selectionEnd, extracted.contentEnd, "\n\n"),
         instructions: options.instructions,
         eventTarget: options.eventTarget,
         targetLength: options.targetLength,
@@ -1018,8 +1132,10 @@ export const ManuscriptEditor = forwardRef<
               });
               setError(new Error(event.message));
             } else if (event.type === "generation.cancelled") {
-              activeRef.current = null;
-              setActive(null);
+              if (activeRef.current?.status !== "complete") {
+                activeRef.current = null;
+                setActive(null);
+              }
             }
           },
           controller.signal,
@@ -1274,7 +1390,7 @@ export const ManuscriptEditor = forwardRef<
                 onClick={() => {
                   const latestModel = localStorage.getItem("skriv-latest-model");
                   const attrs = latestModel ? { modelOverride: latestModel } : {};
-                  editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
+                  editor?.chain().focus().insertContent([{ type: "sceneBeat", attrs }, { type: "paragraph" }]).run();
                 }}
               >
                 <Sparkles size={15} /> <span>AI</span>
@@ -1514,7 +1630,7 @@ export const ManuscriptEditor = forwardRef<
               onClick={() => {
                 const latestModel = localStorage.getItem("skriv-latest-model");
                 const attrs = latestModel ? { modelOverride: latestModel } : {};
-                editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
+                editor?.chain().focus().insertContent([{ type: "sceneBeat", attrs }, { type: "paragraph" }]).run();
               }}
             >
               <Sparkles size={15} /> AI /

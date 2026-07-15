@@ -332,10 +332,13 @@ label small {
   line-height: 1.72;
   overflow-wrap: anywhere;
 }
-.chat-markdown p {
-  margin: 0 0 1.25em;
+.chat-markdown p,
+.chat-input-layer .ProseMirror p {
+  white-space: normal;
+  margin: 0 0 0.5em;
 }
-.chat-markdown p:last-child {
+.chat-markdown p:last-child,
+.chat-input-layer .ProseMirror p:last-child {
   margin-bottom: 0;
 }
 .chat-markdown h1,
@@ -456,7 +459,7 @@ label small {
   border-radius: 14px;
   background: var(--c-171717f5);
   box-shadow: 0 18px 60px var(--c-0009);
-  padding: 8px 9px;
+  padding: 8px 9px 14px 9px;
 }
 .chat-layout .chat-header,
 .chat-layout .chat-composer,
@@ -684,7 +687,8 @@ label small {
   min-height: 58px;
 }
 .chat-input-layer .mention-textarea-highlights,
-.chat-input-layer textarea {
+.chat-input-layer textarea,
+.chat-input-layer .ProseMirror {
   margin: 0;
   padding: 6px 9px;
   min-height: 58px;
@@ -700,10 +704,13 @@ label small {
   border: 0;
   background: transparent;
 }
-.chat-input-layer textarea {
+.chat-input-layer textarea,
+.chat-input-layer .ProseMirror {
   resize: vertical;
+  overflow-y: auto;
 }
-.chat-composer textarea {
+.chat-composer textarea,
+.chat-composer .ProseMirror {
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -9143,8 +9150,10 @@ button.mobile-only-tab {
     backdrop-filter: blur(10px);
   }
 
-  .chat-composer textarea {
+  .chat-composer textarea,
+  .chat-composer .ProseMirror {
     max-height: min(150px, 24vh);
+    overflow-y: auto;
   }
 
   .ideation-panel,
