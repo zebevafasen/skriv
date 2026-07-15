@@ -152,7 +152,8 @@ label small {
   gap: 4px;
 }
 
-.global-nav a {
+.global-nav a,
+.global-nav button {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -163,11 +164,14 @@ label small {
 }
 
 .global-nav a:hover,
-.global-nav a.active {
+.global-nav button:hover,
+.global-nav a.active,
+.global-nav button.active {
   color: var(--text);
 }
 
-.global-nav a.active {
+.global-nav a.active,
+.global-nav button.active {
   border-bottom-color: var(--accent);
   color: var(--accent-bright);
 }
@@ -1064,6 +1068,10 @@ label small {
 
 .project-card-actions span {
   margin-top: 0;
+}
+
+.project-card-menu {
+  position: relative;
 }
 
 .project-card-dropdown {
@@ -6527,11 +6535,13 @@ button.mobile-only-tab {
     gap: 15px;
   }
 
-  .global-nav a {
+  .global-nav a,
+  .global-nav button {
     padding: 0 9px;
   }
 
-  .global-nav a {
+  .global-nav a,
+  .global-nav button {
     font-size: 0;
   }
 
@@ -6998,7 +7008,8 @@ button.mobile-only-tab {
     padding-left: max(18px, env(safe-area-inset-left));
   }
 
-  .global-nav a {
+  .global-nav a,
+  .global-nav button {
     min-width: 44px;
     min-height: 44px;
     justify-content: center;
@@ -7338,7 +7349,8 @@ button.mobile-only-tab {
     gap: 0;
   }
 
-  .global-nav a {
+  .global-nav a,
+  .global-nav button {
     padding-inline: 8px;
   }
 

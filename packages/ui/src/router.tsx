@@ -8,6 +8,8 @@ import {
 } from "@tanstack/react-router";
 import { lazy, Suspense, type FunctionComponent } from "react";
 import { AppShell } from "./components/AppShell.js";
+import { DialogProvider } from "./components/DialogProvider.js";
+import { SettingsProvider } from "./components/SettingsProvider.js";
 
 const LibraryPage = lazy(() =>
   import("./pages/LibraryPage.js").then((module) => ({ default: module.LibraryPage })),
@@ -15,12 +17,7 @@ const LibraryPage = lazy(() =>
 const ProjectPage = lazy(() =>
   import("./pages/ProjectPage.js").then((module) => ({ default: module.ProjectPage })),
 );
-const PromptsPage = lazy(() =>
-  import("./pages/PromptsPage.js").then((module) => ({ default: module.PromptsPage })),
-);
-const DefaultSettingsPage = lazy(() =>
-  import("./pages/SettingsPage.js").then((module) => ({ default: module.SettingsPage })),
-);
+
 
 type ProjectSearch = {
   tab?: "chat" | "compendium" | "ideation" | "settings";
@@ -37,18 +34,29 @@ export type SkrivRouterOptions = {
 };
 
 export function createSkrivRouter(options: SkrivRouterOptions = {}) {
-  const SettingsComponent = options.settingsComponent ?? DefaultSettingsPage;
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: 10_000, retry: 1 }, mutations: { retry: 0 } },
   });
   const RootComponent = () => {
     const location = useLocation();
     const content = (
-      <Suspense fallback={<div className="loading-state">Loading workspace…</div>}>
-        <Outlet />
-      </Suspense>
+      <DialogProvider>
+        <SettingsProvider>
+          {location.pathname !== "/login" ? (
+            <AppShell>
+              <Suspense fallback={<div className="loading-state">Loading workspace…</div>}>
+                <Outlet />
+              </Suspense>
+            </AppShell>
+          ) : (
+            <Suspense fallback={<div className="loading-state">Loading workspace…</div>}>
+              <Outlet />
+            </Suspense>
+          )}
+        </SettingsProvider>
+      </DialogProvider>
     );
-    return location.pathname === "/login" ? content : <AppShell>{content}</AppShell>;
+    return content;
   };
   const rootRoute = createRootRoute({
     component: RootComponent,
@@ -79,16 +87,7 @@ export function createSkrivRouter(options: SkrivRouterOptions = {}) {
     }),
     component: ProjectPage,
   });
-  const promptsRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/prompts",
-    component: PromptsPage,
-  });
-  const settingsRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/settings",
-    component: SettingsComponent,
-  });
+
   const authenticationRoute = options.authenticationComponent
     ? createRoute({
         getParentRoute: () => rootRoute,
@@ -100,11 +99,9 @@ export function createSkrivRouter(options: SkrivRouterOptions = {}) {
     ? rootRoute.addChildren([
         libraryRoute,
         projectRoute,
-        promptsRoute,
-        settingsRoute,
         authenticationRoute,
       ])
-    : rootRoute.addChildren([libraryRoute, projectRoute, promptsRoute, settingsRoute]);
+    : rootRoute.addChildren([libraryRoute, projectRoute]);
   const router = createRouter({
     routeTree,
     defaultPreload: "intent",

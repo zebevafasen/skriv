@@ -40,6 +40,7 @@ import { ErrorNotice } from "../components/AppShell.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { ExportDialog } from "../components/ExportDialog.js";
+import { useSettings } from "../components/SettingsProvider.js";
 import type {
   FirstSceneGenerationIntent,
   ManuscriptEditorHandle,
@@ -107,6 +108,7 @@ function countWords(value: string): number {
 }
 
 export function ProjectPage() {
+  const { openSettings, openPrompts } = useSettings();
   const { projectId } = useParams({ from: "/projects/$projectId" });
   const search = useSearch({ from: "/projects/$projectId" });
   const navigate = useNavigate({ from: "/projects/$projectId" });
@@ -803,12 +805,12 @@ export function ProjectPage() {
                 >
                   <Settings size={16} /> Project settings
                 </button>
-                <a href="/prompts" role="menuitem">
+                <button type="button" onClick={() => { setMoreOpen(false); openPrompts(); }} role="menuitem">
                   <FileText size={16} /> Prompts
-                </a>
-                <a href="/settings" role="menuitem">
+                </button>
+                <button type="button" onClick={() => { setMoreOpen(false); openSettings(); }} role="menuitem">
                   <Settings size={16} /> App settings
-                </a>
+                </button>
                 <button
                   type="button"
                   role="menuitem"
@@ -863,7 +865,7 @@ export function ProjectPage() {
       {!credential.isLoading && !aiConfigured ? (
         <div className="ai-key-guidance" role="status">
           AI actions are disabled until an OpenRouter key is configured. Non-AI writing remains
-          fully offline. <Link to="/settings">Open Settings</Link>
+          fully offline. <button type="button" className="link" onClick={openSettings}>Open Settings</button>
         </div>
       ) : null}
 
@@ -1153,12 +1155,12 @@ export function ProjectPage() {
               <Link to="/" onClick={() => setMoreOpen(false)}>
                 <Library size={17} /> Back to projects
               </Link>
-              <a href="/prompts">
+              <button type="button" onClick={openPrompts}>
                 <FileText size={17} /> Prompts
-              </a>
-              <a href="/settings">
+              </button>
+              <button type="button" onClick={openSettings}>
                 <Settings size={17} /> App settings
-              </a>
+              </button>
             </div>
             <button
               type="button"

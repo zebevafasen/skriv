@@ -70,8 +70,8 @@ function ProjectCardMenu({ project }: { project: Project }) {
     const onClick = (e: MouseEvent) => {
       if (!menuRef.current?.contains(e.target as Node)) setOpen(false);
     };
-    window.addEventListener("click", onClick);
-    return () => window.removeEventListener("click", onClick);
+    window.addEventListener("click", onClick, { capture: true });
+    return () => window.removeEventListener("click", onClick, { capture: true });
   }, [open]);
 
   const handleRename = async () => {

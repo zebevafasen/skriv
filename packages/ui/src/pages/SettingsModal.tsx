@@ -1,0 +1,359 @@
+import { AppError } from "@skriv/application";
+import type { AiSettings, AppSettings } from "@skriv/contracts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  FolderOpen,
+  HardDriveDownload,
+  KeyRound,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { skriv } from "../api.js";
+import { ErrorNotice } from "../components/AppShell.js";
+import { useAppDialog } from "../components/DialogProvider.js";
+import { ModelSelect } from "../components/ModelSelect.js";
+
+type Model = { id: string; name: string; contextLength: number };
+type DatabaseSnapshot = { name: string; createdAt: string; size: number };
+
+export function SettingsModal({ onClose, extraSection = null }: { onClose: () => void; extraSection?: ReactNode }) {
+  const app = skriv();
+  const backups = app.backups;
+  const client = useQueryClient();
+  const dialog = useAppDialog();
+  const appSettings = useQuery({
+    queryKey: ["app-settings"],
+    queryFn: () => skriv().settings.app(),
+  });
+  const settings = useQuery({
+    queryKey: ["ai-settings"],
+    queryFn: () => skriv().settings.ai(),
+  });
+  const credential = useQuery({
+    queryKey: ["openrouter-credential"],
+    queryFn: () => skriv().settings.credential(),
+  });
+  const models = useQuery({
+    queryKey: ["models"],
+    queryFn: () => skriv().settings.models() as Promise<Model[]>,
+    enabled: credential.data?.configured === true,
+  });
+  const snapshots = useQuery({
+    queryKey: ["database-snapshots"],
+    queryFn: () => backups?.databaseSnapshots() as Promise<DatabaseSnapshot[]>,
+    enabled: backups !== null,
+  });
+  const [draft, setDraft] = useState<AiSettings | null>(null);
+  const [appDraft, setAppDraft] = useState<AppSettings | null>(null);
+  const [openRouterKey, setOpenRouterKey] = useState("");
+
+  useEffect(() => {
+    if (settings.data) setDraft(settings.data);
+  }, [settings.data]);
+
+  useEffect(() => {
+    if (appSettings.data) setAppDraft(appSettings.data);
+  }, [appSettings.data]);
+
+  const saveApp = useMutation({
+    mutationFn: (value: AppSettings) => skriv().settings.updateApp(value),
+    onSuccess: async (value) => {
+      setAppDraft(value);
+      await client.invalidateQueries({ queryKey: ["app-settings"] });
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: (value: AiSettings) => skriv().settings.updateAi(value),
+    onSuccess: async (value) => {
+      setDraft(value);
+      await client.invalidateQueries({ queryKey: ["ai-settings"] });
+    },
+  });
+  const saveCredential = useMutation({
+    mutationFn: (apiKey: string) => skriv().settings.saveCredential(apiKey),
+    onSuccess: async () => {
+      setOpenRouterKey("");
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["openrouter-credential"] }),
+        client.invalidateQueries({ queryKey: ["models"] }),
+      ]);
+    },
+  });
+  const removeCredential = useMutation({
+    mutationFn: () => skriv().settings.deleteCredential(),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["openrouter-credential"] }),
+        client.invalidateQueries({ queryKey: ["models"] }),
+      ]);
+    },
+  });
+  const backupNow = useMutation({
+    mutationFn: () =>
+      backups?.backupNow() ??
+      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
+  });
+  const openBackupFolder = useMutation({
+    mutationFn: () =>
+      backups?.openBackupFolder() ??
+      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
+  });
+  const restoreSnapshot = useMutation({
+    mutationFn: (name: string) =>
+      backups?.restoreDatabaseSnapshot(name) ??
+      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
+  });
+  const credentialSummary = credential.data?.configured
+    ? credential.data.source === "keychain"
+      ? `Configured in Windows Credential Manager ·••••${credential.data.lastFour ?? ""}`
+      : credential.data.source === "user"
+        ? `Configured for your account ·••••${credential.data.lastFour ?? ""}`
+        : "Configured by the hosted server"
+    : app.capabilities.platform === "desktop"
+      ? "No key configured. All non-AI writing features remain available offline."
+      : "No key configured. All non-AI writing features remain available.";
+
+  return createPortal(
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 50 }}>
+      <div
+        className="modal settings-modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}
+      >
+        <section className="page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '6px' }}>
+          <div>
+            <h1 style={{ marginTop: 0 }}>Settings</h1>
+            <p>
+              Configure private AI access and writing models
+              {app.capabilities.localBackups ? ", plus local recovery" : ""}.
+            </p>
+          </div>
+          <button className="icon-button" onClick={onClose} aria-label="Close settings">
+            <X size={20} />
+          </button>
+        </section>
+        {appSettings.error || settings.error || models.error || credential.error ? (
+          <ErrorNotice error={appSettings.error ?? settings.error ?? models.error ?? credential.error} />
+        ) : null}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px', alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            {appDraft ? (
+              <section className="settings-card">
+                <div className="settings-heading">
+                  <h2>App Appearance</h2>
+                </div>
+                <div className="form-field">
+                  <span>Theme</span>
+                  <select
+                    value={appDraft.theme}
+                    onChange={(e) => setAppDraft({ ...appDraft, theme: e.target.value as AppSettings["theme"] })}
+                  >
+                    <option value="system">System Default</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="midnight">Midnight</option>
+                    <option value="ocean">Ocean</option>
+                    <option value="forest">Forest</option>
+                    <option value="sepia">Sepia</option>
+                  </select>
+                </div>
+                <button type="button" className="button primary" onClick={() => saveApp.mutate(appDraft)}>
+                  <Save size={16} /> Save appearance
+                </button>
+                {saveApp.error ? <ErrorNotice error={saveApp.error} /> : null}
+              </section>
+            ) : null}
+
+            {backups ? (
+              <section className="settings-card">
+                <div className="settings-heading">
+                  <h2>Local Recovery</h2>
+                </div>
+                <div className="settings-note">
+                  <HardDriveDownload size={20} />
+                  <div>
+                    <strong>Your work is backed up automatically</strong>
+                    <p>
+                      A backup is created every hour while the app is running. Open the backups folder
+                      to retrieve individual scenes in plain text.
+                    </p>
+                  </div>
+                </div>
+                <div className="button-row">
+                  <button type="button" className="button primary" onClick={() => backupNow.mutate()}>
+                    <HardDriveDownload size={16} /> Back up now
+                  </button>
+                  <button type="button" className="button ghost" onClick={() => openBackupFolder.mutate()}>
+                    <FolderOpen size={16} /> Open backup folder
+                  </button>
+                </div>
+                <div className="snapshot-list">
+                  {snapshots.data?.map((snapshot) => (
+                    <div key={snapshot.name}>
+                      <span>{new Date(snapshot.createdAt).toLocaleString()}</span>
+                      <small>{(snapshot.size / 1024 / 1024).toFixed(1)} MiB</small>
+                      <button
+                        type="button"
+                        className="button danger"
+                        onClick={async () => {
+                          if (
+                            await dialog.confirm({
+                              title: "Restore this database snapshot?",
+                              body: "Skriv will replace the current database and restart. A safety copy is made first.",
+                              confirmLabel: "Restore and restart",
+                              destructive: true,
+                            })
+                          )
+                            restoreSnapshot.mutate(snapshot.name);
+                        }}
+                      >
+                        <RotateCcw size={15} /> Restore
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {backupNow.error || openBackupFolder.error || restoreSnapshot.error || snapshots.error ? (
+                  <ErrorNotice
+                    error={
+                      backupNow.error ?? openBackupFolder.error ?? restoreSnapshot.error ?? snapshots.error
+                    }
+                  />
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            {draft ? (
+              <section className="settings-card">
+                <div className="settings-heading">
+                  <h2>AI Assistant</h2>
+                </div>
+                <div className="settings-note">
+                  <ShieldCheck size={20} />
+                  <div>
+                    <strong>
+                      {app.capabilities.platform === "desktop"
+                        ? "Your key stays in Windows Credential Manager"
+                        : "Your key is encrypted and scoped to your account"}
+                    </strong>
+                    <p>
+                      {app.capabilities.platform === "desktop"
+                        ? "OpenRouter requests run in the native process. The UI never receives the saved key."
+                        : "OpenRouter requests run on the hosted API. Saved plaintext is never returned to the browser."}
+                    </p>
+                  </div>
+                </div>
+                <div className="credential-field">
+                  <div>
+                    <label htmlFor="openrouter-key">OpenRouter API key</label>
+                    <p>{credentialSummary}</p>
+                  </div>
+                  <div className="credential-input-row">
+                    <KeyRound size={17} />
+                    <input
+                      id="openrouter-key"
+                      type="password"
+                      autoComplete="off"
+                      value={openRouterKey}
+                      onChange={(event) => setOpenRouterKey(event.target.value)}
+                      placeholder={credential.data?.configured ? "Enter a replacement key" : "sk-or-v1-…"}
+                    />
+                    <button
+                      type="button"
+                      className="button primary"
+                      disabled={openRouterKey.trim().length < 10 || saveCredential.isPending}
+                      onClick={() => saveCredential.mutate(openRouterKey.trim())}
+                    >
+                      {saveCredential.isPending ? "Validating…" : "Save key"}
+                    </button>
+                    {credential.data?.source === "keychain" || credential.data?.source === "user" ? (
+                      <button
+                        type="button"
+                        className="button danger"
+                        aria-label="Remove OpenRouter key"
+                        onClick={async () => {
+                          if (
+                            await dialog.confirm({
+                              title: "Remove saved OpenRouter key?",
+                              body: "AI actions will be disabled until another key is configured.",
+                              confirmLabel: "Remove key",
+                              destructive: true,
+                            })
+                          )
+                            removeCredential.mutate();
+                        }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    ) : null}
+                  </div>
+                  {saveCredential.error || removeCredential.error ? (
+                    <ErrorNotice error={saveCredential.error ?? removeCredential.error} />
+                  ) : null}
+                </div>
+                <div className="form-field">
+                  <span>Base writing model</span>
+                  <ModelSelect
+                    value={draft.baseModel}
+                    onChange={(value) => setDraft({ ...draft, baseModel: value })}
+                    models={models.data ?? []}
+                  />
+                </div>
+                <div className="form-field">
+                  <span>Smart Context model</span>
+                  <ModelSelect
+                    value={draft.contextModel}
+                    onChange={(value) => setDraft({ ...draft, contextModel: value })}
+                    models={models.data ?? []}
+                  />
+                </div>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={draft.smartContextEnabled}
+                    onChange={(event) =>
+                      setDraft({ ...draft, smartContextEnabled: event.target.checked })
+                    }
+                  />{" "}
+                  Enable grounded Smart Context extraction
+                </label>
+                <label>
+                  Recursive discovery depth
+                  <input
+                    type="number"
+                    min={0}
+                    max={5}
+                    value={draft.recursionDepth}
+                    onChange={(event) =>
+                      setDraft({ ...draft, recursionDepth: Number(event.target.value) })
+                    }
+                  />
+                </label>
+                <button type="button" className="button primary" onClick={() => save.mutate(draft)}>
+                  <Save size={16} /> Save settings
+                </button>
+                {save.error ? <ErrorNotice error={save.error} /> : null}
+              </section>
+            ) : (
+              <div className="loading">Loading settings…</div>
+            )}
+
+            {extraSection}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}

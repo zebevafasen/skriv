@@ -7,6 +7,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, FileInput, LockKeyhole, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { skriv } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 import { useAppDialog } from "../components/DialogProvider.js";
@@ -307,7 +308,7 @@ function PromptListGroup({
   );
 }
 
-export function PromptsPage() {
+export function PromptsModal({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
   const dialog = useAppDialog();
   const query = useQuery({
@@ -402,237 +403,249 @@ export function PromptsPage() {
     createDraft.messages.length > 0 &&
     createDraft.messages.every((message) => message.content.trim().length > 0);
 
-  return (
-    <div className="page prompts-page">
-      <section className="page-heading prompt-page-heading">
-        <div>
-          <h1>Prompt Registry</h1>
-          <p>Inspect built-in instructions and tailor custom prompts for each writing workflow.</p>
-        </div>
-        <button type="button" className="button primary" onClick={() => openCreate()}>
-          <Plus size={17} /> Create prompt
-        </button>
-      </section>
-      {query.error ? <ErrorNotice error={query.error} /> : null}
-      <div className="prompt-layout">
-        <aside className="prompt-list" aria-label="Prompt library">
-          <PromptListGroup
-            title="Built-in prompts"
-            ownership="builtin"
-            prompts={builtinPrompts}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
-          <PromptListGroup
-            title="Your prompts"
-            ownership="user"
-            prompts={userPrompts}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
-        </aside>
-        <section className="prompt-editor">
-          {!draft ? (
-            <EmptyState
-              title="Choose a prompt"
-              body="Select a built-in or custom prompt to inspect its messages."
+  return createPortal(
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 50 }}>
+      <div
+        className="modal prompts-page"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column' }}
+      >
+        <section className="page-heading prompt-page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ marginTop: 0 }}>Prompt Registry</h1>
+            <p>Inspect built-in instructions and tailor custom prompts for each writing workflow.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="button" className="button primary" onClick={() => openCreate()}>
+              <Plus size={17} /> Create prompt
+            </button>
+            <button className="icon-button" onClick={onClose} aria-label="Close prompts">
+              <X size={20} />
+            </button>
+          </div>
+        </section>
+        {query.error ? <ErrorNotice error={query.error} /> : null}
+        <div className="prompt-layout">
+          <aside className="prompt-list" aria-label="Prompt library">
+            <PromptListGroup
+              title="Built-in prompts"
+              ownership="builtin"
+              prompts={builtinPrompts}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
             />
-          ) : (
-            <>
-              <div className="prompt-editor-heading">
-                <div className="prompt-editor-title">
-                  <p className="eyebrow">
-                    {draft.ownership === "builtin" ? (
-                      <>
-                        <LockKeyhole size={12} /> Built-in prompt
-                      </>
-                    ) : (
-                      "Your prompt"
-                    )}
-                    {isActive ? (
-                      <span className="active-prompt-badge">
-                        <Check size={11} /> Active
-                      </span>
-                    ) : null}
-                  </p>
-                  <input
-                    className="title-input"
-                    disabled={draft.ownership === "builtin"}
-                    value={draft.name}
-                    onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-                  />
-                  <div className="prompt-workflow-readout">
-                    <span>Workflow</span>
-                    <strong>{workflowLabels[draft.workflow]}</strong>
-                    <code>{draft.workflow}</code>
+            <PromptListGroup
+              title="Your prompts"
+              ownership="user"
+              prompts={userPrompts}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </aside>
+          <section className="prompt-editor">
+            {!draft ? (
+              <EmptyState
+                title="Choose a prompt"
+                body="Select a built-in or custom prompt to inspect its messages."
+              />
+            ) : (
+              <>
+                <div className="prompt-editor-heading">
+                  <div className="prompt-editor-title">
+                    <p className="eyebrow">
+                      {draft.ownership === "builtin" ? (
+                        <>
+                          <LockKeyhole size={12} /> Built-in prompt
+                        </>
+                      ) : (
+                        "Your prompt"
+                      )}
+                      {isActive ? (
+                        <span className="active-prompt-badge">
+                          <Check size={11} /> Active
+                        </span>
+                      ) : null}
+                    </p>
+                    <input
+                      className="title-input"
+                      disabled={draft.ownership === "builtin"}
+                      value={draft.name}
+                      onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                    />
+                    <div className="prompt-workflow-readout">
+                      <span>Workflow</span>
+                      <strong>{workflowLabels[draft.workflow]}</strong>
+                      <code>{draft.workflow}</code>
+                    </div>
                   </div>
-                </div>
-                <div className="prompt-editor-actions">
-                  <button
-                    type="button"
-                    className="button ghost"
-                    disabled={isActive || bind.isPending}
-                    onClick={() => bind.mutate({ workflow: draft.workflow, promptId: draft.id })}
-                  >
-                    {isActive ? "In use" : "Use for workflow"}
-                  </button>
-                  {draft.ownership === "builtin" ? (
+                  <div className="prompt-editor-actions">
                     <button
                       type="button"
-                      className="button primary"
-                      onClick={() => openCreate(draft)}
+                      className="button ghost"
+                      disabled={isActive || bind.isPending}
+                      onClick={() => bind.mutate({ workflow: draft.workflow, promptId: draft.id })}
                     >
-                      <FileInput size={15} /> Use as template
+                      {isActive ? "In use" : "Use for workflow"}
                     </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className="button ghost"
-                        disabled={!binding?.promptDefinitionId || bind.isPending}
-                        onClick={() => bind.mutate({ workflow: draft.workflow, promptId: null })}
-                      >
-                        Restore built-in
-                      </button>
-                      <button
-                        type="button"
-                        className="button danger"
-                        disabled={remove.isPending}
-                        onClick={async () => {
-                          if (
-                            !(await dialog.confirm({
-                              title: "Delete prompt?",
-                              body: `“${draft.name}” will be permanently deleted. Its workflow will fall back to the built-in prompt if it is currently active.`,
-                              confirmLabel: "Delete prompt",
-                              destructive: true,
-                            }))
-                          )
-                            return;
-                          remove.mutate(draft.id);
-                        }}
-                      >
-                        <Trash2 size={15} /> Delete
-                      </button>
+                    {draft.ownership === "builtin" ? (
                       <button
                         type="button"
                         className="button primary"
-                        disabled={!draft.name.trim() || save.isPending}
-                        onClick={() => save.mutate(draft)}
+                        onClick={() => openCreate(draft)}
                       >
-                        <Save size={15} /> {save.isPending ? "Saving…" : "Save"}
+                        <FileInput size={15} /> Use as template
                       </button>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="button ghost"
+                          disabled={!binding?.promptDefinitionId || bind.isPending}
+                          onClick={() => bind.mutate({ workflow: draft.workflow, promptId: null })}
+                        >
+                          Restore built-in
+                        </button>
+                        <button
+                          type="button"
+                          className="button danger"
+                          disabled={remove.isPending}
+                          onClick={async () => {
+                            if (
+                              !(await dialog.confirm({
+                                title: "Delete prompt?",
+                                body: `“${draft.name}” will be permanently deleted. Its workflow will fall back to the built-in prompt if it is currently active.`,
+                                confirmLabel: "Delete prompt",
+                                destructive: true,
+                              }))
+                            )
+                              return;
+                            remove.mutate(draft.id);
+                          }}
+                        >
+                          <Trash2 size={15} /> Delete
+                        </button>
+                        <button
+                          type="button"
+                          className="button primary"
+                          disabled={!draft.name.trim() || save.isPending}
+                          onClick={() => save.mutate(draft)}
+                        >
+                          <Save size={15} /> {save.isPending ? "Saving…" : "Save"}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <PromptFields
-                value={draft}
-                disabled={draft.ownership === "builtin"}
-                onChange={(next) => setDraft({ ...draft, ...next })}
-              />
-              {save.error || bind.error || remove.error ? (
-                <ErrorNotice error={save.error ?? bind.error ?? remove.error} />
-              ) : null}
-            </>
-          )}
-        </section>
-      </div>
-
-      {creating ? (
-        <div className="modal-backdrop">
-          <form
-            className="modal prompt-create-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-prompt-title"
-            onMouseDown={(event) => event.stopPropagation()}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (formValid) create.mutate(createDraft);
-            }}
-          >
-            <div className="prompt-create-heading">
-              <div>
-                <p className="eyebrow">Custom prompt</p>
-                <h2 id="create-prompt-title">Create prompt</h2>
-              </div>
-              <button
-                type="button"
-                className="icon-button"
-                aria-label="Close create prompt dialog"
-                onClick={() => setCreating(false)}
-              >
-                <X size={17} />
-              </button>
-            </div>
-
-            <div className="prompt-create-source-grid">
-              <label>
-                <span>Start from</span>
-                <select
-                  value={createTemplateId}
-                  onChange={(event) => {
-                    const sourceId = event.target.value;
-                    setCreateTemplateId(sourceId);
-                    const source = builtinPrompts.find((prompt) => prompt.id === sourceId);
-                    setCreateDraft(
-                      source ? promptFromBuiltin(source) : blankPrompt(createDraft.workflow),
-                    );
-                  }}
-                >
-                  <option value="blank">Blank prompt</option>
-                  {builtinPrompts.map((prompt) => (
-                    <option value={prompt.id} key={prompt.id}>
-                      {workflowLabels[prompt.workflow]} — {prompt.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Workflow</span>
-                <select
-                  value={createDraft.workflow}
-                  onChange={(event) => {
-                    const workflow = event.target.value as WorkflowKey;
-                    setCreateTemplateId("blank");
-                    setCreateDraft(blankPrompt(workflow));
-                  }}
-                >
-                  {workflowKeys.map((workflow) => (
-                    <option value={workflow} key={workflow}>
-                      {workflowLabels[workflow]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="prompt-create-name">
-                <span>Name</span>
-                <input
-                  value={createDraft.name}
-                  placeholder="My custom prompt"
-                  onChange={(event) => setCreateDraft({ ...createDraft, name: event.target.value })}
+                <PromptFields
+                  value={draft}
+                  disabled={draft.ownership === "builtin"}
+                  onChange={(next) => setDraft({ ...draft, ...next })}
                 />
-              </label>
-            </div>
-
-            <PromptFields value={createDraft} onChange={setCreateDraft} />
-            {create.error ? <ErrorNotice error={create.error} /> : null}
-            <div className="modal-actions">
-              <button type="button" className="button ghost" onClick={() => setCreating(false)}>
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="button primary"
-                disabled={!formValid || create.isPending}
-              >
-                <Plus size={15} /> {create.isPending ? "Creating…" : "Create prompt"}
-              </button>
-            </div>
-          </form>
+                {save.error || bind.error || remove.error ? (
+                  <ErrorNotice error={save.error ?? bind.error ?? remove.error} />
+                ) : null}
+              </>
+            )}
+          </section>
         </div>
-      ) : null}
-    </div>
+
+        {creating ? (
+          <div className="modal-backdrop">
+            <form
+              className="modal prompt-create-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="create-prompt-title"
+              onMouseDown={(event) => event.stopPropagation()}
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (formValid) create.mutate(createDraft);
+              }}
+            >
+              <div className="prompt-create-heading">
+                <div>
+                  <p className="eyebrow">Custom prompt</p>
+                  <h2 id="create-prompt-title">Create prompt</h2>
+                </div>
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label="Close create prompt dialog"
+                  onClick={() => setCreating(false)}
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <div className="prompt-create-source-grid">
+                <label>
+                  <span>Start from</span>
+                  <select
+                    value={createTemplateId}
+                    onChange={(event) => {
+                      const sourceId = event.target.value;
+                      setCreateTemplateId(sourceId);
+                      const source = builtinPrompts.find((prompt) => prompt.id === sourceId);
+                      setCreateDraft(
+                        source ? promptFromBuiltin(source) : blankPrompt(createDraft.workflow),
+                      );
+                    }}
+                  >
+                    <option value="blank">Blank prompt</option>
+                    {builtinPrompts.map((prompt) => (
+                      <option value={prompt.id} key={prompt.id}>
+                        {workflowLabels[prompt.workflow]} — {prompt.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Workflow</span>
+                  <select
+                    value={createDraft.workflow}
+                    onChange={(event) => {
+                      const workflow = event.target.value as WorkflowKey;
+                      setCreateTemplateId("blank");
+                      setCreateDraft(blankPrompt(workflow));
+                    }}
+                  >
+                    {workflowKeys.map((workflow) => (
+                      <option value={workflow} key={workflow}>
+                        {workflowLabels[workflow]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="prompt-create-name">
+                  <span>Name</span>
+                  <input
+                    value={createDraft.name}
+                    placeholder="My custom prompt"
+                    onChange={(event) => setCreateDraft({ ...createDraft, name: event.target.value })}
+                  />
+                </label>
+              </div>
+
+              <PromptFields value={createDraft} onChange={setCreateDraft} />
+              {create.error ? <ErrorNotice error={create.error} /> : null}
+              <div className="modal-actions">
+                <button type="button" className="button ghost" onClick={() => setCreating(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={!formValid || create.isPending}
+                >
+                  <Plus size={15} /> {create.isPending ? "Creating…" : "Create prompt"}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+      </div>
+    </div>,
+    document.body
   );
 }
