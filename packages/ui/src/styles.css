@@ -1516,12 +1516,20 @@ label small {
   display: grid;
   gap: 9px;
 }
-.ingredient-category,
-.ingredient-collection {
+.ingredient-category {
   overflow: hidden;
   border: 1px solid var(--c-333333);
   border-radius: 9px;
   background: linear-gradient(145deg, var(--c-1b1b1b), var(--c-151515));
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+.ingredient-collection {
+  overflow: hidden;
+  border: 1px solid var(--c-282828);
+  border-radius: 9px;
+  background: var(--c-131313);
   transition:
     border-color 140ms ease,
     background 140ms ease;
@@ -1568,9 +1576,13 @@ label small {
   display: grid;
   gap: 4px;
 }
-.ingredient-category-copy strong,
+.ingredient-category-copy strong {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.2;
+}
 .ingredient-collection-copy strong {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.2;
 }
 .ingredient-category-copy small,

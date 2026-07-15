@@ -122,7 +122,19 @@ function ProjectCardMenu({ project }: { project: Project }) {
   };
 
   return (
-    <div className="project-card-menu" ref={menuRef} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: menu wrapper needs click stopPropagation
+    <div
+      className="project-card-menu"
+      ref={menuRef}
+      role="presentation"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+      }}
+    >
       <button 
         type="button" 
         className="icon-button" 

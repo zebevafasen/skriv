@@ -100,22 +100,13 @@ export function IngredientPackPicker({
   const [ownership, setOwnership] = useState<"all" | "builtin" | "user">("all");
   const [sort, setSort] = useState<"catalog" | "name" | "ownership">("catalog");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    () => new Set(catalog.categories.slice(0, 1).map((category) => category.id)),
+    () => new Set(),
   );
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
-  const categoryExpansionInitialized = useRef(false);
   const definitionById = useMemo(
     () => new Map(definitions.map((definition) => [definition.id, definition])),
     [definitions],
   );
-
-  useEffect(() => {
-    const firstCategoryId = catalog.categories[0]?.id;
-    if (!categoryExpansionInitialized.current && firstCategoryId) {
-      categoryExpansionInitialized.current = true;
-      setExpandedCategories(new Set([firstCategoryId]));
-    }
-  }, [catalog.categories]);
 
   const updateSelection = (packIds: string[]) => {
     onSelectionChange(toggleIngredientPackSelection(selectedIds, packIds));
@@ -244,6 +235,7 @@ export function IngredientPackPicker({
                   }
                 >
                   <span className="ingredient-category-copy">
+                    <span className="eyebrow" style={{ fontSize: '9px', marginBottom: '-2px' }}>Category</span>
                     <strong>{category.name}</strong>
                     <small>{category.description}</small>
                     <span className="ingredient-hierarchy-counts">
@@ -294,6 +286,7 @@ export function IngredientPackPicker({
                               }
                             >
                               <span className="ingredient-collection-copy">
+                                <span className="eyebrow" style={{ fontSize: '9px', marginBottom: '-2px', color: 'var(--muted)' }}>Collection</span>
                                 <strong>{collection.name}</strong>
                                 <small>{collection.description}</small>
                                 <span className="ingredient-hierarchy-counts">
@@ -380,12 +373,20 @@ export function IngredientPackPickerModal({
 }: { open: boolean; onClose: () => void } & React.ComponentProps<typeof IngredientPackPicker>) {
   if (!open) return null;
   return (
-    <div className="modal-backdrop ingredient-pack-picker-backdrop">
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a mouse convenience
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop is not keyboard-interactive
+    <div
+      className="modal-backdrop ingredient-pack-picker-backdrop"
+      onClick={onClose}
+    >
       <div
         className="modal ingredient-pack-picker-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="ingredient-pack-picker-title"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}
       >
         <header>
           <div>

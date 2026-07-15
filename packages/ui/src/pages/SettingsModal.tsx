@@ -121,10 +121,20 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
       : "No key configured. All non-AI writing features remain available.";
 
   return createPortal(
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 50 }}>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a mouse convenience
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop is not keyboard-interactive
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      style={{ zIndex: 50 }}
+    >
       <div
         className="modal settings-modal"
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}
       >
         <section className="page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '6px' }}>
@@ -135,7 +145,7 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
               {app.capabilities.localBackups ? ", plus local recovery" : ""}.
             </p>
           </div>
-          <button className="icon-button" onClick={onClose} aria-label="Close settings">
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close settings">
             <X size={20} />
           </button>
         </section>

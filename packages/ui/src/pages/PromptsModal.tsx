@@ -404,10 +404,20 @@ export function PromptsModal({ onClose }: { onClose: () => void }) {
     createDraft.messages.every((message) => message.content.trim().length > 0);
 
   return createPortal(
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 50 }}>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a mouse convenience
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop is not keyboard-interactive
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      style={{ zIndex: 50 }}
+    >
       <div
         className="modal prompts-page"
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column' }}
       >
         <section className="page-heading prompt-page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -419,7 +429,7 @@ export function PromptsModal({ onClose }: { onClose: () => void }) {
             <button type="button" className="button primary" onClick={() => openCreate()}>
               <Plus size={17} /> Create prompt
             </button>
-            <button className="icon-button" onClick={onClose} aria-label="Close prompts">
+            <button type="button" className="icon-button" onClick={onClose} aria-label="Close prompts">
               <X size={20} />
             </button>
           </div>

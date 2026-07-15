@@ -29,8 +29,8 @@ type ProjectSearch = {
 };
 
 export type SkrivRouterOptions = {
-  settingsComponent?: FunctionComponent;
-  authenticationComponent?: FunctionComponent;
+  settingsComponent?: FunctionComponent | undefined;
+  authenticationComponent?: FunctionComponent | undefined;
 };
 
 export function createSkrivRouter(options: SkrivRouterOptions = {}) {
@@ -41,7 +41,7 @@ export function createSkrivRouter(options: SkrivRouterOptions = {}) {
     const location = useLocation();
     const content = (
       <DialogProvider>
-        <SettingsProvider>
+        <SettingsProvider settingsComponent={options.settingsComponent}>
           {location.pathname !== "/login" ? (
             <AppShell>
               <Suspense fallback={<div className="loading-state">Loading workspace…</div>}>

@@ -87,7 +87,12 @@ export function ChatEditor({
   }, [editor, value]);
 
   return (
-    <div className={`chat-input-layer ${wrapperClassName}`} onKeyDown={onKeyDown}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: Tiptap wrapper needs keydown to submit chat
+    <div
+      className={`chat-input-layer ${wrapperClassName}`}
+      role="presentation"
+      onKeyDown={onKeyDown}
+    >
       <EditorContent editor={editor} className="chat-editor-container" />
     </div>
   );
