@@ -10249,11 +10249,11 @@ body:has(.project-workspace) .topbar,
   --c-141414: #ededed;
   --c-4c4c4c: #a5a5a5;
   --c-171717f5: #e9e9e9f5;
-  --c-0009: #ffffff9;
+  --c-0009: #ffffff99;
   --c-4a4a4a: #a7a7a7;
   --c-191919: #e6e6e6;
-  --c-000c: #ffffffc;
-  --c-000b: #ffffffb;
+  --c-000c: #ffffffcc;
+  --c-000b: #ffffffbb;
   --c-8c8c8c: #626262;
   --c-64646488: #8a8a8a88;
   --c-535353: #9d9d9d;
@@ -10274,7 +10274,7 @@ body:has(.project-workspace) .topbar,
   --c-5c482d: #bba283;
   --c-1b1b1b: #e3e3e3;
   --c-5a5a5a: #959595;
-  --c-0007: #ffffff7;
+  --c-0007: #ffffff77;
   --c-eab35b: #553100;
   --c-b8b8b8: #3c3c3c;
   --c-070707c9: #f9f9f9c9;
@@ -10309,7 +10309,7 @@ body:has(.project-workspace) .topbar,
   --c-e8a74388: #62350088;
   --c-565656: #9a9a9a;
   --c-3e3e3e: #b5b5b5;
-  --c-000a: #ffffffa;
+  --c-000a: #ffffffaa;
   --c-575757: #989898;
   --c-dedede: #1f1f1f;
   --c-fff: #000000;
@@ -10377,7 +10377,7 @@ body:has(.project-workspace) .topbar,
   --c-343f4d: #abb6c7;
   --c-484848: #a9a9a9;
   --c-171717fa: #e9e9e9fa;
-  --c-000d: #ffffffd;
+  --c-000d: #ffffffdd;
   --c-c8c8c8: #2f2f2f;
   --c-626262: #8d8d8d;
   --c-df8d81: #7f3931;
@@ -10399,13 +10399,13 @@ body:has(.project-workspace) .topbar,
   --c-d1d1d1: #282828;
   --c-4f4f4f: #a1a1a1;
   --c-3d3d3d: #b7b7b7;
-  --c-0003: #ffffff3;
+  --c-0003: #ffffff33;
   --c-efcf9a: #362300;
   --c-919191: #5e5e5e;
   --c-434343: #afafaf;
   --c-2b2b2b: #cdcdcd;
   --c-acacac: #464646;
-  --c-0005: #ffffff5;
+  --c-0005: #ffffff55;
   --c-d49b3e12: #6d430012;
   --c-eaeaea: #161616;
   --c-08080899: #f9f9f999;
@@ -10458,7 +10458,7 @@ body:has(.project-workspace) .topbar,
   --c-101010f5: #f2f2f2f5;
   --c-d99a3520: #6f410020;
   --c-070707b8: #f9f9f9b8;
-  --c-000e: #ffffffe;
+  --c-000e: #ffffffee;
   --c-c7c7c7: #303030;
   --c-040404b8: #fcfcfcb8;
   --c-e89488: #78322b;
@@ -11529,4 +11529,3 @@ body:has(.project-workspace) .topbar,
   --c-c0c0c0: #40331f;
   --c-0505058c: #0505058c;
 }
-

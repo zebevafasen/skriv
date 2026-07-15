@@ -239,16 +239,16 @@ function OutlineItemMenu({
         setSummaryOpen(false);
       }
     };
-    const escape = (event: KeyboardEvent) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (summaryOpen) setSummaryOpen(false);
       else setOpen(false);
     };
     window.addEventListener("pointerdown", dismiss);
-    window.addEventListener("keydown", escape);
+    window.addEventListener("keydown", handleEscape);
     return () => {
       window.removeEventListener("pointerdown", dismiss);
-      window.removeEventListener("keydown", escape);
+      window.removeEventListener("keydown", handleEscape);
     };
   }, [open, summaryOpen]);
 
@@ -416,14 +416,14 @@ function CompendiumEntryPicker({
       if (!buttonRef.current?.contains(target) && !menuRef.current?.contains(target))
         setOpen(false);
     };
-    const escape = (event: KeyboardEvent) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("pointerdown", dismiss);
-    window.addEventListener("keydown", escape);
+    window.addEventListener("keydown", handleEscape);
     return () => {
       window.removeEventListener("pointerdown", dismiss);
-      window.removeEventListener("keydown", escape);
+      window.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
