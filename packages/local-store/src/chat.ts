@@ -1,5 +1,4 @@
 import { AppError } from "@skriv/application";
-import { getBuiltinPrompt } from "@skriv/content";
 import {
   createChatThreadInputSchema,
   sendChatMessageInputSchema,
@@ -8,6 +7,7 @@ import {
   type ChatStreamEvent,
   updateChatThreadInputSchema,
 } from "@skriv/contracts";
+import { resolvePrompt } from "./settings-prompts.js";
 import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { LocalDatabase } from "./database.js";
@@ -306,7 +306,7 @@ export async function streamLocalChat(
     ...(replacedMessageId ? { replacedMessageId } : {}),
   });
   const projectContext = await selectedProjectContext(db, thread.projectId, thread.contextSources);
-  const prompt = getBuiltinPrompt("chat.respond");
+  const prompt = await resolvePrompt(db, "chat.respond");
   const promptMessages = [
     protectedProtocolMessage("chat.respond"),
     ...renderPrompt(prompt, {

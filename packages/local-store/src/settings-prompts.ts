@@ -1,5 +1,5 @@
 import { AppError } from "@skriv/application";
-import { basePackage } from "@skriv/content";
+import { basePackage, getBuiltinPrompt } from "@skriv/content";
 import {
   aiSettingsSchema,
   appSettingsSchema,
@@ -11,9 +11,11 @@ import {
   updateEditorSettingsInputSchema,
   updatePromptInputSchema,
   workflowKeySchema,
+  type PromptDefinition,
+  type WorkflowKey,
 } from "@skriv/contracts";
 import { validatePromptDefinition } from "@skriv/core";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";
 import {
@@ -255,4 +257,44 @@ export async function handleSettingsAndPrompts(
   }
 
   return null;
+}
+
+export async function resolvePrompt(
+  db: LocalDatabase,
+  workflow: WorkflowKey,
+  overrideId?: string | null,
+): Promise<PromptDefinition> {
+  if (overrideId) {
+    const builtin = basePackage.prompts.find(
+      (prompt) => prompt.id === overrideId && prompt.workflow === workflow,
+    );
+    if (builtin) return builtin;
+    const [custom] = await db
+      .select()
+      .from(promptDefinitions)
+      .where(and(eq(promptDefinitions.id, overrideId), eq(promptDefinitions.workflow, workflow)))
+      .limit(1);
+    if (!custom) throw new AppError("Prompt override is missing or incompatible.", "BAD_REQUEST");
+    return { ...custom, ownership: "user" };
+  }
+  const [binding] = await db
+    .select()
+    .from(workflowBindings)
+    .where(eq(workflowBindings.workflow, workflow))
+    .limit(1);
+  if (binding?.promptDefinitionId) {
+    const [custom] = await db
+      .select()
+      .from(promptDefinitions)
+      .where(eq(promptDefinitions.id, binding.promptDefinitionId))
+      .limit(1);
+    if (custom && custom.workflow === workflow) return { ...custom, ownership: "user" };
+  }
+  if (binding?.builtinPromptId) {
+    const builtin = basePackage.prompts.find(
+      (prompt) => prompt.id === binding.builtinPromptId && prompt.workflow === workflow,
+    );
+    if (builtin) return builtin;
+  }
+  return getBuiltinPrompt(workflow);
 }

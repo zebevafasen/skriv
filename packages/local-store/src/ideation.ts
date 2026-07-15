@@ -1,13 +1,11 @@
 import { AppError } from "@skriv/application";
-import { basePackage, getBuiltinPrompt } from "@skriv/content";
+import { basePackage } from "@skriv/content";
 import {
   compendiumTypeIdSchema,
   extractCompendiumInputSchema,
   extractedCompendiumDraftSchema,
   generateSceneSummaryInputSchema,
   importExtractedCompendiumInputSchema,
-  type PromptDefinition,
-  type WorkflowKey,
 } from "@skriv/contracts";
 import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
 import { and, eq } from "drizzle-orm";
@@ -20,13 +18,12 @@ import {
   compendiumEntries,
   packageSettings,
   projects,
-  promptDefinitions,
   scenes,
   touchUpdatedAt,
   userCollections,
   userDefinitions,
-  workflowBindings,
 } from "./schema.js";
+import { resolvePrompt } from "./settings-prompts.js";
 
 const ingredientValueSchema = z.object({
   definitionId: z.string().nullable(),
@@ -101,28 +98,7 @@ async function metadataEntries(db: LocalDatabase, projectId: string) {
   );
 }
 
-async function resolvePrompt(db: LocalDatabase, workflow: WorkflowKey): Promise<PromptDefinition> {
-  const [binding] = await db
-    .select()
-    .from(workflowBindings)
-    .where(eq(workflowBindings.workflow, workflow))
-    .limit(1);
-  if (binding?.promptDefinitionId) {
-    const [row] = await db
-      .select()
-      .from(promptDefinitions)
-      .where(eq(promptDefinitions.id, binding.promptDefinitionId))
-      .limit(1);
-    if (row && row.workflow === workflow) return { ...row, ownership: "user" };
-  }
-  if (binding?.builtinPromptId) {
-    const prompt = basePackage.prompts.find(
-      (item) => item.id === binding.builtinPromptId && item.workflow === workflow,
-    );
-    if (prompt) return prompt;
-  }
-  return getBuiltinPrompt(workflow);
-}
+
 
 async function modelFor(db: LocalDatabase, override?: string | null) {
   if (override) return override;

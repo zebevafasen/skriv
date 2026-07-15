@@ -1,11 +1,9 @@
 import { AppError } from "@skriv/application";
-import { basePackage, getBuiltinPrompt } from "@skriv/content";
 import {
   acceptGenerationInputSchema,
   generationRequestSchema,
   type GenerationRequest,
   type GenerationStreamEvent,
-  type PromptDefinition,
 } from "@skriv/contracts";
 import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -19,12 +17,11 @@ import {
   compendiumEntries,
   generations,
   projects,
-  promptDefinitions,
   sceneRevisions,
   scenes,
   touchUpdatedAt,
-  workflowBindings,
 } from "./schema.js";
+import { resolvePrompt } from "./settings-prompts.js";
 
 const cancelInputSchema = z.object({ candidateText: z.string().max(2_000_000).optional() });
 
@@ -36,45 +33,7 @@ function conflict(message: string, details?: unknown): never {
   throw new AppError(message, "CONFLICT", details);
 }
 
-async function resolvePrompt(
-  db: LocalDatabase,
-  workflow: GenerationRequest["workflow"],
-  overrideId: string | null,
-): Promise<PromptDefinition> {
-  if (overrideId) {
-    const builtin = basePackage.prompts.find(
-      (prompt) => prompt.id === overrideId && prompt.workflow === workflow,
-    );
-    if (builtin) return builtin;
-    const [custom] = await db
-      .select()
-      .from(promptDefinitions)
-      .where(and(eq(promptDefinitions.id, overrideId), eq(promptDefinitions.workflow, workflow)))
-      .limit(1);
-    if (!custom) throw new AppError("Prompt override is missing or incompatible.", "BAD_REQUEST");
-    return { ...custom, ownership: "user" };
-  }
-  const [binding] = await db
-    .select()
-    .from(workflowBindings)
-    .where(eq(workflowBindings.workflow, workflow))
-    .limit(1);
-  if (binding?.promptDefinitionId) {
-    const [custom] = await db
-      .select()
-      .from(promptDefinitions)
-      .where(eq(promptDefinitions.id, binding.promptDefinitionId))
-      .limit(1);
-    if (custom && custom.workflow === workflow) return { ...custom, ownership: "user" };
-  }
-  if (binding?.builtinPromptId) {
-    const builtin = basePackage.prompts.find(
-      (prompt) => prompt.id === binding.builtinPromptId && prompt.workflow === workflow,
-    );
-    if (builtin) return builtin;
-  }
-  return getBuiltinPrompt(workflow);
-}
+
 
 async function generationContext(db: LocalDatabase, input: GenerationRequest) {
   const [scene] = await db.select().from(scenes).where(eq(scenes.id, input.sceneId)).limit(1);
