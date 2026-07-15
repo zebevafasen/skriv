@@ -457,11 +457,11 @@ export function IdeationPanel({
                             current.map((entry) =>
                               entry.id === draft.id
                                 ? {
-                                    ...entry,
-                                    name,
-                                    duplicateEntryId: duplicate?.id ?? null,
-                                    duplicateEntryRevision: duplicate?.revision ?? null,
-                                  }
+                                  ...entry,
+                                  name,
+                                  duplicateEntryId: duplicate?.id ?? null,
+                                  duplicateEntryRevision: duplicate?.revision ?? null,
+                                }
                                 : entry,
                             ),
                           );
@@ -477,9 +477,9 @@ export function IdeationPanel({
                             current.map((entry) =>
                               entry.id === draft.id
                                 ? {
-                                    ...entry,
-                                    typeId: event.target.value as ExtractionReview["typeId"],
-                                  }
+                                  ...entry,
+                                  typeId: event.target.value as ExtractionReview["typeId"],
+                                }
                                 : entry,
                             ),
                           )
@@ -655,9 +655,8 @@ export function IdeationPanel({
     <div className="workspace-panel ideation-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Story ideation</p>
-          <h2>Find the constellation</h2>
-          <p>Combine constraints into a premise with its own gravity.</p>
+          <h2>Ideation</h2>
+          <p>Combine ingredients to create a unique premise.</p>
         </div>
         <div className="button-row">
           <button
@@ -693,9 +692,9 @@ export function IdeationPanel({
         </button>
       </nav>
       {definitions.error ||
-      metadata.error ||
-      ingredientPackCatalog.error ||
-      importedIngredientPacks.error ? (
+        metadata.error ||
+        ingredientPackCatalog.error ||
+        importedIngredientPacks.error ? (
         <ErrorNotice
           error={
             definitions.error ??
@@ -761,7 +760,7 @@ export function IdeationPanel({
                 </button>
               </div>
             </div>
-            
+
             {importedIngredientPacks.data?.length ? (
               <IngredientPackPicker
                 catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
@@ -1343,9 +1342,9 @@ function UnifiedTagInput({
               </button>
             ))}
             {input.trim() &&
-            !suggestions.some(
-              (item) => item.label.toLocaleLowerCase() === input.trim().toLocaleLowerCase(),
-            ) ? (
+              !suggestions.some(
+                (item) => item.label.toLocaleLowerCase() === input.trim().toLocaleLowerCase(),
+              ) ? (
               <button
                 type="button"
                 className="create-tag"

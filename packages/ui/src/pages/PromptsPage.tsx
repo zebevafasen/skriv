@@ -406,8 +406,7 @@ export function PromptsPage() {
     <div className="page prompts-page">
       <section className="page-heading prompt-page-heading">
         <div>
-          <p className="eyebrow">Prompt registry</p>
-          <h1>Prompts</h1>
+          <h1>Prompt Registry</h1>
           <p>Inspect built-in instructions and tailor custom prompts for each writing workflow.</p>
         </div>
         <button type="button" className="button primary" onClick={() => openCreate()}>

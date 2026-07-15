@@ -323,7 +323,6 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
       <aside className="notebook-sidebar">
         <div className="notebook-sidebar-heading">
           <div>
-            <p className="eyebrow">Project notebook</p>
             <h2>Notes</h2>
           </div>
           <button

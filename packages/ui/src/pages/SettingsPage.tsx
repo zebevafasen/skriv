@@ -50,7 +50,7 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
   const [draft, setDraft] = useState<AiSettings | null>(null);
   const [appDraft, setAppDraft] = useState<AppSettings | null>(null);
   const [openRouterKey, setOpenRouterKey] = useState("");
-  
+
   useEffect(() => {
     if (settings.data) setDraft(settings.data);
   }, [settings.data]);
@@ -121,7 +121,6 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
   return (
     <div className="page settings-page">
       <section className="page-heading">
-        <p className="eyebrow">Configuration</p>
         <h1>Settings</h1>
         <p>
           Configure private AI access and writing models
@@ -131,7 +130,7 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
       {appSettings.error || settings.error || models.error || credential.error ? (
         <ErrorNotice error={appSettings.error ?? settings.error ?? models.error ?? credential.error} />
       ) : null}
-      
+
       {appDraft ? (
         <section className="settings-card">
           <div className="settings-heading">

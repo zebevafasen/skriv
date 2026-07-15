@@ -1,18 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="background" x1="72" y1="48" x2="444" y2="464" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#312E81"/>
-      <stop offset="0.52" stop-color="#581C87"/>
-      <stop offset="1" stop-color="#111827"/>
+    <linearGradient id="background" x1="72" y1="48" x2="452" y2="468" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#292117"/>
+      <stop offset="0.5" stop-color="#171513"/>
+      <stop offset="1" stop-color="#0F1114"/>
     </linearGradient>
-    <linearGradient id="star" x1="153" y1="118" x2="354" y2="391" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FDE68A"/>
-      <stop offset="0.5" stop-color="#F5D0FE"/>
-      <stop offset="1" stop-color="#C4B5FD"/>
+    <linearGradient id="quill" x1="365" y1="118" x2="130" y2="402" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE3A7"/>
+      <stop offset="0.52" stop-color="#F4BD61"/>
+      <stop offset="1" stop-color="#D48432"/>
     </linearGradient>
   </defs>
   <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#background)"/>
-  <path d="M256 92C271 187 325 241 420 256C325 271 271 325 256 420C241 325 187 271 92 256C187 241 241 187 256 92Z" fill="url(#star)"/>
-  <path d="M369 92C375 130 398 153 436 159C398 165 375 188 369 226C363 188 340 165 302 159C340 153 363 130 369 92Z" fill="#F9A8D4"/>
-  <circle cx="134" cy="131" r="20" fill="#C4B5FD"/>
+  <rect x="118" y="118" width="276" height="276" rx="34" transform="rotate(45 256 256)" fill="#E8A743" fill-opacity="0.035" stroke="#F4BD61" stroke-opacity="0.34" stroke-width="5"/>
+  <g transform="translate(64 64) scale(16)" fill="none" stroke="url(#quill)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+    <path d="m16 8-14 14"/>
+    <path d="M17.5 15H9"/>
+  </g>
 </svg>

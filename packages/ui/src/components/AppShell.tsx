@@ -1,8 +1,8 @@
 import { AppError } from "@skriv/application";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { BookOpenText, Library, Settings, Sparkles } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { BookOpenText, Feather, Library, Settings, Sparkles } from "lucide-react";
+import { type ReactNode, useEffect } from "react";
 import { skriv } from "../api.js";
 import { DialogProvider } from "./DialogProvider.js";
 
@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="topbar">
           <Link to="/" className="brand" aria-label="Skriv home">
             <span className="brand-mark">
-              <Sparkles size={18} />
+              <Feather size={19} strokeWidth={1.8} />
             </span>
             <span>Skriv</span>
           </Link>

@@ -276,106 +276,106 @@ function OutlineItemMenu({
       </button>
       {open && position
         ? createPortal(
-            <div
-              ref={menuRef}
-              className="outline-item-menu"
-              role="menu"
-              aria-label={`Options for ${displayLabel}`}
-              style={position}
-            >
-              {summaryOpen && summary ? (
-                <>
-                  <header>
-                    <button
-                      type="button"
-                      aria-label="Back to Scene options"
-                      onClick={() => setSummaryOpen(false)}
-                    >
-                      <ChevronLeft size={15} />
-                    </button>
-                    <strong>Summarize Scene</strong>
-                  </header>
-                  <label className="outline-model-search">
-                    <Search size={13} />
-                    <input
-                      value={search}
-                      placeholder="Find a model…"
-                      onChange={(event) => setSearch(event.target.value)}
-                    />
-                  </label>
-                  <div className="outline-summary-models">
+          <div
+            ref={menuRef}
+            className="outline-item-menu"
+            role="menu"
+            aria-label={`Options for ${displayLabel}`}
+            style={position}
+          >
+            {summaryOpen && summary ? (
+              <>
+                <header>
+                  <button
+                    type="button"
+                    aria-label="Back to Scene options"
+                    onClick={() => setSummaryOpen(false)}
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
+                  <strong>Summarize Scene</strong>
+                </header>
+                <label className="outline-model-search">
+                  <Search size={13} />
+                  <input
+                    value={search}
+                    placeholder="Find a model…"
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </label>
+                <div className="outline-summary-models">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      close();
+                      summary.onSummarize(null);
+                    }}
+                  >
+                    <span>
+                      <strong>Use default</strong>
+                      <small>{defaultModelName}</small>
+                    </span>
+                  </button>
+                  {filteredModels.map((model) => (
                     <button
                       type="button"
                       role="menuitem"
+                      key={model.id}
                       onClick={() => {
                         close();
-                        summary.onSummarize(null);
+                        summary.onSummarize(model.id);
                       }}
                     >
                       <span>
-                        <strong>Use default</strong>
-                        <small>{defaultModelName}</small>
+                        <strong>{model.name}</strong>
+                        <small>{model.id}</small>
                       </span>
                     </button>
-                    {filteredModels.map((model) => (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        key={model.id}
-                        onClick={() => {
-                          close();
-                          summary.onSummarize(model.id);
-                        }}
-                      >
-                        <span>
-                          <strong>{model.name}</strong>
-                          <small>{model.id}</small>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    close();
+                    onRename();
+                  }}
+                >
+                  <Pencil size={14} /> Rename
+                </button>
+                {summary ? (
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={() => {
-                      close();
-                      onRename();
-                    }}
+                    disabled={summary.disabled}
+                    onClick={() => setSummaryOpen(true)}
                   >
-                    <Pencil size={14} /> Rename
+                    <Sparkles size={14} />
+                    {summary.generating ? "Summarizing…" : "Summarize Scene"}
+                    <ChevronRight size={14} />
                   </button>
-                  {summary ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={summary.disabled}
-                      onClick={() => setSummaryOpen(true)}
-                    >
-                      <Sparkles size={14} />
-                      {summary.generating ? "Summarizing…" : "Summarize Scene"}
-                      <ChevronRight size={14} />
-                    </button>
-                  ) : null}
-                  <div className="outline-item-menu-divider" />
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="danger"
-                    onClick={() => {
-                      close();
-                      onDelete();
-                    }}
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </>
-              )}
-            </div>,
-            document.body,
-          )
+                ) : null}
+                <div className="outline-item-menu-divider" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="danger"
+                  onClick={() => {
+                    close();
+                    onDelete();
+                  }}
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+              </>
+            )}
+          </div>,
+          document.body,
+        )
         : null}
     </>
   );
@@ -442,56 +442,56 @@ function CompendiumEntryPicker({
       </button>
       {open && position
         ? createPortal(
-            <div
-              ref={menuRef}
-              className="outline-compendium-menu"
-              role="menu"
-              aria-label={`Compendium entries for ${displayLabel}`}
-              style={position}
-            >
-              <header>
-                <strong>Add Compendium entries</strong>
-                <small>Manually keep entries on this card</small>
-              </header>
-              <label className="outline-model-search">
-                <Search size={13} />
-                <input
-                  value={search}
-                  placeholder="Search Compendium…"
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </label>
-              <div className="outline-compendium-options">
-                {groups.map((group) => (
-                  <section key={group}>
-                    <strong>{group}</strong>
-                    {available
-                      .filter((entry) => typeLabel(entry.typeId) === group)
-                      .map((entry) => (
-                        <button
-                          type="button"
-                          role="menuitemcheckbox"
-                          aria-checked={selected.has(entry.id)}
-                          key={entry.id}
-                          onClick={() =>
-                            onChange(
-                              selected.has(entry.id)
-                                ? selectedIds.filter((id) => id !== entry.id)
-                                : [...selectedIds, entry.id],
-                            )
-                          }
-                        >
-                          <span>{entry.name}</span>
-                          {selected.has(entry.id) ? <Check size={14} /> : null}
-                        </button>
-                      ))}
-                  </section>
-                ))}
-                {!available.length ? <p>No matching Compendium entries.</p> : null}
-              </div>
-            </div>,
-            document.body,
-          )
+          <div
+            ref={menuRef}
+            className="outline-compendium-menu"
+            role="menu"
+            aria-label={`Compendium entries for ${displayLabel}`}
+            style={position}
+          >
+            <header>
+              <strong>Add Compendium entries</strong>
+              <small>Manually keep entries on this card</small>
+            </header>
+            <label className="outline-model-search">
+              <Search size={13} />
+              <input
+                value={search}
+                placeholder="Search Compendium…"
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </label>
+            <div className="outline-compendium-options">
+              {groups.map((group) => (
+                <section key={group}>
+                  <strong>{group}</strong>
+                  {available
+                    .filter((entry) => typeLabel(entry.typeId) === group)
+                    .map((entry) => (
+                      <button
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={selected.has(entry.id)}
+                        key={entry.id}
+                        onClick={() =>
+                          onChange(
+                            selected.has(entry.id)
+                              ? selectedIds.filter((id) => id !== entry.id)
+                              : [...selectedIds, entry.id],
+                          )
+                        }
+                      >
+                        <span>{entry.name}</span>
+                        {selected.has(entry.id) ? <Check size={14} /> : null}
+                      </button>
+                    ))}
+                </section>
+              ))}
+              {!available.length ? <p>No matching Compendium entries.</p> : null}
+            </div>
+          </div>,
+          document.body,
+        )
         : null}
     </>
   );
@@ -736,14 +736,14 @@ function SceneCard({
       labels: active
         ? withoutPack
         : [
-            ...withoutPack,
-            {
-              id: crypto.randomUUID(),
-              definitionId: definition.id,
-              text: definition.name,
-              color: definition.color,
-            },
-          ],
+          ...withoutPack,
+          {
+            id: crypto.randomUUID(),
+            definitionId: definition.id,
+            text: definition.name,
+            color: definition.color,
+          },
+        ],
     });
   };
 
@@ -881,113 +881,113 @@ function SceneCard({
         </button>
         {labelMenuOpen && labelMenuPosition
           ? createPortal(
-              <div
-                ref={labelPopoverRef}
-                className="outline-label-menu"
-                role="menu"
-                aria-label={`Labels for ${displayLabel}`}
-                style={labelMenuPosition}
-              >
-                <header>
-                  <strong>Add a label</strong>
-                  <span>One choice per pack</span>
-                </header>
-                <div className="outline-label-menu-packs">
-                  {labelPacks.map((pack) => (
-                    <section key={pack.id}>
-                      <div>
-                        <strong>{pack.name}</strong>
-                        <small>{pack.ownership === "builtin" ? "BUILTIN" : "CUSTOM"}</small>
+            <div
+              ref={labelPopoverRef}
+              className="outline-label-menu"
+              role="menu"
+              aria-label={`Labels for ${displayLabel}`}
+              style={labelMenuPosition}
+            >
+              <header>
+                <strong>Add a label</strong>
+                <span>One choice per pack</span>
+              </header>
+              <div className="outline-label-menu-packs">
+                {labelPacks.map((pack) => (
+                  <section key={pack.id}>
+                    <div>
+                      <strong>{pack.name}</strong>
+                      <small>{pack.ownership === "builtin" ? "BUILTIN" : "CUSTOM"}</small>
+                    </div>
+                    {pack.labels.length ? (
+                      <div className="outline-label-options">
+                        {pack.labels.map((definition) => {
+                          const active = metadata.labels.some(
+                            (label) =>
+                              findLabelDefinition(labelPacks, label)?.definition.id ===
+                              definition.id,
+                          );
+                          return (
+                            <button
+                              type="button"
+                              role="menuitemcheckbox"
+                              aria-checked={active}
+                              className={`scene-label color-${safeLabelColor(definition.color)}${active ? " active" : ""}`}
+                              key={definition.id}
+                              onClick={() => toggleLabel(pack, definition)}
+                            >
+                              {definition.name}
+                            </button>
+                          );
+                        })}
                       </div>
-                      {pack.labels.length ? (
-                        <div className="outline-label-options">
-                          {pack.labels.map((definition) => {
-                            const active = metadata.labels.some(
-                              (label) =>
-                                findLabelDefinition(labelPacks, label)?.definition.id ===
-                                definition.id,
-                            );
-                            return (
-                              <button
-                                type="button"
-                                role="menuitemcheckbox"
-                                aria-checked={active}
-                                className={`scene-label color-${safeLabelColor(definition.color)}${active ? " active" : ""}`}
-                                key={definition.id}
-                                onClick={() => toggleLabel(pack, definition)}
-                              >
-                                {definition.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p>No labels yet.</p>
-                      )}
-                    </section>
-                  ))}
-                </div>
-                <div className="outline-quick-label">
-                  <input
-                    value={quickLabelName}
-                    maxLength={60}
-                    placeholder="Quick label…"
-                    onChange={(event) => setQuickLabelName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && quickLabelName.trim()) {
-                        event.preventDefault();
-                        void onCreateQuickLabel(quickLabelName, quickLabelColor).then(
-                          ({ pack, definition }) => {
-                            toggleLabel(pack, definition);
-                            setQuickLabelName("");
-                          },
-                          setError,
-                        );
-                      }
-                    }}
-                  />
-                  <select
-                    aria-label="Quick label color"
-                    value={quickLabelColor}
-                    onChange={(event) => setQuickLabelColor(event.target.value as SceneLabelColor)}
-                  >
-                    {editableLabelColors.map((color) => (
-                      <option value={color} key={color}>
-                        {color}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label="Create quick label"
-                    disabled={!quickLabelName.trim()}
-                    onClick={() =>
+                    ) : (
+                      <p>No labels yet.</p>
+                    )}
+                  </section>
+                ))}
+              </div>
+              <div className="outline-quick-label">
+                <input
+                  value={quickLabelName}
+                  maxLength={60}
+                  placeholder="Quick label…"
+                  onChange={(event) => setQuickLabelName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && quickLabelName.trim()) {
+                      event.preventDefault();
                       void onCreateQuickLabel(quickLabelName, quickLabelColor).then(
                         ({ pack, definition }) => {
                           toggleLabel(pack, definition);
                           setQuickLabelName("");
                         },
                         setError,
-                      )
+                      );
                     }
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
+                  }}
+                />
+                <select
+                  aria-label="Quick label color"
+                  value={quickLabelColor}
+                  onChange={(event) => setQuickLabelColor(event.target.value as SceneLabelColor)}
+                >
+                  {editableLabelColors.map((color) => (
+                    <option value={color} key={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
-                  className="outline-manage-labels"
-                  onClick={() => {
-                    setLabelMenuOpen(false);
-                    onManageLabels();
-                  }}
+                  className="icon-button"
+                  aria-label="Create quick label"
+                  disabled={!quickLabelName.trim()}
+                  onClick={() =>
+                    void onCreateQuickLabel(quickLabelName, quickLabelColor).then(
+                      ({ pack, definition }) => {
+                        toggleLabel(pack, definition);
+                        setQuickLabelName("");
+                      },
+                      setError,
+                    )
+                  }
                 >
-                  <Settings2 size={14} /> Manage labels and packs
+                  <Plus size={14} />
                 </button>
-              </div>,
-              document.body,
-            )
+              </div>
+              <button
+                type="button"
+                className="outline-manage-labels"
+                onClick={() => {
+                  setLabelMenuOpen(false);
+                  onManageLabels();
+                }}
+              >
+                <Settings2 size={14} /> Manage labels and packs
+              </button>
+            </div>,
+            document.body,
+          )
           : null}
       </div>
       <footer>
@@ -1219,7 +1219,6 @@ export function OutlineGrid({
     <section className="outline-grid" aria-label="Story outline">
       <header className="outline-grid-heading">
         <div>
-          <p className="eyebrow">Planning grid</p>
           <h2>Outline</h2>
         </div>
       </header>
@@ -1261,14 +1260,14 @@ export function OutlineGrid({
                   acts: tree.acts.map((candidate) =>
                     candidate.id === act.id
                       ? {
-                          ...candidate,
-                          chapters: ids.map((id, position) => ({
-                            ...(act.chapters.find(
-                              (chapter) => chapter.id === id,
-                            ) as (typeof act.chapters)[number]),
-                            position,
-                          })),
-                        }
+                        ...candidate,
+                        chapters: ids.map((id, position) => ({
+                          ...(act.chapters.find(
+                            (chapter) => chapter.id === id,
+                          ) as (typeof act.chapters)[number]),
+                          position,
+                        })),
+                      }
                       : candidate,
                   ),
                 }),
@@ -1290,12 +1289,12 @@ export function OutlineGrid({
                       chapters: candidateAct.chapters.map((candidateChapter) =>
                         candidateChapter.id === chapter.id
                           ? {
-                              ...candidateChapter,
-                              scenes: ids.map((id, position) => ({
-                                ...(chapter.scenes.find((scene) => scene.id === id) as Scene),
-                                position,
-                              })),
-                            }
+                            ...candidateChapter,
+                            scenes: ids.map((id, position) => ({
+                              ...(chapter.scenes.find((scene) => scene.id === id) as Scene),
+                              position,
+                            })),
+                          }
                           : candidateChapter,
                       ),
                     })),
@@ -1456,7 +1455,7 @@ export function OutlineGrid({
                                             "chapter",
                                             chapter.id,
                                             structureLabels.chapters.get(chapter.id)?.label ??
-                                              "Chapter",
+                                            "Chapter",
                                           )
                                         }
                                       />
