@@ -31,17 +31,21 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Check,
   ChevronDown,
-  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
   GripVertical,
   MoreVertical,
+  Pencil,
   Plus,
+  Search,
   Settings2,
   Sparkles,
   Tags,
   Trash2,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { asterism } from "../api.js";
@@ -64,6 +68,434 @@ const compendiumTypeOrder = [
   "story.lore",
   "story.other",
 ] as const;
+
+type OutlineModel = { id: string; name: string };
+type MenuPosition = { top: number; left: number; width: number; maxHeight: number };
+
+const standardCompendiumLabels: Record<string, string> = {
+  "story.character": "Characters",
+  "story.location": "Locations",
+  "story.object": "Objects",
+  "story.faction": "Factions",
+  "story.lore": "Lore",
+  "story.other": "Other",
+  "project.premise": "Premise",
+  "project.genres": "Genres",
+  "project.themes": "Themes",
+  "project.tags": "Tags",
+  "project.instructions": "Instructions",
+};
+
+function compendiumEntryHasValue(entry: CompendiumEntry): boolean {
+  if (!entry.typeId.startsWith("project.")) return true;
+  if (entry.content.kind === "rich_text") return Boolean(entry.content.plainText.trim());
+  if (entry.content.kind === "text") return Boolean(entry.content.text.trim());
+  return entry.content.values.length > 0;
+}
+
+function useAnchoredPosition(
+  open: boolean,
+  anchorRef: RefObject<HTMLElement | null>,
+  width: number,
+  desiredHeight: number,
+): MenuPosition | null {
+  const [position, setPosition] = useState<MenuPosition | null>(null);
+  useEffect(() => {
+    if (!open) {
+      setPosition(null);
+      return;
+    }
+    const update = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const edge = 12;
+      const gap = 7;
+      const resolvedWidth = Math.min(width, window.innerWidth - edge * 2);
+      const spaceAbove = Math.max(0, rect.top - edge - gap);
+      const spaceBelow = Math.max(0, window.innerHeight - rect.bottom - edge - gap);
+      const openBelow = spaceBelow >= Math.min(desiredHeight, spaceAbove);
+      const available = openBelow ? spaceBelow : spaceAbove;
+      const maxHeight = Math.min(desiredHeight, available);
+      const left = Math.min(
+        Math.max(edge, rect.right - resolvedWidth),
+        Math.max(edge, window.innerWidth - resolvedWidth - edge),
+      );
+      const top = openBelow ? rect.bottom + gap : Math.max(edge, rect.top - gap - maxHeight);
+      setPosition({ top, left, width: resolvedWidth, maxHeight });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [anchorRef, desiredHeight, open, width]);
+  return position;
+}
+
+function EditableStructureTitle({
+  displayLabel,
+  title,
+  editing,
+  onStart,
+  onCancel,
+  onCommit,
+}: {
+  displayLabel: string;
+  title: string;
+  editing: boolean;
+  onStart: () => void;
+  onCancel: () => void;
+  onCommit: (title: string) => void;
+}) {
+  const [draft, setDraft] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const cancelling = useRef(false);
+  useEffect(() => {
+    if (!editing) return;
+    cancelling.current = false;
+    setDraft(title);
+    const frame = requestAnimationFrame(() => inputRef.current?.select());
+    return () => cancelAnimationFrame(frame);
+  }, [editing, title]);
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="outline-inline-title"
+        aria-label={`Rename ${displayLabel}`}
+        onClick={onStart}
+      >
+        {displayLabel}
+      </button>
+    );
+  }
+  return (
+    <input
+      ref={inputRef}
+      className="outline-inline-title-input"
+      aria-label={`Rename ${displayLabel}`}
+      value={draft}
+      maxLength={300}
+      placeholder={displayLabel}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => {
+        if (cancelling.current) return;
+        onCancel();
+        if (draft.trim() !== title) onCommit(draft.trim());
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Escape") {
+          cancelling.current = true;
+          setDraft(title);
+          onCancel();
+        }
+      }}
+    />
+  );
+}
+
+function OutlineItemMenu({
+  displayLabel,
+  onRename,
+  onDelete,
+  summary,
+}: {
+  displayLabel: string;
+  onRename: () => void;
+  onDelete: () => void;
+  summary?: {
+    disabled: boolean;
+    generating: boolean;
+    baseModel: string;
+    models: OutlineModel[];
+    onSummarize: (modelOverride: string | null) => void;
+  };
+}) {
+  const [open, setOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const position = useAnchoredPosition(open, buttonRef, summaryOpen ? 280 : 210, 390);
+  const defaultModelName =
+    summary?.models.find((model) => model.id === summary.baseModel)?.name ?? summary?.baseModel;
+  const filteredModels = (summary?.models ?? []).filter(
+    (model) =>
+      model.id !== summary?.baseModel &&
+      `${model.name} ${model.id}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!buttonRef.current?.contains(target) && !menuRef.current?.contains(target)) {
+        setOpen(false);
+        setSummaryOpen(false);
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (summaryOpen) setSummaryOpen(false);
+      else setOpen(false);
+    };
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", escape);
+    };
+  }, [open, summaryOpen]);
+
+  const close = () => {
+    setOpen(false);
+    setSummaryOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="icon-button outline-more-button"
+        aria-label={`More options for ${displayLabel}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((current) => !current);
+          setSummaryOpen(false);
+        }}
+      >
+        <MoreVertical size={14} />
+      </button>
+      {open && position
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="outline-item-menu"
+              role="menu"
+              aria-label={`Options for ${displayLabel}`}
+              style={position}
+            >
+              {summaryOpen && summary ? (
+                <>
+                  <header>
+                    <button
+                      type="button"
+                      aria-label="Back to Scene options"
+                      onClick={() => setSummaryOpen(false)}
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+                    <strong>Summarize Scene</strong>
+                  </header>
+                  <label className="outline-model-search">
+                    <Search size={13} />
+                    <input
+                      value={search}
+                      placeholder="Find a model…"
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                  </label>
+                  <div className="outline-summary-models">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        close();
+                        summary.onSummarize(null);
+                      }}
+                    >
+                      <span>
+                        <strong>Use default</strong>
+                        <small>{defaultModelName}</small>
+                      </span>
+                    </button>
+                    {filteredModels.map((model) => (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        key={model.id}
+                        onClick={() => {
+                          close();
+                          summary.onSummarize(model.id);
+                        }}
+                      >
+                        <span>
+                          <strong>{model.name}</strong>
+                          <small>{model.id}</small>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      close();
+                      onRename();
+                    }}
+                  >
+                    <Pencil size={14} /> Rename
+                  </button>
+                  {summary ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={summary.disabled}
+                      onClick={() => setSummaryOpen(true)}
+                    >
+                      <Sparkles size={14} />
+                      {summary.generating ? "Summarizing…" : "Summarize Scene"}
+                      <ChevronRight size={14} />
+                    </button>
+                  ) : null}
+                  <div className="outline-item-menu-divider" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="danger"
+                    onClick={() => {
+                      close();
+                      onDelete();
+                    }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </>
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
+
+function CompendiumEntryPicker({
+  displayLabel,
+  entries,
+  selectedIds,
+  typeLabel,
+  onChange,
+}: {
+  displayLabel: string;
+  entries: CompendiumEntry[];
+  selectedIds: string[];
+  typeLabel: (typeId: string) => string;
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const position = useAnchoredPosition(open, buttonRef, 300, 410);
+  const selected = new Set(selectedIds);
+  const available = entries.filter(
+    (entry) =>
+      compendiumEntryHasValue(entry) &&
+      `${entry.name} ${typeLabel(entry.typeId)}`
+        .toLocaleLowerCase()
+        .includes(search.toLocaleLowerCase()),
+  );
+  const groups = [...new Set(available.map((entry) => typeLabel(entry.typeId)))];
+
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!buttonRef.current?.contains(target) && !menuRef.current?.contains(target))
+        setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", dismiss);
+    window.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="outline-compendium-add"
+        aria-label={`Add Compendium entry to ${displayLabel}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Plus size={12} />
+      </button>
+      {open && position
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="outline-compendium-menu"
+              role="menu"
+              aria-label={`Compendium entries for ${displayLabel}`}
+              style={position}
+            >
+              <header>
+                <strong>Add Compendium entries</strong>
+                <small>Manually keep entries on this card</small>
+              </header>
+              <label className="outline-model-search">
+                <Search size={13} />
+                <input
+                  value={search}
+                  placeholder="Search Compendium…"
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </label>
+              <div className="outline-compendium-options">
+                {groups.map((group) => (
+                  <section key={group}>
+                    <strong>{group}</strong>
+                    {available
+                      .filter((entry) => typeLabel(entry.typeId) === group)
+                      .map((entry) => (
+                        <button
+                          type="button"
+                          role="menuitemcheckbox"
+                          aria-checked={selected.has(entry.id)}
+                          key={entry.id}
+                          onClick={() =>
+                            onChange(
+                              selected.has(entry.id)
+                                ? selectedIds.filter((id) => id !== entry.id)
+                                : [...selectedIds, entry.id],
+                            )
+                          }
+                        >
+                          <span>{entry.name}</span>
+                          {selected.has(entry.id) ? <Check size={14} /> : null}
+                        </button>
+                      ))}
+                  </section>
+                ))}
+                {!available.length ? <p>No matching Compendium entries.</p> : null}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
 
 function wordCount(text: string): number {
   return text.trim() ? text.trim().split(/\s+/u).length : 0;
@@ -104,23 +536,32 @@ function SortableBox({
 
 function SceneCard({
   aiConfigured,
+  baseModel,
+  models,
   scene,
   displayLabel,
   entries,
+  typeLabel,
   labelPacks,
   onOpenScene,
   onOpenEntry,
   onManageLabels,
   onCreateQuickLabel,
   onUpdated,
-  onRename,
+  editingTitle,
+  onStartRename,
+  onStopRename,
+  onRenameTitle,
   onDelete,
   dragHandle,
 }: {
   aiConfigured: boolean;
+  baseModel: string;
+  models: OutlineModel[];
   scene: Scene;
   displayLabel: string;
   entries: CompendiumEntry[];
+  typeLabel: (typeId: string) => string;
   labelPacks: SceneLabelPack[];
   onOpenScene: (sceneId: string) => void;
   onOpenEntry: (entryIds: string[]) => void;
@@ -130,7 +571,10 @@ function SceneCard({
     color: SceneLabelColor,
   ) => Promise<{ pack: SceneLabelPack; definition: SceneLabelDefinition }>;
   onUpdated: (scene: Scene) => void;
-  onRename: () => void;
+  editingTitle: boolean;
+  onStartRename: () => void;
+  onStopRename: () => void;
+  onRenameTitle: (title: string, expectedVersion: number) => Promise<void>;
   onDelete: () => void;
   dragHandle: ReactNode;
 }) {
@@ -262,10 +706,20 @@ function SceneCard({
     [],
   );
 
-  const mentionedIds = useMemo(() => {
+  const automaticallyMentionedIds = useMemo(() => {
     const ids = new Set(findMentions(scene.plainText, entries).flatMap((match) => match.entryIds));
     return entries.filter((entry) => ids.has(entry.id)).map((entry) => entry.id);
   }, [entries, scene.plainText]);
+  const manualEntryIds = metadata.manualCompendiumEntryIds ?? [];
+  const visibleEntryIds = useMemo(
+    () => [
+      ...automaticallyMentionedIds,
+      ...manualEntryIds.filter(
+        (id) => !automaticallyMentionedIds.includes(id) && entries.some((entry) => entry.id === id),
+      ),
+    ],
+    [automaticallyMentionedIds, entries, manualEntryIds],
+  );
 
   const toggleLabel = (pack: SceneLabelPack, definition: SceneLabelDefinition) => {
     const active = metadata.labels.some((label) => {
@@ -293,6 +747,33 @@ function SceneCard({
     });
   };
 
+  const generateSummary = async (modelOverride: string | null) => {
+    setGenerating(true);
+    setError(null);
+    const saved = saveState === "saving" ? await persist() : null;
+    const expectedVersion = saved?.version ?? version.current;
+    try {
+      const updated = await asterism().manuscript.generateSummary(scene.id, {
+        expectedVersion,
+        modelOverride,
+      });
+      version.current = updated.version;
+      metadataRef.current = updated.metadata;
+      setMetadata(updated.metadata);
+      setSaveState("saved");
+      onUpdated(updated);
+    } catch (generationError) {
+      setError(generationError);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const renameScene = async (title: string) => {
+    const saved = saveState === "saving" ? await persist() : null;
+    await onRenameTitle(title, saved?.version ?? version.current);
+  };
+
   return (
     <article
       className="outline-scene-card"
@@ -304,25 +785,37 @@ function SceneCard({
     >
       <header>
         {dragHandle}
-        <strong>{displayLabel}</strong>
+        <EditableStructureTitle
+          displayLabel={displayLabel}
+          title={scene.title}
+          editing={editingTitle}
+          onStart={onStartRename}
+          onCancel={onStopRename}
+          onCommit={(title) => void renameScene(title)}
+        />
         <span>{wordCount(scene.plainText)} words</span>
         <button
-          ref={labelButtonRef}
           type="button"
-          className="icon-button"
-          aria-label={`Rename ${displayLabel}`}
-          onClick={onRename}
+          className="icon-button outline-open-scene"
+          aria-label={`Open ${displayLabel}`}
+          title="Open Scene"
+          onClick={() => onOpenScene(scene.id)}
         >
-          <MoreVertical size={14} />
+          <Pencil size={13} />
         </button>
-        <button
-          type="button"
-          className="icon-button danger scene-card-delete"
-          aria-label={`Delete ${displayLabel}`}
-          onClick={onDelete}
-        >
-          <Trash2 size={12} />
-        </button>
+        <OutlineItemMenu
+          displayLabel={displayLabel}
+          onRename={onStartRename}
+          onDelete={onDelete}
+          summary={{
+            disabled:
+              !aiConfigured || generating || !scene.plainText.trim() || saveState === "conflict",
+            generating,
+            baseModel,
+            models,
+            onSummarize: (modelOverride) => void generateSummary(modelOverride),
+          }}
+        />
       </header>
       <textarea
         aria-label={`${displayLabel} summary`}
@@ -330,18 +823,25 @@ function SceneCard({
         onChange={(event) => changeMetadata({ ...metadata, summary: event.target.value })}
         placeholder="Add summary…"
       />
-      {mentionedIds.length ? (
-        <div className="outline-compendium-chips">
-          {mentionedIds.map((id) => {
-            const entry = entries.find((candidate) => candidate.id === id);
-            return entry ? (
-              <button type="button" key={id} onClick={() => onOpenEntry([id])}>
-                {entry.name}
-              </button>
-            ) : null;
-          })}
-        </div>
-      ) : null}
+      <div className="outline-compendium-chips">
+        {visibleEntryIds.map((id) => {
+          const entry = entries.find((candidate) => candidate.id === id);
+          return entry ? (
+            <button type="button" key={id} onClick={() => onOpenEntry([id])}>
+              {entry.name}
+            </button>
+          ) : null;
+        })}
+        <CompendiumEntryPicker
+          displayLabel={displayLabel}
+          entries={entries}
+          selectedIds={manualEntryIds}
+          typeLabel={typeLabel}
+          onChange={(manualCompendiumEntryIds) =>
+            changeMetadata({ ...metadata, manualCompendiumEntryIds })
+          }
+        />
+      </div>
       {metadata.labels.length ? (
         <div className="outline-labels">
           {metadata.labels.map((label) => {
@@ -369,6 +869,7 @@ function SceneCard({
       ) : null}
       <div className="outline-label-actions" ref={labelMenuRef}>
         <button
+          ref={labelButtonRef}
           type="button"
           className="button ghost outline-label-button"
           aria-haspopup="menu"
@@ -491,40 +992,6 @@ function SceneCard({
       </div>
       <footer>
         <span className={`outline-save-state ${saveState}`}>{saveState}</span>
-        <button
-          type="button"
-          className="button ghost"
-          disabled={
-            !aiConfigured || generating || !scene.plainText.trim() || saveState === "conflict"
-          }
-          title={aiConfigured ? "Generate a Scene summary" : "Configure OpenRouter in Settings"}
-          onClick={async () => {
-            setGenerating(true);
-            setError(null);
-            const saved = saveState === "saving" ? await persist() : null;
-            const expectedVersion = saved?.version ?? version.current;
-            try {
-              const updated = await asterism().manuscript.generateSummary(scene.id, {
-                expectedVersion,
-                modelOverride: localStorage.getItem("asterism-latest-model"),
-              });
-              version.current = updated.version;
-              metadataRef.current = updated.metadata;
-              setMetadata(updated.metadata);
-              setSaveState("saved");
-              onUpdated(updated);
-            } catch (generationError) {
-              setError(generationError);
-            } finally {
-              setGenerating(false);
-            }
-          }}
-        >
-          <Sparkles size={13} /> {generating ? "Summarizing…" : "Summarize"}
-        </button>
-        <button type="button" className="button ghost" onClick={() => onOpenScene(scene.id)}>
-          <ExternalLink size={13} /> Open Scene
-        </button>
       </footer>
       {error ? <ErrorNotice error={error} /> : null}
     </article>
@@ -533,6 +1000,8 @@ function SceneCard({
 
 export function OutlineGrid({
   aiConfigured,
+  baseModel,
+  models,
   projectId,
   tree,
   entries,
@@ -540,6 +1009,8 @@ export function OutlineGrid({
   onOpenEntry,
 }: {
   aiConfigured: boolean;
+  baseModel: string;
+  models: OutlineModel[];
   projectId: string;
   tree: ManuscriptTree;
   entries: CompendiumEntry[];
@@ -554,6 +1025,10 @@ export function OutlineGrid({
   });
   const [collapsedActs, setCollapsedActs] = useState<Set<string>>(() => new Set());
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(() => new Set());
+  const [editingItem, setEditingItem] = useState<{
+    kind: "act" | "chapter" | "scene";
+    id: string;
+  } | null>(null);
   const [labelManagerOpen, setLabelManagerOpen] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const hierarchyKeyboardCoordinates = useCallback<KeyboardCoordinateGetter>(
@@ -627,6 +1102,13 @@ export function OutlineGrid({
       return rank || left.name.localeCompare(right.name);
     });
   }, [categories.data, entries]);
+  const typeLabel = useCallback(
+    (typeId: string) =>
+      categories.data?.find((category) => `custom.${category.id}` === typeId)?.name ??
+      standardCompendiumLabels[typeId] ??
+      "Other",
+    [categories.data],
+  );
   const structureLabels = useMemo(() => manuscriptLabels(tree), [tree]);
   const hierarchyCollisionDetection = useCallback<CollisionDetection>(
     (args) => {
@@ -695,9 +1177,8 @@ export function OutlineGrid({
   };
   const create = async (input: CreateManuscriptItemInput) => {
     try {
-      const created = await asterism().manuscript.createItem(projectId, input);
+      await asterism().manuscript.createItem(projectId, input);
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
-      onOpenScene(created.initialSceneId);
     } catch (createError) {
       setError(createError);
     }
@@ -708,14 +1189,7 @@ export function OutlineGrid({
     title: string,
     body: object = {},
   ) => {
-    const result = await dialog.prompt({
-      title: "Edit custom title",
-      label: "Optional title",
-      initialValue: title,
-    });
-    if (result === null) return;
-    const next = result.trim();
-    if (next === title) return;
+    const next = title.trim();
     try {
       await asterism().manuscript.updateItem(kind, id, { ...body, title: next });
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
@@ -856,7 +1330,8 @@ export function OutlineGrid({
                         {actHandle}
                         <button
                           type="button"
-                          className="outline-collapse"
+                          className="outline-collapse-toggle"
+                          aria-label={`${collapsedActs.has(act.id) ? "Expand" : "Collapse"} ${structureLabels.acts.get(act.id)?.label}`}
                           onClick={() =>
                             setCollapsedActs((current) => {
                               const next = new Set(current);
@@ -870,8 +1345,15 @@ export function OutlineGrid({
                             className={collapsedActs.has(act.id) ? "collapsed" : ""}
                             size={15}
                           />
-                          <strong>{structureLabels.acts.get(act.id)?.label}</strong>
                         </button>
+                        <EditableStructureTitle
+                          displayLabel={structureLabels.acts.get(act.id)?.label ?? "Act"}
+                          title={act.title}
+                          editing={editingItem?.kind === "act" && editingItem.id === act.id}
+                          onStart={() => setEditingItem({ kind: "act", id: act.id })}
+                          onCancel={() => setEditingItem(null)}
+                          onCommit={(title) => void rename("act", act.id, title)}
+                        />
                         <span>
                           {act.chapters.length} chapters · {actWords} words
                         </span>
@@ -888,28 +1370,17 @@ export function OutlineGrid({
                         >
                           <Plus size={13} /> Chapter
                         </button>
-                        <button
-                          type="button"
-                          className="icon-button"
-                          onClick={() => void rename("act", act.id, act.title)}
-                          aria-label={`Rename ${structureLabels.acts.get(act.id)?.label}`}
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="icon-button danger"
-                          onClick={() =>
+                        <OutlineItemMenu
+                          displayLabel={structureLabels.acts.get(act.id)?.label ?? "Act"}
+                          onRename={() => setEditingItem({ kind: "act", id: act.id })}
+                          onDelete={() =>
                             void remove(
                               "act",
                               act.id,
                               structureLabels.acts.get(act.id)?.label ?? "Act",
                             )
                           }
-                          aria-label={`Delete ${structureLabels.acts.get(act.id)?.label}`}
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        />
                       </header>
                       {!collapsedActs.has(act.id) ? (
                         <SortableContext
@@ -929,7 +1400,8 @@ export function OutlineGrid({
                                       {chapterHandle}
                                       <button
                                         type="button"
-                                        className="outline-chapter-collapse"
+                                        className="outline-collapse-toggle"
+                                        aria-label={`${collapsedChapters.has(chapter.id) ? "Expand" : "Collapse"} ${structureLabels.chapters.get(chapter.id)?.label}`}
                                         onClick={() =>
                                           setCollapsedChapters((current) => {
                                             const next = new Set(current);
@@ -945,10 +1417,25 @@ export function OutlineGrid({
                                           }
                                           size={14}
                                         />
-                                        <strong>
-                                          {structureLabels.chapters.get(chapter.id)?.label}
-                                        </strong>
                                       </button>
+                                      <EditableStructureTitle
+                                        displayLabel={
+                                          structureLabels.chapters.get(chapter.id)?.label ??
+                                          "Chapter"
+                                        }
+                                        title={chapter.title}
+                                        editing={
+                                          editingItem?.kind === "chapter" &&
+                                          editingItem.id === chapter.id
+                                        }
+                                        onStart={() =>
+                                          setEditingItem({ kind: "chapter", id: chapter.id })
+                                        }
+                                        onCancel={() => setEditingItem(null)}
+                                        onCommit={(title) =>
+                                          void rename("chapter", chapter.id, title)
+                                        }
+                                      />
                                       <span>
                                         {chapter.scenes.reduce(
                                           (sum, scene) => sum + wordCount(scene.plainText),
@@ -956,20 +1443,15 @@ export function OutlineGrid({
                                         )}{" "}
                                         words
                                       </span>
-                                      <button
-                                        type="button"
-                                        className="icon-button"
-                                        onClick={() =>
-                                          void rename("chapter", chapter.id, chapter.title)
+                                      <OutlineItemMenu
+                                        displayLabel={
+                                          structureLabels.chapters.get(chapter.id)?.label ??
+                                          "Chapter"
                                         }
-                                        aria-label={`Rename ${structureLabels.chapters.get(chapter.id)?.label}`}
-                                      >
-                                        <MoreVertical size={13} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="icon-button danger"
-                                        onClick={() =>
+                                        onRename={() =>
+                                          setEditingItem({ kind: "chapter", id: chapter.id })
+                                        }
+                                        onDelete={() =>
                                           void remove(
                                             "chapter",
                                             chapter.id,
@@ -977,10 +1459,7 @@ export function OutlineGrid({
                                               "Chapter",
                                           )
                                         }
-                                        aria-label={`Delete ${structureLabels.chapters.get(chapter.id)?.label}`}
-                                      >
-                                        <Trash2 size={12} />
-                                      </button>
+                                      />
                                     </header>
                                     {!collapsedChapters.has(chapter.id) ? (
                                       <>
@@ -998,12 +1477,15 @@ export function OutlineGrid({
                                                 {(sceneHandle) => (
                                                   <SceneCard
                                                     aiConfigured={aiConfigured}
+                                                    baseModel={baseModel}
+                                                    models={models}
                                                     scene={scene}
                                                     displayLabel={
                                                       structureLabels.scenes.get(scene.id)?.label ??
                                                       "Scene"
                                                     }
                                                     entries={orderedEntries}
+                                                    typeLabel={typeLabel}
                                                     labelPacks={labelLibrary.allPacks}
                                                     onOpenScene={onOpenScene}
                                                     onOpenEntry={onOpenEntry}
@@ -1012,11 +1494,26 @@ export function OutlineGrid({
                                                     onUpdated={(updated) =>
                                                       setTree(updateSceneInTree(tree, updated))
                                                     }
-                                                    onRename={() =>
-                                                      void rename("scene", scene.id, scene.title, {
-                                                        expectedVersion: scene.version,
+                                                    editingTitle={
+                                                      editingItem?.kind === "scene" &&
+                                                      editingItem.id === scene.id
+                                                    }
+                                                    onStartRename={() =>
+                                                      setEditingItem({
+                                                        kind: "scene",
+                                                        id: scene.id,
                                                       })
                                                     }
+                                                    onStopRename={() => setEditingItem(null)}
+                                                    onRenameTitle={async (
+                                                      title,
+                                                      expectedVersion,
+                                                    ) => {
+                                                      setEditingItem(null);
+                                                      await rename("scene", scene.id, title, {
+                                                        expectedVersion,
+                                                      });
+                                                    }}
                                                     onDelete={() =>
                                                       void remove(
                                                         "scene",

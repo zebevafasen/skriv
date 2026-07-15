@@ -210,6 +210,12 @@ export async function registerImportRoutes(
                         return mapped ? [mapped] : [];
                       },
                     ),
+                    manualCompendiumEntryIds: (metadata.manualCompendiumEntryIds ?? []).flatMap(
+                      (id) => {
+                        const mapped = entryIdMap.get(id);
+                        return mapped ? [mapped] : [];
+                      },
+                    ),
                   };
                 })(),
               })

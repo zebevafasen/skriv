@@ -24,6 +24,7 @@ function labelScene(title: string): Scene {
       povEntryId: null,
       locationEntryId: null,
       presentCharacterEntryIds: [],
+      manualCompendiumEntryIds: [],
       goal: "",
       notes: "",
       status: "draft",

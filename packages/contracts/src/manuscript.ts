@@ -89,6 +89,7 @@ const sceneMetadataBaseSchema = z.object({
   goal: z.string().max(10_000).default(""),
   notes: z.string().max(50_000).default(""),
   status: sceneStatusSchema.default("draft"),
+  manualCompendiumEntryIds: z.array(idSchema).max(250).default([]),
   labels: z.array(sceneLabelSchema).max(24).default([]),
 });
 

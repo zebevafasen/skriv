@@ -932,6 +932,8 @@ export function ProjectPage() {
                 <DeferredWorkspace name="outline">
                   <OutlineGrid
                     aiConfigured={aiConfigured}
+                    baseModel={baseModel}
+                    models={modelOptions}
                     projectId={projectId}
                     tree={tree.data}
                     entries={compendium.data ?? []}

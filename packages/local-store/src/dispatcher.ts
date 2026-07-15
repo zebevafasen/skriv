@@ -24,7 +24,7 @@ import {
   type GenerationRequest,
   type GenerationStreamEvent,
 } from "@asterism/contracts";
-import { and, asc, desc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { createLocalDatabase, type LocalDatabase } from "./database.js";
 import {
@@ -202,22 +202,28 @@ async function nextPosition(
 ): Promise<number> {
   if (kind === "act") {
     const [row] = await db
-      .select({ value: max(acts.position) })
+      .select({ value: acts.position })
       .from(acts)
-      .where(eq(acts.projectId, parentId));
+      .where(eq(acts.projectId, parentId))
+      .orderBy(desc(acts.position))
+      .limit(1);
     return (row?.value ?? -1) + 1;
   }
   if (kind === "chapter") {
     const [row] = await db
-      .select({ value: max(chapters.position) })
+      .select({ value: chapters.position })
       .from(chapters)
-      .where(eq(chapters.actId, parentId));
+      .where(eq(chapters.actId, parentId))
+      .orderBy(desc(chapters.position))
+      .limit(1);
     return (row?.value ?? -1) + 1;
   }
   const [row] = await db
-    .select({ value: max(scenes.position) })
+    .select({ value: scenes.position })
     .from(scenes)
-    .where(eq(scenes.chapterId, parentId));
+    .where(eq(scenes.chapterId, parentId))
+    .orderBy(desc(scenes.position))
+    .limit(1);
   return (row?.value ?? -1) + 1;
 }
 
@@ -914,9 +920,11 @@ async function handleCompendium(db: LocalDatabase, method: string, path: string,
     if (method === "POST") {
       const input = createCompendiumCategoryInputSchema.parse(body);
       const [positionRow] = await db
-        .select({ value: max(compendiumCategories.position) })
+        .select({ value: compendiumCategories.position })
         .from(compendiumCategories)
-        .where(eq(compendiumCategories.projectId, projectId));
+        .where(eq(compendiumCategories.projectId, projectId))
+        .orderBy(desc(compendiumCategories.position))
+        .limit(1);
       const [created] = await db
         .insert(compendiumCategories)
         .values({

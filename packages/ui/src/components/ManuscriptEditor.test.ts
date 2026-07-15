@@ -32,6 +32,7 @@ const scene = (id: string, title: string, position: number): Scene => ({
     povEntryId: null,
     locationEntryId: null,
     presentCharacterEntryIds: [],
+    manualCompendiumEntryIds: [],
     goal: "",
     notes: "",
     status: "draft",

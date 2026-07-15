@@ -320,8 +320,7 @@ async function importV5(db: LocalDatabase, raw: unknown, nativeAssets: NativeAss
         settings: {
           ...archive.project.settings,
           coverDataUrl: cover ? (assetMap.get(cover.path) ?? null) : null,
-          coverArtworkSeed:
-            archive.project.settings.coverArtworkSeed || archive.project.id,
+          coverArtworkSeed: archive.project.settings.coverArtworkSeed || archive.project.id,
           povCharacterEntryId: remap(entryMap, archive.project.settings.povCharacterEntryId),
         },
       })
@@ -374,6 +373,9 @@ async function importV5(db: LocalDatabase, raw: unknown, nativeAssets: NativeAss
               povEntryId: remap(entryMap, scene.metadata.povEntryId),
               locationEntryId: remap(entryMap, scene.metadata.locationEntryId),
               presentCharacterEntryIds: scene.metadata.presentCharacterEntryIds.flatMap(
+                (id) => entryMap.get(id) ?? [],
+              ),
+              manualCompendiumEntryIds: scene.metadata.manualCompendiumEntryIds.flatMap(
                 (id) => entryMap.get(id) ?? [],
               ),
             }),
@@ -551,6 +553,9 @@ async function importV4(db: LocalDatabase, raw: unknown) {
               povEntryId: remap(entryMap, scene.metadata.povEntryId),
               locationEntryId: remap(entryMap, scene.metadata.locationEntryId),
               presentCharacterEntryIds: scene.metadata.presentCharacterEntryIds.flatMap(
+                (id) => entryMap.get(id) ?? [],
+              ),
+              manualCompendiumEntryIds: scene.metadata.manualCompendiumEntryIds.flatMap(
                 (id) => entryMap.get(id) ?? [],
               ),
             }),

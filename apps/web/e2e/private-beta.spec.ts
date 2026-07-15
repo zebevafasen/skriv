@@ -54,16 +54,15 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       timeout: 5_000,
     });
     await firstCard.getByRole("button", { name: "Label" }).click();
-    await firstCard.getByPlaceholder("Quick label…").fill("Foreshadowing");
-    await firstCard.getByPlaceholder("Quick label…").press("Enter");
+    await page.getByPlaceholder("Quick label…").fill("Foreshadowing");
+    await page.getByPlaceholder("Quick label…").press("Enter");
     await expect(firstCard.getByText(/Foreshadowing/)).toBeVisible();
-    await firstCard.getByRole("button", { name: "Summarize" }).click();
+    await firstCard.getByRole("button", { name: "More options for Scene 1" }).click();
+    await page.getByRole("menuitem", { name: "Summarize Scene" }).click();
+    await page.getByRole("menuitem", { name: /Use default/ }).click();
     await expect(summary).toContainText("decisive change", { timeout: 5_000 });
 
     await page.getByRole("button", { name: "New Scene" }).click();
-    const viewingMode = page.getByRole("button", { name: "Manuscript navigator" });
-    await expect(viewingMode).toContainText("Scene 2");
-    await page.getByRole("button", { name: "Outline" }).click();
     await expect(page.locator(".outline-scene-card")).toHaveCount(2);
     const openingDragHandle = page
       .locator(".outline-scene-card", { hasText: "Scene 1" })
@@ -77,7 +76,8 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(page.locator(".outline-scene-card").nth(1)).toContainText("Foreshadowing");
     const newSceneCard = page.locator(".outline-scene-card").nth(0);
     await expect(newSceneCard).toContainText("Scene 1");
-    await newSceneCard.getByRole("button", { name: "Open Scene" }).click();
+    await newSceneCard.getByRole("button", { name: "Open Scene 1" }).click();
+    const viewingMode = page.getByRole("button", { name: "Manuscript navigator" });
     await expect(viewingMode).toContainText("Scene 1");
     await viewingMode.click();
     await page.getByRole("option", { name: /Everything/ }).click();
