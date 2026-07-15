@@ -1,5 +1,5 @@
 {
-  "name": "@asterism/db",
+  "name": "@skriv/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "@asterism/contracts": "workspace:*",
+    "@skriv/contracts": "workspace:*",
     "dotenv": "17.4.2",
     "drizzle-orm": "0.45.2",
     "pg": "8.22.0"

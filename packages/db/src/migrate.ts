@@ -10,7 +10,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { createDatabase } from "./index.js";
 
 const connectionString = (
-  process.env.DATABASE_URL ?? "postgresql://asterism:asterism@localhost:5433/asterism"
+  process.env.DATABASE_URL ?? "postgresql://skriv:skriv@localhost:5433/skriv"
 ).replace("sslmode=require", "sslmode=verify-full");
 const { db, pool } = createDatabase(connectionString);
 

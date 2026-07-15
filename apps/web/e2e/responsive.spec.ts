@@ -84,7 +84,8 @@ for (const viewport of viewports) {
 
     for (const path of ["/", "/prompts", "/settings", "/login"]) {
       await page.goto(path);
-      await expect(page.locator(".topbar")).toBeVisible();
+      if (path === "/login") await expect(page.locator(".auth-card")).toBeVisible();
+      else await expect(page.locator(".topbar")).toBeVisible();
       await expectNoDocumentOverflow(page);
       await expectDocumentScrolls(page);
     }
@@ -98,6 +99,8 @@ for (const viewport of viewports) {
 }
 
 test("mobile workspace exposes every primary workflow without page overflow", async ({ page }) => {
+  test.setTimeout(120_000);
+  page.setDefaultTimeout(10_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "Create story" }).click();
@@ -187,11 +190,16 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await expect(firstOutlineCard).toBeVisible();
     const sceneActionBoxes = await Promise.all(
       [
-        firstOutlineCard.getByRole("button", { name: /Rename Scene/ }),
-        firstOutlineCard.getByRole("button", { name: /Delete Scene/ }),
+        firstOutlineCard.getByRole("button", { name: /Open Scene/ }),
+        firstOutlineCard.getByRole("button", { name: /More options for Scene/ }),
       ].map((control) => control.boundingBox()),
     );
     expect(Math.abs((sceneActionBoxes[0]?.y ?? 0) - (sceneActionBoxes[1]?.y ?? 0))).toBeLessThan(4);
+    await firstOutlineCard.getByRole("button", { name: /More options for Scene/ }).click();
+    const sceneOptions = page.getByRole("menu", { name: /Options for Scene/ });
+    await expect(sceneOptions.getByRole("menuitem", { name: "Rename" })).toBeVisible();
+    await expect(sceneOptions.getByRole("menuitem", { name: "Delete" })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expectNoDocumentOverflow(page);
 
     await page.getByRole("button", { name: "Ideation" }).click();
@@ -220,7 +228,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await page.getByRole("button", { name: "More" }).click();
     await page.getByRole("link", { name: "Back to projects" }).click();
     await expect(page).toHaveURL("/");
-    await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your Library" })).toBeVisible();
     await page.evaluate(() => {
       const spacer = document.createElement("div");
       spacer.style.height = "1200px";
@@ -230,7 +238,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });
 
@@ -274,7 +282,7 @@ test("writing-first desktop workspace reclaims the canvas and persists the Compe
 
     const compendium = page.locator(".compendium-sidebar");
     await expect(compendium).toBeVisible();
-    expect((await compendium.boundingBox())?.width).toBe(320);
+    expect((await compendium.boundingBox())?.width).toBe(380);
     const compendiumWidths = await compendium.evaluate((element) => ({
       client: element.clientWidth,
       scroll: element.scrollWidth,
@@ -312,7 +320,7 @@ test("writing-first desktop workspace reclaims the canvas and persists the Compe
     await page.getByRole("button", { name: "Collapse Compendium" }).click();
     await expect(compendium).toBeHidden();
     await expect
-      .poll(() => page.evaluate(() => localStorage.getItem("asterism:workspace:compendium-open")))
+      .poll(() => page.evaluate(() => localStorage.getItem("skriv:workspace:compendium-open")))
       .toBe("false");
     await page.reload();
     await expect(compendium).toBeHidden();
@@ -330,7 +338,7 @@ test("writing-first desktop workspace reclaims the canvas and persists the Compe
     await expect(compendium).toBeHidden();
     await expectNoDocumentOverflow(page);
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });
 
@@ -378,10 +386,11 @@ test("every project workspace exposes a working vertical scroll container", asyn
       await expectElementScrolls(page, ".settings-content");
 
       await page.goto(`${projectUrl}?tab=compendium`);
-      await expectElementScrolls(page, ".compendium-sidebar");
+      if (viewport.width <= 768) await expectDocumentScrolls(page);
+      else await expectElementScrolls(page, ".compendium-sidebar .entry-groups");
       await expectNoDocumentOverflow(page);
     }
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });

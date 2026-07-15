@@ -1,4 +1,4 @@
-import { acts, chapters, projects, scenes, workspaceMembers } from "@asterism/db";
+import { acts, chapters, projects, scenes, workspaceMembers } from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { AppContext } from "./context.js";
 

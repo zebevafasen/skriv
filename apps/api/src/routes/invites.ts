@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { invites } from "@asterism/db";
+import { invites } from "@skriv/db";
 import { desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

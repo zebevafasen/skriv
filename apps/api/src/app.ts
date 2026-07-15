@@ -1,7 +1,8 @@
-import { createAIProvider, FakeAIProvider } from "@asterism/ai";
-import { loadServerEnv, type ServerEnv } from "@asterism/config";
-import { validateBuiltinContent } from "@asterism/content";
-import { createDatabase } from "@asterism/db";
+import { createAIProvider } from "@skriv/ai";
+import { AppError } from "@skriv/application";
+import { loadServerEnv, type ServerEnv } from "@skriv/config";
+import { validateBuiltinContent } from "@skriv/content";
+import { createDatabase } from "@skriv/db";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import sensible from "@fastify/sensible";
@@ -10,6 +11,7 @@ import { createAuth, ensureDevelopmentUser, registerAuth } from "./auth.js";
 import type { AppContext } from "./context.js";
 import { createProviderResolver } from "./credentials.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
+import { registerArchiveTransferRoutes } from "./routes/archive-transfers.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerCompendiumRoutes } from "./routes/compendium.js";
 import { registerExportRoutes } from "./routes/export.js";
@@ -28,22 +30,26 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   validateBuiltinContent();
   const { db, pool } = createDatabase(env.DATABASE_URL);
   const auth = createAuth(db, env);
-  const defaultAi = createAIProvider({
-    provider: env.AI_PROVIDER,
-    fakeDelayMs: env.FAKE_AI_DELAY_MS,
-    apiKey: env.OPENROUTER_API_KEY,
-    baseUrl: env.OPENROUTER_BASE_URL,
-    appUrl: env.WEB_ORIGIN,
-  });
-  const fakeAi = new FakeAIProvider(env.FAKE_AI_DELAY_MS);
+  const defaultAi =
+    env.AI_PROVIDER === "fake" || env.OPENROUTER_API_KEY
+      ? createAIProvider({
+          provider: env.AI_PROVIDER,
+          fakeDelayMs: env.FAKE_AI_DELAY_MS,
+          apiKey: env.OPENROUTER_API_KEY,
+          baseUrl: env.OPENROUTER_BASE_URL,
+          appUrl: env.WEB_ORIGIN,
+        })
+      : null;
   const context: AppContext = {
     db,
     pool,
     env,
     auth: auth as AppContext["auth"],
     defaultAi,
-    fakeAi,
-    getAi: async () => defaultAi,
+    getAi: async () => {
+      if (defaultAi) return defaultAi;
+      throw new AppError("Configure OpenRouter in Settings.", "CREDENTIAL_ERROR");
+    },
   };
   context.getAi = createProviderResolver(context);
   const app = Fastify({
@@ -64,13 +70,14 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
 
   app.get("/api/health", async () => ({
     status: "ok",
-    provider: defaultAi.name,
-    contentPackage: "asterism.base",
+    provider: defaultAi?.name ?? "openrouter",
+    contentPackage: "skriv.base",
   }));
   await registerProjectRoutes(app, context);
   await registerNoteRoutes(app, context);
   await registerCompendiumRoutes(app, context);
   await registerCategoryRoutes(app, context);
+  await registerArchiveTransferRoutes(app, context);
   await registerChatRoutes(app, context);
   await registerPromptRoutes(app, context);
   await registerSettingsRoutes(app, context);
@@ -84,15 +91,45 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
-    const status =
-      typeof error === "object" &&
+    const status = error instanceof AppError
+      ? ({
+          BAD_REQUEST: 400,
+          VALIDATION_ERROR: 400,
+          UNAUTHORIZED: 401,
+          FORBIDDEN: 403,
+          NOT_FOUND: 404,
+          CONFLICT: 409,
+          CANCELLED: 409,
+          RATE_LIMITED: 429,
+          UNSUPPORTED: 501,
+          PROVIDER_ERROR: 502,
+          NETWORK_ERROR: 503,
+          CREDENTIAL_ERROR: 400,
+          DATABASE_ERROR: 500,
+          FILE_ERROR: 500,
+          INTERNAL_ERROR: 500,
+        } as const)[error.code]
+      : typeof error === "object" &&
       error !== null &&
       "statusCode" in error &&
       typeof error.statusCode === "number"
         ? error.statusCode
         : 500;
-    const code =
-      status === 400 ? "VALIDATION_ERROR" : status === 429 ? "RATE_LIMITED" : "INTERNAL_ERROR";
+    const code = error instanceof AppError
+      ? error.code
+      : status === 400
+        ? "VALIDATION_ERROR"
+        : status === 401
+          ? "UNAUTHORIZED"
+          : status === 403
+            ? "FORBIDDEN"
+            : status === 404
+              ? "NOT_FOUND"
+              : status === 409
+                ? "CONFLICT"
+                : status === 429
+                  ? "RATE_LIMITED"
+                  : "INTERNAL_ERROR";
     const message = error instanceof Error ? error.message : "Request failed.";
     return reply.code(status).send({
       error: {

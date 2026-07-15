@@ -6,7 +6,6 @@
     "version": 1,
     "description": "Turns the chosen premise into an opening Scene while respecting project settings and approved Compendium facts.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -65,7 +64,6 @@
     "version": 3,
     "description": "Begins a scene using explicit project settings and prior-story context.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -109,9 +107,7 @@
       },
       {
         "role": "assistant",
-        "content": [
-          "{{style_reference_prose}}"
-        ]
+        "content": ["{{style_reference_prose}}"]
       },
       {
         "role": "user",
@@ -142,7 +138,6 @@
     "version": 3,
     "description": "Continues prose from the cursor while respecting following text.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -183,9 +178,7 @@
       },
       {
         "role": "assistant",
-        "content": [
-          "{{style_reference_prose}}"
-        ]
+        "content": ["{{style_reference_prose}}"]
       },
       {
         "role": "user",
@@ -223,7 +216,6 @@
     "version": 3,
     "description": "Continues naturally while progressing toward a narrative destination.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -265,9 +257,7 @@
       },
       {
         "role": "assistant",
-        "content": [
-          "{{style_reference_prose}}"
-        ]
+        "content": ["{{style_reference_prose}}"]
       },
       {
         "role": "user",
@@ -309,7 +299,6 @@
     "version": 1,
     "description": "Revises selected manuscript prose while preserving surrounding continuity.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -382,7 +371,6 @@
     "version": 3,
     "description": "Combines story ingredients into a distinctive, coherent premise without imposing a conventional plot structure.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -434,13 +422,7 @@
         ]
       }
     ],
-    "variables": [
-      "genres",
-      "themes",
-      "tags",
-      "selected_context",
-      "user_instructions"
-    ],
+    "variables": ["genres", "themes", "tags", "selected_context", "user_instructions"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -451,7 +433,6 @@
     "version": 1,
     "description": "Selects grounded source fragments relevant to a request.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -471,10 +452,7 @@
         ]
       }
     ],
-    "variables": [
-      "request_context",
-      "candidate_fragments"
-    ],
+    "variables": ["request_context", "candidate_fragments"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -485,7 +463,6 @@
     "version": 1,
     "description": "Summarizes canonical Scene prose for planning and continuity.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -506,10 +483,7 @@
         ]
       }
     ],
-    "variables": [
-      "scene_title",
-      "scene_prose"
-    ],
+    "variables": ["scene_title", "scene_prose"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -520,7 +494,6 @@
     "version": 1,
     "description": "Grounds project Chat responses in selected story context and conversation state.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -540,10 +513,7 @@
         ]
       }
     ],
-    "variables": [
-      "project_context",
-      "conversation_summary"
-    ],
+    "variables": ["project_context", "conversation_summary"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -554,7 +524,6 @@
     "version": 1,
     "description": "Maintains a concise rolling summary of older Chat turns.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -574,10 +543,7 @@
         ]
       }
     ],
-    "variables": [
-      "existing_summary",
-      "new_messages"
-    ],
+    "variables": ["existing_summary", "new_messages"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -588,7 +554,6 @@
     "version": 1,
     "description": "Compresses an oversized project-context source without inventing facts.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -607,10 +572,7 @@
         ]
       }
     ],
-    "variables": [
-      "project_context",
-      "target_budget"
-    ],
+    "variables": ["project_context", "target_budget"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -621,7 +583,6 @@
     "version": 1,
     "description": "Extracts a reviewable starter Compendium using only facts established by the chosen premise.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -641,18 +602,10 @@
       },
       {
         "role": "user",
-        "content": [
-          "Story language: {{story_language}}",
-          "",
-          "Chosen premise:",
-          "{{premise}}"
-        ]
+        "content": ["Story language: {{story_language}}", "", "Chosen premise:", "{{premise}}"]
       }
     ],
-    "variables": [
-      "premise",
-      "story_language"
-    ],
+    "variables": ["premise", "story_language"],
     "createdAt": null,
     "updatedAt": null
   },
@@ -663,7 +616,6 @@
     "version": 2,
     "description": "Creates a distinctive story entity grounded in project ingredients and selected canonical context.",
     "ownership": "builtin",
-    "ownerId": null,
     "sourcePromptId": null,
     "messages": [
       {
@@ -713,14 +665,7 @@
         ]
       }
     ],
-    "variables": [
-      "category",
-      "genres",
-      "themes",
-      "tags",
-      "selected_context",
-      "user_instructions"
-    ],
+    "variables": ["category", "genres", "themes", "tags", "selected_context", "user_instructions"],
     "createdAt": null,
     "updatedAt": null
   }

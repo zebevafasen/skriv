@@ -8,7 +8,7 @@ import type {
   IngredientPackValues,
   TiptapNode,
   WorkflowKey,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -111,6 +111,21 @@ export const invites = pgTable("invites", {
   createdBy: text("created_by").references(() => user.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const archiveTransfers = pgTable(
+  "archive_transfers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["import", "export"] }).notNull(),
+    pathname: text("pathname").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [uniqueIndex("archive_transfers_pathname_idx").on(table.pathname)],
+);
 
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -337,10 +352,21 @@ export const aiSettings = pgTable("ai_settings", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
-  baseModel: text("base_model").notNull().default("asterism/fake-prose"),
-  contextModel: text("context_model").notNull().default("asterism/fake-context"),
+  baseModel: text("base_model").notNull().default("skriv/fake-prose"),
+  contextModel: text("context_model").notNull().default("skriv/fake-context"),
   smartContextEnabled: boolean("smart_context_enabled").notNull().default(true),
   recursionDepth: integer("recursion_depth").notNull().default(2),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const appSettings = pgTable("app_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia"] })
+    .$type<import("@skriv/contracts").AppSettings["theme"]>()
+    .notNull()
+    .default("system"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

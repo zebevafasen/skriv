@@ -1,0 +1,37 @@
+{
+  "name": "@skriv/desktop",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "dev": "vite",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@skriv/application": "workspace:*",
+    "@skriv/contracts": "workspace:*",
+    "@skriv/local-store": "workspace:*",
+    "@skriv/ui": "workspace:*",
+    "@tauri-apps/api": "^2.0.0",
+    "@tanstack/react-query": "5.101.2",
+    "@tanstack/react-router": "1.170.17",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.2",
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "tailwindcss": "4.3.2",
+    "typescript": "7.0.2",
+    "vite": "8.1.4",
+    "vitest": "4.1.10"
+  }
+}

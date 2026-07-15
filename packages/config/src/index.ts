@@ -12,6 +12,12 @@ const optionalBooleanFromString = z
   .optional()
   .transform((value) => (value === undefined ? undefined : value === "true"));
 
+const optionalSecret = z
+  .string()
+  .transform((value) => (value.trim() === "" ? undefined : value))
+  .pipe(z.string().min(16).optional())
+  .optional();
+
 const serverEnvSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -20,7 +26,7 @@ const serverEnvSchema = z
     DATABASE_URL: z
       .string()
       .min(1)
-      .default("postgresql://asterism:asterism@localhost:5433/asterism"),
+      .default("postgresql://skriv:skriv@localhost:5433/skriv"),
     BETTER_AUTH_SECRET: z
       .string()
       .min(32)
@@ -31,8 +37,10 @@ const serverEnvSchema = z
     OPENROUTER_API_KEY: z.string().default(""),
     CREDENTIAL_ENCRYPTION_KEY: z.string().min(32).default("development-credential-key-change-me"),
     OPENROUTER_BASE_URL: z.url().default("https://openrouter.ai/api/v1"),
-    AI_PROVIDER: z.enum(["fake", "openrouter"]).default("fake"),
+    AI_PROVIDER: z.enum(["fake", "openrouter"]).default("openrouter"),
     FAKE_AI_DELAY_MS: z.coerce.number().int().min(0).max(2_000).default(20),
+    BLOB_READ_WRITE_TOKEN: z.string().optional(),
+    CRON_SECRET: optionalSecret,
   })
   .transform((value) => ({
     ...value,
@@ -50,8 +58,8 @@ export function loadServerEnv(source: NodeJS.ProcessEnv = process.env): ServerEn
   if (result.data.NODE_ENV === "production" && result.data.DEV_AUTH_BYPASS) {
     throw new Error("DEV_AUTH_BYPASS cannot be enabled in production.");
   }
-  if (result.data.AI_PROVIDER === "openrouter" && !result.data.OPENROUTER_API_KEY) {
-    throw new Error("OPENROUTER_API_KEY is required when AI_PROVIDER=openrouter.");
+  if (result.data.AI_PROVIDER === "fake" && result.data.NODE_ENV !== "test") {
+    throw new Error("AI_PROVIDER=fake is only available during automated tests.");
   }
   if (
     result.data.NODE_ENV === "production" &&

@@ -1,4 +1,4 @@
-import { getOutlinePreset } from "@asterism/content";
+import { getOutlinePreset } from "@skriv/content";
 import {
   actSchema,
   type CompendiumContent,
@@ -15,7 +15,7 @@ import {
   sceneMetadataSchema,
   updateProjectInputSchema,
   updateSceneInputSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   acts,
   chapters,
@@ -27,7 +27,7 @@ import {
   scenes,
   touchUpdatedAt,
   workspaceMembers,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, asc, desc, eq, gte, inArray, max, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -77,6 +77,16 @@ function sceneResponse(scene: typeof scenes.$inferSelect) {
   return { ...scene, createdAt: timestamp(scene.createdAt), updatedAt: timestamp(scene.updatedAt) };
 }
 
+function projectResponse(project: typeof projects.$inferSelect) {
+  return {
+    id: project.id,
+    title: project.title,
+    settings: projectSettingsSchema.parse(project.settings),
+    createdAt: timestamp(project.createdAt),
+    updatedAt: timestamp(project.updatedAt),
+  };
+}
+
 async function nextPosition(
   context: AppContext,
   table: typeof acts | typeof chapters | typeof scenes,
@@ -103,11 +113,7 @@ export async function registerProjectRoutes(
       .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, projects.workspaceId))
       .where(eq(workspaceMembers.userId, request.userId))
       .orderBy(desc(projects.updatedAt));
-    return rows.map(({ project }) => ({
-      ...project,
-      createdAt: timestamp(project.createdAt),
-      updatedAt: timestamp(project.updatedAt),
-    }));
+    return rows.map(({ project }) => projectResponse(project));
   });
 
   app.post("/api/projects", async (request, reply) => {
@@ -119,7 +125,9 @@ export async function registerProjectRoutes(
     if (selectedPacks.some((pack) => !pack)) {
       return reply
         .code(400)
-        .send({ error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." } });
+        .send({
+          error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." },
+        });
     }
     const validSelectedPacks = [
       ...new Map(
@@ -337,11 +345,7 @@ export async function registerProjectRoutes(
       return { project, initialSceneId };
     });
     return reply.code(201).send({
-      project: {
-        ...result.project,
-        createdAt: timestamp(result.project.createdAt),
-        updatedAt: timestamp(result.project.updatedAt),
-      },
+      project: projectResponse(result.project),
       initialSceneId: result.initialSceneId,
     });
   });
@@ -382,11 +386,7 @@ export async function registerProjectRoutes(
           .orderBy(asc(scenes.position))
       : [];
     return {
-      project: {
-        ...project,
-        createdAt: timestamp(project.createdAt),
-        updatedAt: timestamp(project.updatedAt),
-      },
+      project: projectResponse(project),
       acts: actRows.map((act) => ({
         id: act.id,
         projectId: act.projectId,
@@ -741,7 +741,7 @@ export async function registerProjectRoutes(
       })
       .where(eq(projects.id, id))
       .returning();
-    return project;
+    return project ? projectResponse(project) : project;
   });
 
   app.delete("/api/projects/:id", async (request, reply) => {

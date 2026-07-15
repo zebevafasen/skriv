@@ -1,6 +1,6 @@
-import type { AIProvider } from "@asterism/ai";
-import type { ServerEnv } from "@asterism/config";
-import type { Database } from "@asterism/db";
+import type { AIProvider } from "@skriv/ai";
+import type { ServerEnv } from "@skriv/config";
+import type { Database } from "@skriv/db";
 import type { BetterAuthOptions, betterAuth } from "better-auth";
 import type { Pool } from "pg";
 
@@ -10,8 +10,7 @@ export type AppContext = {
   db: Database;
   pool: Pool;
   env: ServerEnv;
-  defaultAi: AIProvider;
-  fakeAi: AIProvider;
+  defaultAi: AIProvider | null;
   getAi: (userId: string, model?: string) => Promise<AIProvider>;
   auth: AuthInstance;
 };

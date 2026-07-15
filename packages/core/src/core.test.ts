@@ -1,4 +1,4 @@
-import type { CompendiumEntry, ManuscriptTree, PromptDefinition, Scene } from "@asterism/contracts";
+import type { CompendiumEntry, ManuscriptTree, PromptDefinition, Scene } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import {
   discoverEntries,
@@ -24,6 +24,7 @@ function labelScene(title: string): Scene {
       povEntryId: null,
       locationEntryId: null,
       presentCharacterEntryIds: [],
+      manualCompendiumEntryIds: [],
       goal: "",
       notes: "",
       status: "draft",
@@ -105,7 +106,6 @@ describe("manuscript labels", () => {
     const tree: ManuscriptTree = {
       project: {
         id: projectId,
-        workspaceId: crypto.randomUUID(),
         title: "Story",
         settings: {
           author: "",
@@ -117,6 +117,7 @@ describe("manuscript labels", () => {
           povType: "3rd Person (Limited)",
           povCharacterEntryId: null,
           notes: "",
+          labelPacks: [],
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -238,7 +239,6 @@ describe("prompt registry primitives", () => {
     version: 1,
     description: "",
     ownership: "builtin",
-    ownerId: null,
     sourcePromptId: null,
     messages: [{ role: "user", content: "After: {{manuscript_after_cursor}}" }],
     variables: ["manuscript_after_cursor"],

@@ -1,10 +1,11 @@
 {
-  "name": "@asterism/content",
+  "name": "@skriv/content",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./label-packs": "./src/label-packs.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -12,6 +13,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@asterism/contracts": "workspace:*"
+    "@skriv/contracts": "workspace:*"
   }
 }

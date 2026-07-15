@@ -1,12 +1,12 @@
-import { basePackage, getBuiltinPrompt } from "@asterism/content";
+import { basePackage, getBuiltinPrompt } from "@skriv/content";
 import {
   createPromptInputSchema,
   promptDefinitionSchema,
   updatePromptInputSchema,
   workflowKeySchema,
-} from "@asterism/contracts";
-import { validatePromptDefinition } from "@asterism/core";
-import { promptDefinitions, touchUpdatedAt, workflowBindings } from "@asterism/db";
+} from "@skriv/contracts";
+import { validatePromptDefinition } from "@skriv/core";
+import { promptDefinitions, touchUpdatedAt, workflowBindings } from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -24,7 +24,6 @@ function userPromptResponse(row: typeof promptDefinitions.$inferSelect) {
     version: row.version,
     description: row.description,
     ownership: "user",
-    ownerId: row.ownerId,
     sourcePromptId: row.sourcePromptId,
     messages: row.messages,
     variables: row.variables,
@@ -109,7 +108,6 @@ export async function registerPromptRoutes(
       id: crypto.randomUUID(),
       ...input,
       ownership: "user",
-      ownerId: request.userId,
       version: 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -190,6 +188,17 @@ export async function registerPromptRoutes(
       .returning();
     if (!updated) throw new Error("Prompt update failed.");
     return userPromptResponse(updated);
+  });
+
+  app.delete("/api/prompts/:id", async (request, reply) => {
+    const { id } = parseWith(promptParams, request.params);
+    const [removed] = await context.db
+      .delete(promptDefinitions)
+      .where(and(eq(promptDefinitions.id, id), eq(promptDefinitions.ownerId, request.userId)))
+      .returning({ id: promptDefinitions.id });
+    if (!removed)
+      return notFound(reply, "User prompt not found. Built-in prompts cannot be deleted.");
+    return reply.code(204).send();
   });
 
   app.put("/api/prompt-bindings", async (request, reply) => {

@@ -1,6 +1,6 @@
-import { generateSceneSummaryInputSchema } from "@asterism/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@asterism/core";
-import { scenes, touchUpdatedAt, usageEvents } from "@asterism/db";
+import { generateSceneSummaryInputSchema } from "@skriv/contracts";
+import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
+import { scenes, touchUpdatedAt, usageEvents } from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

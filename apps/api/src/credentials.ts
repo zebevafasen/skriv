@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { type AIProvider, OpenRouterProvider } from "@asterism/ai";
-import { providerCredentials } from "@asterism/db";
+import { type AIProvider, OpenRouterProvider } from "@skriv/ai";
+import { AppError } from "@skriv/application";
+import { providerCredentials } from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { AppContext } from "./context.js";
 
@@ -66,10 +67,16 @@ export async function deleteOpenRouterCredential(context: AppContext, userId: st
 }
 
 export function createProviderResolver(
-  context: Pick<AppContext, "db" | "env" | "defaultAi" | "fakeAi">,
+  context: Pick<AppContext, "db" | "env" | "defaultAi">,
 ): (userId: string, model?: string) => Promise<AIProvider> {
   return async (userId, model) => {
-    if (model?.startsWith("asterism/fake-")) return context.fakeAi;
+    if (
+      model?.startsWith("skriv/fake-") &&
+      context.env.NODE_ENV === "test" &&
+      context.defaultAi?.name === "fake"
+    ) {
+      return context.defaultAi;
+    }
     const [row] = await context.db
       .select()
       .from(providerCredentials)
@@ -87,6 +94,9 @@ export function createProviderResolver(
         context.env.WEB_ORIGIN,
       );
     }
-    return context.env.AI_PROVIDER === "fake" ? context.defaultAi : context.fakeAi;
+    if (context.env.NODE_ENV === "test" && context.defaultAi?.name === "fake") {
+      return context.defaultAi;
+    }
+    throw new AppError("Configure OpenRouter in Settings.", "CREDENTIAL_ERROR");
   };
 }

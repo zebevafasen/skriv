@@ -1,5 +1,5 @@
-import { basePackage } from "@asterism/content";
-import { renderPrompt } from "@asterism/core";
+import { basePackage } from "@skriv/content";
+import { renderPrompt } from "@skriv/core";
 import { describe, expect, it } from "vitest";
 import {
   continuationMessages,
@@ -69,7 +69,7 @@ describe("prose prompt context", () => {
       .map((message) => message.content)
       .join("\n");
     expect(rendered).toContain("Mara enters the Glass Archive");
-    expect(rendered).toContain("Opening Image");
+    expect(rendered).toContain("First Scene planning summary");
     expect(rendered).toContain("Establish the archive");
   });
 

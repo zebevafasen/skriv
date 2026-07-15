@@ -1,4 +1,4 @@
-import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@asterism/contracts";
+import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@skriv/contracts";
 import genres from "./genres.json" with { type: "json" };
 import packageMetadata from "./manifest.json" with { type: "json" };
 import prompts from "./prompts.json" with { type: "json" };
@@ -47,7 +47,9 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
   const collectionIds = new Set<string>();
   for (const collection of content.ingredientPackCollections) {
     if (collectionIds.has(collection.id)) {
-      throw new Error(`Duplicate ingredient pack collection id in ${content.id}: ${collection.id}.`);
+      throw new Error(
+        `Duplicate ingredient pack collection id in ${content.id}: ${collection.id}.`,
+      );
     }
     if (!categoryIds.has(collection.categoryId)) {
       throw new Error(`Unknown category for ingredient pack collection ${collection.id}.`);

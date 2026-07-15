@@ -2,14 +2,14 @@ import {
   compendiumEntrySchema,
   createCompendiumEntryInputSchema,
   updateCompendiumEntryInputSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   compendiumCategories,
   compendiumEntries,
   projects,
   touchUpdatedAt,
   workspaceMembers,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, asc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

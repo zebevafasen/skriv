@@ -4,15 +4,16 @@ test.setTimeout(120_000);
 
 test("writes, outlines, summarizes, and edits a continuous manuscript", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Library" })).toBeVisible();
   await page.request.patch("/api/settings/ai", {
     data: {
-      baseModel: "asterism/fake-prose",
-      contextModel: "asterism/fake-context",
+      baseModel: "skriv/fake-prose",
+      contextModel: "skriv/fake-context",
       smartContextEnabled: true,
       recursionDepth: 2,
     },
   });
+  await page.reload();
 
   await page.getByRole("button", { name: "Create story" }).click();
   await page.getByPlaceholder("The Last Ember").fill(`Playwright Story ${Date.now()}`);
@@ -52,16 +53,19 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(firstCard.locator(".outline-save-state")).toHaveText("saved", {
       timeout: 5_000,
     });
-    await firstCard.getByPlaceholder("Add label…").fill("Foreshadowing");
-    await firstCard.getByPlaceholder("Add label…").press("Enter");
+    await firstCard.getByRole("button", { name: "Label" }).click();
+    await page.getByPlaceholder("Quick label…").fill("Foreshadowing");
+    await page.getByPlaceholder("Quick label…").press("Enter");
     await expect(firstCard.getByText(/Foreshadowing/)).toBeVisible();
-    await firstCard.getByRole("button", { name: "Summarize" }).click();
+    const labelMenu = page.getByRole("menu", { name: "Labels for Scene 1" });
+    await page.keyboard.press("Escape");
+    await expect(labelMenu).toBeHidden();
+    await firstCard.getByRole("button", { name: "More options for Scene 1" }).click();
+    await page.getByRole("menuitem", { name: "Summarize Scene" }).click();
+    await page.getByRole("menuitem", { name: /Use default/ }).click();
     await expect(summary).toContainText("decisive change", { timeout: 5_000 });
 
     await page.getByRole("button", { name: "New Scene" }).click();
-    const viewingMode = page.getByRole("button", { name: "Viewing mode" });
-    await expect(viewingMode).toContainText("Scene 2");
-    await page.getByRole("button", { name: "Outline" }).click();
     await expect(page.locator(".outline-scene-card")).toHaveCount(2);
     const openingDragHandle = page
       .locator(".outline-scene-card", { hasText: "Scene 1" })
@@ -75,7 +79,8 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(page.locator(".outline-scene-card").nth(1)).toContainText("Foreshadowing");
     const newSceneCard = page.locator(".outline-scene-card").nth(0);
     await expect(newSceneCard).toContainText("Scene 1");
-    await newSceneCard.getByRole("button", { name: "Open Scene" }).click();
+    await newSceneCard.getByRole("button", { name: "Open Scene 1" }).click();
+    const viewingMode = page.getByRole("button", { name: "Manuscript navigator" });
     await expect(viewingMode).toContainText("Scene 1");
     await viewingMode.click();
     await page.getByRole("option", { name: /Everything/ }).click();
@@ -115,10 +120,14 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       "Adult gothic tone; let Evelyn complicate the central relationship.",
     );
     await premiseInstructions.fill("Let Evie complicate the central relationship.");
-    await expect(ideation.locator(".ideation-instructions-input mark", { hasText: "Evie" })).toBeVisible();
+    await expect(
+      ideation.locator(".ideation-instructions-input mark", { hasText: "Evie" }),
+    ).toBeVisible();
     await ideation.getByRole("button", { name: /Reference/ }).click();
     await page.locator(".ideation-reference-options label", { hasText: "Evelyn" }).click();
-    await expect(ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" })).toBeVisible();
+    await expect(
+      ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
+    ).toBeVisible();
     await ideation.getByRole("button", { name: /Reference/ }).click();
     await ideation.getByRole("button", { name: "Entity" }).click();
     await page
@@ -126,7 +135,9 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       .fill("Make this entity unsettling.");
     await ideation.getByRole("button", { name: "Premise" }).click();
     await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
-    await expect(ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" })).toBeVisible();
+    await expect(
+      ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
+    ).toBeVisible();
 
     await ideation.getByRole("button", { name: "Compendium", exact: true }).click();
     const ideationCompendium = page.locator(".ideation-compendium-dialog");
@@ -170,8 +181,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     const customTag = "E2E Custom Tag";
     const persistedPremise = "A premise selected for persistence testing.";
     const premiseSaved = page.waitForResponse(
-      (response) =>
-        response.request().method() === "PATCH" && response.url().includes("/ideation"),
+      (response) => response.request().method() === "PATCH" && response.url().includes("/ideation"),
     );
     await page.getByRole("textbox", { name: "Active premise" }).fill(persistedPremise);
     await premiseSaved;
@@ -179,8 +189,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await tagInput.press("Enter");
     await expect(page.locator(".selected-tag", { hasText: customTag })).toBeVisible();
     const ingredientsSaved = page.waitForResponse(
-      (response) =>
-        response.request().method() === "PATCH" && response.url().includes("/ideation"),
+      (response) => response.request().method() === "PATCH" && response.url().includes("/ideation"),
     );
     await page.getByRole("button", { name: "Save ingredients" }).click();
     await ingredientsSaved;
@@ -196,6 +205,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       persistedPremise,
     );
 
+    await page.evaluate(() => localStorage.setItem("skriv-latest-model", "skriv/fake-prose"));
     await page.getByRole("button", { name: "Chat" }).click();
     await expect(page).toHaveURL(/tab=chat/);
     await page.getByRole("button", { name: "New thread" }).click();
@@ -219,13 +229,14 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await page.goBack();
     await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
 
-    await page.getByTitle("Rename Project").click();
+    await page.getByRole("button", { name: "Project menu" }).click();
+    await page.getByRole("menuitem", { name: "Rename project" }).click();
     const renameDialog = page.getByRole("dialog", { name: "Rename Project" });
     await renameDialog
       .getByRole("textbox", { name: "Project title" })
       .fill("Renamed Playwright Story");
     await renameDialog.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("heading", { name: "Renamed Playwright Story" })).toBeVisible();
+    await expect(page.locator(".workspace-project-title")).toHaveText("Renamed Playwright Story");
   } finally {
     await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }

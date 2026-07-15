@@ -19,9 +19,10 @@ export const ingredientPackCategoryDefinitionSchema = z.object({
   description: z.string().max(1_000).default(""),
 });
 
-export const ingredientPackCollectionDefinitionSchema = ingredientPackCategoryDefinitionSchema.extend({
-  categoryId: ingredientPackCategoryDefinitionSchema.shape.id,
-});
+export const ingredientPackCollectionDefinitionSchema =
+  ingredientPackCategoryDefinitionSchema.extend({
+    categoryId: ingredientPackCategoryDefinitionSchema.shape.id,
+  });
 
 export const builtinIngredientPackSchema = z.object({
   id: z.string().regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/),
@@ -49,8 +50,12 @@ export const contentPackageSchema = z.object({
 export type ContentPackage = z.infer<typeof contentPackageSchema>;
 export type DefinitionItem = z.infer<typeof definitionItemSchema>;
 export type IngredientPackValues = z.infer<typeof ingredientPackValuesSchema>;
-export type IngredientPackCategoryDefinition = z.infer<typeof ingredientPackCategoryDefinitionSchema>;
-export type IngredientPackCollectionDefinition = z.infer<typeof ingredientPackCollectionDefinitionSchema>;
+export type IngredientPackCategoryDefinition = z.infer<
+  typeof ingredientPackCategoryDefinitionSchema
+>;
+export type IngredientPackCollectionDefinition = z.infer<
+  typeof ingredientPackCollectionDefinitionSchema
+>;
 export type BuiltinIngredientPack = z.infer<typeof builtinIngredientPackSchema>;
 
 /** @deprecated Use Ingredient Pack terminology. */

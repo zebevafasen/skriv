@@ -5,4 +5,6 @@ packages:
 onlyBuiltDependencies:
   - esbuild
 allowBuilds:
+  edgedriver: false
   esbuild: true
+  geckodriver: false

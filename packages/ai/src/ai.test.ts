@@ -8,7 +8,7 @@ describe("FakeAIProvider", () => {
     const provider = new FakeAIProvider(0);
     let result = "";
     for await (const chunk of provider.stream({
-      model: "asterism/fake-prose",
+      model: "skriv/fake-prose",
       messages: [{ role: "user", content: "Continue" }],
       maxOutputTokens: 100,
     })) {
@@ -20,7 +20,7 @@ describe("FakeAIProvider", () => {
   it("returns supplied fragment identifiers for context extraction", async () => {
     const provider = new FakeAIProvider(0);
     const result = await provider.complete({
-      model: "asterism/fake-context",
+      model: "skriv/fake-context",
       messages: [{ role: "user", content: "Candidate fragments:\n[fragment:abc] fact" }],
       maxOutputTokens: 100,
     });
@@ -31,7 +31,7 @@ describe("FakeAIProvider", () => {
     const provider = new FakeAIProvider(0);
     let result = "";
     for await (const chunk of provider.stream({
-      model: "asterism/fake-prose",
+      model: "skriv/fake-prose",
       messages: [{ role: "user", content: "Write approximately 3 paragraphs." }],
       maxOutputTokens: 1_000,
     })) {
@@ -43,7 +43,7 @@ describe("FakeAIProvider", () => {
   it("returns a deterministic Scene summary", async () => {
     const provider = new FakeAIProvider(0);
     const result = await provider.complete({
-      model: "asterism/fake-prose",
+      model: "skriv/fake-prose",
       messages: [{ role: "user", content: "Scene prose:\nA door opened." }],
       maxOutputTokens: 700,
     });
@@ -53,7 +53,7 @@ describe("FakeAIProvider", () => {
   it("returns structured premise Compendium extraction", async () => {
     const provider = new FakeAIProvider(0);
     const result = await provider.complete({
-      model: "asterism/fake-prose",
+      model: "skriv/fake-prose",
       messages: [
         {
           role: "system",

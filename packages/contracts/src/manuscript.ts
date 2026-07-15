@@ -50,8 +50,35 @@ export const sceneLabelColorSchema = z.enum([
 
 export const sceneLabelSchema = z.object({
   id: idSchema,
+  definitionId: z.string().min(1).max(120).nullable().default(null),
   text: z.string().trim().min(1).max(60),
   color: sceneLabelColorSchema,
+});
+
+export const sceneLabelDefinitionSchema = z.object({
+  id: z.string().min(1).max(120),
+  name: z.string().trim().min(1).max(60),
+  color: sceneLabelColorSchema,
+});
+
+export const sceneLabelPackSchema = z.object({
+  id: z.string().min(1).max(120),
+  name: z.string().trim().min(1).max(80),
+  description: z.string().max(300).default(""),
+  ownership: z.enum(["builtin", "user"]),
+  protected: z.boolean().default(false),
+  selectionMode: z.literal("single").default("single"),
+  labels: z.array(sceneLabelDefinitionSchema).max(100).default([]),
+});
+
+export const defaultUserLabelPack = sceneLabelPackSchema.parse({
+  id: "user.default",
+  name: "My Labels",
+  description: "Quick labels created for this project.",
+  ownership: "user",
+  protected: true,
+  selectionMode: "single",
+  labels: [],
 });
 
 const sceneMetadataBaseSchema = z.object({
@@ -62,6 +89,7 @@ const sceneMetadataBaseSchema = z.object({
   goal: z.string().max(10_000).default(""),
   notes: z.string().max(50_000).default(""),
   status: sceneStatusSchema.default("draft"),
+  manualCompendiumEntryIds: z.array(idSchema).max(250).default([]),
   labels: z.array(sceneLabelSchema).max(24).default([]),
 });
 
@@ -85,6 +113,7 @@ export const projectSettingsSchema = z.object({
   series: z.string().max(100).default(""),
   seriesIndex: z.string().max(50).default(""),
   coverDataUrl: z.string().nullable().default(null),
+  coverArtworkSeed: z.string().max(300).optional(),
   tense: z.enum(["Past", "Present"]).default("Past"),
   language: storyLanguageSchema.default("General English"),
   povType: z
@@ -98,11 +127,11 @@ export const projectSettingsSchema = z.object({
     .default("3rd Person (Limited)"),
   povCharacterEntryId: idSchema.nullable().default(null),
   notes: z.string().max(500_000).default(""),
+  labelPacks: z.array(sceneLabelPackSchema).max(50).default([defaultUserLabelPack]),
 });
 
 export const projectSchema = z.object({
   id: idSchema,
-  workspaceId: idSchema,
   title: z.string().min(1).max(300),
   settings: projectSettingsSchema,
   createdAt: timestampSchema,
@@ -223,6 +252,8 @@ export type Scene = z.infer<typeof sceneSchema>;
 export type SceneMetadata = z.infer<typeof sceneMetadataSchema>;
 export type SceneLabel = z.infer<typeof sceneLabelSchema>;
 export type SceneLabelColor = z.infer<typeof sceneLabelColorSchema>;
+export type SceneLabelDefinition = z.infer<typeof sceneLabelDefinitionSchema>;
+export type SceneLabelPack = z.infer<typeof sceneLabelPackSchema>;
 export type ManuscriptTree = z.infer<typeof manuscriptTreeSchema>;
 export type CreateManuscriptItemInput = z.infer<typeof createManuscriptItemInputSchema>;
 export type CreateManuscriptItemResponse = z.infer<typeof createManuscriptItemResponseSchema>;

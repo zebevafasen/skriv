@@ -1,4 +1,4 @@
-import type { CompendiumContent, CompendiumEntry, ContextFragment } from "@asterism/contracts";
+import type { CompendiumContent, CompendiumEntry, ContextFragment } from "@skriv/contracts";
 import { findMentions } from "./mentions.js";
 
 export type ContextDiscoveryInput = {

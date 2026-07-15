@@ -1,4 +1,4 @@
-import type { PromptMessage } from "@asterism/contracts";
+import type { PromptMessage } from "@skriv/contracts";
 import { z } from "zod";
 
 export type ModelDescriptor = {
@@ -63,16 +63,16 @@ export interface AIProvider {
 
 const fakeModels: ModelDescriptor[] = [
   {
-    id: "asterism/fake-prose",
-    name: "Asterism Fake Prose",
+    id: "skriv/fake-prose",
+    name: "Skriv Fake Prose",
     contextLength: 32_768,
     maxCompletionTokens: 16_384,
     inputPricePerMillion: 0,
     outputPricePerMillion: 0,
   },
   {
-    id: "asterism/fake-context",
-    name: "Asterism Fake Context",
+    id: "skriv/fake-context",
+    name: "Skriv Fake Context",
     contextLength: 32_768,
     maxCompletionTokens: 4_096,
     inputPricePerMillion: 0,
@@ -206,7 +206,7 @@ export class OpenRouterProvider implements AIProvider {
       Authorization: `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": this.appUrl,
-      "X-Title": "Asterism",
+      "X-Title": "Skriv",
     };
   }
 

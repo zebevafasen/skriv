@@ -2,8 +2,8 @@ import {
   compendiumCategorySchema,
   createCompendiumCategoryInputSchema,
   updateCompendiumCategoryInputSchema,
-} from "@asterism/contracts";
-import { compendiumCategories, compendiumEntries, touchUpdatedAt } from "@asterism/db";
+} from "@skriv/contracts";
+import { compendiumCategories, compendiumEntries, touchUpdatedAt } from "@skriv/db";
 import { and, asc, eq, inArray, max } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

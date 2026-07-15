@@ -3,8 +3,8 @@ import {
   idSchema,
   projectNoteSchema,
   updateProjectNoteInputSchema,
-} from "@asterism/contracts";
-import { projectNotes, projects, touchUpdatedAt, workspaceMembers } from "@asterism/db";
+} from "@skriv/contracts";
+import { projectNotes, projects, touchUpdatedAt, workspaceMembers } from "@skriv/db";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

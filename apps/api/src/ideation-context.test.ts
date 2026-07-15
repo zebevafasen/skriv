@@ -1,5 +1,5 @@
-import type { CompendiumEntry, PromptDefinition } from "@asterism/contracts";
-import { discoverReferences } from "@asterism/core";
+import type { CompendiumEntry, PromptDefinition } from "@skriv/contracts";
+import { discoverReferences } from "@skriv/core";
 import { describe, expect, it } from "vitest";
 import {
   formatIdeationContext,
@@ -39,7 +39,6 @@ function prompt(messages: PromptDefinition["messages"], variables: string[]): Pr
     version: 1,
     description: "",
     ownership: "user",
-    ownerId: crypto.randomUUID(),
     sourcePromptId: null,
     messages,
     variables,

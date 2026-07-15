@@ -1,5 +1,5 @@
 {
-  "name": "asterism",
+  "name": "skriv",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.11.0",
@@ -7,27 +7,39 @@
     "node": "24.x"
   },
   "scripts": {
+    "web:dev": "turbo dev --filter=@skriv/web --filter=@skriv/api",
+    "web:build": "pnpm --filter @skriv/web build",
+    "api:dev": "pnpm --filter @skriv/api dev",
+    "api:build": "pnpm --filter @skriv/api build",
+    "build:vercel": "node scripts/build-vercel-api.mjs && pnpm web:build",
+    "desktop:dev": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 dev",
+    "desktop:build": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 build",
+    "desktop:check": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 check",
+    "desktop:e2e": "wdio run e2e/wdio.conf.mjs",
+    "web:e2e": "playwright test",
     "build": "turbo build",
-    "build:vercel": "pnpm --filter @asterism/db exec drizzle-kit push --force && pnpm --filter @asterism/db db:cleanup && node scripts/build-vercel-api.mjs && pnpm --filter @asterism/web build",
-    "dev": "turbo dev --parallel",
     "typecheck": "turbo typecheck",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "test": "turbo test",
-    "test:e2e": "playwright test",
+    "test:native": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 test",
     "infra:up": "docker compose up -d postgres",
     "infra:down": "docker compose down",
-    "db:generate": "pnpm --filter @asterism/db db:generate",
-    "db:migrate": "pnpm --filter @asterism/db db:migrate",
-    "db:push": "pnpm --filter @asterism/db db:push"
+    "db:generate": "pnpm --filter @skriv/db db:generate",
+    "db:migrate": "pnpm --filter @skriv/db db:migrate"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
     "@playwright/test": "1.61.1",
     "@types/node": "26.1.1",
+    "@wdio/cli": "^9.19.0",
+    "@wdio/local-runner": "^9.19.0",
+    "@wdio/mocha-framework": "^9.19.0",
+    "@wdio/spec-reporter": "^9.19.0",
     "esbuild": "0.28.1",
     "turbo": "2.10.4",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
-  }
+  },
+  "version": "0.0.1"
 }

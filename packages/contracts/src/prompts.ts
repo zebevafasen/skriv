@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idSchema, timestampSchema } from "./primitives.js";
+import { timestampSchema } from "./primitives.js";
 
 export const workflowKeySchema = z.enum([
   "prose.first_scene",
@@ -31,7 +31,6 @@ export const promptDefinitionSchema = z.object({
   version: z.number().int().positive(),
   description: z.string().max(2_000),
   ownership: z.enum(["builtin", "user"]),
-  ownerId: idSchema.nullable(),
   sourcePromptId: z.string().nullable(),
   messages: z.array(promptMessageSchema).min(1),
   variables: z.array(z.string().regex(/^[a-z][a-z0-9_]*$/)),

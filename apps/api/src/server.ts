@@ -1,4 +1,4 @@
-import { loadServerEnv } from "@asterism/config";
+import { loadServerEnv } from "@skriv/config";
 import { buildApp } from "./app.js";
 
 const env = loadServerEnv();

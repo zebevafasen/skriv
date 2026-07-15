@@ -1,115 +1,53 @@
-# Asterism
+# Skriv
 
-Asterism is a full-stack, AI-assisted long-form fiction workspace. It combines a continuous Scene-based manuscript editor, a draggable planning Outline, streamed prose generation, AI-assisted Scene summaries, a navigable Compendium, grounded Smart Context, editable workflow prompts, story ideation, and persistent project-grounded Chat.
+Skriv is developed as two independent writing products from one shared codebase:
 
-## Prerequisites
+- **Web** is a responsive hosted private beta with accounts, invitations, PostgreSQL, encrypted per-user OpenRouter credentials, and Vercel deployment.
+- **Desktop** is a Windows-first Tauri application with no accounts, local SQLite storage, Windows Credential Manager, native file dialogs, and automatic local backups.
+- **Shared** packages contain the editor, writing UI, contracts, prompts, context logic, application client, archive codec, and manuscript exporters.
 
-Before starting, make sure you have installed:
-1. **[Node.js 24 LTS](https://nodejs.org/)**: This is required to run the JavaScript code.
-2. **[Docker Desktop](https://www.docker.com/products/docker-desktop/)**: Docker is a tool that lets this app run its own isolated database without you having to manually install or configure a database server on your computer. You must have Docker Desktop installed, and you must actually **open the Docker Desktop application** and let it run in the background on your computer before continuing.
+The two stores do not synchronize. A checksummed schema-v5 `.skriv` archive is the deliberate project-transfer format. Both products import and export it; legacy schema-v4 JSON is import-only.
 
-*Note: You don't need to install `pnpm` manually, the setup steps below will handle that for you using Node's built-in `corepack`.*
+## Development
 
-## Step-by-Step Local Setup
+Install Node.js 24 and pnpm 11. Hosted development also needs Docker; desktop development needs stable Rust, Visual Studio C++ Build Tools, and WebView2.
 
-### One-click Windows startup
-
-On Windows, double-click `START_ASTERISM.bat` in the project folder. It starts Docker Desktop
-when needed, waits for PostgreSQL, applies database migrations, and starts the app. Keep the
-terminal window open while using Asterism; press `Ctrl+C` in it to stop the development servers.
-
-For manual setup, use the steps below.
-
-Open your terminal (or Command Prompt) in the project folder and run the following commands in order:
-
-1. **Enable the package manager** (this allows you to use the `pnpm` command):
-   ```bash
-   corepack enable
-   ```
-
-2. **Install all the necessary project files and dependencies**:
-   ```bash
-   pnpm install
-   ```
-
-3. **Create your local configuration file**:
-   *(Note: You only need to run this command the very first time you set up the project. Do not run it again later or it will overwrite your saved settings!)*
-   ```bash
-   copy .env.example .env
-   ```
-
-4. **Start the database** (this uses Docker, so make sure the Docker Desktop app is currently open and running!):
-   ```bash
-   pnpm infra:up
-   ```
-
-5. **Set up the database structure** (this creates the necessary tables):
-   ```bash
-   pnpm db:migrate
-   ```
-
-6. **Start the app!**
-   ```bash
-   pnpm dev
-   ```
-
-Once you see a message saying the server is ready, open your web browser and go to `http://localhost:5173`. 
-
-### Setting up the AI
-
-By default, the app uses a "fake" AI that just replies with dummy text so you can test the app without an API key. 
-
-To use real AI features:
-1. Create an account on [OpenRouter](https://openrouter.ai/) and generate an API Key.
-2. Open Asterism and choose **Settings** in the main navigation.
-3. Paste the key into **OpenRouter API key** and choose **Save key**. Asterism validates the key before saving it.
-4. Choose the OpenRouter models you want for writing and Smart Context, then save the AI settings.
-
-The key is encrypted in PostgreSQL with `CREDENTIAL_ENCRYPTION_KEY`; the plaintext is never returned to the browser. Set that environment value to a private random secret in hosted environments. `OPENROUTER_API_KEY` remains available as a server-wide fallback for deployments that do not want per-user keys.
-
-## Commands
-
-```bash
-pnpm dev          # Run web and API with hot reload
-pnpm typecheck    # Strict TypeScript validation
-pnpm lint         # Biome lint and formatting check
-pnpm test         # Deterministic unit tests
-pnpm test:e2e     # Playwright private-beta workflow
-pnpm build        # Production builds
-pnpm db:generate  # Generate a migration after schema changes
-pnpm db:migrate   # Apply committed migrations
-pnpm infra:down   # Stop local infrastructure
+```powershell
+pnpm install
+pnpm infra:up
+pnpm db:migrate
+pnpm web:dev
 ```
 
-Pull requests run the same typecheck, lint, unit-test, build, clean-migration, and Playwright gates in GitHub Actions.
+Desktop development uses `pnpm desktop:dev`.
+
+Common verification commands:
+
+```powershell
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+pnpm build:vercel
+pnpm web:e2e
+pnpm test:native
+pnpm desktop:build
+pnpm desktop:e2e
+```
 
 ## Repository layout
 
-- `apps/web` — React, Vite, TanStack Query/Router, and Tiptap UI.
-- `apps/api` — Fastify modular backend, authentication, persistence, context, and generation orchestration.
-- `packages/contracts` — shared Zod transport and content contracts.
-- `packages/core` — prompt rendering, mention matching, recursive discovery, segmentation, and budgeting.
-- `packages/content` — immutable, versioned built-in prompts and ideation definitions.
-- `packages/ai` — OpenRouter and deterministic fake-provider adapters.
-- `packages/db` — Drizzle schema and migrations.
-- `packages/config` — validated server environment configuration.
+- `apps/web` — Vite shell, authenticated HTTP/NDJSON client, login, invitations, and browser file transfer.
+- `apps/api` — Fastify, Better Auth, ownership isolation, hosted AI orchestration, archive transfers, and Vercel handler.
+- `apps/desktop` — Vite/Tauri shell, Rust native services, security capabilities, and NSIS packaging.
+- `packages/ui` — shared React writing experience.
+- `packages/application` — typed client boundary, archive codec, workflows, and exporters.
+- `packages/db` — PostgreSQL schema and generated hosted migrations.
+- `packages/local-store` — SQLite desktop implementation and local backup scheduling.
+- `packages/contracts`, `packages/core`, `packages/content`, `packages/ai` — platform-neutral schemas and writing logic.
 
-## Authentication and invitations
+## Release safety
 
-Hosted environments disable the development bypass and require a Better Auth session. When `INVITE_ONLY=true`, signup also requires an unexpired invitation token passed by the signup screen. Authenticated beta users can create invitation records through the API; the plaintext token is returned only once.
+`main` remains the production web baseline until the integration branch passes Unified CI, produces a staging Vercel preview and Windows installer, completes the manual parity/archive checklist, and receives explicit written approval. Auto-merge is not permitted. The final integration must use one merge commit after a production PostgreSQL backup.
 
-Every Project query is scoped through Workspace membership. New accounts receive a Personal Workspace on their first authenticated application request.
-
-## Data safety
-
-Scene saves use optimistic versions, including when several locked Scene blocks are displayed in one continuous editor. Manual/editor saves and accepted generations create restore points, generation candidates remain outside canonical Tiptap documents until acceptance, and sibling reordering preserves stable hierarchy IDs. Project export is available from `GET /api/projects/:id/export`.
-
-Major project workspace state is URL-addressable. Tabs, manuscript scope, selected Scenes, Chat threads, and Compendium entries survive refresh and browser history navigation.
-
-See [operations](docs/operations.md) for deployment, backup, and recovery guidance.
-
-## Personal Vercel deployment
-
-Asterism can be deployed as one Vercel project, with the Vite frontend and Fastify API sharing
-the same domain. Use a hosted PostgreSQL database; the recommended personal setup is Neon in
-the Frankfurt region. Follow the complete [Vercel deployment guide](docs/vercel.md).
+See [operations](docs/operations.md), [Vercel deployment](docs/vercel.md), and the [design specification](Skriv_Design_Specification_v5.md).

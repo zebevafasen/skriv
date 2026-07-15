@@ -1,4 +1,4 @@
-import { basePackage } from "@asterism/content";
+import { basePackage } from "@skriv/content";
 import {
   compendiumEntrySchema,
   compendiumContentSchema,
@@ -12,7 +12,7 @@ import {
   type PromptDefinition,
   type PromptMessage,
   workflowKeySchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   approximateTokens,
   discoverReferences,
@@ -20,7 +20,7 @@ import {
   normalizeCompendiumContent,
   protectedProtocolMessage,
   renderPrompt,
-} from "@asterism/core";
+} from "@skriv/core";
 import {
   compendiumCategories,
   compendiumEntries,
@@ -30,7 +30,7 @@ import {
   usageEvents,
   userCollections,
   userDefinitions,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

@@ -9,6 +9,10 @@ coverage/
 .cache/
 .turbo/
 .vite/
+.cargo/
+.rustup/
+.tmp/
+apps/desktop/src-tauri/target/
 *.tsbuildinfo
 .vercel/
 .vercel-build/
@@ -56,3 +60,4 @@ Desktop.ini
 *.tmp
 *.temp
 *.bak
+covers-preview.html
