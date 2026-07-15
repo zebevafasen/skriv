@@ -8,6 +8,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ArrowLeft, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
+import { registerPersistenceFlusher } from "../persistence.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
 
@@ -101,6 +102,7 @@ function NoteEditor({
       if (JSON.stringify(document) === documentRef.current) return;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
+        saveTimer.current = null;
         void persist({
           document,
           plainText: current.getText({ blockSeparator: "\n\n" }),
@@ -109,19 +111,28 @@ function NoteEditor({
     },
   });
 
+  const flush = useCallback(async () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    await saveQueue.current;
+    if (!editor) return;
+    const document = editor.getJSON();
+    if (JSON.stringify(document) === documentRef.current) return;
+    await persist({
+      document,
+      plainText: editor.getText({ blockSeparator: "\n\n" }),
+    });
+  }, [editor, persist]);
+
+  useEffect(() => registerPersistenceFlusher(flush), [flush]);
+
   useEffect(
     () => () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (!editor) return;
-      const document = editor.getJSON();
-      if (JSON.stringify(document) !== documentRef.current) {
-        void persist({
-          document,
-          plainText: editor.getText({ blockSeparator: "\n\n" }),
-        });
-      }
+      void flush();
     },
-    [editor, persist],
+    [flush],
   );
 
   return (
