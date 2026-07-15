@@ -1,4 +1,4 @@
-import type { ManuscriptExportOptions, Project, TiptapNode } from "@asterism/contracts";
+import type { ManuscriptExportOptions, Project, TiptapNode } from "@skriv/contracts";
 import { AlignmentType, Document, HeadingLevel, Packer, PageBreak, Paragraph, TextRun } from "docx";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
@@ -14,7 +14,7 @@ export function safeExportFilename(title: string): string {
       .normalize("NFKD")
       .replace(/[^a-z0-9_-]+/gi, "-")
       .replace(/^-|-$/g, "")
-      .toLocaleLowerCase() || "asterism-story"
+      .toLocaleLowerCase() || "skriv-story"
   );
 }
 

@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { type Project } from "@asterism/contracts";
+import { type Project } from "@skriv/contracts";
 
 export const projectArtworkVariants: CSSProperties[] = [
   // 0

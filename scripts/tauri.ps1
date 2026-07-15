@@ -28,9 +28,9 @@ if (Test-Path $vsDevCmd) {
 $manifest = Join-Path $root "apps\desktop\src-tauri\Cargo.toml"
 $cargo = Join-Path $env:USERPROFILE ".cargo\bin\cargo.exe"
 switch ($Command) {
-  "dev" { pnpm --filter @asterism/desktop tauri dev }
-  "build" { pnpm --filter @asterism/desktop tauri build }
-  "e2e-build" { pnpm --filter @asterism/desktop tauri build --debug --no-bundle }
+  "dev" { pnpm --filter @skriv/desktop tauri dev }
+  "build" { pnpm --filter @skriv/desktop tauri build }
+  "e2e-build" { pnpm --filter @skriv/desktop tauri build --debug --no-bundle }
   "check" { & $cargo check --manifest-path $manifest }
   "test" { & $cargo test --manifest-path $manifest }
   "clippy" { & $cargo clippy --manifest-path $manifest --all-targets -- -D warnings }

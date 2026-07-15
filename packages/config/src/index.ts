@@ -26,7 +26,7 @@ const serverEnvSchema = z
     DATABASE_URL: z
       .string()
       .min(1)
-      .default("postgresql://asterism:asterism@localhost:5433/asterism"),
+      .default("postgresql://skriv:skriv@localhost:5433/skriv"),
     BETTER_AUTH_SECRET: z
       .string()
       .min(32)

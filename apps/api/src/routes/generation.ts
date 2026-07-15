@@ -7,7 +7,7 @@ import {
   generationRequestSchema,
   generationStreamEventSchema,
   type PromptMessage,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   approximateTokens,
   budgetFragments,
@@ -15,7 +15,7 @@ import {
   protectedProtocolMessage,
   renderPrompt,
   segmentEntry,
-} from "@asterism/core";
+} from "@skriv/core";
 import {
   acts,
   chapters,
@@ -25,7 +25,7 @@ import {
   scenes,
   touchUpdatedAt,
   usageEvents,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, asc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -504,7 +504,7 @@ export async function registerGenerationRoutes(
             const remainingTotalTokens = totalOutputLimit - approximateTokens(candidateText);
             if (remainingTotalTokens < 128) {
               throw new Error(
-                "Asterism reached the overall automatic writing safety limit. Your draft was preserved; accept it and continue writing from there.",
+                "Skriv reached the overall automatic writing safety limit. Your draft was preserved; accept it and continue writing from there.",
               );
             }
             const maxOutputTokens = Math.min(

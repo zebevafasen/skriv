@@ -1,8 +1,8 @@
-import { createAIProvider } from "@asterism/ai";
-import { AppError } from "@asterism/application";
-import { loadServerEnv, type ServerEnv } from "@asterism/config";
-import { validateBuiltinContent } from "@asterism/content";
-import { createDatabase } from "@asterism/db";
+import { createAIProvider } from "@skriv/ai";
+import { AppError } from "@skriv/application";
+import { loadServerEnv, type ServerEnv } from "@skriv/config";
+import { validateBuiltinContent } from "@skriv/content";
+import { createDatabase } from "@skriv/db";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import sensible from "@fastify/sensible";
@@ -71,7 +71,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   app.get("/api/health", async () => ({
     status: "ok",
     provider: defaultAi?.name ?? "openrouter",
-    contentPackage: "asterism.base",
+    contentPackage: "skriv.base",
   }));
   await registerProjectRoutes(app, context);
   await registerNoteRoutes(app, context);

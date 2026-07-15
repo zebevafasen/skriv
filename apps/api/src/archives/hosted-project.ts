@@ -1,11 +1,11 @@
-import type { PortableArchiveAsset } from "@asterism/application";
+import type { PortableArchiveAsset } from "@skriv/application";
 import {
   projectArchiveV5Schema,
   projectSettingsSchema,
   sceneMetadataSchema,
   type ChatContextSource,
   type ProjectArchiveV5,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   acts,
   chapters,
@@ -18,7 +18,7 @@ import {
   projects,
   sceneRevisions,
   scenes,
-} from "@asterism/db";
+} from "@skriv/db";
 import { asc, eq, inArray } from "drizzle-orm";
 import type { AppContext } from "../context.js";
 import { ownedWorkspaceId } from "../ownership.js";

@@ -1,5 +1,5 @@
 {
-  "name": "@asterism/api",
+  "name": "@skriv/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,13 +11,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@asterism/ai": "workspace:*",
-    "@asterism/application": "workspace:*",
-    "@asterism/config": "workspace:*",
-    "@asterism/content": "workspace:*",
-    "@asterism/contracts": "workspace:*",
-    "@asterism/core": "workspace:*",
-    "@asterism/db": "workspace:*",
+    "@skriv/ai": "workspace:*",
+    "@skriv/application": "workspace:*",
+    "@skriv/config": "workspace:*",
+    "@skriv/content": "workspace:*",
+    "@skriv/contracts": "workspace:*",
+    "@skriv/core": "workspace:*",
+    "@skriv/db": "workspace:*",
     "@fastify/cors": "11.3.0",
     "@fastify/rate-limit": "11.1.0",
     "@fastify/sensible": "6.0.4",

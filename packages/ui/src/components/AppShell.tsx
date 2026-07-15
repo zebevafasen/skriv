@@ -1,15 +1,15 @@
-import { AppError } from "@asterism/application";
+import { AppError } from "@skriv/application";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { BookOpenText, Library, Settings, Sparkles } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { DialogProvider } from "./DialogProvider.js";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const appSettings = useQuery({
     queryKey: ["app-settings"],
-    queryFn: () => asterism().settings.app(),
+    queryFn: () => skriv().settings.app(),
   });
 
   useEffect(() => {
@@ -27,11 +27,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <DialogProvider>
       <div className="app-shell">
         <header className="topbar">
-          <Link to="/" className="brand" aria-label="Asterism home">
+          <Link to="/" className="brand" aria-label="Skriv home">
             <span className="brand-mark">
               <Sparkles size={18} />
             </span>
-            <span>Asterism</span>
+            <span>Skriv</span>
           </Link>
           <nav className="global-nav" aria-label="Primary navigation">
             <Link to="/" activeProps={{ className: "active" }}>

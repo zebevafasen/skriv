@@ -3,7 +3,7 @@ import {
   type PromptMessage,
   type WorkflowKey,
   workflowVariables,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 
 const variablePattern = /{{\s*([a-z][a-z0-9_]*)\s*}}/g;
 

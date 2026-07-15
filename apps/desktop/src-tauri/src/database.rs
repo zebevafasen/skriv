@@ -74,22 +74,22 @@ impl DatabaseResult {
 
 pub async fn initialize(app: &AppHandle) -> NativeResult<DatabaseState> {
     #[cfg(debug_assertions)]
-    let data_dir = if let Some(path) = std::env::var_os("ASTERISM_DATA_DIR") {
+    let data_dir = if let Some(path) = std::env::var_os("SKRIV_DATA_DIR") {
         PathBuf::from(path)
     } else {
         app.path()
             .local_data_dir()
             .map_err(|error| NativeError::File(error.to_string()))?
-            .join("Asterism")
+            .join("Skriv")
     };
     #[cfg(not(debug_assertions))]
     let data_dir = app
         .path()
         .local_data_dir()
         .map_err(|error| NativeError::File(error.to_string()))?
-        .join("Asterism");
+        .join("Skriv");
     std::fs::create_dir_all(&data_dir)?;
-    let path = data_dir.join("asterism.sqlite3");
+    let path = data_dir.join("skriv.sqlite3");
     let result = initialize_connection(&path).await;
     let (connection, startup_error) = match result {
         Ok(connection) => (Some(connection), None),

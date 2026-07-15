@@ -2,7 +2,7 @@
 
 ## Product boundaries
 
-Web and desktop share features and archive contracts but never share a live store. PostgreSQL records remain account/workspace scoped. Desktop records remain in `%LOCALAPPDATA%\Asterism\asterism.sqlite3`. Shared UI calls only `AsterismClient`; a shared feature change must update and test both adapters.
+Web and desktop share features and archive contracts but never share a live store. PostgreSQL records remain account/workspace scoped. Desktop records remain in `%LOCALAPPDATA%\Skriv\skriv.sqlite3`. Shared UI calls only `SkrivClient`; a shared feature change must update and test both adapters.
 
 ## CI and merge gate
 
@@ -26,4 +26,4 @@ Hosted v5 archives use an environment-specific private Vercel Blob store. Import
 
 ## Desktop recovery
 
-The desktop database uses foreign keys, WAL, compiled migrations, and safety snapshots. Portable project snapshots are retained locally after dirty mutations and clean close. The desktop OpenRouter key is stored under service `com.zebevafasen.asterism`; hosted credentials are separately encrypted and user scoped. Credentials are excluded from archives.
+The desktop database uses foreign keys, WAL, compiled migrations, and safety snapshots. Portable project snapshots are retained locally after dirty mutations and clean close. The desktop OpenRouter key is stored under service `com.zebevafasen.skriv`; hosted credentials are separately encrypted and user scoped. Credentials are excluded from archives.

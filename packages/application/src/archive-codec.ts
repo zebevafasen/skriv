@@ -4,7 +4,7 @@ import {
   type ProjectArchiveManifestEntry,
   type ProjectArchiveManifestV5,
   type ProjectArchiveV5,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { unzipSync, zipSync } from "fflate";
 import { AppError } from "./client.js";
 
@@ -111,7 +111,7 @@ export async function encodeProjectArchive(
     });
   }
   const manifest = projectArchiveManifestV5Schema.parse({
-    format: "asterism-project",
+    format: "skriv-project",
     schemaVersion: 5,
     applicationVersion,
     exportedAt: new Date().toISOString(),

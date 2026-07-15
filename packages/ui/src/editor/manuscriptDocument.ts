@@ -1,5 +1,5 @@
-import type { ManuscriptTree, Scene } from "@asterism/contracts";
-import { manuscriptLabels } from "@asterism/core";
+import type { ManuscriptTree, Scene } from "@skriv/contracts";
+import { manuscriptLabels } from "@skriv/core";
 import type { JSONContent } from "@tiptap/core";
 import { generatedInlineContent, generatedProseContent } from "./generatedProse.js";
 

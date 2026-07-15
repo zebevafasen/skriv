@@ -3,11 +3,11 @@ import {
   type Project,
   type Scene,
   storyLanguages,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { Book, Image as ImageIcon, Info, Layers3, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { useAppDialog } from "./DialogProvider.js";
 import { LabelPackManager } from "./LabelPackManager.js";
 
@@ -39,7 +39,7 @@ export function ProjectSettingsPanel({
 
   const updateSetting = useCallback(
     async (field: string, value: unknown) => {
-      await asterism().projects.update(projectId, { settings: { [field]: value } });
+      await skriv().projects.update(projectId, { settings: { [field]: value } });
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
     },
     [client, projectId],
@@ -47,7 +47,7 @@ export function ProjectSettingsPanel({
 
   const updateTitle = async (title: string) => {
     if (title === project.title) return;
-    await asterism().projects.update(projectId, { title });
+    await skriv().projects.update(projectId, { title });
     await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
   };
 
@@ -179,7 +179,7 @@ export function ProjectSettingsPanel({
                           confirmLabel: "Delete",
                         })
                       ) {
-                        await asterism().projects.remove(projectId);
+                        await skriv().projects.remove(projectId);
                         window.location.assign("/");
                       }
                     }}

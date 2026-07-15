@@ -24,7 +24,7 @@ import type {
   Scene,
   TiptapNode,
   WorkflowKey,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 
 export type AppErrorCode =
   | "BAD_REQUEST"
@@ -150,7 +150,7 @@ export type ManuscriptClient = {
   createItem(
     projectId: string,
     input: JsonInput,
-  ): Promise<import("@asterism/contracts").CreateManuscriptItemResponse>;
+  ): Promise<import("@skriv/contracts").CreateManuscriptItemResponse>;
   updateItem(kind: ItemKind, id: string, input: JsonInput): Promise<unknown>;
   removeItem(kind: ItemKind, id: string): Promise<void>;
   reorderActs(projectId: string, orderedIds: string[]): Promise<void>;
@@ -271,7 +271,7 @@ export type ArchivesClient = {
   importProject(): Promise<ImportedProject | null>;
 };
 
-export type AsterismClient = {
+export type SkrivClient = {
   capabilities: PlatformCapabilities;
   projects: ProjectsClient;
   manuscript: ManuscriptClient;
@@ -312,13 +312,13 @@ function request<T>(
   });
 }
 
-export function createAsterismClient(
+export function createSkrivClient(
   transport: RequestTransport,
   streams: StreamingAdapters,
   archives: ArchivesClient,
   capabilities: PlatformCapabilities,
   backups: BackupsClient | null,
-): AsterismClient {
+): SkrivClient {
   return {
     capabilities,
     projects: {
@@ -445,13 +445,13 @@ export function createAsterismClient(
   };
 }
 
-let configuredClient: AsterismClient | null = null;
+let configuredClient: SkrivClient | null = null;
 
-export function configureAsterismClient(client: AsterismClient): void {
+export function configureSkrivClient(client: SkrivClient): void {
   configuredClient = client;
 }
 
-export function getAsterismClient(): AsterismClient {
+export function getSkrivClient(): SkrivClient {
   if (!configuredClient)
     throw new AppError("The application client has not been configured.", "INTERNAL_ERROR");
   return configuredClient;

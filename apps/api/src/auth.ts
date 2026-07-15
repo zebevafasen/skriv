@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { ServerEnv } from "@asterism/config";
-import type { Database } from "@asterism/db";
+import type { ServerEnv } from "@skriv/config";
+import type { Database } from "@skriv/db";
 import {
   account,
   invites,
@@ -9,7 +9,7 @@ import {
   verification,
   workspaceMembers,
   workspaces,
-} from "@asterism/db";
+} from "@skriv/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { and, eq, gt, isNull } from "drizzle-orm";
@@ -52,7 +52,7 @@ export async function ensureDevelopmentUser(context: AppContext): Promise<void> 
     await tx.insert(user).values({
       id: DEV_USER_ID,
       name: "Local Writer",
-      email: "writer@asterism.local",
+      email: "writer@skriv.local",
       emailVerified: true,
     });
     const [workspace] = await tx
@@ -95,7 +95,7 @@ export async function registerAuth(app: FastifyInstance, context: AppContext): P
         request.method === "POST" &&
         request.url.includes("/sign-up/email")
       ) {
-        const inviteToken = request.headers["x-asterism-invite-token"];
+        const inviteToken = request.headers["x-skriv-invite-token"];
         const email =
           typeof request.body === "object" && request.body && "email" in request.body
             ? String(request.body.email).toLocaleLowerCase()

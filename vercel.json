@@ -15,7 +15,7 @@
     { "path": "/api/internal/archive-transfers/cleanup", "schedule": "17 3 * * *" }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index?__asterism_path=$1" },
+    { "source": "/api/(.*)", "destination": "/api/index?__skriv_path=$1" },
     { "source": "/((?!api(?:/|$)).*)", "destination": "/index.html" }
   ]
 }

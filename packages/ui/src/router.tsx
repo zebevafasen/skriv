@@ -31,12 +31,12 @@ type ProjectSearch = {
   entry?: string;
 };
 
-export type AsterismRouterOptions = {
+export type SkrivRouterOptions = {
   settingsComponent?: FunctionComponent;
   authenticationComponent?: FunctionComponent;
 };
 
-export function createAsterismRouter(options: AsterismRouterOptions = {}) {
+export function createSkrivRouter(options: SkrivRouterOptions = {}) {
   const SettingsComponent = options.settingsComponent ?? DefaultSettingsPage;
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: 10_000, retry: 1 }, mutations: { retry: 0 } },
@@ -113,4 +113,4 @@ export function createAsterismRouter(options: AsterismRouterOptions = {}) {
   return { queryClient, router };
 }
 
-export type AsterismRouter = ReturnType<typeof createAsterismRouter>["router"];
+export type SkrivRouter = ReturnType<typeof createSkrivRouter>["router"];

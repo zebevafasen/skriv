@@ -9,11 +9,11 @@ const tempRoot = path.join(root, ".tmp", "e2e");
 mkdirSync(tempRoot, { recursive: true });
 process.env.TEMP = tempRoot;
 process.env.TMP = tempRoot;
-const dataDirectory = path.join(tempRoot, "asterism-data");
+const dataDirectory = path.join(tempRoot, "skriv-data");
 if (!dataDirectory.startsWith(`${tempRoot}${path.sep}`)) {
   throw new Error("E2E data directory must remain inside the workspace test directory.");
 }
-process.env.ASTERISM_DATA_DIR = dataDirectory;
+process.env.SKRIV_DATA_DIR = dataDirectory;
 
 const application = path.join(
   root,
@@ -22,7 +22,7 @@ const application = path.join(
   "src-tauri",
   "target",
   "debug",
-  "asterism.exe",
+  "skriv.exe",
 );
 const installedTauriDriver = path.join(os.homedir(), ".cargo", "bin", "tauri-driver.exe");
 const tauriDriverPort = 4544;

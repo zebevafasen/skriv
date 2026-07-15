@@ -1,10 +1,10 @@
-import { AppError, getAsterismClient } from "@asterism/application";
-import type { GenerationRequest, GenerationStreamEvent } from "@asterism/contracts";
+import { AppError, getSkrivClient } from "@skriv/application";
+import type { GenerationRequest, GenerationStreamEvent } from "@skriv/contracts";
 
 export { AppError, AppError as ApiError };
 
-export function asterism() {
-  return getAsterismClient();
+export function skriv() {
+  return getSkrivClient();
 }
 
 export function streamGeneration(
@@ -12,5 +12,5 @@ export function streamGeneration(
   onEvent: (event: GenerationStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  return getAsterismClient().generation.start(input, onEvent, signal);
+  return getSkrivClient().generation.start(input, onEvent, signal);
 }

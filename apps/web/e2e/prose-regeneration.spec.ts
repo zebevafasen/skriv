@@ -19,8 +19,8 @@ test("regenerates prose at the original position and accepts the replacement", a
   await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
   await page.request.patch("/api/settings/ai", {
     data: {
-      baseModel: "asterism/fake-prose",
-      contextModel: "asterism/fake-context",
+      baseModel: "skriv/fake-prose",
+      contextModel: "skriv/fake-context",
       smartContextEnabled: true,
       recursionDepth: 2,
     },
@@ -47,7 +47,7 @@ test("regenerates prose at the original position and accepts the replacement", a
     await expect.poll(() => candidateFollowsSceneBeat(page)).toBe(true);
 
     await page.getByRole("button", { name: "Regenerate" }).click();
-    await expect(page.getByText("Asterism is rewriting…")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Skriv is rewriting…")).toBeVisible({ timeout: 10_000 });
     await expect(temporaryGeneration).toHaveCount(1);
     await expect(page.getByText("Candidate ready")).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => candidateFollowsSceneBeat(page)).toBe(true);

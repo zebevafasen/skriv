@@ -1,4 +1,4 @@
-import { manuscriptExportOptionsSchema, type TiptapNode } from "@asterism/contracts";
+import { manuscriptExportOptionsSchema, type TiptapNode } from "@skriv/contracts";
 import {
   acts,
   chapters,
@@ -8,7 +8,7 @@ import {
   projects,
   projectIngredientPacks,
   scenes,
-} from "@asterism/db";
+} from "@skriv/db";
 import { AlignmentType, Document, HeadingLevel, Packer, PageBreak, Paragraph, TextRun } from "docx";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -29,7 +29,7 @@ function safeFilename(title: string) {
       .normalize("NFKD")
       .replace(/[^a-z0-9_-]+/gi, "-")
       .replace(/^-|-$/g, "")
-      .toLocaleLowerCase() || "asterism-story"
+      .toLocaleLowerCase() || "skriv-story"
   );
 }
 

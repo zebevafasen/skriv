@@ -1,4 +1,4 @@
-import type { CompendiumEntry, SelectionAction, WorkflowKey } from "@asterism/contracts";
+import type { CompendiumEntry, SelectionAction, WorkflowKey } from "@skriv/contracts";
 import { createContext, useContext } from "react";
 
 export type InsertionGenerationOptions = {

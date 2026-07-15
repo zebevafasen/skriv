@@ -1,6 +1,6 @@
-import { configureAsterismClient } from "@asterism/application";
-import { createAsterismRouter, flushPendingPersistence } from "@asterism/ui";
-import "@asterism/ui/styles.css";
+import { configureSkrivClient } from "@skriv/application";
+import { createSkrivRouter, flushPendingPersistence } from "@skriv/ui";
+import "@skriv/ui/styles.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { invoke } from "@tauri-apps/api/core";
@@ -26,7 +26,7 @@ function RecoveryScreen({ error }: { error: string }) {
     <main className="page settings-page">
       <section className="page-heading">
         <p className="eyebrow">Local recovery</p>
-        <h1>Asterism could not open its database</h1>
+        <h1>Skriv could not open its database</h1>
         <p>
           Your existing database has not been replaced. Restore a safety snapshot, or open the
           backup folder to recover a portable project archive.
@@ -71,7 +71,7 @@ function RecoveryScreen({ error }: { error: string }) {
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found.");
 const reactRoot = createRoot(root);
-const { queryClient, router } = createAsterismRouter();
+const { queryClient, router } = createSkrivRouter();
 
 async function start() {
   const status = await invoke<DatabaseStatus>("database_status");
@@ -80,7 +80,7 @@ async function start() {
     return;
   }
   const client = createDesktopClient();
-  configureAsterismClient(client);
+  configureSkrivClient(client);
   let closing = false;
   await getCurrentWindow().onCloseRequested(async (event) => {
     if (closing) return;
@@ -92,7 +92,7 @@ async function start() {
       await getCurrentWindow().destroy();
     } catch (error) {
       closing = false;
-      console.error("Asterism could not finish saving before close.", error);
+      console.error("Skriv could not finish saving before close.", error);
     }
   });
   reactRoot.render(
@@ -106,6 +106,6 @@ async function start() {
 
 void start().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error("Asterism frontend startup failed.", error);
+  console.error("Skriv frontend startup failed.", error);
   reactRoot.render(<RecoveryScreen error={message} />);
 });

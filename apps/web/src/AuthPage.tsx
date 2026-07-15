@@ -23,7 +23,7 @@ export function AuthPage() {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            ...(mode === "sign-up" ? { "x-asterism-invite-token": inviteToken } : {}),
+            ...(mode === "sign-up" ? { "x-skriv-invite-token": inviteToken } : {}),
           },
           body: JSON.stringify(mode === "sign-in" ? { email, password } : { name, email, password }),
         },

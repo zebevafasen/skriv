@@ -10,10 +10,10 @@ type DecorationState = {
     | null;
   mentions: EditorMention[];
 };
-const key = new PluginKey<DecorationState>("asterismDecorations");
+const key = new PluginKey<DecorationState>("skrivDecorations");
 
-export const AsterismDecorations = Extension.create({
-  name: "asterismDecorations",
+export const SkrivDecorations = Extension.create({
+  name: "skrivDecorations",
   addProseMirrorPlugins() {
     return [
       new Plugin<DecorationState>({

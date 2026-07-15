@@ -1,6 +1,6 @@
-import type { AsterismClient, ClientRequest, RequestTransport } from "@asterism/application";
-import { AppError, createAsterismClient } from "@asterism/application";
-import { createLocalRequestDispatcher } from "@asterism/local-store";
+import type { SkrivClient, ClientRequest, RequestTransport } from "@skriv/application";
+import { AppError, createSkrivClient } from "@skriv/application";
+import { createLocalRequestDispatcher } from "@skriv/local-store";
 import { invoke } from "@tauri-apps/api/core";
 
 type NativeErrorPayload = { code?: string; message?: string };
@@ -34,7 +34,7 @@ async function invokeApp<T>(command: string, args?: Record<string, unknown>): Pr
   }
 }
 
-export type DesktopClient = AsterismClient & { shutdown(): Promise<void> };
+export type DesktopClient = SkrivClient & { shutdown(): Promise<void> };
 
 export function createDesktopClient(): DesktopClient {
   const dispatcher = createLocalRequestDispatcher();
@@ -57,7 +57,7 @@ export function createDesktopClient(): DesktopClient {
       return dispatcher.request<T>(path, init);
     },
   };
-  const client = createAsterismClient(
+  const client = createSkrivClient(
     transport,
     {
       generation(input, onEvent, signal) {

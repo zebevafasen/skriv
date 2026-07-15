@@ -1,4 +1,4 @@
-import { projectSchema } from "@asterism/contracts";
+import { projectSchema } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import { filterAndSortProjects, type ProjectSortField } from "./projectLibrary.js";
 

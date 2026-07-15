@@ -1,7 +1,7 @@
-import type { IngredientPack, IngredientPackCatalog } from "@asterism/contracts";
+import type { IngredientPack, IngredientPackCatalog } from "@skriv/contracts";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
 import type { IngredientDefinition } from "./IngredientPackPicker.js";
@@ -92,7 +92,7 @@ export function IngredientPackCatalogManager({
     });
     if (!next?.trim()) return;
     await run(async () => {
-      await asterism().ideation.updateCatalogNode(kind, id, { name: next.trim() });
+      await skriv().ideation.updateCatalogNode(kind, id, { name: next.trim() });
     });
   };
 
@@ -107,7 +107,7 @@ export function IngredientPackCatalogManager({
     )
       return;
     await run(async () => {
-      await asterism().ideation.removeCatalogNode(kind, id);
+      await skriv().ideation.removeCatalogNode(kind, id);
     });
   };
 
@@ -140,7 +140,7 @@ export function IngredientPackCatalogManager({
             definition.label.toLocaleLowerCase() === label.toLocaleLowerCase(),
         );
         if (existing) return existing.id;
-        const created = await asterism().ideation.createDefinition({ kind, label });
+        const created = await skriv().ideation.createDefinition({ kind, label });
         return created.id;
       }),
     );
@@ -205,7 +205,7 @@ export function IngredientPackCatalogManager({
                 event.preventDefault();
                 if (!categoryName.trim()) return;
                 void run(async () => {
-                  await asterism().ideation.createCatalogNode("categories", {
+                  await skriv().ideation.createCatalogNode("categories", {
                     name: categoryName.trim(),
                   });
                   setCategoryName("");
@@ -243,7 +243,7 @@ export function IngredientPackCatalogManager({
                         disabled={busy || collection.protected}
                         onChange={(event) =>
                           void run(async () => {
-                            await asterism().ideation.updateCatalogNode(
+                            await skriv().ideation.updateCatalogNode(
                               "collections",
                               collection.id,
                               { categoryId: event.target.value },
@@ -283,7 +283,7 @@ export function IngredientPackCatalogManager({
                 event.preventDefault();
                 if (!collectionName.trim() || !collectionCategoryId) return;
                 void run(async () => {
-                  await asterism().ideation.createCatalogNode("collections", {
+                  await skriv().ideation.createCatalogNode("collections", {
                     name: collectionName.trim(),
                     categoryId: collectionCategoryId,
                   });
@@ -344,8 +344,8 @@ export function IngredientPackCatalogManager({
                     collectionId: packCollectionId,
                     values,
                   };
-                  if (editingPackId) await asterism().ideation.updatePack(editingPackId, input);
-                  else await asterism().ideation.createPack(input);
+                  if (editingPackId) await skriv().ideation.updatePack(editingPackId, input);
+                  else await skriv().ideation.createPack(input);
                   resetPack();
                 });
               }}
@@ -440,7 +440,7 @@ export function IngredientPackCatalogManager({
                           )
                             return;
                           await run(async () => {
-                            await asterism().ideation.removePack(pack.id);
+                            await skriv().ideation.removePack(pack.id);
                             if (editingPackId === pack.id) resetPack();
                           });
                         }}

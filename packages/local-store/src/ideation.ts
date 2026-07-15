@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import { basePackage, getBuiltinPrompt } from "@asterism/content";
+import { AppError } from "@skriv/application";
+import { basePackage, getBuiltinPrompt } from "@skriv/content";
 import {
   compendiumTypeIdSchema,
   extractCompendiumInputSchema,
@@ -8,8 +8,8 @@ import {
   importExtractedCompendiumInputSchema,
   type PromptDefinition,
   type WorkflowKey,
-} from "@asterism/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@asterism/core";
+} from "@skriv/contracts";
+import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";

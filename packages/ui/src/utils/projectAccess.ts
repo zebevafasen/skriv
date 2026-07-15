@@ -1,4 +1,4 @@
-const projectAccessKey = "asterism:library:project-access";
+const projectAccessKey = "skriv:library:project-access";
 
 export type ProjectAccessHistory = Record<string, string>;
 

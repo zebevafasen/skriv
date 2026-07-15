@@ -4,8 +4,8 @@ import type {
   ChatThread,
   CompendiumEntry,
   ManuscriptTree,
-} from "@asterism/contracts";
-import { manuscriptLabels } from "@asterism/core";
+} from "@skriv/contracts";
+import { manuscriptLabels } from "@skriv/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -35,7 +35,7 @@ import {
 } from "react";
 import Markdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
-import { ApiError, asterism } from "../api.js";
+import { ApiError, skriv } from "../api.js";
 import { CompendiumMentionText } from "./CompendiumMentionText.js";
 import { useAppDialog } from "./DialogProvider.js";
 import { MentionTextarea } from "./MentionTextarea.js";
@@ -148,7 +148,7 @@ export function ChatPanel({
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
-    queryFn: () => asterism().compendium.categories(projectId),
+    queryFn: () => skriv().compendium.categories(projectId),
   });
   const dialog = useAppDialog();
   const [draft, setDraft] = useState("");
@@ -163,11 +163,11 @@ export function ChatPanel({
   const messageEndRef = useRef<HTMLDivElement>(null);
   const threads = useQuery({
     queryKey: ["chat-threads", projectId],
-    queryFn: () => asterism().chat.list(projectId),
+    queryFn: () => skriv().chat.list(projectId),
   });
   const thread = useQuery({
     queryKey: ["chat-thread", threadId],
-    queryFn: () => asterism().chat.get(threadId as string),
+    queryFn: () => skriv().chat.get(threadId as string),
     enabled: Boolean(threadId),
   });
   useEffect(() => {
@@ -177,8 +177,8 @@ export function ChatPanel({
     setHomeError("");
     setCreatingThread(true);
     try {
-      const latestModel = localStorage.getItem("asterism-latest-model") ?? baseModel;
-      const created = await asterism().chat.create(projectId, latestModel);
+      const latestModel = localStorage.getItem("skriv-latest-model") ?? baseModel;
+      const created = await skriv().chat.create(projectId, latestModel);
       await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
       onThreadChange(created.id);
     } catch (error) {
@@ -191,13 +191,13 @@ export function ChatPanel({
     input: Partial<Pick<ChatThread, "title" | "model" | "contextSources">>,
   ) => {
     if (!threadId) return;
-    const updated = await asterism().chat.update(threadId, input);
+    const updated = await skriv().chat.update(threadId, input);
     client.setQueryData(["chat-thread", threadId], (old: ChatThread | undefined) =>
       old ? { ...old, ...updated, messages: old.messages } : updated,
     );
     await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
   };
-  const applyEvent = (event: import("@asterism/contracts").ChatStreamEvent) => {
+  const applyEvent = (event: import("@skriv/contracts").ChatStreamEvent) => {
     client.setQueryData<ChatThread>(["chat-thread", threadId], (old) => {
       if (!old) return old;
       if (event.type === "chat.started") {
@@ -263,7 +263,7 @@ export function ChatPanel({
     setStreaming(true);
     controller.current = new AbortController();
     try {
-      await asterism().chat.send(threadId, text, applyEvent, controller.current.signal);
+      await skriv().chat.send(threadId, text, applyEvent, controller.current.signal);
     } catch (error) {
       if (!controller.current.signal.aborted)
         setWarning(error instanceof Error ? error.message : "Chat failed.");
@@ -473,7 +473,7 @@ export function ChatPanel({
               }))
             )
               return;
-            await asterism().chat.remove(threadId);
+            await skriv().chat.remove(threadId);
             onThreadChange(null);
             await client.invalidateQueries({ queryKey: ["chat-threads", projectId] });
           }}
@@ -486,7 +486,7 @@ export function ChatPanel({
           {(thread.data.messages ?? []).map((message) => (
             <article key={message.id} className={`chat-message ${message.role}`}>
               <div className="chat-message-meta">
-                <strong>{message.role === "user" ? "You" : "Asterism"}</strong>
+                <strong>{message.role === "user" ? "You" : "Skriv"}</strong>
                 <button
                   type="button"
                   title="Copy"
@@ -634,7 +634,7 @@ export function ChatPanel({
             <ModelSelect
               value={thread.data.model}
               onChange={(model) => {
-                localStorage.setItem("asterism-latest-model", model);
+                localStorage.setItem("skriv-latest-model", model);
                 void patchThread({ model });
               }}
               models={models}
@@ -653,7 +653,7 @@ export function ChatPanel({
                   setStreaming(true);
                   controller.current = new AbortController();
                   try {
-                    await asterism().chat.regenerate(
+                    await skriv().chat.regenerate(
                       threadId,
                       applyEvent,
                       controller.current.signal,
@@ -673,7 +673,7 @@ export function ChatPanel({
               type="button"
               onClick={() => {
                 controller.current?.abort();
-                void asterism().chat.stop(threadId);
+                void skriv().chat.stop(threadId);
               }}
             >
               <Square size={13} /> Stop

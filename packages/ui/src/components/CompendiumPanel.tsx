@@ -1,4 +1,4 @@
-import type { CompendiumCategory, CompendiumEntry } from "@asterism/contracts";
+import type { CompendiumCategory, CompendiumEntry } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookMarked,
@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
 import { MentionTextarea } from "./MentionTextarea.js";
@@ -127,7 +127,7 @@ export function CompendiumPanel({
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
-    queryFn: () => asterism().compendium.categories(projectId),
+    queryFn: () => skriv().compendium.categories(projectId),
   });
   const [search, setSearch] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
@@ -159,7 +159,7 @@ export function CompendiumPanel({
     mutationFn: (typeId: string) => {
       const type = storyTypes.find((candidate) => candidate.id === typeId);
       const custom = categories.data?.find((category) => `custom.${category.id}` === typeId);
-      return asterism().compendium.create(projectId, {
+      return skriv().compendium.create(projectId, {
         name: `Untitled ${type?.label ?? custom?.name ?? "Entry"}`,
         typeId,
         aliases: [],
@@ -179,11 +179,11 @@ export function CompendiumPanel({
     },
   });
   const createCategory = useMutation({
-    mutationFn: (name: string) => asterism().compendium.createCategory(projectId, { name }),
+    mutationFn: (name: string) => skriv().compendium.createCategory(projectId, { name }),
     onSuccess: () => client.invalidateQueries({ queryKey: ["compendium-categories", projectId] }),
   });
   const deleteCategory = useMutation({
-    mutationFn: (id: string) => asterism().compendium.removeCategory(id),
+    mutationFn: (id: string) => skriv().compendium.removeCategory(id),
     onSuccess: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: ["compendium-categories", projectId] }),
@@ -193,7 +193,7 @@ export function CompendiumPanel({
   });
   const renameCategory = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
-      asterism().compendium.updateCategory(id, { name }),
+      skriv().compendium.updateCategory(id, { name }),
     onSuccess: () => client.invalidateQueries({ queryKey: ["compendium-categories", projectId] }),
   });
   const groups = useMemo(() => {
@@ -576,7 +576,7 @@ export function CompendiumEntryDrawer({
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
-    queryFn: () => asterism().compendium.categories(projectId),
+    queryFn: () => skriv().compendium.categories(projectId),
   });
   const [draft, setDraft] = useState<CompendiumEntry | null>(entry);
   const [tab, setTab] = useState<"details" | "tracking">("details");
@@ -598,7 +598,7 @@ export function CompendiumEntryDrawer({
   const invalidate = () => client.invalidateQueries({ queryKey: ["compendium", projectId] });
   const save = useMutation({
     mutationFn: (value: CompendiumEntry) =>
-      asterism().compendium.update(value.id, {
+      skriv().compendium.update(value.id, {
         expectedRevision: value.revision,
         name: value.name,
         typeId: value.typeId,
@@ -617,7 +617,7 @@ export function CompendiumEntryDrawer({
     },
   });
   const remove = useMutation({
-    mutationFn: (id: string) => asterism().compendium.remove(id),
+    mutationFn: (id: string) => skriv().compendium.remove(id),
     onSuccess: async () => {
       onClose();
       await invalidate();

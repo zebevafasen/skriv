@@ -163,7 +163,7 @@ fn build_archive_bytes(
         ));
     }
     let manifest = ArchiveManifest {
-        format: "asterism-project".into(),
+        format: "skriv-project".into(),
         schema_version: 5,
         application_version,
         exported_at: Utc::now().to_rfc3339(),
@@ -230,7 +230,7 @@ fn project_backup_paths(directory: &Path) -> NativeResult<Vec<PathBuf>> {
     let mut paths = std::fs::read_dir(directory)?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
-        .filter(|path| path.extension().and_then(|value| value.to_str()) == Some("asterism"))
+        .filter(|path| path.extension().and_then(|value| value.to_str()) == Some("skriv"))
         .collect::<Vec<_>>();
     paths.sort_by_key(|path| {
         std::cmp::Reverse(
@@ -299,8 +299,8 @@ pub async fn save_project_archive(
     let bytes = build_archive_bytes(request.application_version, request.project, request.assets)?;
     let save_request = SaveBytesRequest {
         suggested_name: request.suggested_name,
-        extension: "asterism".into(),
-        label: "Asterism project".into(),
+        extension: "skriv".into(),
+        label: "Skriv project".into(),
         bytes,
     };
     save_bytes(app, save_request).await
@@ -316,7 +316,7 @@ pub async fn write_project_backup(
     let bytes = build_archive_bytes(request.application_version, request.project, request.assets)?;
     let timestamp = Utc::now().format("%Y%m%dT%H%M%S%.3fZ");
     let path = directory.join(format!(
-        "{timestamp}-{}.asterism",
+        "{timestamp}-{}.skriv",
         safe_title(&request.title)
     ));
     std::fs::write(path, bytes)?;
@@ -328,7 +328,7 @@ pub async fn open_project_archive(app: AppHandle) -> NativeResult<Option<OpenedP
     let Some(file) = app
         .dialog()
         .file()
-        .add_filter("Asterism projects", &["asterism", "json"])
+        .add_filter("Skriv projects", &["skriv", "json"])
         .blocking_pick_file()
     else {
         return Ok(None);
@@ -385,9 +385,9 @@ pub async fn open_project_archive(app: AppHandle) -> NativeResult<Option<OpenedP
         .remove("manifest.json")
         .ok_or_else(|| NativeError::File("Archive manifest is missing.".into()))?;
     let manifest: ArchiveManifest = serde_json::from_slice(&manifest_bytes)?;
-    if manifest.format != "asterism-project" || manifest.schema_version != 5 {
+    if manifest.format != "skriv-project" || manifest.schema_version != 5 {
         return Err(NativeError::File(
-            "Unsupported Asterism archive version.".into(),
+            "Unsupported Skriv archive version.".into(),
         ));
     }
     let manifest_paths = manifest
@@ -450,7 +450,7 @@ mod tests {
     #[test]
     fn archive_paths_reject_traversal_and_absolute_paths() {
         assert!(valid_archive_path("assets/cover.png"));
-        assert!(!valid_archive_path("../asterism.sqlite3"));
+        assert!(!valid_archive_path("../skriv.sqlite3"));
         assert!(!valid_archive_path("assets//cover.png"));
         assert!(!valid_archive_path("C:\\secret.txt"));
         assert!(!valid_archive_path("/secret.txt"));

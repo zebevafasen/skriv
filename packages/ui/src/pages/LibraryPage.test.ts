@@ -1,4 +1,4 @@
-import { projectSettingsSchema } from "@asterism/contracts";
+import { projectSettingsSchema } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import {
   projectArtworkHue,

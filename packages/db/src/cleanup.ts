@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 config({ path: resolve(__dirname, "../../../.env") });
 
 const connectionString = (
-  process.env.DATABASE_URL ?? "postgresql://asterism:asterism@localhost:5433/asterism"
+  process.env.DATABASE_URL ?? "postgresql://skriv:skriv@localhost:5433/skriv"
 ).replace("sslmode=require", "sslmode=verify-full");
 const { db, pool } = createDatabase(connectionString);
 

@@ -1,12 +1,12 @@
-# Asterism
+# Skriv
 
-Asterism is developed as two independent writing products from one shared codebase:
+Skriv is developed as two independent writing products from one shared codebase:
 
 - **Web** is a responsive hosted private beta with accounts, invitations, PostgreSQL, encrypted per-user OpenRouter credentials, and Vercel deployment.
 - **Desktop** is a Windows-first Tauri application with no accounts, local SQLite storage, Windows Credential Manager, native file dialogs, and automatic local backups.
 - **Shared** packages contain the editor, writing UI, contracts, prompts, context logic, application client, archive codec, and manuscript exporters.
 
-The two stores do not synchronize. A checksummed schema-v5 `.asterism` archive is the deliberate project-transfer format. Both products import and export it; legacy schema-v4 JSON is import-only.
+The two stores do not synchronize. A checksummed schema-v5 `.skriv` archive is the deliberate project-transfer format. Both products import and export it; legacy schema-v4 JSON is import-only.
 
 ## Development
 
@@ -50,4 +50,4 @@ pnpm desktop:e2e
 
 `main` remains the production web baseline until the integration branch passes Unified CI, produces a staging Vercel preview and Windows installer, completes the manual parity/archive checklist, and receives explicit written approval. Auto-merge is not permitted. The final integration must use one merge commit after a production PostgreSQL backup.
 
-See [operations](docs/operations.md), [Vercel deployment](docs/vercel.md), and the [design specification](Asterism_Design_Specification_v5.md).
+See [operations](docs/operations.md), [Vercel deployment](docs/vercel.md), and the [design specification](Skriv_Design_Specification_v5.md).

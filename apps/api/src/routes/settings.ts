@@ -1,4 +1,4 @@
-import type { ModelDescriptor } from "@asterism/ai";
+import type { ModelDescriptor } from "@skriv/ai";
 import {
   aiSettingsSchema,
   appSettingsSchema,
@@ -8,8 +8,8 @@ import {
   updateAppSettingsInputSchema,
   updateEditorSettingsInputSchema,
   updateOpenRouterCredentialSchema,
-} from "@asterism/contracts";
-import { aiSettings, appSettings, editorSettings } from "@asterism/db";
+} from "@skriv/contracts";
+import { aiSettings, appSettings, editorSettings } from "@skriv/db";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context.js";
@@ -50,7 +50,7 @@ export async function getModelContextLength(
   model: string,
   signal?: AbortSignal,
 ) {
-  const available = model.startsWith("asterism/fake-")
+  const available = model.startsWith("skriv/fake-")
     ? await (await context.getAi(userId, model)).listModels(signal)
     : await getModels(context, userId, signal);
   const descriptor = available.find((item) => item.id === model);
@@ -63,7 +63,7 @@ export async function getModelLimits(
   model: string,
   signal?: AbortSignal,
 ) {
-  const available = model.startsWith("asterism/fake-")
+  const available = model.startsWith("skriv/fake-")
     ? await (await context.getAi(userId, model)).listModels(signal)
     : await getModels(context, userId, signal);
   const descriptor = available.find((item) => item.id === model);
@@ -177,7 +177,7 @@ export async function registerSettingsRoutes(
           message:
             validation?.status === 401
               ? "OpenRouter rejected this API key. Check the key and try again."
-              : "Asterism could not validate this key with OpenRouter. Try again shortly.",
+              : "Skriv could not validate this key with OpenRouter. Try again shortly.",
         },
       });
     }

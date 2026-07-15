@@ -1,4 +1,4 @@
-import { type Project, type ProjectDefaults, storyLanguages } from "@asterism/contracts";
+import { type Project, type ProjectDefaults, storyLanguages } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -13,7 +13,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 import { readProjectAccessHistory } from "../utils/projectAccess.js";
 import {
@@ -75,25 +75,25 @@ export function LibraryPage() {
   const navigate = useNavigate();
   const projects = useQuery({
     queryKey: ["projects"],
-    queryFn: () => asterism().projects.list(),
+    queryFn: () => skriv().projects.list(),
   });
   const defaults = useQuery({
     queryKey: ["project-defaults"],
-    queryFn: () => asterism().projects.defaults(),
+    queryFn: () => skriv().projects.defaults(),
   });
   const sourceEntries = useQuery({
     queryKey: ["compendium", copyProjectId],
-    queryFn: () => asterism().compendium.list(copyProjectId),
+    queryFn: () => skriv().compendium.list(copyProjectId),
     enabled: Boolean(copyProjectId),
   });
   const sourceCategories = useQuery({
     queryKey: ["compendium-categories", copyProjectId],
-    queryFn: () => asterism().compendium.categories(copyProjectId),
+    queryFn: () => skriv().compendium.categories(copyProjectId),
     enabled: Boolean(copyProjectId),
   });
   const sourceTree = useQuery({
     queryKey: ["project-tree", copyProjectId],
-    queryFn: () => asterism().projects.tree(copyProjectId),
+    queryFn: () => skriv().projects.tree(copyProjectId),
     enabled: Boolean(copyProjectId) && outlineChoice === "copy",
   });
   useEffect(() => {
@@ -112,7 +112,7 @@ export function LibraryPage() {
       nextLanguage === defaults.data.language
     )
       return;
-    const saved = await asterism().projects.updateDefaults({
+    const saved = await skriv().projects.updateDefaults({
       author: nextAuthor,
       language: nextLanguage,
     });
@@ -121,7 +121,7 @@ export function LibraryPage() {
   const createProject = useMutation({
     mutationFn: async () => {
       await persistDefaults();
-      return asterism().projects.create({
+      return skriv().projects.create({
         title: newTitle.trim(),
         author,
         language,
@@ -143,7 +143,7 @@ export function LibraryPage() {
     },
   });
   const importProject = useMutation({
-    mutationFn: () => asterism().archives.importProject(),
+    mutationFn: () => skriv().archives.importProject(),
     onSuccess: async (result) => {
       if (!result) return;
       await client.invalidateQueries({ queryKey: ["projects"] });
@@ -312,7 +312,7 @@ export function LibraryPage() {
       {!projects.isLoading && filtered.length === 0 && !query.trim() ? (
         <EmptyState
           title="A blank shelf"
-          body="Create your first story and Asterism will prepare its opening scene."
+          body="Create your first story and Skriv will prepare its opening scene."
         />
       ) : null}
       {!projects.isLoading && filtered.length === 0 && query.trim() ? (

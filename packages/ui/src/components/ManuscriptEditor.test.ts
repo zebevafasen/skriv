@@ -1,4 +1,4 @@
-import type { ManuscriptTree, Scene } from "@asterism/contracts";
+import type { ManuscriptTree, Scene } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import { compositeDocument, selectionReplacementContent } from "../editor/manuscriptDocument.js";
 import { candidateControlsLayout } from "../utils/manuscript.js";

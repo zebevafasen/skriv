@@ -4,7 +4,7 @@ import {
   type SceneMetadata,
   type TiptapNode,
   ingredientPackValuesSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   acts,
   chapters,
@@ -14,7 +14,7 @@ import {
   projects,
   projectIngredientPacks,
   scenes,
-} from "@asterism/db";
+} from "@skriv/db";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppContext } from "../context.js";

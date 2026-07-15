@@ -2,7 +2,7 @@ import type {
   CompendiumEntry,
   ContentPackage,
   ExtractCompendiumResponse,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { ModelSelect } from "./ModelSelect.js";
 import { IngredientPackPickerModal, IngredientPackPicker } from "./IngredientPackPicker.js";
@@ -85,32 +85,32 @@ export function IdeationPanel({
   const client = useQueryClient();
   const definitions = useQuery({
     queryKey: ["ideation-definitions"],
-    queryFn: () => asterism().ideation.definitions() as Promise<Definitions>,
+    queryFn: () => skriv().ideation.definitions() as Promise<Definitions>,
   });
   const metadata = useQuery({
     queryKey: ["ideation", projectId],
-    queryFn: () => asterism().ideation.metadata(projectId),
+    queryFn: () => skriv().ideation.metadata(projectId),
   });
   const settings = useQuery({
     queryKey: ["ai-settings"],
-    queryFn: () => asterism().settings.ai(),
+    queryFn: () => skriv().settings.ai(),
   });
   const models = useQuery({
     queryKey: ["models"],
-    queryFn: () => asterism().settings.models(),
+    queryFn: () => skriv().settings.models(),
     enabled: aiConfigured,
   });
   const ingredientPackCatalog = useQuery({
     queryKey: ["ingredient-pack-catalog"],
-    queryFn: () => asterism().ideation.catalog(),
+    queryFn: () => skriv().ideation.catalog(),
   });
   const importedIngredientPacks = useQuery({
     queryKey: ["project-ingredient-packs", projectId],
-    queryFn: () => asterism().ideation.projectPacks(projectId),
+    queryFn: () => skriv().ideation.projectPacks(projectId),
   });
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
-    queryFn: () => asterism().compendium.categories(projectId),
+    queryFn: () => skriv().compendium.categories(projectId),
   });
   const [mode, setMode] = useState<IdeationMode>("premise");
   const [genres, setGenres] = useState<Value[]>([]);
@@ -166,12 +166,12 @@ export function IdeationPanel({
   }, [metadata.data, projectId]);
   useEffect(() => {
     if (!model && settings.data) {
-      setModel(localStorage.getItem("asterism-latest-model") ?? settings.data.baseModel);
+      setModel(localStorage.getItem("skriv-latest-model") ?? settings.data.baseModel);
     }
   }, [model, settings.data]);
   const save = useMutation({
     mutationFn: (payload: IdeationSavePayload) =>
-      asterism().ideation.updateMetadata(projectId, payload),
+      skriv().ideation.updateMetadata(projectId, payload),
     onSuccess: async (_result, payload) => {
       persistedSnapshotRef.current = JSON.stringify(payload);
       await Promise.all([
@@ -192,7 +192,7 @@ export function IdeationPanel({
   }, [persistedSnapshot, persistedValues, save.mutate]);
   const generate = useMutation({
     mutationFn: () =>
-      asterism().ideation.generate<string>(projectId, {
+      skriv().ideation.generate<string>(projectId, {
         instructions: instructions.premise,
         contextEntryIds: contextEntryIds.premise,
         genres,
@@ -205,7 +205,7 @@ export function IdeationPanel({
   });
   const syncIngredientPacks = useMutation({
     mutationFn: (ingredientPackIds: string[]) =>
-      asterism().ideation.syncProjectPacks(projectId, ingredientPackIds),
+      skriv().ideation.syncProjectPacks(projectId, ingredientPackIds),
     onSuccess: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: ["project-ingredient-packs", projectId] }),
@@ -216,7 +216,7 @@ export function IdeationPanel({
   });
   const generateEntity = useMutation({
     mutationFn: () =>
-      asterism().ideation.generate<{ name: string; description: string }>(projectId, {
+      skriv().ideation.generate<{ name: string; description: string }>(projectId, {
         mode: "entity",
         typeId: entityTypeId,
         contextEntryIds: contextEntryIds.entity,
@@ -234,7 +234,7 @@ export function IdeationPanel({
   });
   const createEntity = useMutation({
     mutationFn: (alternative: { name: string; description: string }) =>
-      asterism().compendium.create(projectId, {
+      skriv().compendium.create(projectId, {
         name: alternative.name,
         typeId: entityTypeId,
         content: {
@@ -256,7 +256,7 @@ export function IdeationPanel({
   const extractCompendium = useMutation({
     mutationFn: async () => {
       await save.mutateAsync(persistedValues);
-      return asterism().ideation.extractCompendium(projectId, {
+      return skriv().ideation.extractCompendium(projectId, {
         modelOverride: model && model !== settings.data?.baseModel ? model : null,
       });
     },
@@ -269,7 +269,7 @@ export function IdeationPanel({
   const importCompendium = useMutation({
     mutationFn: () => {
       if (sourcePremiseRevision === null) throw new Error("Run extraction again.");
-      return asterism().ideation.importCompendium(projectId, {
+      return skriv().ideation.importCompendium(projectId, {
         sourcePremiseRevision,
         entries: extractionReview
           .filter((entry) => entry.selected)
@@ -381,7 +381,7 @@ export function IdeationPanel({
         <div className="ideation-transition-choice">
           <h4>Build a starter Compendium first?</h4>
           <p>
-            Asterism can extract premise-supported characters, places, objects, factions, and lore
+            Skriv can extract premise-supported characters, places, objects, factions, and lore
             for you to review before writing.
           </p>
           <div className="button-row">
@@ -843,7 +843,7 @@ export function IdeationPanel({
                 value={model}
                 onChange={(value) => {
                   setModel(value);
-                  localStorage.setItem("asterism-latest-model", value);
+                  localStorage.setItem("skriv-latest-model", value);
                 }}
                 models={models.data ?? []}
               />

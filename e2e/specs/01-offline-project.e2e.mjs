@@ -3,7 +3,7 @@ describe("offline project lifecycle", () => {
     const libraryHeading = await $("h1=Your stories");
     await libraryHeading.waitForDisplayed({
       timeout: 30_000,
-      timeoutMsg: `Asterism did not reach the library. Body: ${await $("body").getText()}`,
+      timeoutMsg: `Skriv did not reach the library. Body: ${await $("body").getText()}`,
     });
     const createStory = await $(".library-actions button.primary");
     await createStory.waitForClickable();

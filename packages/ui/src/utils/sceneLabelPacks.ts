@@ -1,11 +1,11 @@
-import { builtinLabelPacks } from "@asterism/content/label-packs";
+import { builtinLabelPacks } from "@skriv/content/label-packs";
 import {
   defaultUserLabelPack,
   type SceneLabel,
   type SceneLabelColor,
   type SceneLabelDefinition,
   type SceneLabelPack,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 
 export const editableLabelColors: SceneLabelColor[] = [
   "orange",

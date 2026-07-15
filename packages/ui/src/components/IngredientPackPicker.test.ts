@@ -1,4 +1,4 @@
-import type { IngredientPack } from "@asterism/contracts";
+import type { IngredientPack } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import {
   ingredientPackMatchesSearch,

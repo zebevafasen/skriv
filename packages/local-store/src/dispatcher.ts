@@ -1,5 +1,5 @@
-import { AppError, type ClientRequest } from "@asterism/application";
-import { basePackage, getOutlinePreset } from "@asterism/content";
+import { AppError, type ClientRequest } from "@skriv/application";
+import { basePackage, getOutlinePreset } from "@skriv/content";
 import {
   createActInputSchema,
   createChapterInputSchema,
@@ -23,7 +23,7 @@ import {
   type CompendiumContent,
   type GenerationRequest,
   type GenerationStreamEvent,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { createLocalDatabase, type LocalDatabase } from "./database.js";
@@ -1059,9 +1059,9 @@ export type LocalRequestDispatcher = {
   ): Promise<void>;
   exportProject(
     projectId: string,
-    options: import("@asterism/contracts").ManuscriptExportOptions,
+    options: import("@skriv/contracts").ManuscriptExportOptions,
   ): Promise<void>;
-  importProject(): Promise<import("@asterism/application").ImportedProject | null>;
+  importProject(): Promise<import("@skriv/application").ImportedProject | null>;
   backupAll(): Promise<void>;
   shutdown(): Promise<void>;
 };

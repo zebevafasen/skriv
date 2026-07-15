@@ -1,4 +1,4 @@
-import type { CompendiumEntry } from "@asterism/contracts";
+import type { CompendiumEntry } from "@skriv/contracts";
 
 export type MentionMatch = {
   from: number;

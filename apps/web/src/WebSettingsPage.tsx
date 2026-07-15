@@ -1,4 +1,4 @@
-import { SettingsPage } from "@asterism/ui/settings";
+import { SettingsPage } from "@skriv/ui/settings";
 import { Copy, LogOut, Trash2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 

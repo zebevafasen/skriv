@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import type { PromptMessage } from "@asterism/contracts";
+import { AppError } from "@skriv/application";
+import type { PromptMessage } from "@skriv/contracts";
 import { Channel, invoke } from "@tauri-apps/api/core";
 
 export type NativeAiEvent = { type: "delta"; delta: string };

@@ -8,7 +8,7 @@ import type {
   IngredientPackValues,
   TiptapNode,
   WorkflowKey,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -352,8 +352,8 @@ export const aiSettings = pgTable("ai_settings", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
-  baseModel: text("base_model").notNull().default("asterism/fake-prose"),
-  contextModel: text("context_model").notNull().default("asterism/fake-context"),
+  baseModel: text("base_model").notNull().default("skriv/fake-prose"),
+  contextModel: text("context_model").notNull().default("skriv/fake-context"),
   smartContextEnabled: boolean("smart_context_enabled").notNull().default(true),
   recursionDepth: integer("recursion_depth").notNull().default(2),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -364,7 +364,7 @@ export const appSettings = pgTable("app_settings", {
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
   theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia"] })
-    .$type<import("@asterism/contracts").AppSettings["theme"]>()
+    .$type<import("@skriv/contracts").AppSettings["theme"]>()
     .notNull()
     .default("system"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

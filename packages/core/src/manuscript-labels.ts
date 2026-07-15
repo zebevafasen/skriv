@@ -1,4 +1,4 @@
-import type { ManuscriptTree } from "@asterism/contracts";
+import type { ManuscriptTree } from "@skriv/contracts";
 
 export type ManuscriptStructureKind = "Act" | "Chapter" | "Scene";
 export type ManuscriptLabel = {

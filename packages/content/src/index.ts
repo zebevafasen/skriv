@@ -1,4 +1,4 @@
-import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@asterism/contracts";
+import { type ContentPackage, contentPackageSchema, type WorkflowKey } from "@skriv/contracts";
 import genres from "./genres.json" with { type: "json" };
 import packageMetadata from "./manifest.json" with { type: "json" };
 import prompts from "./prompts.json" with { type: "json" };

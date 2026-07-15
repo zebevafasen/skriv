@@ -37,7 +37,7 @@ export const projectArchiveManifestEntrySchema = z.object({
 });
 
 export const projectArchiveManifestV5Schema = z.object({
-  format: z.literal("asterism-project"),
+  format: z.literal("skriv-project"),
   schemaVersion: z.literal(5),
   applicationVersion: z.string().min(1),
   exportedAt: timestampSchema,

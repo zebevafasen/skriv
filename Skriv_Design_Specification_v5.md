@@ -1,10 +1,10 @@
-# Asterism Desktop Design Specification — v5
+# Skriv Desktop Design Specification — v5
 
 ## Product boundary
 
-> **Unified product amendment (2026-07-14):** This specification now sits inside a two-product monorepo. The desktop boundary below remains authoritative for Tauri. The responsive hosted product adds `apps/web`, `apps/api`, PostgreSQL, Better Auth, invitations, and environment-isolated private Vercel Blob transfers. Both shells inject `AsterismClient` and fixed `PlatformCapabilities`; shared UI never probes platform globals. Their stores remain independent and schema-v5 `.asterism` archives are the only supported transfer mechanism.
+> **Unified product amendment (2026-07-14):** This specification now sits inside a two-product monorepo. The desktop boundary below remains authoritative for Tauri. The responsive hosted product adds `apps/web`, `apps/api`, PostgreSQL, Better Auth, invitations, and environment-isolated private Vercel Blob transfers. Both shells inject `SkrivClient` and fixed `PlatformCapabilities`; shared UI never probes platform globals. Their stores remain independent and schema-v5 `.skriv` archives are the only supported transfer mechanism.
 
-Asterism is a Windows-first, single-user desktop writing environment. Human-authored project state is canonical and local. The installed application requires neither Node.js nor a database server and remains fully useful offline. OpenRouter is the only release AI provider and is contacted only for an explicit AI action.
+Skriv is a Windows-first, single-user desktop writing environment. Human-authored project state is canonical and local. The installed application requires neither Node.js nor a database server and remains fully useful offline. OpenRouter is the only release AI provider and is contacted only for an explicit AI action.
 
 The supported writing surface includes Projects, the continuous Scene manuscript editor, Outline and hierarchy reordering, optimistic Scene saves and revisions, Notes, Compendium, Ideation, ingredient catalogs, customizable Prompts, provisional generation acceptance/rejection, project-grounded Chat, and project import/export.
 
@@ -20,7 +20,7 @@ Hosted-only identities, ownership, deployment, and PostgreSQL records remain int
 
 ## Persistence model
 
-The canonical SQLite file is `%LOCALAPPDATA%\Asterism\asterism.sqlite3`. Identifiers are text UUIDs generated before insert; timestamps are ISO-8601 text; structured values are validated JSON text; enum values are validated at the application boundary. Foreign-key cascades preserve hierarchy ownership. Scene versions and Compendium revisions are optimistic concurrency boundaries.
+The canonical SQLite file is `%LOCALAPPDATA%\Skriv\skriv.sqlite3`. Identifiers are text UUIDs generated before insert; timestamps are ISO-8601 text; structured values are validated JSON text; enum values are validated at the application boundary. Foreign-key cascades preserve hierarchy ownership. Scene versions and Compendium revisions are optimistic concurrency boundaries.
 
 Application-wide tables contain preferences, AI/editor settings, prompt overrides/bindings, ingredient catalogs, and definitions. Project-owned tables contain the manuscript hierarchy, revisions, notes, Compendium, imported pack snapshots, generations, and Chat. Token counts are retained on generation and Chat records solely for local context/cost awareness; there is no usage reporting.
 
@@ -36,7 +36,7 @@ Window size and position persist. A close request is intercepted until pending e
 
 ## Portable archives
 
-Schema-v5 `.asterism` files contain a checksum manifest, a validated project payload, and cover/Compendium image assets. They include the complete manuscript, metadata, Notes, Compendium/categories, imported project packs, revisions, and Chat history. They exclude credentials, global preferences/prompts/catalogs, transient generation jobs, and telemetry.
+Schema-v5 `.skriv` files contain a checksum manifest, a validated project payload, and cover/Compendium image assets. They include the complete manuscript, metadata, Notes, Compendium/categories, imported project packs, revisions, and Chat history. They exclude credentials, global preferences/prompts/catalogs, transient generation jobs, and telemetry.
 
 Import validates structure and archive limits before a transaction, creates a new Project, and remaps project-owned identifiers and references. Schema-v4 JSON remains a read-only import format, including legacy Notes and singleton Compendium migration behavior.
 

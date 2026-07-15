@@ -44,27 +44,6 @@ importers:
 
   apps/api:
     dependencies:
-      '@asterism/ai':
-        specifier: workspace:*
-        version: link:../../packages/ai
-      '@asterism/application':
-        specifier: workspace:*
-        version: link:../../packages/application
-      '@asterism/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@asterism/content':
-        specifier: workspace:*
-        version: link:../../packages/content
-      '@asterism/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@asterism/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@asterism/db':
-        specifier: workspace:*
-        version: link:../../packages/db
       '@fastify/cors':
         specifier: 11.3.0
         version: 11.3.0
@@ -74,6 +53,27 @@ importers:
       '@fastify/sensible':
         specifier: 6.0.4
         version: 6.0.4
+      '@skriv/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
+      '@skriv/application':
+        specifier: workspace:*
+        version: link:../../packages/application
+      '@skriv/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@skriv/content':
+        specifier: workspace:*
+        version: link:../../packages/content
+      '@skriv/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@skriv/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@skriv/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@vercel/blob':
         specifier: ^2.4.0
         version: 2.6.1
@@ -111,16 +111,16 @@ importers:
 
   apps/desktop:
     dependencies:
-      '@asterism/application':
+      '@skriv/application':
         specifier: workspace:*
         version: link:../../packages/application
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@asterism/local-store':
+      '@skriv/local-store':
         specifier: workspace:*
         version: link:../../packages/local-store
-      '@asterism/ui':
+      '@skriv/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tanstack/react-query':
@@ -169,13 +169,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@asterism/application':
+      '@skriv/application':
         specifier: workspace:*
         version: link:../../packages/application
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@asterism/ui':
+      '@skriv/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tanstack/react-query':
@@ -221,7 +221,7 @@ importers:
 
   packages/ai:
     dependencies:
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../contracts
       zod:
@@ -230,7 +230,7 @@ importers:
 
   packages/application:
     dependencies:
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../contracts
       docx:
@@ -268,7 +268,7 @@ importers:
 
   packages/content:
     dependencies:
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../contracts
 
@@ -280,13 +280,13 @@ importers:
 
   packages/core:
     dependencies:
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../contracts
 
   packages/db:
     dependencies:
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../contracts
       dotenv:
@@ -311,16 +311,16 @@ importers:
 
   packages/local-store:
     dependencies:
-      '@asterism/application':
+      '@skriv/application':
         specifier: workspace:*
         version: link:../application
-      '@asterism/content':
+      '@skriv/content':
         specifier: workspace:*
         version: link:../content
-      '@asterism/contracts':
+      '@skriv/contracts':
         specifier: workspace:*
         version: link:../contracts
-      '@asterism/core':
+      '@skriv/core':
         specifier: workspace:*
         version: link:../core
       '@tauri-apps/api':
@@ -345,18 +345,6 @@ importers:
 
   packages/ui:
     dependencies:
-      '@asterism/application':
-        specifier: workspace:*
-        version: link:../application
-      '@asterism/content':
-        specifier: workspace:*
-        version: link:../content
-      '@asterism/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@asterism/core':
-        specifier: workspace:*
-        version: link:../core
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -366,6 +354,18 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.7)
+      '@skriv/application':
+        specifier: workspace:*
+        version: link:../application
+      '@skriv/content':
+        specifier: workspace:*
+        version: link:../content
+      '@skriv/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@skriv/core':
+        specifier: workspace:*
+        version: link:../core
       '@tanstack/react-query':
         specifier: 5.101.2
         version: 5.101.2(react@19.2.7)

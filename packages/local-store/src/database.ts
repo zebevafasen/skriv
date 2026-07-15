@@ -1,4 +1,4 @@
-import { AppError, type AppErrorCode } from "@asterism/application";
+import { AppError, type AppErrorCode } from "@skriv/application";
 import { invoke } from "@tauri-apps/api/core";
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 import * as schema from "./schema.js";

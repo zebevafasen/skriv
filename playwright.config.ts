@@ -10,13 +10,13 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "pnpm --filter @asterism/api exec tsx src/server.ts",
+      command: "pnpm --filter @skriv/api exec tsx src/server.ts",
       url: "http://localhost:3001/api/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
-      command: "pnpm --filter @asterism/web exec vite --host 127.0.0.1",
+      command: "pnpm --filter @skriv/web exec vite --host 127.0.0.1",
       url: "http://localhost:5173",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

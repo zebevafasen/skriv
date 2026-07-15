@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import type { AiSettings, AppSettings } from "@asterism/contracts";
+import { AppError } from "@skriv/application";
+import type { AiSettings, AppSettings } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FolderOpen,
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { ModelSelect } from "../components/ModelSelect.js";
@@ -21,25 +21,25 @@ type Model = { id: string; name: string; contextLength: number };
 type DatabaseSnapshot = { name: string; createdAt: string; size: number };
 
 export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode }) {
-  const app = asterism();
+  const app = skriv();
   const backups = app.backups;
   const client = useQueryClient();
   const dialog = useAppDialog();
   const appSettings = useQuery({
     queryKey: ["app-settings"],
-    queryFn: () => asterism().settings.app(),
+    queryFn: () => skriv().settings.app(),
   });
   const settings = useQuery({
     queryKey: ["ai-settings"],
-    queryFn: () => asterism().settings.ai(),
+    queryFn: () => skriv().settings.ai(),
   });
   const credential = useQuery({
     queryKey: ["openrouter-credential"],
-    queryFn: () => asterism().settings.credential(),
+    queryFn: () => skriv().settings.credential(),
   });
   const models = useQuery({
     queryKey: ["models"],
-    queryFn: () => asterism().settings.models() as Promise<Model[]>,
+    queryFn: () => skriv().settings.models() as Promise<Model[]>,
     enabled: credential.data?.configured === true,
   });
   const snapshots = useQuery({
@@ -60,7 +60,7 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
   }, [appSettings.data]);
 
   const saveApp = useMutation({
-    mutationFn: (value: AppSettings) => asterism().settings.updateApp(value),
+    mutationFn: (value: AppSettings) => skriv().settings.updateApp(value),
     onSuccess: async (value) => {
       setAppDraft(value);
       await client.invalidateQueries({ queryKey: ["app-settings"] });
@@ -68,14 +68,14 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
   });
 
   const save = useMutation({
-    mutationFn: (value: AiSettings) => asterism().settings.updateAi(value),
+    mutationFn: (value: AiSettings) => skriv().settings.updateAi(value),
     onSuccess: async (value) => {
       setDraft(value);
       await client.invalidateQueries({ queryKey: ["ai-settings"] });
     },
   });
   const saveCredential = useMutation({
-    mutationFn: (apiKey: string) => asterism().settings.saveCredential(apiKey),
+    mutationFn: (apiKey: string) => skriv().settings.saveCredential(apiKey),
     onSuccess: async () => {
       setOpenRouterKey("");
       await Promise.all([
@@ -85,7 +85,7 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
     },
   });
   const removeCredential = useMutation({
-    mutationFn: () => asterism().settings.deleteCredential(),
+    mutationFn: () => skriv().settings.deleteCredential(),
     onSuccess: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: ["openrouter-credential"] }),
@@ -300,7 +300,7 @@ export function SettingsPage({ extraSection = null }: { extraSection?: ReactNode
                   if (
                     await dialog.confirm({
                       title: "Restore this database snapshot?",
-                      body: "Asterism will replace the current database and restart. A safety copy is made first.",
+                      body: "Skriv will replace the current database and restart. A safety copy is made first.",
                       confirmLabel: "Restore and restart",
                       destructive: true,
                     })

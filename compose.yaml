@@ -2,18 +2,18 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: asterism
-      POSTGRES_USER: asterism
-      POSTGRES_PASSWORD: asterism
+      POSTGRES_DB: skriv
+      POSTGRES_USER: skriv
+      POSTGRES_PASSWORD: skriv
     ports:
       - "5433:5432"
     volumes:
-      - asterism-postgres:/var/lib/postgresql/data
+      - skriv-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U asterism -d asterism"]
+      test: ["CMD-SHELL", "pg_isready -U skriv -d skriv"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  asterism-postgres:
+  skriv-postgres:

@@ -1,5 +1,5 @@
-import type { CompendiumEntry } from "@asterism/contracts";
-import { findMentions } from "@asterism/core";
+import type { CompendiumEntry } from "@skriv/contracts";
+import { findMentions } from "@skriv/core";
 import type { ReactNode } from "react";
 
 export function CompendiumMentionText({

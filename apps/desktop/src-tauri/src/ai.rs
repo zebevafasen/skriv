@@ -57,7 +57,7 @@ fn client() -> NativeResult<Client> {
     Client::builder()
         .connect_timeout(Duration::from_secs(15))
         .timeout(Duration::from_secs(60 * 10))
-        .user_agent("Asterism/0.1")
+        .user_agent("Skriv/0.1")
         .build()
         .map_err(|error| NativeError::Provider(error.to_string()))
 }
@@ -133,8 +133,8 @@ pub async fn openrouter_stream(
     let response = http
         .post(OPENROUTER_CHAT_URL)
         .bearer_auth(key)
-        .header("HTTP-Referer", "https://asterism.local")
-        .header("X-Title", "Asterism")
+        .header("HTTP-Referer", "https://skriv.local")
+        .header("X-Title", "Skriv")
         .json(&payload)
         .send()
         .await;

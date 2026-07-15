@@ -1,12 +1,12 @@
 [package]
-name = "asterism"
+name = "skriv"
 version = "0.1.1"
 description = "A private desktop workspace for planning and writing long-form fiction"
 authors = ["zebevafasen"]
 edition = "2021"
 
 [lib]
-name = "asterism_lib"
+name = "skriv_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

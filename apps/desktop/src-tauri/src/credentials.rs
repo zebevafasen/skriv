@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use crate::error::{NativeError, NativeResult};
 
-const SERVICE: &str = "com.zebevafasen.asterism";
+const SERVICE: &str = "com.zebevafasen.skriv";
 const OPENROUTER_ACCOUNT: &str = "openrouter-api-key";
 const OPENROUTER_BASE_URL: &str = "https://openrouter.ai/api/v1";
 
@@ -84,7 +84,7 @@ fn status_for(secret: Option<&str>) -> CredentialStatus {
 fn client() -> NativeResult<Client> {
     Client::builder()
         .timeout(Duration::from_secs(20))
-        .user_agent("Asterism/0.1")
+        .user_agent("Skriv/0.1")
         .build()
         .map_err(|error| NativeError::Provider(error.to_string()))
 }

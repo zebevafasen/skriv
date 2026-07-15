@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createAsterismClient, type PlatformCapabilities } from "./client.js";
+import { createSkrivClient, type PlatformCapabilities } from "./client.js";
 
 const platforms: PlatformCapabilities[] = [
   {
@@ -18,10 +18,10 @@ const platforms: PlatformCapabilities[] = [
   },
 ];
 
-describe.each(platforms)("AsterismClient $platform conformance", (capabilities) => {
+describe.each(platforms)("SkrivClient $platform conformance", (capabilities) => {
   it("routes domain methods through the same typed operation surface", async () => {
     const operations: string[] = [];
-    const client = createAsterismClient(
+    const client = createSkrivClient(
       {
         async request(path, init) {
           operations.push(`${init?.method ?? "GET"} ${path}`);

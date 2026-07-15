@@ -7,8 +7,8 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
   await expect(page.getByRole("heading", { name: "Your stories" })).toBeVisible();
   await page.request.patch("/api/settings/ai", {
     data: {
-      baseModel: "asterism/fake-prose",
-      contextModel: "asterism/fake-context",
+      baseModel: "skriv/fake-prose",
+      contextModel: "skriv/fake-context",
       smartContextEnabled: true,
       recursionDepth: 2,
     },
@@ -202,7 +202,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       persistedPremise,
     );
 
-    await page.evaluate(() => localStorage.setItem("asterism-latest-model", "asterism/fake-prose"));
+    await page.evaluate(() => localStorage.setItem("skriv-latest-model", "skriv/fake-prose"));
     await page.getByRole("button", { name: "Chat" }).click();
     await expect(page).toHaveURL(/tab=chat/);
     await page.getByRole("button", { name: "New thread" }).click();

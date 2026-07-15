@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projectSettingsSchema, type Project } from "@asterism/contracts";
+import { projectSettingsSchema, type Project } from "@skriv/contracts";
 import { renderManuscriptExport, safeExportFilename } from "./exporter.js";
 
 const project: Project = {
@@ -13,7 +13,7 @@ const project: Project = {
 describe("manuscript exporter", () => {
   it("creates portable filenames", () => {
     expect(safeExportFilename("  A Story: Stars & Snow  ")).toBe("a-story-stars-snow");
-    expect(safeExportFilename("***")).toBe("asterism-story");
+    expect(safeExportFilename("***")).toBe("skriv-story");
   });
 
   it("projects rich text into Markdown without empty scenes", async () => {

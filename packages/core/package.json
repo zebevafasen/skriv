@@ -1,5 +1,5 @@
 {
-  "name": "@asterism/core",
+  "name": "@skriv/core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,6 +12,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@asterism/contracts": "workspace:*"
+    "@skriv/contracts": "workspace:*"
   }
 }

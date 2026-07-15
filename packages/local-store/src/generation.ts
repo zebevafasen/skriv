@@ -1,13 +1,13 @@
-import { AppError } from "@asterism/application";
-import { basePackage, getBuiltinPrompt } from "@asterism/content";
+import { AppError } from "@skriv/application";
+import { basePackage, getBuiltinPrompt } from "@skriv/content";
 import {
   acceptGenerationInputSchema,
   generationRequestSchema,
   type GenerationRequest,
   type GenerationStreamEvent,
   type PromptDefinition,
-} from "@asterism/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@asterism/core";
+} from "@skriv/contracts";
+import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";

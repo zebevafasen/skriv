@@ -3,11 +3,11 @@ import {
   type PromptMessage,
   type WorkflowKey,
   workflowVariables,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, FileInput, LockKeyhole, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 
@@ -312,7 +312,7 @@ export function PromptsPage() {
   const dialog = useAppDialog();
   const query = useQuery({
     queryKey: ["prompts"],
-    queryFn: () => asterism().prompts.list() as Promise<PromptPayload>,
+    queryFn: () => skriv().prompts.list() as Promise<PromptPayload>,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -349,7 +349,7 @@ export function PromptsPage() {
   const refresh = () => client.invalidateQueries({ queryKey: ["prompts"] });
   const save = useMutation({
     mutationFn: (prompt: PromptDefinition) =>
-      asterism().prompts.update(prompt.id, {
+      skriv().prompts.update(prompt.id, {
         name: prompt.name,
         description: prompt.description,
         messages: prompt.messages,
@@ -361,7 +361,7 @@ export function PromptsPage() {
     },
   });
   const create = useMutation({
-    mutationFn: (prompt: EditablePrompt) => asterism().prompts.create(prompt),
+    mutationFn: (prompt: EditablePrompt) => skriv().prompts.create(prompt),
     onSuccess: async (prompt) => {
       setCreating(false);
       await refresh();
@@ -369,7 +369,7 @@ export function PromptsPage() {
     },
   });
   const remove = useMutation({
-    mutationFn: (promptId: string) => asterism().prompts.remove(promptId),
+    mutationFn: (promptId: string) => skriv().prompts.remove(promptId),
     onSuccess: async () => {
       setSelectedId(null);
       await refresh();
@@ -377,7 +377,7 @@ export function PromptsPage() {
   });
   const bind = useMutation({
     mutationFn: ({ workflow, promptId }: { workflow: WorkflowKey; promptId: string | null }) =>
-      asterism().prompts.bind(workflow, promptId),
+      skriv().prompts.bind(workflow, promptId),
     onSuccess: refresh,
   });
 

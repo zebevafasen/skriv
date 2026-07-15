@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import { basePackage } from "@asterism/content";
+import { AppError } from "@skriv/application";
+import { basePackage } from "@skriv/content";
 import {
   aiSettingsSchema,
   appSettingsSchema,
@@ -11,8 +11,8 @@ import {
   updateEditorSettingsInputSchema,
   updatePromptInputSchema,
   workflowKeySchema,
-} from "@asterism/contracts";
-import { validatePromptDefinition } from "@asterism/core";
+} from "@skriv/contracts";
+import { validatePromptDefinition } from "@skriv/core";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";

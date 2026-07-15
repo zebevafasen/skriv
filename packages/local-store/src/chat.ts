@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import { getBuiltinPrompt } from "@asterism/content";
+import { AppError } from "@skriv/application";
+import { getBuiltinPrompt } from "@skriv/content";
 import {
   createChatThreadInputSchema,
   sendChatMessageInputSchema,
@@ -7,8 +7,8 @@ import {
   type ChatMessage,
   type ChatStreamEvent,
   updateChatThreadInputSchema,
-} from "@asterism/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@asterism/core";
+} from "@skriv/contracts";
+import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { LocalDatabase } from "./database.js";
 import { cancelNativeAi, streamNativeAi } from "./native-ai.js";

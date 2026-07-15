@@ -1,4 +1,4 @@
-import type { ProjectNote } from "@asterism/contracts";
+import type { ProjectNote } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -7,7 +7,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ArrowLeft, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
 
@@ -42,13 +42,13 @@ function NoteEditor({
   const saveQueue = useRef<Promise<ProjectNote | null>>(Promise.resolve(null));
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
-  const nativeSpellcheck = asterism().capabilities.platform !== "desktop";
+  const nativeSpellcheck = skriv().capabilities.platform !== "desktop";
 
   const persist = useCallback(
     (payload: object) => {
       saveQueue.current = saveQueue.current.then(async () => {
         try {
-          const updated = await asterism().notes.update(note.id, {
+          const updated = await skriv().notes.update(note.id, {
             expectedVersion: versionRef.current,
             ...payload,
           });
@@ -174,7 +174,7 @@ function NoteEditor({
             try {
               if (saveTimer.current) clearTimeout(saveTimer.current);
               await saveQueue.current;
-              await asterism().notes.remove(note.id);
+              await skriv().notes.remove(note.id);
               onDeleted();
             } catch (deleteError) {
               setError(deleteError);
@@ -192,7 +192,7 @@ function NoteEditor({
             className="button ghost"
             onClick={async () => {
               try {
-                const remote = await asterism().notes.get(note.id);
+                const remote = await skriv().notes.get(note.id);
                 versionRef.current = remote.version;
                 documentRef.current = JSON.stringify(remote.document);
                 setTitle(remote.title);
@@ -274,10 +274,10 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const notes = useQuery({
     queryKey: ["project-notes", projectId],
-    queryFn: () => asterism().notes.list(projectId),
+    queryFn: () => skriv().notes.list(projectId),
   });
   const create = useMutation({
-    mutationFn: () => asterism().notes.create(projectId, {}),
+    mutationFn: () => skriv().notes.create(projectId, {}),
     onSuccess: (note) => {
       client.setQueryData<ProjectNote[]>(["project-notes", projectId], (current = []) =>
         sortNotes([note, ...current]),

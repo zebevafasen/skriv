@@ -1,4 +1,4 @@
-import type { CompendiumEntry, ManuscriptTree, PromptDefinition, Scene } from "@asterism/contracts";
+import type { CompendiumEntry, ManuscriptTree, PromptDefinition, Scene } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import {
   discoverEntries,

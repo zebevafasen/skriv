@@ -1,5 +1,5 @@
 {
-  "name": "@asterism/desktop",
+  "name": "@skriv/desktop",
   "version": "0.1.1",
   "private": true,
   "type": "module",
@@ -13,10 +13,10 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@asterism/application": "workspace:*",
-    "@asterism/contracts": "workspace:*",
-    "@asterism/local-store": "workspace:*",
-    "@asterism/ui": "workspace:*",
+    "@skriv/application": "workspace:*",
+    "@skriv/contracts": "workspace:*",
+    "@skriv/local-store": "workspace:*",
+    "@skriv/ui": "workspace:*",
     "@tauri-apps/api": "^2.0.0",
     "@tanstack/react-query": "5.101.2",
     "@tanstack/react-router": "1.170.17",

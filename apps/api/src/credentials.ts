@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { type AIProvider, OpenRouterProvider } from "@asterism/ai";
-import { AppError } from "@asterism/application";
-import { providerCredentials } from "@asterism/db";
+import { type AIProvider, OpenRouterProvider } from "@skriv/ai";
+import { AppError } from "@skriv/application";
+import { providerCredentials } from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { AppContext } from "./context.js";
 
@@ -71,7 +71,7 @@ export function createProviderResolver(
 ): (userId: string, model?: string) => Promise<AIProvider> {
   return async (userId, model) => {
     if (
-      model?.startsWith("asterism/fake-") &&
+      model?.startsWith("skriv/fake-") &&
       context.env.NODE_ENV === "test" &&
       context.defaultAi?.name === "fake"
     ) {

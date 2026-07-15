@@ -1,4 +1,4 @@
-import { approximateTokens } from "@asterism/core";
+import { approximateTokens } from "@skriv/core";
 
 export type ChatContextProvenance = {
   reason: "explicit" | "user_mention" | "canonical" | "always" | "recursive" | "smart";

@@ -1,16 +1,16 @@
 import {
   AppError,
-  createAsterismClient,
+  createSkrivClient,
   type AppErrorCode,
   type ClientRequest,
   type RequestTransport,
-} from "@asterism/application";
+} from "@skriv/application";
 import type {
   ChatStreamEvent,
   GenerationRequest,
   GenerationStreamEvent,
   ManuscriptExportOptions,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 
 type ErrorPayload = { error?: { code?: string; message?: string; details?: unknown } };
 
@@ -152,7 +152,7 @@ function chooseArchive(): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".asterism,.json,application/json,application/zip";
+    input.accept = ".skriv,.json,application/json,application/zip";
     input.onchange = () => resolve(input.files?.[0] ?? null);
     input.addEventListener("cancel", () => resolve(null), { once: true });
     input.click();
@@ -160,7 +160,7 @@ function chooseArchive(): Promise<File | null> {
 }
 
 export function createWebClient() {
-  return createAsterismClient(
+  return createSkrivClient(
     transport,
     {
       generation(input: GenerationRequest, onEvent, signal) {
@@ -203,7 +203,7 @@ export function createWebClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(options),
         });
-        download(await response.blob(), filename(response, `asterism-export.${options.format}`));
+        download(await response.blob(), filename(response, `skriv-export.${options.format}`));
       },
       async importProject() {
         const file = await chooseArchive();
@@ -215,7 +215,7 @@ export function createWebClient() {
           );
           const upload = await fetch(transfer.uploadUrl, {
             method: "PUT",
-            headers: { "Content-Type": "application/vnd.asterism.project+zip" },
+            headers: { "Content-Type": "application/vnd.skriv.project+zip" },
             body: file,
           });
           if (!upload.ok)

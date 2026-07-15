@@ -2,7 +2,7 @@ import type {
   ProjectIngredientPack,
   IngredientPack,
   IngredientPackCatalog,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { Check, ChevronDown, Minus, Search, Settings2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 

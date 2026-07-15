@@ -3,7 +3,7 @@ describe("restart persistence", () => {
     const libraryHeading = await $("h1=Your stories");
     await libraryHeading.waitForDisplayed({
       timeout: 30_000,
-      timeoutMsg: `Asterism did not reach the library. Body: ${await $("body").getText()}`,
+      timeoutMsg: `Skriv did not reach the library. Body: ${await $("body").getText()}`,
     });
     const projectCard = await $("h2=E2E Northern Lights");
     await projectCard.waitForDisplayed({ timeout: 15_000 });

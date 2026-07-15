@@ -8,8 +8,8 @@ test("turns a chosen premise into reviewed Compendium entries and a first-Scene 
   await page.goto("/");
   await page.request.patch("/api/settings/ai", {
     data: {
-      baseModel: "asterism/fake-prose",
-      contextModel: "asterism/fake-context",
+      baseModel: "skriv/fake-prose",
+      contextModel: "skriv/fake-context",
       smartContextEnabled: true,
       recursionDepth: 2,
     },

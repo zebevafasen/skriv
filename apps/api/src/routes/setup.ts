@@ -1,4 +1,4 @@
-import { basePackage } from "@asterism/content";
+import { basePackage } from "@skriv/content";
 import {
   createIngredientPackCategoryInputSchema,
   createIngredientPackCollectionInputSchema,
@@ -13,7 +13,7 @@ import {
   updateIngredientPackCategoryInputSchema,
   updateIngredientPackCollectionInputSchema,
   updateIngredientPackInputSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   compendiumEntries,
   projectDefaults,
@@ -21,7 +21,7 @@ import {
   ingredientPackCatalogNodes,
   ingredientPacks,
   touchUpdatedAt,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

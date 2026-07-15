@@ -1,12 +1,12 @@
-import { basePackage, getBuiltinPrompt } from "@asterism/content";
+import { basePackage, getBuiltinPrompt } from "@skriv/content";
 import {
   createPromptInputSchema,
   promptDefinitionSchema,
   updatePromptInputSchema,
   workflowKeySchema,
-} from "@asterism/contracts";
-import { validatePromptDefinition } from "@asterism/core";
-import { promptDefinitions, touchUpdatedAt, workflowBindings } from "@asterism/db";
+} from "@skriv/contracts";
+import { validatePromptDefinition } from "@skriv/core";
+import { promptDefinitions, touchUpdatedAt, workflowBindings } from "@skriv/db";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

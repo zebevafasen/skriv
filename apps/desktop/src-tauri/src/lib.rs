@@ -23,7 +23,7 @@ pub fn run() {
                     tokio::time::sleep(std::time::Duration::from_secs(6 * 60 * 60)).await;
                     let state = handle.state::<database::DatabaseState>();
                     if let Err(error) = backups::ensure_daily_database_snapshot(&state).await {
-                        eprintln!("Asterism daily backup failed: {error}");
+                        eprintln!("Skriv daily backup failed: {error}");
                     }
                 }
             });
@@ -50,5 +50,5 @@ pub fn run() {
             files::open_project_archive,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Asterism");
+        .expect("error while running Skriv");
 }

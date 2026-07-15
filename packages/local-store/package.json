@@ -1,5 +1,5 @@
 {
-  "name": "@asterism/local-store",
+  "name": "@skriv/local-store",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,10 +13,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@asterism/application": "workspace:*",
-    "@asterism/content": "workspace:*",
-    "@asterism/contracts": "workspace:*",
-    "@asterism/core": "workspace:*",
+    "@skriv/application": "workspace:*",
+    "@skriv/content": "workspace:*",
+    "@skriv/contracts": "workspace:*",
+    "@skriv/core": "workspace:*",
     "@tauri-apps/api": "^2.0.0",
     "drizzle-orm": "0.45.2",
     "zod": "4.4.3"

@@ -1,5 +1,5 @@
-import { basePackage } from "@asterism/content";
-import { renderPrompt } from "@asterism/core";
+import { basePackage } from "@skriv/content";
+import { renderPrompt } from "@skriv/core";
 import { describe, expect, it } from "vitest";
 import {
   continuationMessages,

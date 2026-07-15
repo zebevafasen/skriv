@@ -1,4 +1,4 @@
-import { getOutlinePreset } from "@asterism/content";
+import { getOutlinePreset } from "@skriv/content";
 import {
   actSchema,
   type CompendiumContent,
@@ -15,7 +15,7 @@ import {
   sceneMetadataSchema,
   updateProjectInputSchema,
   updateSceneInputSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   acts,
   chapters,
@@ -27,7 +27,7 @@ import {
   scenes,
   touchUpdatedAt,
   workspaceMembers,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, asc, desc, eq, gte, inArray, max, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

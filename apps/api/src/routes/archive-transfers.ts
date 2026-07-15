@@ -2,8 +2,8 @@ import {
   MAX_ARCHIVE_UNCOMPRESSED_BYTES,
   decodeProjectArchive,
   encodeProjectArchive,
-} from "@asterism/application";
-import { archiveTransfers } from "@asterism/db";
+} from "@skriv/application";
+import { archiveTransfers } from "@skriv/db";
 import { del, get, issueSignedToken, list, presignUrl, put } from "@vercel/blob";
 import { and, eq, inArray, lt, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -33,7 +33,7 @@ async function signedUrl(
     validUntil,
     ...(operation === "put"
       ? {
-          allowedContentTypes: ["application/vnd.asterism.project+zip", "application/zip"],
+          allowedContentTypes: ["application/vnd.skriv.project+zip", "application/zip"],
           maximumSizeInBytes: MAX_ARCHIVE_UNCOMPRESSED_BYTES,
         }
       : {}),
@@ -46,7 +46,7 @@ async function signedUrl(
     validUntil,
     ...(operation === "put"
       ? {
-          allowedContentTypes: ["application/vnd.asterism.project+zip", "application/zip"],
+          allowedContentTypes: ["application/vnd.skriv.project+zip", "application/zip"],
           maximumSizeInBytes: MAX_ARCHIVE_UNCOMPRESSED_BYTES,
           allowOverwrite: false,
         }
@@ -93,7 +93,7 @@ export async function registerArchiveTransferRoutes(
 ): Promise<void> {
   app.post("/api/archive-transfers/import", async (request, reply) => {
     const id = crypto.randomUUID();
-    const pathname = `archive-transfers/${request.userId}/${id}.asterism`;
+    const pathname = `archive-transfers/${request.userId}/${id}.skriv`;
     const validUntil = Date.now() + lifetime;
     await context.db.insert(archiveTransfers).values({
       id,
@@ -134,12 +134,12 @@ export async function registerArchiveTransferRoutes(
     const loaded = await loadHostedProjectArchive(context, projectId);
     if (!loaded) return notFound(reply, "Project not found.");
     const id = crypto.randomUUID();
-    const pathname = `archive-transfers/${request.userId}/${id}.asterism`;
+    const pathname = `archive-transfers/${request.userId}/${id}.skriv`;
     const validUntil = Date.now() + lifetime;
     const bytes = await encodeProjectArchive(loaded.project, loaded.assets, "web-0.1.0");
     await put(pathname, Buffer.from(bytes), {
       access: "private",
-      contentType: "application/vnd.asterism.project+zip",
+      contentType: "application/vnd.skriv.project+zip",
       cacheControlMaxAge: 60,
       ...blobOptions(context),
     });
@@ -154,7 +154,7 @@ export async function registerArchiveTransferRoutes(
     return reply.code(201).send({
       transferId: id,
       downloadUrl: presignedUrl,
-      filename: `${loaded.project.project.title.replace(/[^a-z0-9_-]+/gi, "-") || "asterism-story"}.asterism`,
+      filename: `${loaded.project.project.title.replace(/[^a-z0-9_-]+/gi, "-") || "skriv-story"}.skriv`,
       expiresAt: new Date(validUntil).toISOString(),
     });
   });

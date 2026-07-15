@@ -1,3 +1,3 @@
 fn main() {
-    asterism_lib::run();
+    skriv_lib::run();
 }

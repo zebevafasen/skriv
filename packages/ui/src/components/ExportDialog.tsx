@@ -1,5 +1,5 @@
-import type { ManuscriptExportOptions } from "@asterism/contracts";
-import { getAsterismClient } from "@asterism/application";
+import type { ManuscriptExportOptions } from "@skriv/contracts";
+import { getSkrivClient } from "@skriv/application";
 import { Download, X } from "lucide-react";
 import { useState } from "react";
 
@@ -19,7 +19,7 @@ export function ExportDialog({ projectId, onClose }: { projectId: string; onClos
     setPending(true);
     setError("");
     try {
-      await getAsterismClient().archives.exportProject(projectId, options);
+      await getSkrivClient().archives.exportProject(projectId, options);
       onClose();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Export failed.");
@@ -52,7 +52,7 @@ export function ExportDialog({ projectId, onClose }: { projectId: string; onClos
               }))
             }
           >
-            <option value="json">Asterism project (.asterism)</option>
+            <option value="json">Skriv project (.skriv)</option>
             <option value="markdown">Markdown</option>
             <option value="docx">Word document (.docx)</option>
             <option value="pdf">PDF</option>

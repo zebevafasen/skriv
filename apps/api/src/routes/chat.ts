@@ -8,7 +8,7 @@ import {
   createChatThreadInputSchema,
   sendChatMessageInputSchema,
   updateChatThreadInputSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import {
   approximateTokens,
   discoverEntries,
@@ -16,7 +16,7 @@ import {
   formatManuscriptLabel,
   normalizeEntry,
   renderPrompt,
-} from "@asterism/core";
+} from "@skriv/core";
 import {
   acts,
   chapters,
@@ -26,7 +26,7 @@ import {
   scenes,
   touchUpdatedAt,
   usageEvents,
-} from "@asterism/db";
+} from "@skriv/db";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { z } from "zod";

@@ -1,7 +1,7 @@
-import type { SceneLabel, SceneLabelColor, SceneLabelPack } from "@asterism/contracts";
+import type { SceneLabel, SceneLabelColor, SceneLabelPack } from "@skriv/contracts";
 import { Layers3, Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { editableLabelColors, projectLabelLibrary } from "../utils/sceneLabelPacks.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
@@ -126,7 +126,7 @@ export function LabelPackManager({
     setBusy(true);
     setError(null);
     try {
-      await asterism().projects.update(projectId, { settings: { labelPacks: draftPacks } });
+      await skriv().projects.update(projectId, { settings: { labelPacks: draftPacks } });
       await onSaved();
       onClose();
     } catch (cause) {

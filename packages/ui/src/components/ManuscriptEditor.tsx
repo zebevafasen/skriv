@@ -7,8 +7,8 @@ import type {
   ManuscriptTree,
   Scene,
   SelectionAction,
-} from "@asterism/contracts";
-import { findMentions, manuscriptLabels } from "@asterism/core";
+} from "@skriv/contracts";
+import { findMentions, manuscriptLabels } from "@skriv/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Editor,
@@ -64,12 +64,12 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { asterism, streamGeneration } from "../api.js";
+import { skriv, streamGeneration } from "../api.js";
 import {
-  AsterismDecorations,
+  SkrivDecorations,
   setCandidateDecoration,
   setMentionDecorations,
-} from "../editor/AsterismDecorations.js";
+} from "../editor/SkrivDecorations.js";
 import { generatedProseContent } from "../editor/generatedProse.js";
 import {
   compositeDocument,
@@ -211,7 +211,7 @@ const ManuscriptHeadingView = (props: NodeViewProps) => {
     e.currentTarget.textContent = newTitle; // format text cleanly on blur
     if (newTitle !== props.node.attrs.title) {
       props.updateAttributes({ title: newTitle });
-      void asterism()
+      void skriv()
         .manuscript.updateItem(isAct ? "act" : "chapter", props.node.attrs.id, {
           title: newTitle,
         })
@@ -546,10 +546,10 @@ export const ManuscriptEditor = forwardRef<
 ) {
   const queryClient = useQueryClient();
   // WebView2 selects its native spelling dictionary from the host Windows
-  // language packs, not Asterism's per-project language. When they differ it
+  // language packs, not Skriv's per-project language. When they differ it
   // can underline nearly every word, so keep native spellcheck in the browser
   // product and disable the unreliable WebView2 layer on desktop.
-  const nativeSpellcheck = asterism().capabilities.platform !== "desktop";
+  const nativeSpellcheck = skriv().capabilities.platform !== "desktop";
   const visibleScenes = useMemo(() => scenesForScope(tree, scope), [tree, scope]);
   const scopeKey = `${scope.kind}:${"id" in scope ? scope.id : "all"}`;
   const [typographyOpen, setTypographyOpen] = useState(false);
@@ -590,10 +590,10 @@ export const ManuscriptEditor = forwardRef<
   const consumedFirstSceneIntentRef = useRef<string | null>(null);
   const settingsQuery = useQuery({
     queryKey: ["editor-settings"],
-    queryFn: () => asterism().settings.editor(),
+    queryFn: () => skriv().settings.editor(),
   });
   const settingsMutation = useMutation({
-    mutationFn: (value: EditorSettings) => asterism().settings.updateEditor(value),
+    mutationFn: (value: EditorSettings) => skriv().settings.updateEditor(value),
     onSuccess: (value) => {
       queryClient.setQueryData(["editor-settings"], value);
     },
@@ -627,7 +627,7 @@ export const ManuscriptEditor = forwardRef<
     if (existingTimer) clearTimeout(existingTimer);
     saveTimers.current.delete(sceneId);
     try {
-      const updated = await asterism().manuscript.updateScene(sceneId, {
+      const updated = await skriv().manuscript.updateScene(sceneId, {
         expectedVersion: versionRefs.current.get(sceneId),
         document: extracted.document,
         plainText: extracted.plainText,
@@ -661,8 +661,8 @@ export const ManuscriptEditor = forwardRef<
         SceneBlock,
         SceneBeat,
         LockedSceneBoundaries,
-        Placeholder.configure({ placeholder: "Begin the scene… Press / for Asterism." }),
-        AsterismDecorations,
+        Placeholder.configure({ placeholder: "Begin the scene… Press / for Skriv." }),
+        SkrivDecorations,
       ],
       content: compositeDocument(tree, scope),
       editorProps: {
@@ -674,7 +674,7 @@ export const ManuscriptEditor = forwardRef<
           if (text !== "/") return false;
           const sceneBeat = view.state.schema.nodes.sceneBeat;
           if (!sceneBeat) return false;
-          const latestModel = localStorage.getItem("asterism-latest-model");
+          const latestModel = localStorage.getItem("skriv-latest-model");
           const attrs = latestModel ? { modelOverride: latestModel } : {};
           view.dispatch(view.state.tr.replaceSelectionWith(sceneBeat.create(attrs)));
           return true;
@@ -684,7 +684,7 @@ export const ManuscriptEditor = forwardRef<
             event.preventDefault();
             const sceneBeat = view.state.schema.nodes.sceneBeat;
             if (!sceneBeat) return false;
-            const latestModel = localStorage.getItem("asterism-latest-model");
+            const latestModel = localStorage.getItem("skriv-latest-model");
             const attrs = latestModel ? { modelOverride: latestModel } : {};
             view.dispatch(view.state.tr.replaceSelectionWith(sceneBeat.create(attrs)));
             return true;
@@ -1081,7 +1081,7 @@ export const ManuscriptEditor = forwardRef<
     const extracted = extractScene(editor, active.sceneId);
     if (!extracted) return;
     try {
-      const updated = await asterism().generation.accept(active.id, {
+      const updated = await skriv().generation.accept(active.id, {
         expectedSceneVersion: versionRefs.current.get(active.sceneId),
         document: extracted.document,
         plainText: extracted.plainText,
@@ -1099,7 +1099,7 @@ export const ManuscriptEditor = forwardRef<
     }
   };
   const reject = async () => {
-    if (active?.id) await asterism().generation.reject(active.id).catch(setError);
+    if (active?.id) await skriv().generation.reject(active.id).catch(setError);
     activeRef.current = null;
     setActive(null);
     setSelectionMenu(null);
@@ -1108,7 +1108,7 @@ export const ManuscriptEditor = forwardRef<
   const cancel = async () => {
     abortRef.current?.abort();
     if (active?.id)
-      await asterism()
+      await skriv()
         .generation.cancel(active.id)
         .catch(() => undefined);
     activeRef.current = null;
@@ -1123,7 +1123,7 @@ export const ManuscriptEditor = forwardRef<
     setActive(currentActive);
     abortRef.current?.abort();
     if (active.id) {
-      await asterism()
+      await skriv()
         .generation.cancel(active.id, { candidateText: active.text })
         .catch(() => undefined);
     }
@@ -1139,13 +1139,13 @@ export const ManuscriptEditor = forwardRef<
     };
     activeRef.current = pending;
     setActive(pending);
-    if (id) await asterism().generation.reject(id).catch(setError);
+    if (id) await skriv().generation.reject(id).catch(setError);
     await startGeneration(options, position, text);
   };
   const loadHistory = async () => {
     if (!activeSceneId) return;
     try {
-      setRevisions(await asterism().manuscript.revisions(activeSceneId));
+      setRevisions(await skriv().manuscript.revisions(activeSceneId));
       setHistoryOpen(true);
     } catch (historyError) {
       setError(historyError);
@@ -1216,7 +1216,7 @@ export const ManuscriptEditor = forwardRef<
             [...saveTimers.current.keys()].map((sceneId) => saveScene(editor, sceneId)),
           );
         }
-        const created = await asterism().manuscript.createItem(tree.project.id, input);
+        const created = await skriv().manuscript.createItem(tree.project.id, input);
         await queryClient.invalidateQueries({ queryKey: ["project-tree", tree.project.id] });
         onSelectScene(created.initialSceneId);
       } catch (creationError) {
@@ -1272,7 +1272,7 @@ export const ManuscriptEditor = forwardRef<
                 disabled={!aiConfigured}
                 title={aiConfigured ? "Add a Scene Beat" : "Configure OpenRouter in Settings"}
                 onClick={() => {
-                  const latestModel = localStorage.getItem("asterism-latest-model");
+                  const latestModel = localStorage.getItem("skriv-latest-model");
                   const attrs = latestModel ? { modelOverride: latestModel } : {};
                   editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
                 }}
@@ -1512,7 +1512,7 @@ export const ManuscriptEditor = forwardRef<
               disabled={!aiConfigured}
               title={aiConfigured ? "Add a Scene Beat" : "Configure OpenRouter in Settings"}
               onClick={() => {
-                const latestModel = localStorage.getItem("asterism-latest-model");
+                const latestModel = localStorage.getItem("skriv-latest-model");
                 const attrs = latestModel ? { modelOverride: latestModel } : {};
                 editor?.chain().focus().insertContent({ type: "sceneBeat", attrs }).run();
               }}
@@ -1919,7 +1919,7 @@ export const ManuscriptEditor = forwardRef<
             onClick={async () => {
               const sceneId = [...conflicts][0];
               if (!editor || !sceneId) return;
-              const remote = await asterism().manuscript.scene(sceneId);
+              const remote = await skriv().manuscript.scene(sceneId);
               versionRefs.current.set(sceneId, remote.version);
               documentRefs.current.set(sceneId, JSON.stringify(remote.document));
               onSaved(remote);
@@ -1942,10 +1942,10 @@ export const ManuscriptEditor = forwardRef<
               <>
                 <RefreshCw className="spin" size={15} />
                 {active.continuation > 0
-                  ? `Asterism is continuing… (${active.continuation + 1})`
+                  ? `Skriv is continuing… (${active.continuation + 1})`
                   : active.previousText === null
-                    ? "Asterism is writing…"
-                    : "Asterism is rewriting…"}
+                    ? "Skriv is writing…"
+                    : "Skriv is rewriting…"}
               </>
             ) : active.status === "complete" ? (
               "Candidate ready"
@@ -2009,7 +2009,7 @@ export const ManuscriptEditor = forwardRef<
                     type="button"
                     className="button ghost"
                     onClick={async () => {
-                      const restored = await asterism().manuscript.restoreRevision(
+                      const restored = await skriv().manuscript.restoreRevision(
                         activeSceneId,
                         revision.id,
                       );

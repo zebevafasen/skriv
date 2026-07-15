@@ -6,11 +6,11 @@ import { build } from "esbuild";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceAliases = Object.fromEntries(
   ["ai", "application", "config", "content", "contracts", "core", "db"].map((name) => [
-    `@asterism/${name}`,
+    `@skriv/${name}`,
     resolve(root, `packages/${name}/src/index.ts`),
   ]),
 );
-workspaceAliases["@asterism/db/schema"] = resolve(root, "packages/db/src/schema.ts");
+workspaceAliases["@skriv/db/schema"] = resolve(root, "packages/db/src/schema.ts");
 
 await mkdir(resolve(root, ".vercel-build"), { recursive: true });
 await build({

@@ -239,7 +239,7 @@ function SceneBeatView(props: NodeViewProps) {
                   value={modelOverride ?? baseModel}
                   onChange={(v) => {
                     updateAttr("modelOverride", v === baseModel ? null : v);
-                    localStorage.setItem("asterism-latest-model", v);
+                    localStorage.setItem("skriv-latest-model", v);
                   }}
                   models={models}
                 />

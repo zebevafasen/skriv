@@ -27,11 +27,11 @@ describe("project access history", () => {
   });
 
   it("ignores malformed stored history", () => {
-    localStorage.setItem("asterism:library:project-access", "not json");
+    localStorage.setItem("skriv:library:project-access", "not json");
     expect(readProjectAccessHistory()).toEqual({});
 
     localStorage.setItem(
-      "asterism:library:project-access",
+      "skriv:library:project-access",
       JSON.stringify({ valid: "2026-07-15T11:30:00.000Z", invalid: 42, badDate: "yesterday" }),
     );
     expect(readProjectAccessHistory()).toEqual({ valid: "2026-07-15T11:30:00.000Z" });

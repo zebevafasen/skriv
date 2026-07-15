@@ -1,4 +1,4 @@
-import { projectSettingsSchema, type ProjectArchiveV5 } from "@asterism/contracts";
+import { projectSettingsSchema, type ProjectArchiveV5 } from "@skriv/contracts";
 import { unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { decodeProjectArchive, encodeProjectArchive } from "./archive-codec.js";

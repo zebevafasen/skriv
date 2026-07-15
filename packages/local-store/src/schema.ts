@@ -8,7 +8,7 @@ import type {
   SceneMetadata,
   TiptapNode,
   WorkflowKey,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { relations, sql } from "drizzle-orm";
 import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
@@ -241,7 +241,7 @@ export const editorSettings = sqliteTable("editor_settings", {
 export const appSettings = sqliteTable("app_settings", {
   id: integer("id").primaryKey().default(1),
   theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia"] })
-    .$type<import("@asterism/contracts").AppSettings["theme"]>()
+    .$type<import("@skriv/contracts").AppSettings["theme"]>()
     .notNull()
     .default("system"),
   updatedAt: text("updated_at").notNull().default(now),

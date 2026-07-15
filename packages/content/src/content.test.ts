@@ -5,7 +5,7 @@ import { builtinLabelPacks } from "./label-packs.js";
 
 describe("base content package", () => {
   it("validates and contains every implemented workflow", () => {
-    expect(validateBuiltinContent().id).toBe("asterism.base");
+    expect(validateBuiltinContent().id).toBe("skriv.base");
     expect(basePackage.genres).toHaveLength(37);
     expect(basePackage.themes).toHaveLength(41);
     expect(basePackage.tags).toHaveLength(974);

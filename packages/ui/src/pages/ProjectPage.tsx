@@ -1,5 +1,5 @@
-import type { ManuscriptTree } from "@asterism/contracts";
-import { findMentions, manuscriptLabels } from "@asterism/core";
+import type { ManuscriptTree } from "@skriv/contracts";
+import { findMentions, manuscriptLabels } from "@skriv/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
@@ -35,7 +35,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
 import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
@@ -78,7 +78,7 @@ const ProjectSettingsPanel = lazy(() =>
 type Tab = "manuscript" | "compendium" | "ideation" | "chat" | "settings";
 type ManuscriptView = "write" | "outline" | "notes";
 type Model = { id: string; name: string };
-const compendiumPreferenceKey = "asterism:workspace:compendium-open";
+const compendiumPreferenceKey = "skriv:workspace:compendium-open";
 
 function preferredCompendiumState(): boolean {
   if (window.matchMedia("(max-width: 1023px)").matches) return false;
@@ -228,23 +228,23 @@ export function ProjectPage() {
   useEffect(() => registerPersistenceFlusher(async () => editorRef.current?.flush()), []);
   const tree = useQuery({
     queryKey: ["project-tree", projectId],
-    queryFn: () => asterism().projects.tree(projectId),
+    queryFn: () => skriv().projects.tree(projectId),
   });
   const compendium = useQuery({
     queryKey: ["compendium", projectId],
-    queryFn: () => asterism().compendium.list(projectId),
+    queryFn: () => skriv().compendium.list(projectId),
   });
   const settings = useQuery({
     queryKey: ["ai-settings"],
-    queryFn: () => asterism().settings.ai(),
+    queryFn: () => skriv().settings.ai(),
   });
   const credential = useQuery({
     queryKey: ["openrouter-credential"],
-    queryFn: () => asterism().settings.credential(),
+    queryFn: () => skriv().settings.credential(),
   });
   const models = useQuery({
     queryKey: ["models"],
-    queryFn: () => asterism().settings.models() as Promise<Model[]>,
+    queryFn: () => skriv().settings.models() as Promise<Model[]>,
     enabled: credential.data?.configured === true,
   });
   const aiConfigured = credential.data?.configured === true;
@@ -825,7 +825,7 @@ export function ProjectPage() {
                       })
                     )?.trim();
                     if (!title || title === tree.data?.project.title) return;
-                    await asterism().projects.update(projectId, { title });
+                    await skriv().projects.update(projectId, { title });
                     await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
                   }}
                 >
@@ -851,7 +851,7 @@ export function ProjectPage() {
                       }))
                     )
                       return;
-                    await asterism().projects.remove(projectId);
+                    await skriv().projects.remove(projectId);
                     window.location.assign("/");
                   }}
                 >
@@ -1128,7 +1128,7 @@ export function ProjectPage() {
                     })
                   )?.trim();
                   if (!title || title === tree.data.project.title) return;
-                  await asterism().projects.update(projectId, { title });
+                  await skriv().projects.update(projectId, { title });
                   await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
                 }}
               >
@@ -1179,7 +1179,7 @@ export function ProjectPage() {
                   }))
                 )
                   return;
-                await asterism().projects.remove(projectId);
+                await skriv().projects.remove(projectId);
                 window.location.assign("/");
               }}
             >

@@ -1,4 +1,4 @@
-import type { Project } from "@asterism/contracts";
+import type { Project } from "@skriv/contracts";
 
 export type ProjectSortField = "date" | "name" | "series" | "author";
 export type ProjectSortDirection = "ascending" | "descending";

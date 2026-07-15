@@ -1,4 +1,4 @@
-import type { ManuscriptTree, Scene } from "@asterism/contracts";
+import type { ManuscriptTree, Scene } from "@skriv/contracts";
 
 export function candidateControlsLayout(editorBounds: { left: number; width: number }) {
   return {

@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import { renderManuscriptExport, safeExportFilename } from "@asterism/application/exporter";
+import { AppError } from "@skriv/application";
+import { renderManuscriptExport, safeExportFilename } from "@skriv/application/exporter";
 import {
   legacyProjectArchiveV4Schema,
   manuscriptExportOptionsSchema,
@@ -10,7 +10,7 @@ import {
   type CompendiumContent,
   type ManuscriptExportOptions,
   type ProjectArchiveV5,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { asc, eq, inArray } from "drizzle-orm";
 import { invoke } from "@tauri-apps/api/core";
 import type { LocalDatabase } from "./database.js";
@@ -218,7 +218,7 @@ export async function exportLocalProject(
     const assetPayload = await loadArchiveAssets(db, projectId, archive);
     await invoke("save_project_archive", {
       request: {
-        suggestedName: `${baseName}.asterism`,
+        suggestedName: `${baseName}.skriv`,
         applicationVersion: "0.1.1",
         project: archive,
         assets: assetPayload,

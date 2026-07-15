@@ -313,7 +313,7 @@ test("writing-first desktop workspace reclaims the canvas and persists the Compe
     await page.getByRole("button", { name: "Collapse Compendium" }).click();
     await expect(compendium).toBeHidden();
     await expect
-      .poll(() => page.evaluate(() => localStorage.getItem("asterism:workspace:compendium-open")))
+      .poll(() => page.evaluate(() => localStorage.getItem("skriv:workspace:compendium-open")))
       .toBe("false");
     await page.reload();
     await expect(compendium).toBeHidden();

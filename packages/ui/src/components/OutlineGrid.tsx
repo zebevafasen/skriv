@@ -8,8 +8,8 @@ import type {
   SceneLabelColor,
   SceneLabelPack,
   SceneMetadata,
-} from "@asterism/contracts";
-import { findMentions, manuscriptLabels } from "@asterism/core";
+} from "@skriv/contracts";
+import { findMentions, manuscriptLabels } from "@skriv/core";
 import {
   type CollisionDetection,
   closestCenter,
@@ -48,7 +48,7 @@ import {
 import type { ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { asterism } from "../api.js";
+import { skriv } from "../api.js";
 import {
   editableLabelColors,
   findLabelDefinition,
@@ -665,7 +665,7 @@ function SceneCard({
     timer.current = null;
     if (updateUi) setSaveState("saving");
     try {
-      const updated = await asterism().manuscript.updateScene(scene.id, {
+      const updated = await skriv().manuscript.updateScene(scene.id, {
         expectedVersion: version.current,
         metadata: next,
       });
@@ -753,7 +753,7 @@ function SceneCard({
     const saved = saveState === "saving" ? await persist() : null;
     const expectedVersion = saved?.version ?? version.current;
     try {
-      const updated = await asterism().manuscript.generateSummary(scene.id, {
+      const updated = await skriv().manuscript.generateSummary(scene.id, {
         expectedVersion,
         modelOverride,
       });
@@ -1021,7 +1021,7 @@ export function OutlineGrid({
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
-    queryFn: () => asterism().compendium.categories(projectId),
+    queryFn: () => skriv().compendium.categories(projectId),
   });
   const [collapsedActs, setCollapsedActs] = useState<Set<string>>(() => new Set());
   const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(() => new Set());
@@ -1148,7 +1148,7 @@ export function OutlineGrid({
     const userPacks = labelLibrary.userPacks.map((pack) =>
       pack.id === "user.default" ? { ...pack, labels: [...pack.labels, definition] } : pack,
     );
-    await asterism().projects.update(projectId, { settings: { labelPacks: userPacks } });
+    await skriv().projects.update(projectId, { settings: { labelPacks: userPacks } });
     await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
     const pack = userPacks.find((candidate) => candidate.id === "user.default");
     if (!pack) throw new Error("The default label pack is unavailable.");
@@ -1177,7 +1177,7 @@ export function OutlineGrid({
   };
   const create = async (input: CreateManuscriptItemInput) => {
     try {
-      await asterism().manuscript.createItem(projectId, input);
+      await skriv().manuscript.createItem(projectId, input);
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
     } catch (createError) {
       setError(createError);
@@ -1191,7 +1191,7 @@ export function OutlineGrid({
   ) => {
     const next = title.trim();
     try {
-      await asterism().manuscript.updateItem(kind, id, { ...body, title: next });
+      await skriv().manuscript.updateItem(kind, id, { ...body, title: next });
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
     } catch (renameError) {
       setError(renameError);
@@ -1208,7 +1208,7 @@ export function OutlineGrid({
     )
       return;
     try {
-      await asterism().manuscript.removeItem(kind, id);
+      await skriv().manuscript.removeItem(kind, id);
       await client.invalidateQueries({ queryKey: ["project-tree", projectId] });
     } catch (removeError) {
       setError(removeError);
@@ -1234,7 +1234,7 @@ export function OutlineGrid({
           const actIds = tree.acts.map((act) => act.id);
           if (actIds.includes(activeId) && actIds.includes(overId)) {
             void reorder(
-              (orderedIds) => asterism().manuscript.reorderActs(projectId, orderedIds),
+              (orderedIds) => skriv().manuscript.reorderActs(projectId, orderedIds),
               actIds,
               activeId,
               overId,
@@ -1252,7 +1252,7 @@ export function OutlineGrid({
             const chapterIds = act.chapters.map((chapter) => chapter.id);
             if (chapterIds.includes(activeId) && chapterIds.includes(overId)) {
               void reorder(
-                (orderedIds) => asterism().manuscript.reorderChapters(act.id, orderedIds),
+                (orderedIds) => skriv().manuscript.reorderChapters(act.id, orderedIds),
                 chapterIds,
                 activeId,
                 overId,
@@ -1279,7 +1279,7 @@ export function OutlineGrid({
               const sceneIds = chapter.scenes.map((scene) => scene.id);
               if (sceneIds.includes(activeId) && sceneIds.includes(overId)) {
                 void reorder(
-                  (orderedIds) => asterism().manuscript.reorderScenes(chapter.id, orderedIds),
+                  (orderedIds) => skriv().manuscript.reorderScenes(chapter.id, orderedIds),
                   sceneIds,
                   activeId,
                   overId,

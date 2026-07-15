@@ -1,5 +1,5 @@
-import { AppError } from "@asterism/application";
-import { basePackage } from "@asterism/content";
+import { AppError } from "@skriv/application";
+import { basePackage } from "@skriv/content";
 import {
   createIngredientPackCategoryInputSchema,
   createIngredientPackCollectionInputSchema,
@@ -8,7 +8,7 @@ import {
   updateIngredientPackCategoryInputSchema,
   updateIngredientPackCollectionInputSchema,
   updateIngredientPackInputSchema,
-} from "@asterism/contracts";
+} from "@skriv/contracts";
 import { and, eq, inArray } from "drizzle-orm";
 import type { LocalDatabase } from "./database.js";
 import {
