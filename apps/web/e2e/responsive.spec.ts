@@ -190,11 +190,16 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     await expect(firstOutlineCard).toBeVisible();
     const sceneActionBoxes = await Promise.all(
       [
-        firstOutlineCard.getByRole("button", { name: /Rename Scene/ }),
-        firstOutlineCard.getByRole("button", { name: /Delete Scene/ }),
+        firstOutlineCard.getByRole("button", { name: /Open Scene/ }),
+        firstOutlineCard.getByRole("button", { name: /More options for Scene/ }),
       ].map((control) => control.boundingBox()),
     );
     expect(Math.abs((sceneActionBoxes[0]?.y ?? 0) - (sceneActionBoxes[1]?.y ?? 0))).toBeLessThan(4);
+    await firstOutlineCard.getByRole("button", { name: /More options for Scene/ }).click();
+    const sceneOptions = page.getByRole("menu", { name: /Options for Scene/ });
+    await expect(sceneOptions.getByRole("menuitem", { name: "Rename" })).toBeVisible();
+    await expect(sceneOptions.getByRole("menuitem", { name: "Delete" })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expectNoDocumentOverflow(page);
 
     await page.getByRole("button", { name: "Ideation" }).click();
