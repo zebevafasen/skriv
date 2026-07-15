@@ -100,6 +100,7 @@ for (const viewport of viewports) {
 
 test("mobile workspace exposes every primary workflow without page overflow", async ({ page }) => {
   test.setTimeout(120_000);
+  page.setDefaultTimeout(10_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "Create story" }).click();
@@ -232,7 +233,7 @@ test("mobile workspace exposes every primary workflow without page overflow", as
     });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });
 
@@ -332,7 +333,7 @@ test("writing-first desktop workspace reclaims the canvas and persists the Compe
     await expect(compendium).toBeHidden();
     await expectNoDocumentOverflow(page);
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });
 
@@ -385,6 +386,6 @@ test("every project workspace exposes a working vertical scroll container", asyn
       await expectNoDocumentOverflow(page);
     }
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`);
+    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
   }
 });

@@ -57,6 +57,9 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await page.getByPlaceholder("Quick label…").fill("Foreshadowing");
     await page.getByPlaceholder("Quick label…").press("Enter");
     await expect(firstCard.getByText(/Foreshadowing/)).toBeVisible();
+    const labelMenu = page.getByRole("menu", { name: "Labels for Scene 1" });
+    await page.keyboard.press("Escape");
+    await expect(labelMenu).toBeHidden();
     await firstCard.getByRole("button", { name: "More options for Scene 1" }).click();
     await page.getByRole("menuitem", { name: "Summarize Scene" }).click();
     await page.getByRole("menuitem", { name: /Use default/ }).click();
