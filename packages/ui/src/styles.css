@@ -650,7 +650,7 @@ label small {
   position: relative;
   width: 100%;
 }
-.mention-textarea-highlights {
+.mention-textarea .mention-textarea-highlights {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -666,7 +666,7 @@ label small {
   overflow-wrap: break-word;
   pointer-events: none;
 }
-.mention-textarea-highlights mark {
+.mention-textarea .mention-textarea-highlights mark {
   color: transparent;
   background: transparent;
   text-decoration: underline dotted var(--accent-bright) 1.5px;
