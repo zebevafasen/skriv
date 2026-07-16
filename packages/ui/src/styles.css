@@ -1474,9 +1474,6 @@ label small {
 .ingredient-pack-toolbar > * {
   flex-shrink: 0;
 }
-.ingredient-pack-toolbar > .ingredient-pack-search {
-  flex: 1 1 200px;
-}
 .ingredient-pack-search {
   display: flex;
   align-items: center;
@@ -1486,6 +1483,9 @@ label small {
   border-radius: 7px;
   background: var(--c-131313);
   color: var(--muted);
+}
+.ingredient-pack-toolbar > .ingredient-pack-search {
+  flex: 1 1 200px;
 }
 .ingredient-pack-search input {
   min-width: 0;
@@ -1877,7 +1877,7 @@ label small {
   .ingredient-pack-toolbar {
     grid-template-columns: 1fr 1fr;
   }
-  .ingredient-pack-search {
+  .ingredient-pack-toolbar > .ingredient-pack-search {
     grid-column: 1 / -1;
   }
   .ingredient-manager-columns {
@@ -1889,7 +1889,7 @@ label small {
   .ingredient-pack-grid {
     grid-template-columns: 1fr;
   }
-  .ingredient-pack-search {
+  .ingredient-pack-toolbar > .ingredient-pack-search {
     grid-column: auto;
   }
   .ingredient-pack-section-heading {
@@ -6181,7 +6181,7 @@ label small {
   font-size: 12px;
 }
 
-.prompt-list-items em {
+.prompt-ownership {
   margin-left: auto;
   padding: 2px 5px;
   border: 1px solid var(--c-484848);
@@ -6191,7 +6191,7 @@ label small {
   letter-spacing: 0.06em;
 }
 
-.prompt-list-items button.active em {
+.prompt-list-items button.active .prompt-ownership {
   color: var(--accent);
   border-color: var(--c-66502f);
 }

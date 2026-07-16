@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a reproducible problem in the Skriv desktop application
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Skriv. Do not include OpenRouter keys, private manuscript text, or a project archive unless the maintainer explicitly requests a safe reproduction file.
+  - type: input
+    id: skriv-version
+    attributes:
+      label: Skriv version
+      description: Open Settings and copy the version shown under About Skriv.
+      placeholder: 0.1.2
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest reliable sequence that triggers the problem.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: data-safe
+    attributes:
+      label: Was any writing lost or corrupted?
+      options:
+        - "No"
+        - "Possibly"
+        - "Yes"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add screenshots or non-sensitive error messages if useful.

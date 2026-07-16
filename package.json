@@ -15,6 +15,7 @@
     "desktop:dev": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 dev",
     "desktop:build": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 build",
     "desktop:check": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 check",
+    "desktop:release-check": "node scripts/check-desktop-release.mjs",
     "desktop:e2e": "wdio run e2e/wdio.conf.mjs",
     "web:e2e": "playwright test",
     "build": "turbo build",

@@ -12,6 +12,7 @@ import {
   type ProjectArchiveV5,
 } from "@skriv/contracts";
 import { asc, eq, inArray } from "drizzle-orm";
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import type { LocalDatabase } from "./database.js";
 import {
@@ -216,10 +217,11 @@ export async function exportLocalProject(
   const baseName = safeExportFilename(archive.project.title);
   if (options.format === "json") {
     const assetPayload = await loadArchiveAssets(db, projectId, archive);
+    const applicationVersion = await getVersion();
     await invoke("save_project_archive", {
       request: {
         suggestedName: `${baseName}.skriv`,
-        applicationVersion: "0.1.1",
+        applicationVersion,
         project: archive,
         assets: assetPayload,
       },
@@ -261,11 +263,12 @@ export async function exportLocalProject(
 export async function writeLocalProjectBackup(db: LocalDatabase, projectId: string): Promise<void> {
   const archive = await loadArchiveProject(db, projectId);
   const assets = await loadArchiveAssets(db, projectId, archive);
+  const applicationVersion = await getVersion();
   await invoke("write_project_backup", {
     request: {
       projectId,
       title: archive.project.title,
-      applicationVersion: "0.1.1",
+      applicationVersion,
       project: archive,
       assets,
     },
