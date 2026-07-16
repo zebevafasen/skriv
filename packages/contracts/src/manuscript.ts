@@ -108,26 +108,38 @@ export const sceneMetadataSchema = sceneMetadataBaseSchema.superRefine((metadata
   });
 });
 
-export const projectSettingsSchema = z.object({
-  author: z.string().max(100).default(""),
-  series: z.string().max(100).default(""),
-  seriesIndex: z.string().max(50).default(""),
-  coverDataUrl: z.string().nullable().default(null),
+const projectSettingsValueShape = {
+  author: z.string().max(100),
+  series: z.string().max(100),
+  seriesIndex: z.string().max(50),
+  coverDataUrl: z.string().nullable(),
   coverArtworkSeed: z.string().max(300).optional(),
-  tense: z.enum(["Past", "Present"]).default("Past"),
-  language: storyLanguageSchema.default("General English"),
-  povType: z
-    .enum([
-      "1st Person",
-      "2nd Person",
-      "3rd Person",
-      "3rd Person (Limited)",
-      "3rd Person (Omniscient)",
-    ])
-    .default("3rd Person (Limited)"),
-  povCharacterEntryId: idSchema.nullable().default(null),
-  notes: z.string().max(500_000).default(""),
-  labelPacks: z.array(sceneLabelPackSchema).max(50).default([defaultUserLabelPack]),
+  tense: z.enum(["Past", "Present"]),
+  language: storyLanguageSchema,
+  povType: z.enum([
+    "1st Person",
+    "2nd Person",
+    "3rd Person",
+    "3rd Person (Limited)",
+    "3rd Person (Omniscient)",
+  ]),
+  povCharacterEntryId: idSchema.nullable(),
+  notes: z.string().max(500_000),
+  labelPacks: z.array(sceneLabelPackSchema).max(50),
+};
+
+export const projectSettingsSchema = z.object({
+  ...projectSettingsValueShape,
+  author: projectSettingsValueShape.author.default(""),
+  series: projectSettingsValueShape.series.default(""),
+  seriesIndex: projectSettingsValueShape.seriesIndex.default(""),
+  coverDataUrl: projectSettingsValueShape.coverDataUrl.default(null),
+  tense: projectSettingsValueShape.tense.default("Past"),
+  language: projectSettingsValueShape.language.default("General English"),
+  povType: projectSettingsValueShape.povType.default("3rd Person (Limited)"),
+  povCharacterEntryId: projectSettingsValueShape.povCharacterEntryId.default(null),
+  notes: projectSettingsValueShape.notes.default(""),
+  labelPacks: projectSettingsValueShape.labelPacks.default([defaultUserLabelPack]),
 });
 
 export const projectSchema = z.object({
@@ -195,8 +207,23 @@ export const createProjectInputSchema = z
 
 export const updateProjectInputSchema = z.object({
   title: z.string().trim().max(300).optional(),
-  settings: projectSettingsSchema.partial().optional(),
+  settings: z.object(projectSettingsValueShape).partial().optional(),
 });
+
+export type UpdateProjectInput = z.infer<typeof updateProjectInputSchema>;
+type ProjectSettingsUpdate = NonNullable<UpdateProjectInput["settings"]>;
+
+const coverOnlySettings = new Set<keyof ProjectSettingsUpdate>([
+  "coverDataUrl",
+  "coverArtworkSeed",
+]);
+
+export function projectUpdateTouchesModifiedAt(input: UpdateProjectInput): boolean {
+  if (input.title !== undefined) return true;
+  return Object.keys(input.settings ?? {}).some(
+    (key) => !coverOnlySettings.has(key as keyof ProjectSettingsUpdate),
+  );
+}
 
 export const createActInputSchema = z.object({
   title: z.string().trim().max(300).default(""),

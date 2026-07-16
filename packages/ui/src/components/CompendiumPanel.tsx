@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
+import { MarkdownEditingShortcuts } from "../editor/MarkdownEditing.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
 
@@ -90,14 +91,20 @@ function CompendiumDescriptionEditor({
 
   const editor = useEditor({
     extensions: [
+      MarkdownEditingShortcuts,
       StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false }),
       Underline,
       Placeholder.configure({ placeholder: "Write a description…" }),
       MentionsHighlighter.configure({ entries: mentionEntries }),
     ],
-    content: draft.content.kind === "rich_text" ? (draft.content.document as JSONContent) : (draft.content.kind === "text" ? draft.content.text : ""),
+    content:
+      draft.content.kind === "rich_text"
+        ? (draft.content.document as JSONContent)
+        : draft.content.kind === "text"
+          ? draft.content.text
+          : "",
     editorProps: {
-      attributes: { class: "compendium-description-prose" },
+      attributes: { class: "compendium-description-prose chat-markdown" },
     },
     onUpdate({ editor: current }) {
       const document = current.getJSON();
@@ -128,7 +135,14 @@ function CompendiumDescriptionEditor({
   }, [editor, mentionEntries]);
 
   return (
-    <div className="compendium-description-editor">
+    // biome-ignore lint/a11y/noStaticElementInteractions: the wrapper expands the editor's empty click target
+    <div
+      className="compendium-description-editor"
+      role="presentation"
+      onClick={() => {
+        if (editor?.isEmpty) editor.commands.focus("start");
+      }}
+    >
       <EditorContent editor={editor} />
     </div>
   );

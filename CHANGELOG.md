@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 - Desktop alpha polish
+
+- Prevent partial project-setting changes from clearing author and other metadata.
+- Keep cover-only changes from unexpectedly reordering the library.
+- Expand generated covers with distinct curated palette families and stronger visual variation.
+- Fix multiline Markdown shortcuts in chat and share them with Compendium descriptions.
+- Improve the Compendium description editor's size, drawer layout, formatting, and empty-state focus behavior.
+
 ## 0.1.2 - Early access
 
 - Windows-first Tauri desktop application with local SQLite storage.

@@ -19,13 +19,7 @@ import { skriv } from "../api.js";
 import { EmptyState, ErrorNotice } from "../components/AppShell.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { readProjectAccessHistory } from "../utils/projectAccess.js";
-import {
-  projectArtworkHue,
-  projectArtworkSecondaryHue,
-  projectArtworkSeed,
-  projectArtworkVariant,
-  projectArtworkVariants,
-} from "../utils/projectArtwork.js";
+import { projectArtworkSeed, projectArtworkStyle } from "../utils/projectArtwork.js";
 import {
   filterAndSortProjects,
   type ProjectSortDirection,
@@ -98,11 +92,11 @@ function ProjectCardMenu({ project }: { project: Project }) {
       });
       if (!confirmed) return;
     }
-    await skriv().projects.update(project.id, { 
-      settings: { 
+    await skriv().projects.update(project.id, {
+      settings: {
         coverDataUrl: null,
-        coverArtworkSeed: crypto.randomUUID()
-      } 
+        coverArtworkSeed: crypto.randomUUID(),
+      },
     });
     await client.invalidateQueries({ queryKey: ["projects"] });
   };
@@ -135,9 +129,9 @@ function ProjectCardMenu({ project }: { project: Project }) {
         e.stopPropagation();
       }}
     >
-      <button 
-        type="button" 
-        className="icon-button" 
+      <button
+        type="button"
+        className="icon-button"
         onClick={() => setOpen(!open)}
         aria-label="Project options"
       >
@@ -145,10 +139,16 @@ function ProjectCardMenu({ project }: { project: Project }) {
       </button>
       {open && (
         <div className="project-card-dropdown">
-          <button type="button" onClick={handleRename}>Rename</button>
-          <button type="button" onClick={handleRegenerateCover}>Regenerate cover</button>
+          <button type="button" onClick={handleRename}>
+            Rename
+          </button>
+          <button type="button" onClick={handleRegenerateCover}>
+            Regenerate cover
+          </button>
           <hr className="dropdown-divider" />
-          <button type="button" className="danger" onClick={handleDelete}>Delete</button>
+          <button type="button" className="danger" onClick={handleDelete}>
+            Delete
+          </button>
         </div>
       )}
     </div>
@@ -428,16 +428,7 @@ export function LibraryPage() {
               params={{ projectId: project.id }}
               className="project-card"
             >
-              <div
-                className="project-art"
-                style={
-                  {
-                    "--art-hue": projectArtworkHue(artworkSeed),
-                    "--art-secondary-hue": projectArtworkSecondaryHue(artworkSeed),
-                    ...projectArtworkVariants[projectArtworkVariant(artworkSeed)],
-                  } as React.CSSProperties
-                }
-              >
+              <div className="project-art" style={projectArtworkStyle(artworkSeed)}>
                 {project.settings.coverDataUrl ? (
                   <img src={project.settings.coverDataUrl} alt="" />
                 ) : null}
@@ -484,10 +475,10 @@ export function LibraryPage() {
                     onChange={(event) => setNewTitle(event.target.value)}
                     placeholder="The Last Ember"
                   />
-                  <button 
-                    type="button" 
-                    className="button ghost icon-only" 
-                    title="Surprise me!" 
+                  <button
+                    type="button"
+                    className="button ghost icon-only"
+                    title="Surprise me!"
                     onClick={() => setNewTitle(generateRandomTitle())}
                   >
                     <Dices size={16} />
@@ -608,14 +599,14 @@ export function LibraryPage() {
                                 setCopyEntryIds((current) =>
                                   group.entries.every((entry) => current.includes(entry.id))
                                     ? current.filter(
-                                      (id) => !group.entries.some((entry) => entry.id === id),
-                                    )
+                                        (id) => !group.entries.some((entry) => entry.id === id),
+                                      )
                                     : [
-                                      ...new Set([
-                                        ...current,
-                                        ...group.entries.map((entry) => entry.id),
-                                      ]),
-                                    ],
+                                        ...new Set([
+                                          ...current,
+                                          ...group.entries.map((entry) => entry.id),
+                                        ]),
+                                      ],
                                 )
                               }
                             />{" "}

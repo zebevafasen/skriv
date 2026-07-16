@@ -10,11 +10,13 @@ import {
   manuscriptExportOptionsSchema,
   promptDefinitionSchema,
   projectSettingsSchema,
+  projectUpdateTouchesModifiedAt,
   sceneMetadataSchema,
   selectionActionSchema,
   ingredientPackSchema,
   syncProjectIngredientPacksInputSchema,
   updateProjectNoteInputSchema,
+  updateProjectInputSchema,
 } from "./index.js";
 
 describe("shared contracts", () => {
@@ -23,6 +25,20 @@ describe("shared contracts", () => {
     expect(settings.labelPacks).toEqual([
       expect.objectContaining({ id: "user.default", name: "My Labels", ownership: "user" }),
     ]);
+  });
+
+  it("keeps partial project setting updates partial", () => {
+    const update = updateProjectInputSchema.parse({
+      settings: { coverDataUrl: null, coverArtworkSeed: "replacement" },
+    });
+
+    expect(update).toEqual({
+      settings: { coverDataUrl: null, coverArtworkSeed: "replacement" },
+    });
+    expect(projectUpdateTouchesModifiedAt(update)).toBe(false);
+    expect(
+      projectUpdateTouchesModifiedAt(updateProjectInputSchema.parse({ settings: { author: "A" } })),
+    ).toBe(true);
   });
 
   it("validates advanced project setup and export options", () => {

@@ -12,6 +12,7 @@ import {
   emptyTiptapDocument,
   projectDefaultsSchema,
   projectSettingsSchema,
+  projectUpdateTouchesModifiedAt,
   reorderInputSchema,
   sceneMetadataSchema,
   updateCompendiumCategoryInputSchema,
@@ -449,7 +450,7 @@ async function handleProjects(db: LocalDatabase, method: string, path: string, b
           ...(input.settings !== undefined
             ? { settings: projectSettingsSchema.parse({ ...current.settings, ...input.settings }) }
             : {}),
-          ...touchUpdatedAt,
+          ...(projectUpdateTouchesModifiedAt(input) ? touchUpdatedAt : {}),
         })
         .where(eq(projects.id, id))
         .returning();
