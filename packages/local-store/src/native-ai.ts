@@ -10,6 +10,13 @@ export type NativeAiCompletion = {
 };
 
 type NativeErrorPayload = { code?: string; message?: string };
+type NativeModelDescriptor = {
+  id: string;
+  contextLength: number;
+  maxCompletionTokens: number | null;
+};
+
+let modelCache: { expiresAt: number; models: NativeModelDescriptor[] } | null = null;
 
 function nativeError(error: unknown): AppError {
   const payload = error as NativeErrorPayload;
@@ -60,6 +67,28 @@ export async function streamNativeAi(
 
 export async function cancelNativeAi(operationId: string): Promise<void> {
   await invoke("cancel_ai_operation", { operationId }).catch(() => undefined);
+}
+
+export async function getNativeModelLimits(model: string): Promise<{
+  contextLength: number;
+  maxCompletionTokens: number;
+}> {
+  try {
+    if (!modelCache || modelCache.expiresAt <= Date.now()) {
+      modelCache = {
+        expiresAt: Date.now() + 10 * 60 * 1_000,
+        models: await invoke<NativeModelDescriptor[]>("list_models"),
+      };
+    }
+    const descriptor = modelCache.models.find((candidate) => candidate.id === model);
+    const contextLength = descriptor?.contextLength ?? 32_768;
+    return {
+      contextLength,
+      maxCompletionTokens: descriptor?.maxCompletionTokens ?? Math.min(16_384, contextLength),
+    };
+  } catch (error) {
+    throw nativeError(error);
+  }
 }
 
 export async function completeNativeAi(

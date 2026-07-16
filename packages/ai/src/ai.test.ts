@@ -66,6 +66,28 @@ describe("FakeAIProvider", () => {
       expect.arrayContaining([expect.objectContaining({ typeId: "story.character" })]),
     );
   });
+
+  it("returns structured story-text Compendium extraction", async () => {
+    const provider = new FakeAIProvider(0);
+    const result = await provider.complete({
+      model: "skriv/fake-prose",
+      messages: [
+        {
+          role: "developer",
+          content:
+            "Return only a JSON object with an entries array. Each entry must contain only name, typeId, description, and evidence.",
+        },
+        {
+          role: "user",
+          content: "<story_text>Mara entered the Glass Archive.</story_text>",
+        },
+      ],
+      maxOutputTokens: 1_000,
+    });
+    expect(JSON.parse(result.text).entries).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: "Mara Vale" })]),
+    );
+  });
 });
 
 describe("OpenRouterProvider streaming", () => {

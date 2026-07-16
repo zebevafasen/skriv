@@ -3,8 +3,6 @@ import {
   compendiumEntrySchema,
   compendiumContentSchema,
   compendiumTypeIdSchema,
-  type CompendiumContent,
-  extractedCompendiumDraftSchema,
   extractCompendiumInputSchema,
   extractCompendiumResponseSchema,
   importExtractedCompendiumInputSchema,
@@ -15,11 +13,16 @@ import {
 } from "@skriv/contracts";
 import {
   approximateTokens,
+  appendCompendiumContent,
   discoverReferences,
   findTemplateVariables,
   normalizeCompendiumContent,
+  parseCompendiumExtraction,
+  prepareCompendiumExtractionSuggestions,
   protectedProtocolMessage,
   renderPrompt,
+  richTextCompendiumContent,
+  validateCompendiumImport,
 } from "@skriv/core";
 import {
   compendiumCategories,
@@ -75,9 +78,6 @@ const entityRequestSchema = draftIngredientsSchema.extend({
   count: z.number().int().min(1).max(5).default(3),
 });
 const generateRequestSchema = z.union([entityRequestSchema, premiseRequestSchema]);
-const extractionResultSchema = z.object({
-  entries: z.array(extractedCompendiumDraftSchema).max(30),
-});
 const IDEATION_CONTEXT_TOKEN_BUDGET = 8_000;
 const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -88,87 +88,6 @@ const definitionSchema = z.object({
   kind: z.enum(["genre", "theme", "tag"]),
   label: z.string().trim().min(1).max(120),
 });
-
-export function normalizedEntryName(value: string): string {
-  return value.trim().normalize("NFKC").toLocaleLowerCase();
-}
-
-export function existingEntryNames<T extends { id: string; name: string; aliases: string[] }>(
-  entries: T[],
-): Map<string, T> {
-  const result = new Map<string, T>();
-  for (const entry of entries) {
-    for (const candidate of [entry.name, ...entry.aliases]) {
-      result.set(normalizedEntryName(candidate), entry);
-    }
-  }
-  return result;
-}
-
-export function parseCompendiumExtraction(value: string) {
-  const withoutReasoning = value.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  const fenced = withoutReasoning.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)?.[1]?.trim();
-  const firstBrace = withoutReasoning.indexOf("{");
-  const lastBrace = withoutReasoning.lastIndexOf("}");
-  const embedded =
-    firstBrace >= 0 && lastBrace > firstBrace
-      ? withoutReasoning.slice(firstBrace, lastBrace + 1)
-      : null;
-  const candidates = [withoutReasoning, fenced, embedded].filter(
-    (candidate, index, all): candidate is string =>
-      Boolean(candidate) && all.indexOf(candidate) === index,
-  );
-  let lastError: unknown = new Error("No JSON object was found in the model response.");
-  for (const candidate of candidates) {
-    try {
-      return extractionResultSchema.parse(JSON.parse(candidate));
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError;
-}
-
-export function richTextContent(text: string) {
-  return {
-    kind: "rich_text" as const,
-    plainText: text,
-    document: {
-      type: "doc",
-      content: text.split(/\r?\n/).map((line) => ({
-        type: "paragraph",
-        ...(line ? { content: [{ type: "text", text: line }] } : {}),
-      })),
-    },
-  };
-}
-
-export function appendCompendiumContent(
-  content: CompendiumContent,
-  appendedText: string,
-): CompendiumContent {
-  const text = appendedText.trim();
-  if (content.kind === "text") {
-    return { kind: "text", text: [content.text.trimEnd(), text].filter(Boolean).join("\n\n") };
-  }
-  const existingText = normalizeCompendiumContent(content).trimEnd();
-  const appended = richTextContent(text);
-  if (content.kind === "selection") {
-    return richTextContent([existingText, text].filter(Boolean).join("\n\n"));
-  }
-  return {
-    kind: "rich_text",
-    plainText: [existingText, text].filter(Boolean).join("\n\n"),
-    document: {
-      ...content.document,
-      type: content.document.type ?? "doc",
-      content: [
-        ...(existingText ? (content.document.content ?? []) : []),
-        ...(appended.document.content ?? []),
-      ],
-    },
-  };
-}
 
 function ideationEntryResponse(entry: typeof compendiumEntries.$inferSelect) {
   return compendiumEntrySchema.parse({
@@ -381,96 +300,86 @@ export async function registerIdeationRoutes(
     return reply.code(204).send();
   });
 
-  app.post("/api/projects/:projectId/ideation/extract-compendium", async (request, reply) => {
-    const { projectId } = parseWith(projectParams, request.params);
-    if (!(await ownsProject(context, request.userId, projectId)))
-      return notFound(reply, "Project not found.");
-    const input = parseWith(extractCompendiumInputSchema, request.body ?? {});
-    const entries = await metadataEntries(context, projectId);
-    const premiseEntry = entries.get("premise");
-    const premise = premiseEntry?.content.kind === "text" ? premiseEntry.content.text.trim() : "";
-    if (!premiseEntry || !premise) {
-      return reply.code(400).send({
-        error: {
-          code: "BAD_REQUEST",
-          message: "Choose and save a premise before extracting entries.",
-        },
+  app.post(
+    "/api/projects/:projectId/ideation/extract-compendium",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const { projectId } = parseWith(projectParams, request.params);
+      if (!(await ownsProject(context, request.userId, projectId)))
+        return notFound(reply, "Project not found.");
+      const input = parseWith(extractCompendiumInputSchema, request.body ?? {});
+      const entries = await metadataEntries(context, projectId);
+      const premiseEntry = entries.get("premise");
+      const premise = premiseEntry?.content.kind === "text" ? premiseEntry.content.text.trim() : "";
+      if (!premiseEntry || !premise) {
+        return reply.code(400).send({
+          error: {
+            code: "BAD_REQUEST",
+            message: "Choose and save a premise before extracting entries.",
+          },
+        });
+      }
+      const [project] = await context.db
+        .select({ settings: projects.settings })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+      if (!project) return notFound(reply, "Project not found.");
+      const settings = await getSettings(context, request.userId);
+      const prompt = await resolvePrompt(
+        context,
+        request.userId,
+        workflowKeySchema.enum["ideation.compendium_extract"],
+      );
+      const model = input.modelOverride ?? settings.baseModel;
+      const result = await (await context.getAi(request.userId, model)).complete({
+        model,
+        maxOutputTokens: 4_000,
+        messages: [
+          protectedProtocolMessage("ideation.compendium_extract"),
+          ...renderPrompt(prompt, {
+            premise,
+            story_language: project.settings.language,
+          }),
+        ],
       });
-    }
-    const [project] = await context.db
-      .select({ settings: projects.settings })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-    if (!project) return notFound(reply, "Project not found.");
-    const settings = await getSettings(context, request.userId);
-    const prompt = await resolvePrompt(
-      context,
-      request.userId,
-      workflowKeySchema.enum["ideation.compendium_extract"],
-    );
-    const model = input.modelOverride ?? settings.baseModel;
-    const result = await (await context.getAi(request.userId, model)).complete({
-      model,
-      maxOutputTokens: 4_000,
-      messages: [
-        protectedProtocolMessage("ideation.compendium_extract"),
-        ...renderPrompt(prompt, {
-          premise,
-          story_language: project.settings.language,
-        }),
-      ],
-    });
-    let extracted: z.infer<typeof extractionResultSchema>;
-    try {
-      extracted = parseCompendiumExtraction(result.text);
-    } catch (error) {
-      request.log.warn({ err: error }, "Invalid Compendium extraction response");
-      return reply.code(502).send({
-        error: {
-          code: "INVALID_AI_RESPONSE",
-          message:
-            "The model returned an invalid Compendium extraction. Try again or choose another model.",
-        },
+      let extracted: ReturnType<typeof parseCompendiumExtraction>;
+      try {
+        extracted = parseCompendiumExtraction(result.text);
+      } catch (error) {
+        request.log.warn({ err: error }, "Invalid Compendium extraction response");
+        return reply.code(502).send({
+          error: {
+            code: "INVALID_AI_RESPONSE",
+            message:
+              "The model returned an invalid Compendium extraction. Try again or choose another model.",
+          },
+        });
+      }
+      const existingRows = await context.db
+        .select()
+        .from(compendiumEntries)
+        .where(eq(compendiumEntries.projectId, projectId));
+      const suggestions = prepareCompendiumExtractionSuggestions(
+        extracted.entries,
+        existingRows.filter((entry) => entry.singletonKey === null),
+      );
+      await context.db.insert(usageEvents).values({
+        userId: request.userId,
+        projectId,
+        model,
+        role: "ideation",
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
       });
-    }
-    const existingRows = await context.db
-      .select()
-      .from(compendiumEntries)
-      .where(eq(compendiumEntries.projectId, projectId));
-    const duplicateByName = existingEntryNames(
-      existingRows.filter((entry) => entry.singletonKey === null),
-    );
-    const seen = new Set<string>();
-    const suggestions = extracted.entries.flatMap((entry) => {
-      const normalized = normalizedEntryName(entry.name);
-      if (seen.has(normalized)) return [];
-      seen.add(normalized);
-      const duplicate = duplicateByName.get(normalized) ?? null;
-      return [
-        {
-          ...entry,
-          id: crypto.randomUUID(),
-          duplicateEntryId: duplicate?.id ?? null,
-          duplicateEntryRevision: duplicate?.revision ?? null,
-        },
-      ];
-    });
-    await context.db.insert(usageEvents).values({
-      userId: request.userId,
-      projectId,
-      model,
-      role: "ideation",
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-    });
-    return extractCompendiumResponseSchema.parse({
-      sourcePremiseRevision: premiseEntry.revision,
-      suggestions,
-      model,
-      promptId: prompt.id,
-    });
-  });
+      return extractCompendiumResponseSchema.parse({
+        sourcePremiseRevision: premiseEntry.revision,
+        suggestions,
+        model,
+        promptId: prompt.id,
+      });
+    },
+  );
 
   app.post("/api/projects/:projectId/ideation/import-compendium", async (request, reply) => {
     const { projectId } = parseWith(projectParams, request.params);
@@ -491,34 +400,8 @@ export async function registerIdeationRoutes(
       });
     }
     const regularEntries = allEntries.filter((entry) => entry.singletonKey === null);
-    const occupied = existingEntryNames(regularEntries);
     const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
-    const incoming = new Set<string>();
-    const appendTargets = new Set<string>();
-    const conflicts = input.entries.flatMap((entry) => {
-      const normalized = normalizedEntryName(entry.name);
-      const matched = occupied.get(normalized) ?? null;
-      const repeated = incoming.has(normalized);
-      incoming.add(normalized);
-      if (entry.existingEntryId && entry.expectedExistingRevision) {
-        const target = byId.get(entry.existingEntryId);
-        const repeatedTarget = appendTargets.has(entry.existingEntryId);
-        appendTargets.add(entry.existingEntryId);
-        if (
-          !target ||
-          target.revision !== entry.expectedExistingRevision ||
-          matched?.id !== target.id ||
-          repeated ||
-          repeatedTarget
-        ) {
-          return [{ name: entry.name, existingEntryId: entry.existingEntryId }];
-        }
-        return [];
-      }
-      return matched || repeated
-        ? [{ name: entry.name, existingEntryId: matched?.id ?? null }]
-        : [];
-    });
+    const conflicts = validateCompendiumImport(input.entries, regularEntries);
     if (conflicts.length) {
       return reply.code(409).send({
         error: {
@@ -569,7 +452,7 @@ export async function registerIdeationRoutes(
             matchExclusions: [],
             activationMode: "mention",
             caseSensitive: false,
-            content: richTextContent(entry.description),
+            content: richTextCompendiumContent(entry.description),
           })
           .returning();
         if (!created) throw new Error("Compendium entry creation failed.");

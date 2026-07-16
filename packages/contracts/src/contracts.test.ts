@@ -5,7 +5,9 @@ import {
   createProjectInputSchema,
   createProjectNoteInputSchema,
   editorSettingsSchema,
+  extractCompendiumFromTextInputSchema,
   extractCompendiumResponseSchema,
+  COMPENDIUM_EXTRACTION_TEXT_MAX_CHARACTERS,
   generationRequestSchema,
   manuscriptExportOptionsSchema,
   promptDefinitionSchema,
@@ -136,6 +138,12 @@ describe("shared contracts", () => {
         lengthUnit: "words",
       }).success,
     ).toBe(true);
+    expect(extractCompendiumFromTextInputSchema.safeParse({ text: "   " }).success).toBe(false);
+    expect(
+      extractCompendiumFromTextInputSchema.safeParse({
+        text: "x".repeat(COMPENDIUM_EXTRACTION_TEXT_MAX_CHARACTERS + 1),
+      }).success,
+    ).toBe(false);
     expect(
       extractCompendiumResponseSchema.safeParse({
         sourcePremiseRevision: 2,
@@ -146,8 +154,7 @@ describe("shared contracts", () => {
             typeId: "story.character",
             description: "An investigator.",
             evidence: "Mara",
-            duplicateEntryId: null,
-            duplicateEntryRevision: null,
+            duplicateCandidates: [],
           },
         ],
         model: "test/model",

@@ -1,6 +1,6 @@
 [package]
 name = "skriv"
-version = "0.1.4"
+version = "0.1.5"
 description = "A private desktop workspace for planning and writing long-form fiction"
 authors = ["zebevafasen"]
 edition = "2021"

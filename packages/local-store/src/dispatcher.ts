@@ -52,13 +52,18 @@ import {
   userDefinitions,
 } from "./schema.js";
 import { handleSettingsAndPrompts, resolvePrompt } from "./settings-prompts.js";
-import { completeNativeAi } from "./native-ai.js";
-import { protectedProtocolMessage, renderPrompt, normalizeCompendiumContent } from "@skriv/core";
+import { completeNativeAi, getNativeModelLimits } from "./native-ai.js";
 import {
-  richTextContent,
+  approximateTokens,
   appendCompendiumContent,
-  parseExtraction,
-} from "./ideation.js";
+  formatCompendiumExtractionContext,
+  parseCompendiumExtraction,
+  prepareCompendiumExtractionSuggestions,
+  protectedProtocolMessage,
+  renderPrompt,
+  richTextCompendiumContent,
+  validateCompendiumImport,
+} from "@skriv/core";
 import { handleGenerationRoutes, streamLocalGeneration } from "./generation.js";
 import { handleChatRoutes, streamLocalChat } from "./chat.js";
 import { handleCatalogRoutes } from "./catalog.js";
@@ -852,20 +857,6 @@ async function handleNotes(db: LocalDatabase, method: string, path: string, body
   return null;
 }
 
-function formatExistingEntries(entries: (typeof compendiumEntries.$inferSelect)[]): string {
-  const regular = entries.filter((entry) => !entry.singletonKey);
-  if (regular.length === 0) return "No existing entries.";
-  return regular
-    .map((entry) => {
-      const type = entry.typeId.replace("story.", "");
-      const name = entry.name;
-      const aliases = entry.aliases && entry.aliases.length ? ` (aliases: ${entry.aliases.join(", ")})` : "";
-      const descText = normalizeCompendiumContent(entry.content);
-      return `- ${name}${aliases} [${type}]: ${descText}`;
-    })
-    .join("\n");
-}
-
 async function handleCompendium(db: LocalDatabase, method: string, path: string, body: unknown) {
   const extractMatch = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium\/extract$/i);
   if (extractMatch && method === "POST") {
@@ -885,36 +876,56 @@ async function handleCompendium(db: LocalDatabase, method: string, path: string,
     const input = extractCompendiumFromTextInputSchema.parse(body ?? {});
     const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
     const model = input.modelOverride ?? settings?.baseModel ?? "openrouter/auto";
-
+    const limits = await getNativeModelLimits(model);
+    const maxTokens = Math.min(4_000, limits.maxCompletionTokens);
     const prompt = await resolvePrompt(db, "compendium.extract");
+    const protocol = protectedProtocolMessage("compendium.extract");
+    const promptOverheadTokens =
+      approximateTokens(protocol.content) +
+      renderPrompt(prompt, {
+        text: "",
+        story_language: project.settings.language,
+        existing_entries: "",
+      }).reduce((total, message) => total + approximateTokens(message.content), 0) +
+      500;
+    const safetyTokens = Math.max(1_024, Math.ceil(limits.contextLength * 0.05));
+    const availableInputTokens =
+      limits.contextLength - maxTokens - safetyTokens - promptOverheadTokens;
+    const storyTokens = approximateTokens(input.text);
+    if (storyTokens > availableInputTokens) {
+      throw new AppError(
+        "The selected text is too long for this model. Select a smaller passage or choose a model with a larger context window.",
+        "BAD_REQUEST",
+      );
+    }
+    const regularEntries = existing.filter((entry) => !entry.singletonKey);
+
     const completion = await completeNativeAi({
       model,
-      maxTokens: 4_000,
+      maxTokens,
       messages: [
-        protectedProtocolMessage("compendium.extract"),
+        protocol,
         ...renderPrompt(prompt, {
           text: input.text,
           story_language: project.settings.language,
-          existing_entries: formatExistingEntries(existing),
+          existing_entries: formatCompendiumExtractionContext(
+            regularEntries,
+            input.text,
+            Math.max(0, availableInputTokens - storyTokens),
+          ),
         }),
       ],
     });
-    const byName = new Map<string, (typeof existing)[number]>();
-    for (const entry of existing.filter((item) => !item.singletonKey)) {
-      for (const name of [entry.name, ...entry.aliases])
-        byName.set(name.trim().toLocaleLowerCase(), entry);
+    let parsed: ReturnType<typeof parseCompendiumExtraction>;
+    try {
+      parsed = parseCompendiumExtraction(completion.text);
+    } catch {
+      throw new AppError(
+        "The model returned an invalid Compendium extraction. Try again or choose another model.",
+        "PROVIDER_ERROR",
+      );
     }
-
-    const parsed = parseExtraction(completion.text);
-    const suggestions = parsed.entries.map((entry) => {
-      const duplicate = byName.get(entry.name.trim().toLocaleLowerCase());
-      return {
-        ...entry,
-        id: crypto.randomUUID(),
-        duplicateEntryId: duplicate?.id ?? null,
-        duplicateEntryRevision: duplicate?.revision ?? null,
-      };
-    });
+    const suggestions = prepareCompendiumExtractionSuggestions(parsed.entries, regularEntries);
 
     return extractCompendiumFromTextResponseSchema.parse({
       suggestions,
@@ -936,43 +947,14 @@ async function handleCompendium(db: LocalDatabase, method: string, path: string,
       .from(compendiumEntries)
       .where(eq(compendiumEntries.projectId, projectId));
     const regularEntries = allEntries.filter((entry) => entry.singletonKey === null);
-    const byName = new Map<string, (typeof regularEntries)[number]>();
-    for (const entry of regularEntries) {
-      for (const name of [entry.name, ...entry.aliases]) {
-        byName.set(name.trim().toLocaleLowerCase(), entry);
-      }
-    }
     const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
-
-    const incoming = new Set<string>();
-    const appendTargets = new Set<string>();
-    const conflicts = input.entries.flatMap((entry) => {
-      const normalized = entry.name.trim().toLocaleLowerCase();
-      const matched = byName.get(normalized) ?? null;
-      const repeated = incoming.has(normalized);
-      incoming.add(normalized);
-      if (entry.existingEntryId && entry.expectedExistingRevision) {
-        const target = byId.get(entry.existingEntryId);
-        const repeatedTarget = appendTargets.has(entry.existingEntryId);
-        appendTargets.add(entry.existingEntryId);
-        if (
-          !target ||
-          target.revision !== entry.expectedExistingRevision ||
-          matched?.id !== target.id ||
-          repeated ||
-          repeatedTarget
-        ) {
-          return [{ name: entry.name, existingEntryId: entry.existingEntryId }];
-        }
-        return [];
-      }
-      return matched || repeated
-        ? [{ name: entry.name, existingEntryId: matched?.id ?? null }]
-        : [];
-    });
+    const conflicts = validateCompendiumImport(input.entries, regularEntries);
 
     if (conflicts.length) {
-      conflict("One or more destination entries changed. Run extraction again before importing.", conflicts);
+      conflict(
+        "One or more destination entries changed. Run extraction again before importing.",
+        conflicts,
+      );
     }
 
     const imported = await db.transaction(async (tx) => {
@@ -1014,7 +996,7 @@ async function handleCompendium(db: LocalDatabase, method: string, path: string,
             matchExclusions: [],
             activationMode: "mention",
             caseSensitive: false,
-            content: richTextContent(entry.description),
+            content: richTextCompendiumContent(entry.description),
             singletonKey: null,
           })
           .returning();

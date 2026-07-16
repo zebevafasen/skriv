@@ -136,19 +136,31 @@ export const extractedCompendiumDraftSchema = z.object({
   evidence: z.string().trim().min(1).max(2_000),
 });
 
+export const compendiumExtractionResultSchema = z.object({
+  entries: z.array(extractedCompendiumDraftSchema).max(30),
+});
+
+export const compendiumDuplicateCandidateSchema = compendiumEntrySchema.pick({
+  id: true,
+  name: true,
+  typeId: true,
+  revision: true,
+});
+
+export const extractedCompendiumSuggestionSchema = extractedCompendiumDraftSchema.extend({
+  id: idSchema,
+  duplicateCandidates: z.array(compendiumDuplicateCandidateSchema).max(100),
+});
+
+export const COMPENDIUM_EXTRACTION_TEXT_MAX_CHARACTERS = 100_000;
+
 export const extractCompendiumFromTextInputSchema = z.object({
-  text: z.string().min(1).max(2_000_000),
+  text: z.string().trim().min(1).max(COMPENDIUM_EXTRACTION_TEXT_MAX_CHARACTERS),
   modelOverride: z.string().min(1).nullable().default(null),
 });
 
 export const extractCompendiumFromTextResponseSchema = z.object({
-  suggestions: z.array(
-    extractedCompendiumDraftSchema.extend({
-      id: idSchema,
-      duplicateEntryId: idSchema.nullable(),
-      duplicateEntryRevision: z.number().int().positive().nullable(),
-    }),
-  ),
+  suggestions: z.array(extractedCompendiumSuggestionSchema).max(30),
   model: z.string(),
   promptId: z.string(),
 });
@@ -178,7 +190,9 @@ export const importExtractedCompendiumFromTextInputSchema = z
   });
 
 export type ExtractCompendiumFromTextInput = z.infer<typeof extractCompendiumFromTextInputSchema>;
-export type ExtractCompendiumFromTextResponse = z.infer<typeof extractCompendiumFromTextResponseSchema>;
+export type ExtractCompendiumFromTextResponse = z.infer<
+  typeof extractCompendiumFromTextResponseSchema
+>;
 export type ImportExtractedCompendiumFromTextInput = z.infer<
   typeof importExtractedCompendiumFromTextInputSchema
 >;

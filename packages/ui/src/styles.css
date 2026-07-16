@@ -677,7 +677,7 @@ label small {
   margin: 0;
 }
 
-.mention-editor .ProseMirror p.is-editor-empty:first-child::before {
+.mention-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -5783,48 +5783,6 @@ label small {
 .export-dialog {
   width: min(540px, calc(100% - 30px));
 }
-.compendium-extraction-dialog {
-  width: min(1400px, calc(100% - 30px));
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-}
-.compendium-extraction-dialog .ideation-extraction-list {
-  flex: 1;
-  max-height: none;
-  overflow-y: auto;
-  margin: 16px 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(620px, 1fr));
-  gap: 16px;
-}
-.compendium-extraction-dialog .ideation-extraction-card {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 16px;
-  align-items: start;
-}
-.compendium-extraction-dialog .ideation-extraction-card-left {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.compendium-extraction-dialog .ideation-extraction-card-right {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-}
-@media (max-width: 700px) {
-  .compendium-extraction-dialog .ideation-extraction-list {
-    grid-template-columns: 1fr;
-  }
-  .compendium-extraction-dialog .ideation-extraction-card {
-    grid-template-columns: 1fr;
-  }
-}
-
-
 .export-dialog .drawer-toolbar h2 {
   margin-bottom: 12px;
 }
@@ -6097,6 +6055,39 @@ label small {
   border-color: var(--accent-deep);
 }
 
+.ideation-extraction-card-left,
+.ideation-extraction-card-right,
+.ideation-extraction-target {
+  display: grid;
+  gap: 10px;
+}
+
+.ideation-extraction-target {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ideation-extraction-target select {
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--c-0e0e0e);
+  color: var(--text);
+}
+
+.ideation-extraction-source-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ideation-extraction-card [aria-invalid="true"] {
+  border-color: var(--warning, var(--c-d6a15d));
+}
+
 .ideation-extraction-select {
   display: flex;
   gap: 7px;
@@ -6115,6 +6106,53 @@ label small {
 
 .ideation-extraction-card small {
   color: var(--warning, var(--c-d6a15d));
+}
+
+.compendium-extraction-dialog {
+  width: min(1400px, calc(100% - 30px));
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.compendium-extraction-dialog .ideation-extraction-list {
+  flex: 1;
+  max-height: none;
+  overflow-y: auto;
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(620px, 1fr));
+  gap: 16px;
+}
+
+.compendium-extraction-dialog .ideation-extraction-card {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.compendium-extraction-dialog .ideation-extraction-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compendium-extraction-dialog .ideation-extraction-card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+@media (max-width: 700px) {
+  .compendium-extraction-dialog .ideation-extraction-list {
+    grid-template-columns: 1fr;
+  }
+
+  .compendium-extraction-dialog .ideation-extraction-card {
+    grid-template-columns: 1fr;
+  }
 }
 
 .first-scene-length-controls > label {

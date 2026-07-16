@@ -1,4 +1,4 @@
-import type { CompendiumCategory, CompendiumEntry, ExtractCompendiumFromTextResponse } from "@skriv/contracts";
+import type { CompendiumCategory, CompendiumEntry } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -27,12 +27,16 @@ import {
 import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import { skriv } from "../api.js";
-import {
-  CompendiumMentions,
-  setCompendiumMentionEntries,
-} from "../editor/CompendiumMentions.js";
+import { CompendiumMentions, setCompendiumMentionEntries } from "../editor/CompendiumMentions.js";
 import { MarkdownEditingShortcuts } from "../editor/MarkdownEditing.js";
 import { ErrorNotice } from "./AppShell.js";
+import {
+  CompendiumExtractionReview,
+  extractionReviewImportEntries,
+  extractionReviewIsValid,
+  prepareExtractionReview,
+  type ExtractionReviewDraft,
+} from "./CompendiumExtractionReview.js";
 import { useAppDialog } from "./DialogProvider.js";
 
 function CompendiumDescriptionEditor({
@@ -193,10 +197,6 @@ function StoryTypeMenu({
   );
 }
 
-type ExtractionReview = ExtractCompendiumFromTextResponse["suggestions"][number] & {
-  selected: boolean;
-};
-
 export type CompendiumPanelHandle = {
   extractText: (text: string) => void;
 };
@@ -230,7 +230,7 @@ export const CompendiumPanel = forwardRef<
     queryFn: () => skriv().compendium.categories(projectId),
   });
 
-  const [extractionReview, setExtractionReview] = useState<ExtractionReview[]>([]);
+  const [extractionReview, setExtractionReview] = useState<ExtractionReviewDraft[]>([]);
   const [extractionModalOpen, setExtractionModalOpen] = useState(false);
 
   const aiSettings = useQuery({
@@ -254,22 +254,14 @@ export const CompendiumPanel = forwardRef<
       setExtractionReview([]);
     },
     onSuccess: (result) => {
-      setExtractionReview(result.suggestions.map((s) => ({ ...s, selected: true })));
+      setExtractionReview(prepareExtractionReview(result.suggestions));
     },
   });
 
   const importCompendium = useMutation({
     mutationFn: () => {
       return skriv().compendium.importCompendium(projectId, {
-        entries: extractionReview
-          .filter((entry) => entry.selected)
-          .map(({ name, typeId, description, duplicateEntryId, duplicateEntryRevision }) => ({
-            name,
-            typeId,
-            description,
-            existingEntryId: duplicateEntryId,
-            expectedExistingRevision: duplicateEntryRevision,
-          })),
+        entries: extractionReviewImportEntries(extractionReview),
       });
     },
     onSuccess: async () => {
@@ -289,18 +281,6 @@ export const CompendiumPanel = forwardRef<
     [extractCompendium],
   );
 
-  const duplicateForName = (name: string) => {
-    const normalized = name.trim().normalize("NFKC").toLocaleLowerCase();
-    return (
-      entries.find(
-        (entry) =>
-          !entry.singleton &&
-          [entry.name, ...entry.aliases].some(
-            (candidate) => candidate.trim().normalize("NFKC").toLocaleLowerCase() === normalized,
-          ),
-      ) ?? null
-    );
-  };
   const [search, setSearch] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
@@ -722,7 +702,7 @@ export const CompendiumPanel = forwardRef<
       ) : null}
       {extractionModalOpen
         ? createPortal(
-            <div className="modal-backdrop" onMouseDown={() => setExtractionModalOpen(false)}>
+            <div className="modal-backdrop">
               <div
                 className="modal compendium-extraction-dialog"
                 role="dialog"
@@ -739,6 +719,7 @@ export const CompendiumPanel = forwardRef<
                     type="button"
                     className="icon-button"
                     aria-label="Close extract dialog"
+                    disabled={extractCompendium.isPending}
                     onClick={() => setExtractionModalOpen(false)}
                   >
                     <X size={17} />
@@ -750,110 +731,11 @@ export const CompendiumPanel = forwardRef<
                     Extracting entries...
                   </div>
                 ) : extractionReview.length ? (
-                  <div className="ideation-extraction-list">
-                    {extractionReview.map((draft) => (
-                      <article
-                        className={`ideation-extraction-card ${draft.duplicateEntryId ? "duplicate" : ""}`}
-                        key={draft.id}
-                      >
-                        <div className="ideation-extraction-card-left">
-                          <label className="ideation-extraction-select">
-                            <input
-                              type="checkbox"
-                              checked={draft.selected}
-                              onChange={(event) =>
-                                setExtractionReview((current) =>
-                                  current.map((entry) =>
-                                    entry.id === draft.id
-                                      ? { ...entry, selected: event.target.checked }
-                                      : entry,
-                                  ),
-                                )
-                              }
-                            />
-                            Include
-                          </label>
-                          <div className="ideation-extraction-fields">
-                            <label>
-                              Name
-                              <input
-                                value={draft.name}
-                                onChange={(event) => {
-                                  const name = event.target.value;
-                                  const duplicate = duplicateForName(name);
-                                  setExtractionReview((current) =>
-                                    current.map((entry) =>
-                                      entry.id === draft.id
-                                        ? {
-                                            ...entry,
-                                            name,
-                                            duplicateEntryId: duplicate?.id ?? null,
-                                            duplicateEntryRevision: duplicate?.revision ?? null,
-                                          }
-                                        : entry,
-                                    ),
-                                  );
-                                }}
-                              />
-                            </label>
-                            <label>
-                              Category
-                              <select
-                                value={draft.typeId}
-                                onChange={(event) =>
-                                  setExtractionReview((current) =>
-                                    current.map((entry) =>
-                                      entry.id === draft.id
-                                        ? {
-                                            ...entry,
-                                            typeId: event.target.value as ExtractionReview["typeId"],
-                                          }
-                                        : entry,
-                                    ),
-                                  )
-                                }
-                              >
-                                <option value="story.character">Character</option>
-                                <option value="story.location">Location</option>
-                                <option value="story.object">Object / Item</option>
-                                <option value="story.faction">Faction</option>
-                                <option value="story.lore">Lore</option>
-                                <option value="story.other">Other</option>
-                              </select>
-                            </label>
-                          </div>
-                          <label className="content-field">
-                            Description
-                            <textarea
-                              value={draft.description}
-                              rows={5}
-                              onChange={(event) =>
-                                setExtractionReview((current) =>
-                                  current.map((entry) =>
-                                    entry.id === draft.id
-                                      ? { ...entry, description: event.target.value }
-                                      : entry,
-                                  ),
-                                )
-                              }
-                            />
-                          </label>
-                        </div>
-                        <div className="ideation-extraction-card-right">
-                          <span style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
-                            Source Context
-                          </span>
-                          <blockquote>“{draft.evidence}”</blockquote>
-                          {draft.duplicateEntryId ? (
-                            <small style={{ marginTop: "auto" }}>
-                              An entry with this name or alias already exists. This description will be
-                              appended to it as a new paragraph.
-                            </small>
-                          ) : null}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
+                  <CompendiumExtractionReview
+                    drafts={extractionReview}
+                    entries={entries}
+                    onChange={setExtractionReview}
+                  />
                 ) : (
                   <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>
                     No clearly supported Compendium entries were found in the text.
@@ -868,6 +750,7 @@ export const CompendiumPanel = forwardRef<
                   <button
                     type="button"
                     className="button ghost"
+                    disabled={extractCompendium.isPending}
                     onClick={() => setExtractionModalOpen(false)}
                   >
                     Cancel
@@ -876,17 +759,17 @@ export const CompendiumPanel = forwardRef<
                     type="button"
                     className="button primary"
                     disabled={
-                      importCompendium.isPending ||
-                      !extractionReview.some((draft) => draft.selected)
+                      importCompendium.isPending || !extractionReviewIsValid(extractionReview)
                     }
                     onClick={() => importCompendium.mutate()}
                   >
-                    <Check size={15} /> {importCompendium.isPending ? "Importing…" : "Import entries"}
+                    <Check size={15} />{" "}
+                    {importCompendium.isPending ? "Importing…" : "Import entries"}
                   </button>
                 </div>
               </div>
             </div>,
-            document.body
+            document.body,
           )
         : null}
     </aside>

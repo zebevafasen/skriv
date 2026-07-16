@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { compendiumEntrySchema, extractedCompendiumDraftSchema } from "./compendium.js";
+import {
+  compendiumEntrySchema,
+  extractedCompendiumDraftSchema,
+  extractedCompendiumSuggestionSchema,
+} from "./compendium.js";
 import { idSchema } from "./primitives.js";
 
 export const extractCompendiumInputSchema = z.object({
@@ -8,13 +12,7 @@ export const extractCompendiumInputSchema = z.object({
 
 export const extractCompendiumResponseSchema = z.object({
   sourcePremiseRevision: z.number().int().positive(),
-  suggestions: z.array(
-    extractedCompendiumDraftSchema.extend({
-      id: idSchema,
-      duplicateEntryId: idSchema.nullable(),
-      duplicateEntryRevision: z.number().int().positive().nullable(),
-    }),
-  ),
+  suggestions: z.array(extractedCompendiumSuggestionSchema).max(30),
   model: z.string(),
   promptId: z.string(),
 });

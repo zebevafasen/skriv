@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5 - Compendium extraction and editor mentions
+
+- Add AI-assisted compendium entry extraction to quickly identify and define characters, locations, and items from text.
+- Add real-time compendium mentions and auto-completion in the manuscript editor and notes.
+- Support interactive review and editing of extracted compendium entries before saving.
+- Add application-wide fixes for TipTap rendering and layout issues.
+
 ## 0.1.4 - Major code restructure and support for application auto-update
 
 - Removed legacy code.

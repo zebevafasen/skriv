@@ -23,32 +23,21 @@ import type { AppContext } from "../context.js";
 import { conflict, notFound, parseWith } from "../http.js";
 import { ownsProject } from "../ownership.js";
 import { resolvePrompt } from "./prompts.js";
-import { getSettings } from "./settings.js";
-import { renderPrompt, protectedProtocolMessage, normalizeCompendiumContent } from "@skriv/core";
+import { getModelLimits, getSettings } from "./settings.js";
 import {
+  approximateTokens,
   appendCompendiumContent,
-  existingEntryNames,
-  normalizedEntryName,
+  formatCompendiumExtractionContext,
   parseCompendiumExtraction,
-  richTextContent,
-} from "./ideation.js";
+  prepareCompendiumExtractionSuggestions,
+  protectedProtocolMessage,
+  renderPrompt,
+  richTextCompendiumContent,
+  validateCompendiumImport,
+} from "@skriv/core";
 
 const projectParams = z.object({ projectId: z.uuid() });
 const entryParams = z.object({ id: z.uuid() });
-
-function formatExistingEntries(entries: (typeof compendiumEntries.$inferSelect)[]): string {
-  const regular = entries.filter((entry) => !entry.singletonKey);
-  if (regular.length === 0) return "No existing entries.";
-  return regular
-    .map((entry) => {
-      const type = entry.typeId.replace("story.", "");
-      const name = entry.name;
-      const aliases = entry.aliases && entry.aliases.length ? ` (aliases: ${entry.aliases.join(", ")})` : "";
-      const descText = normalizeCompendiumContent(entry.content);
-      return `- ${name}${aliases} [${type}]: ${descText}`;
-    })
-    .join("\n");
-}
 
 function entryResponse(entry: typeof compendiumEntries.$inferSelect) {
   return compendiumEntrySchema.parse({
@@ -201,86 +190,105 @@ export async function registerCompendiumRoutes(
     return reply.code(204).send();
   });
 
-  app.post("/api/projects/:projectId/compendium/extract", async (request, reply) => {
-    const { projectId } = parseWith(projectParams, request.params);
-    if (!(await ownsProject(context, request.userId, projectId)))
-      return notFound(reply, "Project not found.");
-    const input = parseWith(extractCompendiumFromTextInputSchema, request.body ?? {});
-    const [project] = await context.db
-      .select({ settings: projects.settings })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-    if (!project) return notFound(reply, "Project not found.");
-    const existingRows = await context.db
-      .select()
-      .from(compendiumEntries)
-      .where(eq(compendiumEntries.projectId, projectId));
+  app.post(
+    "/api/projects/:projectId/compendium/extract",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const { projectId } = parseWith(projectParams, request.params);
+      if (!(await ownsProject(context, request.userId, projectId)))
+        return notFound(reply, "Project not found.");
+      const input = parseWith(extractCompendiumFromTextInputSchema, request.body ?? {});
+      const [project] = await context.db
+        .select({ settings: projects.settings })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+      if (!project) return notFound(reply, "Project not found.");
+      const existingRows = await context.db
+        .select()
+        .from(compendiumEntries)
+        .where(eq(compendiumEntries.projectId, projectId));
 
-    const settings = await getSettings(context, request.userId);
-    const prompt = await resolvePrompt(
-      context,
-      request.userId,
-      workflowKeySchema.enum["compendium.extract"],
-    );
-    const model = input.modelOverride ?? settings.baseModel;
-    const result = await (await context.getAi(request.userId, model)).complete({
-      model,
-      maxOutputTokens: 4_000,
-      messages: [
-        protectedProtocolMessage("compendium.extract"),
-        ...renderPrompt(prompt, {
-          text: input.text,
+      const settings = await getSettings(context, request.userId);
+      const prompt = await resolvePrompt(
+        context,
+        request.userId,
+        workflowKeySchema.enum["compendium.extract"],
+      );
+      const model = input.modelOverride ?? settings.baseModel;
+      const limits = await getModelLimits(context, request.userId, model);
+      const maxOutputTokens = Math.min(4_000, limits.maxCompletionTokens);
+      const safetyTokens = Math.max(1_024, Math.ceil(limits.contextLength * 0.05));
+      const protocol = protectedProtocolMessage("compendium.extract");
+      const promptOverheadTokens =
+        approximateTokens(protocol.content) +
+        renderPrompt(prompt, {
+          text: "",
           story_language: project.settings.language,
-          existing_entries: formatExistingEntries(existingRows),
-        }),
-      ],
-    });
-    let extracted;
-    try {
-      extracted = parseCompendiumExtraction(result.text);
-    } catch (error) {
-      request.log.warn({ err: error }, "Invalid Compendium extraction response");
-      return reply.code(502).send({
-        error: {
-          code: "INVALID_AI_RESPONSE",
-          message:
-            "The model returned an invalid Compendium extraction. Try again or choose another model.",
-        },
+          existing_entries: "",
+        }).reduce((total, message) => total + approximateTokens(message.content), 0) +
+        500;
+      const availableInputTokens = Math.max(
+        0,
+        limits.contextLength - maxOutputTokens - safetyTokens - promptOverheadTokens,
+      );
+      const storyTokens = approximateTokens(input.text);
+      if (storyTokens > availableInputTokens) {
+        return reply.code(400).send({
+          error: {
+            code: "BAD_REQUEST",
+            message:
+              "The selected text is too long for this model. Select a smaller passage or choose a model with a larger context window.",
+            details: { contextLength: limits.contextLength },
+          },
+        });
+      }
+      const regularEntries = existingRows.filter((entry) => entry.singletonKey === null);
+      const result = await (await context.getAi(request.userId, model)).complete({
+        model,
+        maxOutputTokens,
+        messages: [
+          protocol,
+          ...renderPrompt(prompt, {
+            text: input.text,
+            story_language: project.settings.language,
+            existing_entries: formatCompendiumExtractionContext(
+              regularEntries,
+              input.text,
+              Math.max(0, availableInputTokens - storyTokens),
+            ),
+          }),
+        ],
       });
-    }
-    const duplicateByName = existingEntryNames(
-      existingRows.filter((entry) => entry.singletonKey === null),
-    );
-    const seen = new Set<string>();
-    const suggestions = extracted.entries.flatMap((entry) => {
-      const normalized = normalizedEntryName(entry.name);
-      if (seen.has(normalized)) return [];
-      seen.add(normalized);
-      const duplicate = duplicateByName.get(normalized) ?? null;
-      return [
-        {
-          ...entry,
-          id: crypto.randomUUID(),
-          duplicateEntryId: duplicate?.id ?? null,
-          duplicateEntryRevision: duplicate?.revision ?? null,
-        },
-      ];
-    });
-    await context.db.insert(usageEvents).values({
-      userId: request.userId,
-      projectId,
-      model,
-      role: "ideation",
-      inputTokens: result.usage.inputTokens,
-      outputTokens: result.usage.outputTokens,
-    });
-    return extractCompendiumFromTextResponseSchema.parse({
-      suggestions,
-      model,
-      promptId: prompt.id,
-    });
-  });
+      let extracted: ReturnType<typeof parseCompendiumExtraction>;
+      try {
+        extracted = parseCompendiumExtraction(result.text);
+      } catch (error) {
+        request.log.warn({ err: error }, "Invalid Compendium extraction response");
+        return reply.code(502).send({
+          error: {
+            code: "INVALID_AI_RESPONSE",
+            message:
+              "The model returned an invalid Compendium extraction. Try again or choose another model.",
+          },
+        });
+      }
+      const suggestions = prepareCompendiumExtractionSuggestions(extracted.entries, regularEntries);
+      await context.db.insert(usageEvents).values({
+        userId: request.userId,
+        projectId,
+        model,
+        role: "compendium",
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+      });
+      return extractCompendiumFromTextResponseSchema.parse({
+        suggestions,
+        model,
+        promptId: prompt.id,
+      });
+    },
+  );
 
   app.post("/api/projects/:projectId/compendium/import", async (request, reply) => {
     const { projectId } = parseWith(projectParams, request.params);
@@ -292,34 +300,8 @@ export async function registerCompendiumRoutes(
       .from(compendiumEntries)
       .where(eq(compendiumEntries.projectId, projectId));
     const regularEntries = allEntries.filter((entry) => entry.singletonKey === null);
-    const occupied = existingEntryNames(regularEntries);
     const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
-    const incoming = new Set<string>();
-    const appendTargets = new Set<string>();
-    const conflicts = input.entries.flatMap((entry) => {
-      const normalized = normalizedEntryName(entry.name);
-      const matched = occupied.get(normalized) ?? null;
-      const repeated = incoming.has(normalized);
-      incoming.add(normalized);
-      if (entry.existingEntryId && entry.expectedExistingRevision) {
-        const target = byId.get(entry.existingEntryId);
-        const repeatedTarget = appendTargets.has(entry.existingEntryId);
-        appendTargets.add(entry.existingEntryId);
-        if (
-          !target ||
-          target.revision !== entry.expectedExistingRevision ||
-          matched?.id !== target.id ||
-          repeated ||
-          repeatedTarget
-        ) {
-          return [{ name: entry.name, existingEntryId: entry.existingEntryId }];
-        }
-        return [];
-      }
-      return matched || repeated
-        ? [{ name: entry.name, existingEntryId: matched?.id ?? null }]
-        : [];
-    });
+    const conflicts = validateCompendiumImport(input.entries, regularEntries);
     if (conflicts.length) {
       return reply.code(409).send({
         error: {
@@ -370,7 +352,7 @@ export async function registerCompendiumRoutes(
             matchExclusions: [],
             activationMode: "mention",
             caseSensitive: false,
-            content: richTextContent(entry.description),
+            content: richTextCompendiumContent(entry.description),
           })
           .returning();
         if (!created) throw new Error("Compendium entry creation failed.");
