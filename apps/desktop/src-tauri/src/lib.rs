@@ -11,7 +11,10 @@ use tauri::Manager;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(ai::AiState::default())
         .setup(|app| {
@@ -23,7 +26,7 @@ pub fn run() {
                     tokio::time::sleep(std::time::Duration::from_secs(6 * 60 * 60)).await;
                     let state = handle.state::<database::DatabaseState>();
                     if let Err(error) = backups::ensure_daily_database_snapshot(&state).await {
-                        eprintln!("Skriv daily backup failed: {error}");
+                        log::error!("Skriv daily backup failed: {error}");
                     }
                 }
             });

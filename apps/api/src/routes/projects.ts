@@ -11,6 +11,7 @@ import {
   createSceneInputSchema,
   emptyTiptapDocument,
   projectSettingsSchema,
+  projectUpdateTouchesModifiedAt,
   reorderInputSchema,
   sceneMetadataSchema,
   updateProjectInputSchema,
@@ -737,7 +738,7 @@ export async function registerProjectRoutes(
         ...(input.settings !== undefined
           ? { settings: projectSettingsSchema.parse({ ...current.settings, ...input.settings }) }
           : {}),
-        ...touchUpdatedAt,
+        ...(projectUpdateTouchesModifiedAt(input) ? touchUpdatedAt : {}),
       })
       .where(eq(projects.id, id))
       .returning();

@@ -28,7 +28,7 @@ export function safeLabelColor(color: SceneLabelColor): SceneLabelColor {
   return color === "amber" || color === "yellow" ? "orange" : color;
 }
 
-function legacyDefinitionId(text: string): string {
+function unmatchedSavedLabelDefinitionId(text: string): string {
   let hash = 2166136261;
   for (const character of text.toLocaleLowerCase()) {
     hash ^= character.codePointAt(0) ?? 0;
@@ -39,7 +39,7 @@ function legacyDefinitionId(text: string): string {
 
 export function projectLabelLibrary(
   configuredPacks: SceneLabelPack[] | undefined,
-  legacyLabels: SceneLabel[] = [],
+  savedLabels: SceneLabel[] = [],
 ): { builtinPacks: SceneLabelPack[]; userPacks: SceneLabelPack[]; allPacks: SceneLabelPack[] } {
   const userPacks = (configuredPacks ?? [])
     .filter((pack) => pack.ownership === "user")
@@ -55,13 +55,13 @@ export function projectLabelLibrary(
       .flatMap((pack) => pack.labels)
       .map((label) => label.name.toLocaleLowerCase()),
   );
-  for (const legacy of legacyLabels) {
-    const normalized = legacy.text.toLocaleLowerCase();
+  for (const savedLabel of savedLabels) {
+    const normalized = savedLabel.text.toLocaleLowerCase();
     if (knownNames.has(normalized)) continue;
     defaultPack.labels.push({
-      id: legacyDefinitionId(legacy.text),
-      name: legacy.text,
-      color: safeLabelColor(legacy.color),
+      id: unmatchedSavedLabelDefinitionId(savedLabel.text),
+      name: savedLabel.text,
+      color: safeLabelColor(savedLabel.color),
     });
     knownNames.add(normalized);
   }

@@ -36,6 +36,4 @@ pnpm dlx vercel@latest env run -e preview -- pnpm db:migrate
 pnpm dlx vercel@latest deploy
 ```
 
-Before production, create a PostgreSQL restore point or logical backup, inspect the exact migration SQL, and rehearse it on staging. The unification migration only creates `archive_transfers`; it does not drop, rename, or rewrite existing production data.
-
-Do not promote or production-deploy `codex/unified-web-desktop` until the manual merge checklist and explicit approval are complete.
+Before production, create a PostgreSQL restore point or logical backup, inspect the exact migration SQL, and rehearse it on staging. Never use a direct schema push in staging or production. Promote only a protected `main` commit whose Unified CI checks and Vercel preview passed.

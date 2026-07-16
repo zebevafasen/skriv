@@ -82,13 +82,24 @@ for (const viewport of viewports) {
   test(`${viewport.name} keeps global pages inside the viewport`, async ({ page }) => {
     await page.setViewportSize(viewport);
 
-    for (const path of ["/", "/prompts", "/settings", "/login"]) {
+    for (const path of ["/", "/login"]) {
       await page.goto(path);
       if (path === "/login") await expect(page.locator(".auth-card")).toBeVisible();
       else await expect(page.locator(".topbar")).toBeVisible();
       await expectNoDocumentOverflow(page);
       await expectDocumentScrolls(page);
     }
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "Prompts" }).click();
+    await expect(page.getByRole("heading", { name: "Prompt Registry" })).toBeVisible();
+    await expectNoDocumentOverflow(page);
+    await page.getByRole("button", { name: "Close prompts" }).click();
+
+    await page.getByRole("button", { name: "Settings" }).click();
+    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expectNoDocumentOverflow(page);
+    await page.getByRole("button", { name: "Close settings" }).click();
 
     await page.goto("/");
     await page.getByRole("button", { name: "Create story" }).click();
@@ -220,7 +231,9 @@ test("mobile workspace exposes every primary workflow without page overflow", as
 
     await page.getByRole("button", { name: "More" }).click();
     await expect(page.locator(".mobile-project-menu")).toBeVisible();
-    await expect(page.locator(".mobile-project-menu").getByRole("button", { name: "Notes" })).toBeVisible();
+    await expect(
+      page.locator(".mobile-project-menu").getByRole("button", { name: "Notes" }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Project settings" }).click();
     await expect(page.locator(".project-settings-panel")).toBeVisible();
     await expectNoDocumentOverflow(page);
@@ -246,10 +259,10 @@ test("responsive controls retain touch-friendly targets", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/");
 
-  const navLinks = page.locator(".global-nav a");
-  await expect(navLinks).toHaveCount(3);
+  const navControls = page.locator(".global-nav a, .global-nav button");
+  await expect(navControls).toHaveCount(3);
   for (let index = 0; index < 3; index += 1) {
-    const box = await navLinks.nth(index).boundingBox();
+    const box = await navControls.nth(index).boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);
     expect(box?.height).toBeGreaterThanOrEqual(44);
   }
@@ -302,13 +315,13 @@ test("writing-first desktop workspace reclaims the canvas and persists the Compe
     ]);
     const typographyButtonBottom =
       (typographyButtonBox?.y ?? 0) + (typographyButtonBox?.height ?? 0);
-    const typographyButtonRight =
-      (typographyButtonBox?.x ?? 0) + (typographyButtonBox?.width ?? 0);
-    const typographyMenuRight =
-      (typographyMenuBox?.x ?? 0) + (typographyMenuBox?.width ?? 0);
+    const typographyButtonRight = (typographyButtonBox?.x ?? 0) + (typographyButtonBox?.width ?? 0);
+    const typographyMenuRight = (typographyMenuBox?.x ?? 0) + (typographyMenuBox?.width ?? 0);
     expect(typographyMenuBox?.y).toBeGreaterThanOrEqual(typographyButtonBottom);
     expect(Math.abs(typographyMenuRight - typographyButtonRight)).toBeLessThan(2);
-    expect(await typographyMenu.evaluate((element) => getComputedStyle(element).zIndex)).toBe("1000");
+    expect(await typographyMenu.evaluate((element) => getComputedStyle(element).zIndex)).toBe(
+      "1000",
+    );
     await typographyButton.click();
 
     await page.getByRole("button", { name: "Manuscript navigator" }).click();

@@ -650,7 +650,7 @@ label small {
   position: relative;
   width: 100%;
 }
-.mention-textarea-highlights {
+.mention-textarea .mention-textarea-highlights {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -666,7 +666,7 @@ label small {
   overflow-wrap: break-word;
   pointer-events: none;
 }
-.mention-textarea-highlights mark {
+.mention-textarea .mention-textarea-highlights mark {
   color: transparent;
   background: transparent;
   text-decoration: underline dotted var(--accent-bright) 1.5px;
@@ -1297,6 +1297,18 @@ label small {
 .new-project-advanced section {
   display: grid;
   gap: 7px;
+  align-content: start;
+}
+
+.title-input-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 8px;
+}
+
+.title-input-group .icon-only {
+  width: 38px;
+  padding: 0;
 }
 
 .new-project-fields label > span,
@@ -5008,7 +5020,7 @@ label small {
 
 .compendium-entry-drawer {
   width: min(680px, 100%);
-  max-height: min(660px, calc(100% - 12px));
+  max-height: calc(100% - 12px);
   min-width: 0;
   overflow: auto;
   padding: 0 22px 24px;
@@ -5325,6 +5337,29 @@ label small {
 .description-field .mention-textarea-highlights {
   min-height: 175px;
   resize: vertical;
+  font: 14px / 1.65 var(--sans);
+}
+
+.compendium-description-editor {
+  height: 260px;
+  min-height: 220px;
+  max-height: min(65vh, 720px);
+  overflow: auto;
+  resize: vertical;
+  border: 1px solid var(--c-525252);
+  border-radius: 8px;
+  background: var(--c-242424);
+}
+
+.compendium-description-editor > div {
+  height: 100%;
+}
+
+.compendium-description-prose {
+  height: 100%;
+  overflow: auto;
+  padding: 12px 14px;
+  outline: none;
   font: 14px / 1.65 var(--sans);
 }
 
@@ -8421,7 +8456,7 @@ button.mobile-only-tab {
   color: var(--c-5c5c5c);
 }
 
-/* Phone workspace shell. Kept last so it can replace the legacy responsive workspace rules. */
+/* Phone workspace shell. */
 .mobile-project-nav,
 .mobile-editor-context,
 .mobile-editor-tools,

@@ -80,13 +80,9 @@ export const updateIngredientPackCollectionInputSchema =
   createIngredientPackCollectionInputSchema.partial();
 export const syncProjectIngredientPacksInputSchema = z
   .object({
-    ingredientPackIds: z.array(z.string().min(1)).max(250).optional(),
-    /** @deprecated Use ingredientPackIds. */
-    packIds: z.array(z.string().min(1)).max(250).optional(),
+    ingredientPackIds: z.array(z.string().min(1)).max(250).default([]),
   })
-  .transform(({ ingredientPackIds, packIds }) => ({
-    ingredientPackIds: ingredientPackIds ?? packIds ?? [],
-  }));
+  .strict();
 
 export const outlineSourceSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("blank") }),
@@ -112,38 +108,3 @@ export type IngredientPackCatalog = z.infer<typeof ingredientPackCatalogSchema>;
 export type ProjectIngredientPack = z.infer<typeof projectIngredientPackSchema>;
 export type OutlineSource = z.infer<typeof outlineSourceSchema>;
 export type ManuscriptExportOptions = z.infer<typeof manuscriptExportOptionsSchema>;
-
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackSchema = ingredientPackSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackCategorySchema = ingredientPackCategorySchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackCollectionSchema = ingredientPackCollectionSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackCatalogSchema = ingredientPackCatalogSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const projectTagPackSchema = projectIngredientPackSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const createTagPackInputSchema = createIngredientPackInputSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const updateTagPackInputSchema = updateIngredientPackInputSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const createTagPackCategoryInputSchema = createIngredientPackCategoryInputSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const updateTagPackCategoryInputSchema = updateIngredientPackCategoryInputSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const createTagPackCollectionInputSchema = createIngredientPackCollectionInputSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const updateTagPackCollectionInputSchema = updateIngredientPackCollectionInputSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const syncProjectTagPacksInputSchema = syncProjectIngredientPacksInputSchema;
-/** @deprecated Use IngredientPack. */
-export type TagPack = IngredientPack;
-/** @deprecated Use IngredientPackCategory. */
-export type TagPackCategory = IngredientPackCategory;
-/** @deprecated Use IngredientPackCollection. */
-export type TagPackCollection = IngredientPackCollection;
-/** @deprecated Use IngredientPackCatalog. */
-export type TagPackCatalog = IngredientPackCatalog;
-/** @deprecated Use ProjectIngredientPack. */
-export type ProjectTagPack = ProjectIngredientPack;

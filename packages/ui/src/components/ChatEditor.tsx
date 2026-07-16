@@ -6,16 +6,8 @@ import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import { useEffect, useRef } from "react";
+import { MarkdownEditingShortcuts } from "../editor/MarkdownEditing.js";
 import { setMentionDecorations, SkrivDecorations } from "../editor/SkrivDecorations.js";
-import { Extension } from "@tiptap/core";
-
-const ChatKeyboardShortcuts = Extension.create({
-  addKeyboardShortcuts() {
-    return {
-      "Shift-Enter": () => this.editor.commands.keyboardShortcut("Enter"),
-    };
-  },
-});
 
 interface ChatEditorProps {
   value: string;
@@ -37,9 +29,10 @@ export function ChatEditor({
 
   const editor = useEditor({
     extensions: [
-      ChatKeyboardShortcuts,
+      MarkdownEditingShortcuts,
       StarterKit.configure({
         dropcursor: false,
+        underline: false,
       }),
       Underline,
       Placeholder.configure({
@@ -54,7 +47,10 @@ export function ChatEditor({
     content: value,
     editorProps: {
       attributes: {
+        "aria-label": "Chat message",
+        "aria-multiline": "true",
         class: "mention-textarea chat-input prose prose-sm prose-invert chat-markdown",
+        role: "textbox",
         spellcheck: "false",
       },
     },
@@ -66,7 +62,9 @@ export function ChatEditor({
       const mentions: Array<{ from: number; to: number; entryIds: string[] }> = [];
       editor.state.doc.descendants((node, position) => {
         if (!node.isText || !node.text) return;
-        for (const match of findMentions(node.text, entriesRef.current, { includeUntracked: true })) {
+        for (const match of findMentions(node.text, entriesRef.current, {
+          includeUntracked: true,
+        })) {
           mentions.push({
             from: position + match.from,
             to: position + match.to,

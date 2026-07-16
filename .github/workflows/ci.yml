@@ -3,7 +3,7 @@ name: Unified CI
 on:
   pull_request:
   push:
-    branches: [main, codex/unified-web-desktop]
+    branches: [main]
 
 concurrency:
   group: unified-${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +25,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm desktop:release-check
+      - run: pnpm test:compatibility
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
@@ -95,10 +96,9 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm test
+      - run: pnpm desktop:release-check
       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
+      - run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml
       - run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
       - run: pnpm desktop:build

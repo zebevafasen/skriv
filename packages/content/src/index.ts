@@ -39,7 +39,7 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
     throw new Error(`Theme/tag label overlap in ${content.id}: ${overlappingTag.label}.`);
   }
 
-  const packIds = new Set<string>();
+  const ingredientPackIds = new Set<string>();
   const categoryIds = new Set(content.ingredientPackCategories.map((category) => category.id));
   if (categoryIds.size !== content.ingredientPackCategories.length) {
     throw new Error(`Duplicate ingredient pack category id in ${content.id}.`);
@@ -57,9 +57,9 @@ function validateContentReferences(content: ContentPackage): ContentPackage {
     collectionIds.add(collection.id);
   }
   for (const pack of content.ingredientPacks) {
-    if (packIds.has(pack.id))
+    if (ingredientPackIds.has(pack.id))
       throw new Error(`Duplicate ingredient pack id in ${content.id}: ${pack.id}.`);
-    packIds.add(pack.id);
+    ingredientPackIds.add(pack.id);
     if (!collectionIds.has(pack.collectionId)) {
       throw new Error(`Unknown collection for ingredient pack ${pack.id}: ${pack.collectionId}.`);
     }

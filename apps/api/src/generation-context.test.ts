@@ -78,7 +78,7 @@ describe("prose prompt context", () => {
       { typeId: "project.premise", name: "Premise" },
       { typeId: "project.genres", name: "Genres" },
       { typeId: "story.character", name: "Mara" },
-      { typeId: "project.instructions", name: "Legacy instructions" },
+      { typeId: "project.instructions", name: "Saved instructions" },
     ];
     expect(proseContextRows(rows).map((entry) => entry.name)).toEqual(["Genres", "Mara"]);
   });

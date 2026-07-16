@@ -14,7 +14,7 @@ Uninstalling the application may leave local projects and backups in `%LOCALAPPD
 
 Non-AI writing features work without a network connection. Skriv connects directly to OpenRouter only when the user validates an API key, loads the available model list, or invokes an AI feature. Prompts, selected writing context, and generated content used for those requests are sent to OpenRouter and the selected model provider, subject to their policies.
 
-The desktop edition has no Skriv account, cloud synchronization, advertising, or application telemetry. Checking GitHub for a new release is currently a manual user action; the app does not perform an automatic update check.
+The desktop edition has no Skriv account, cloud synchronization, advertising, or application telemetry. Packaged production builds make one delayed request to the public GitHub Releases update endpoint after startup and when the user manually checks in Settings. Update metadata contains the installed version and platform information required by Tauri; manuscript content and API keys are never included. Update packages are downloaded and installed only after user approval.
 
 ## User responsibility
 

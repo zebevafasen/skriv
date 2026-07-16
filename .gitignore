@@ -12,6 +12,7 @@ coverage/
 .cargo/
 .rustup/
 .tmp/
+.local-data/
 apps/desktop/src-tauri/target/
 *.tsbuildinfo
 .vercel/
@@ -60,4 +61,11 @@ Desktop.ini
 *.tmp
 *.temp
 *.bak
-covers-preview.html
+# Release configuration is generated from repository variables and secrets.
+apps/desktop/src-tauri/tauri.release.conf.json
+
+# Local operator guides and release reports intentionally stay outside source control.
+LOCAL_SETUP_GUIDE.md
+LOCAL_TESTING_GUIDE.md
+LOCAL_FEATURE_GUIDE.md
+RELEASE_COMPLETION_REPORT.md

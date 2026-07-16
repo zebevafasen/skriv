@@ -1,0 +1,162 @@
+[1mdiff --git a/.github/BRANCH_PROTECTION.md b/.github/BRANCH_PROTECTION.md[m
+[1mindex 991e58d..8038096 100644[m
+[1m--- a/.github/BRANCH_PROTECTION.md[m
+[1m+++ b/.github/BRANCH_PROTECTION.md[m
+[36m@@ -1,12 +1,12 @@[m
+ # Required `main` protection[m
+ [m
+[31m-Configure this ruleset in GitHub before opening the unification pull request:[m
+[32m+[m[32mConfigure a GitHub ruleset for `main` with these ongoing release requirements:[m
+ [m
+[31m-- Require a pull request and disallow direct pushes.[m
+[31m-- Require the `quality`, `web-e2e`, and `windows` checks from `Unified CI`.[m
+[31m-- Require the Vercel preview deployment check.[m
+[31m-- Require the repository owner approval; dismiss stale approvals after new commits.[m
+[31m-- Disable auto-merge for the repository during the unification review.[m
+[31m-- Allow merge commits and use one for the final integration so the cutover is reversible as a unit.[m
+[32m+[m[32m- Require pull requests and disallow direct pushes.[m
+[32m+[m[32m- Require the `quality`, `web-e2e`, and `windows` jobs from Unified CI.[m
+[32m+[m[32m- Require the Vercel preview deployment for hosted changes.[m
+[32m+[m[32m- Dismiss stale approvals after new commits and require repository-owner approval.[m
+[32m+[m[32m- Block force pushes and branch deletion.[m
+[32m+[m[32m- Allow the repository owner to choose squash, rebase, or merge commits according to the change.[m
+ [m
+[31m-Do not change the production branch or deploy the integration branch as production before the manual checklist is complete.[m
+[32m+[m[32mDesktop releases are not created by pushes or tags. Dispatch **Desktop Release** from a clean `main` commit whose committed desktop version matches the workflow input. Publish its draft only after completing `docs/desktop-release.md`.[m
+[1mdiff --git a/.github/pull_request_template.md b/.github/pull_request_template.md[m
+[1mindex 4207bee..4fc6a95 100644[m
+[1m--- a/.github/pull_request_template.md[m
+[1m+++ b/.github/pull_request_template.md[m
+[36m@@ -1,13 +1,16 @@[m
+[32m+[m[32m## Summary[m
+[32m+[m
+[32m+[m[32mDescribe the user-visible and operational outcome.[m
+[32m+[m
+ ## Verification[m
+ [m
+[31m-- [ ] Shared typecheck, lint, unit tests, web build, API build, and Vercel build pass.[m
+[31m-- [ ] PostgreSQL integration and web Playwright checks pass.[m
+[31m-- [ ] Rust format, clippy, tests, Tauri build, and Windows desktop E2E pass.[m
+[31m-- [ ] A Vercel preview uses staging PostgreSQL and a staging private Blob store.[m
+[31m-- [ ] The CI-produced desktop beta was installed and manually tested on Windows.[m
+[31m-- [ ] Mobile browser parity and v5 archive transfer in both directions were manually verified.[m
+[31m-- [ ] Production data, credentials, and deployment were untouched during verification.[m
+[31m-- [ ] A production PostgreSQL backup exists and the additive migration set was rehearsed on staging.[m
+[31m-- [ ] The owner has given explicit written approval to merge.[m
+[31m-[m
+[31m-`main` must use a merge commit. Auto-merge is not permitted for this unification pull request.[m
+[32m+[m[32m- [ ] `pnpm desktop:release-check` and `pnpm test:compatibility`[m
+[32m+[m[32m- [ ] Typecheck, lint, unit tests, and builds[m
+[32m+[m[32m- [ ] Relevant Playwright and/or desktop WDIO coverage[m
+[32m+[m[32m- [ ] Rust format, Clippy, and tests for native changes[m
+[32m+[m[32m- [ ] Archive/import compatibility checked when contracts or persistence changed[m
+[32m+[m[32m- [ ] No production data, credentials, or release state was modified[m
+[32m+[m
+[32m+[m[32m## Release notes[m
+[32m+[m
+[32m+[m[32mList migrations, signing/configuration requirements, manual checks, and rollback considerations. Write “None” when not applicable.[m
+[1mdiff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml[m
+[1mindex 25bad9c..9920799 100644[m
+[1m--- a/.github/workflows/ci.yml[m
+[1m+++ b/.github/workflows/ci.yml[m
+[36m@@ -3,7 +3,7 @@[m [mname: Unified CI[m
+ on:[m
+   pull_request:[m
+   push:[m
+[31m-    branches: [main, codex/unified-web-desktop][m
+[32m+[m[32m    branches: [main][m
+ [m
+ concurrency:[m
+   group: unified-${{ github.workflow }}-${{ github.ref }}[m
+[36m@@ -25,6 +25,7 @@[m [mjobs:[m
+           cache: pnpm[m
+       - run: pnpm install --frozen-lockfile[m
+       - run: pnpm desktop:release-check[m
+[32m+[m[32m      - run: pnpm test:compatibility[m
+       - run: pnpm typecheck[m
+       - run: pnpm lint[m
+       - run: pnpm test[m
+[36m@@ -95,10 +96,9 @@[m [mjobs:[m
+         with:[m
+           components: rustfmt, clippy[m
+       - run: pnpm install --frozen-lockfile[m
+[31m-      - run: pnpm typecheck[m
+[31m-      - run: pnpm lint[m
+[31m-      - run: pnpm test[m
+[32m+[m[32m      - run: pnpm desktop:release-check[m
+       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check[m
+[32m+[m[32m      - run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml[m
+       - run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings[m
+       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml[m
+       - run: pnpm desktop:build[m
+[1mdiff --git a/.github/workflows/desktop-release.yml b/.github/workflows/desktop-release.yml[m
+[1mindex 798f5a8..98fb987 100644[m
+[1m--- a/.github/workflows/desktop-release.yml[m
+[1m+++ b/.github/workflows/desktop-release.yml[m
+[36m@@ -1,17 +1,84 @@[m
+ name: Desktop Release[m
+ [m
+ on:[m
+[31m-  push:[m
+[31m-    tags:[m
+[31m-      - "v*"[m
+[32m+[m[32m  workflow_dispatch:[m
+[32m+[m[32m    inputs:[m
+[32m+[m[32m      version:[m
+[32m+[m[32m        description: Committed desktop SemVer to release[m
+[32m+[m[32m        required: true[m
+[32m+[m[32m        type: string[m
+[32m+[m[32m      prerelease:[m
+[32m+[m[32m        description: Mark the draft as a prerelease[m
+[32m+[m[32m        required: true[m
+[32m+[m[32m        default: false[m
+[32m+[m[32m        type: boolean[m
+ [m
+ permissions:[m
+[31m-  contents: write[m
+[32m+[m[32m  contents: read[m
+[32m+[m
+[32m+[m[32mconcurrency:[m
+[32m+[m[32m  group: desktop-release-${{ inputs.version }}[m
+[32m+[m[32m  cancel-in-progress: false[m
+ [m
+ jobs:[m
+[31m-  windows-installer:[m
+[32m+[m[32m  validate:[m
+[32m+[m[32m    if: github.ref == 'refs/heads/main'[m
+[32m+[m[32m    runs-on: ubuntu-latest[m
+[32m+[m[32m    timeout-minutes: 45[m
+[32m+[m[32m    services:[m
+[32m+[m[32m      postgres:[m
+[32m+[m[32m        image: postgres:17[m
+[32m+[m[32m        env:[m
+[32m+[m[32m          POSTGRES_DB: skriv[m
+[32m+[m[32m          POSTGRES_USER: skriv[m
+[32m+[m[32m          POSTGRES_PASSWORD: skriv[m
+[32m+[m[32m        ports: ["5432:5432"][m
+[32m+[m[32m        options: >-[m
+[32m+[m[32m          --health-cmd "pg_isready -U skriv"[m
+[32m+[m[32m          --health-interval 10s[m
+[32m+[m[32m          --health-timeout 5s[m
+[32m+[m[32m          --health-retries 5[m
+[32m+[m[32m    env:[m
+[32m+[m[32m      DESKTOP_RELEASE_VERSION: ${{ inputs.version }}[m
+[32m+[m[32m      NODE_ENV: test[m
+[32m+[m[32m      DATABASE_URL: postgresql://skriv:skriv@localhost:5432/skriv[m
+[32m+[m[32m      DEV_AUTH_BYPASS: "true"[m
+[32m+[m[32m      AI_PROVIDER: fake[m
+[32m+[m[32m      FAKE_AI_DELAY_MS: "1"[m
+[32m+[m[32m      BETTER_AUTH_SECRET: ci-only-secret-at-least-32-characters[m
+[32m+[m[32m      CREDENTIAL_ENCRYPTION_KEY: ci-only-credential-key-at-least-32-chars[m
+[32m+[m[32m    steps:[m
+[32m+[m[32m      - uses: actions/checkout@v4[m
+[32m+[m[32m      - uses: pnpm/action-setup@v4[m
+[32m+[m[32m        with:[m
+[32m+[m[32m          version: 11.11.0[m
+[32m+[m[32m          run_install: false[m
+[32m+[m[32m      - uses: actions/setup-node@v4[m
+[32m+[m[32m        with:[m
+[32m+[m[32m          node-version: 24[m
+[32m+[m[32m          cache: pnpm[m
+[32m+[m[32m      - run: pnpm install --frozen-lockfile[m
+[32m+[m[32m      - run: pnpm desktop:release-check[

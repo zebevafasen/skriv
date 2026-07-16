@@ -2,8 +2,11 @@ import { projectSettingsSchema } from "@skriv/contracts";
 import { describe, expect, it } from "vitest";
 import {
   projectArtworkHue,
+  projectArtworkPalette,
+  projectArtworkPalettes,
   projectArtworkSecondaryHue,
   projectArtworkSeed,
+  projectArtworkStyle,
   projectArtworkVariant,
   projectArtworkVariants,
 } from "../utils/projectArtwork.js";
@@ -11,12 +14,37 @@ import {
 describe("project artwork", () => {
   it("is stable and remains within the available variants", () => {
     const id = "1c03c58d-9df3-4fe7-bd3c-7cb8ed13f510";
-    expect(
-      projectArtworkSeed({ id, settings: projectSettingsSchema.parse({}) }),
-    ).toBe(id);
+    expect(projectArtworkSeed({ id, settings: projectSettingsSchema.parse({}) })).toBe(id);
     expect(projectArtworkVariant(id)).toBe(projectArtworkVariant(id));
     expect(projectArtworkVariant(id)).toBeGreaterThanOrEqual(0);
     expect(projectArtworkVariant(id)).toBeLessThan(projectArtworkVariants.length);
+    expect(projectArtworkPalette(id)).toBeGreaterThanOrEqual(0);
+    expect(projectArtworkPalette(id)).toBeLessThan(projectArtworkPalettes.length);
+    expect(projectArtworkStyle(id)).toEqual(projectArtworkStyle(id));
+    expect(projectArtworkStyle(id).backgroundImage).toContain("gradient");
+  });
+
+  it("offers perceptually distinct curated palette families", () => {
+    expect(projectArtworkPalettes.map((palette) => palette.name)).toEqual([
+      "Ember",
+      "Ocean",
+      "Amethyst",
+      "Verdant",
+      "Gilded",
+      "Arctic",
+      "Rose",
+      "Ink",
+      "Neon",
+      "Sepia",
+      "Cobalt & Scarlet",
+      "Dawn",
+    ]);
+    expect(
+      new Set(projectArtworkPalettes.map((palette) => palette.backgroundLightness)).size,
+    ).toBeGreaterThan(4);
+    expect(
+      new Set(projectArtworkPalettes.map((palette) => palette.blendMode)).size,
+    ).toBeGreaterThan(4);
   });
 
   it("uses the archived artwork seed after an import assigns a new project id", () => {

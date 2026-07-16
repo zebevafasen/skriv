@@ -3,5 +3,12 @@
   "identifier": "main-capability",
   "description": "Capabilities for the bundled Skriv main window",
   "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-destroy", "window-state:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-destroy",
+    "log:default",
+    "process:allow-restart",
+    "updater:default",
+    "window-state:default"
+  ]
 }

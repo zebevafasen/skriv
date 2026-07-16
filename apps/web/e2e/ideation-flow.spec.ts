@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createProject, deleteProject } from "./helpers";
 
 test.setTimeout(120_000);
 
@@ -14,12 +15,7 @@ test("turns a chosen premise into reviewed Compendium entries and a first-Scene 
       recursionDepth: 2,
     },
   });
-  await page.getByRole("button", { name: "Create story" }).click();
-  await page.getByPlaceholder("The Last Ember").fill(`Ideation Flow ${Date.now()}`);
-  await page.getByRole("button", { name: "Create project" }).click();
-  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
-  const projectId = page.url().split("/").at(-1);
-  if (!projectId) throw new Error("Project ID was not present in the URL.");
+  const projectId = await createProject(page, "Ideation Flow");
 
   try {
     await page.getByRole("button", { name: "Ideation" }).click();
@@ -76,6 +72,6 @@ test("turns a chosen premise into reviewed Compendium entries and a first-Scene 
       "The room seemed to gather itself",
     );
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
+    await deleteProject(page, projectId);
   }
 });

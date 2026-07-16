@@ -16,6 +16,8 @@
     "desktop:build": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 build",
     "desktop:check": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 check",
     "desktop:release-check": "node scripts/check-desktop-release.mjs",
+    "desktop:release-config": "node scripts/create-desktop-release-config.mjs",
+    "desktop:version": "node scripts/set-desktop-version.mjs",
     "desktop:e2e": "wdio run e2e/wdio.conf.mjs",
     "web:e2e": "playwright test",
     "build": "turbo build",
@@ -23,6 +25,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "test": "turbo test",
+    "test:compatibility": "node scripts/check-legacy-boundary.mjs",
     "test:native": "powershell -ExecutionPolicy Bypass -File scripts/tauri.ps1 test",
     "infra:up": "docker compose up -d postgres",
     "infra:down": "docker compose down",
@@ -41,6 +44,5 @@
     "turbo": "2.10.4",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
-  },
-  "version": "0.0.1"
+  }
 }

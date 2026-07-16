@@ -21,11 +21,11 @@ pnpm web:dev
 
 Desktop development uses `pnpm desktop:dev`.
 
-## Windows early access
+## Windows desktop release
 
 Desktop releases are distributed as Windows x64 installers through GitHub Releases. Non-AI writing works offline; installation may still require internet access when Windows needs to install WebView2. AI features connect directly to OpenRouter after the user adds an API key in Settings.
 
-Projects are stored locally under `%LOCALAPPDATA%\Skriv`. Updates are installed manually by downloading a newer installer from the official GitHub Releases page. Before installing or updating, review the [desktop release guide](docs/desktop-release.md), [privacy notice](PRIVACY.md), and [changelog](CHANGELOG.md).
+Projects are stored locally under `%LOCALAPPDATA%\Skriv`. Packaged production builds check the signed stable GitHub release channel after startup; downloads and installation always require user approval. Existing 0.1.3 installations need one final manual installer upgrade before automatic updates are available. Before releasing, review the [desktop release guide](docs/desktop-release.md), [privacy notice](PRIVACY.md), and [changelog](CHANGELOG.md).
 
 Skriv is proprietary during alpha and is not open-source software. Official alpha binaries may be used for personal, non-commercial evaluation; the source code is available for inspection only. See [LICENSE](LICENSE) for the complete terms.
 
@@ -42,6 +42,7 @@ pnpm test:native
 pnpm desktop:build
 pnpm desktop:e2e
 pnpm desktop:release-check
+pnpm test:compatibility
 ```
 
 ## Repository layout
@@ -57,6 +58,6 @@ pnpm desktop:release-check
 
 ## Release safety
 
-`main` remains the production web baseline until the integration branch passes Unified CI, produces a staging Vercel preview and Windows installer, completes the manual parity/archive checklist, and receives explicit written approval. Auto-merge is not permitted. The final integration must use one merge commit after a production PostgreSQL backup.
+`main` is protected by the `quality`, `web-e2e`, and `windows` jobs in Unified CI. Desktop releases are created only by manually dispatching the Desktop Release workflow from `main`; it creates a draft release that must pass the Windows smoke-test checklist before publication. Updater signing is mandatory, while Authenticode is optional but strongly recommended.
 
 See [operations](docs/operations.md), [Vercel deployment](docs/vercel.md), and the [design specification](Skriv_Design_Specification_v5.md).

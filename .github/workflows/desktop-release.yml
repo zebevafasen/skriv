@@ -1,17 +1,84 @@
 name: Desktop Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Committed desktop SemVer to release
+        required: true
+        type: string
+      prerelease:
+        description: Mark the draft as a prerelease
+        required: true
+        default: false
+        type: boolean
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: desktop-release-${{ inputs.version }}
+  cancel-in-progress: false
 
 jobs:
-  windows-installer:
+  validate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: skriv
+          POSTGRES_USER: skriv
+          POSTGRES_PASSWORD: skriv
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U skriv"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DESKTOP_RELEASE_VERSION: ${{ inputs.version }}
+      NODE_ENV: test
+      DATABASE_URL: postgresql://skriv:skriv@localhost:5432/skriv
+      DEV_AUTH_BYPASS: "true"
+      AI_PROVIDER: fake
+      FAKE_AI_DELAY_MS: "1"
+      BETTER_AUTH_SECRET: ci-only-secret-at-least-32-characters
+      CREDENTIAL_ENCRYPTION_KEY: ci-only-credential-key-at-least-32-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.11.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm desktop:release-check
+      - run: pnpm test:compatibility
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm build:vercel
+      - run: pnpm db:migrate
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm web:e2e
+
+  windows-release:
+    needs: validate
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      DESKTOP_RELEASE_VERSION: ${{ inputs.version }}
+      TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+      WINDOWS_TIMESTAMP_URL: ${{ vars.WINDOWS_TIMESTAMP_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -27,28 +94,86 @@ jobs:
           components: rustfmt, clippy
       - run: pnpm install --frozen-lockfile
       - run: pnpm desktop:release-check
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm test
+      - run: pnpm test:compatibility
+      - name: Verify version is newer than the latest stable release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $latest = gh api repos/${{ github.repository }}/releases/latest --jq .tag_name 2>$null
+          if ($LASTEXITCODE -ne 0) { $latest = "v0.0.0" }
+          $latestVersion = $latest.Trim().TrimStart("v")
+          node scripts/verify-version-order.mjs "${{ inputs.version }}" $latestVersion
       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
+      - run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml
       - run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
-      - run: pnpm desktop:build
-      - name: Prepare release assets
-        id: assets
+      - run: cargo install tauri-driver --locked
+      - run: pnpm desktop:e2e
+      - name: Import optional Authenticode certificate
+        id: certificate
         shell: pwsh
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         run: |
-          $installer = Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          if (-not $env:CERTIFICATE_BASE64) {
+            "::warning::WINDOWS_CERTIFICATE is not configured; the updater will be signed but Windows may show a SmartScreen warning."
+            "thumbprint=" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+          $certificatePath = Join-Path $env:RUNNER_TEMP "skriv-release.pfx"
+          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:CERTIFICATE_BASE64))
+          $password = ConvertTo-SecureString $env:CERTIFICATE_PASSWORD -AsPlainText -Force
+          $certificate = Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          "thumbprint=$($certificate.Thumbprint)" >> $env:GITHUB_OUTPUT
+          Remove-Item -LiteralPath $certificatePath -Force
+      - name: Generate signed release configuration
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          WINDOWS_CERTIFICATE_THUMBPRINT: ${{ steps.certificate.outputs.thumbprint }}
+        run: |
+          if (-not $env:TAURI_UPDATER_PUBLIC_KEY) { throw "Repository variable TAURI_UPDATER_PUBLIC_KEY is required." }
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw "Secret TAURI_SIGNING_PRIVATE_KEY is required." }
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { throw "Secret TAURI_SIGNING_PRIVATE_KEY_PASSWORD is required." }
+          pnpm desktop:release-config
+      - name: Build signed updater artifacts and create draft release
+        id: tauri
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VITE_UPDATER_ENABLED: "true"
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          args: --config src-tauri/tauri.release.conf.json --target x86_64-pc-windows-msvc
+          tagName: v${{ inputs.version }}
+          releaseName: Skriv v${{ inputs.version }}
+          releaseBody: Draft release. Complete the Windows smoke-test checklist before publishing.
+          releaseDraft: true
+          prerelease: ${{ inputs.prerelease }}
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          updaterJsonPreferNsis: true
+      - name: Attach installer checksum
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installer = Get-ChildItem apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe | Select-Object -First 1
           if (-not $installer) { throw "The NSIS installer was not produced." }
           $checksum = "$($installer.FullName).sha256"
           $hash = (Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $($installer.Name)" | Set-Content -LiteralPath $checksum -Encoding ascii
-          "installer=$($installer.FullName)" >> $env:GITHUB_OUTPUT
-          "checksum=$checksum" >> $env:GITHUB_OUTPUT
-      - name: Create draft GitHub release
+          gh release upload "v${{ inputs.version }}" $checksum --clobber
+      - name: Remove imported certificate
+        if: always()
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-          INSTALLER: ${{ steps.assets.outputs.installer }}
-          CHECKSUM: ${{ steps.assets.outputs.checksum }}
-        run: gh release create $env:GITHUB_REF_NAME $env:INSTALLER $env:CHECKSUM --draft --verify-tag --title "Skriv $env:GITHUB_REF_NAME" --generate-notes
+        run: |
+          $certificatePath = Join-Path $env:RUNNER_TEMP "skriv-release.pfx"
+          if (Test-Path -LiteralPath $certificatePath) { Remove-Item -LiteralPath $certificatePath -Force }
+          $thumbprint = "${{ steps.certificate.outputs.thumbprint }}"
+          if ($thumbprint) { Remove-Item -LiteralPath "Cert:\CurrentUser\My\$thumbprint" -Force }

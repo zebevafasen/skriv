@@ -122,7 +122,10 @@ async function ensureDefaultHierarchy(context: AppContext, userId: string) {
 export async function getIngredientPackCatalog(context: AppContext, userId: string) {
   const defaults = await ensureDefaultHierarchy(context, userId);
   const [nodes, rows] = await Promise.all([
-    context.db.select().from(ingredientPackCatalogNodes).where(eq(ingredientPackCatalogNodes.userId, userId)),
+    context.db
+      .select()
+      .from(ingredientPackCatalogNodes)
+      .where(eq(ingredientPackCatalogNodes.userId, userId)),
     context.db.select().from(ingredientPacks).where(eq(ingredientPacks.userId, userId)),
   ]);
   return ingredientPackCatalogSchema.parse({
@@ -171,11 +174,11 @@ export async function importIngredientPacksIntoProject(
   context: AppContext,
   userId: string,
   projectId: string,
-  packIds: string[],
+  ingredientPackIds: string[],
 ) {
-  if (!packIds.length) return [];
+  if (!ingredientPackIds.length) return [];
   const available = await getIngredientPacks(context, userId);
-  const selected = packIds.map((id) => available.find((pack) => pack.id === id));
+  const selected = ingredientPackIds.map((id) => available.find((pack) => pack.id === id));
   if (selected.some((pack) => !pack))
     throw Object.assign(new Error("Ingredient pack not found."), { statusCode: 400 });
   const validSelected = selected.filter((pack) => pack !== undefined);
@@ -196,7 +199,10 @@ export async function importIngredientPacksIntoProject(
     .select()
     .from(projectIngredientPacks)
     .where(
-      and(eq(projectIngredientPacks.projectId, projectId), inArray(projectIngredientPacks.sourcePackId, packIds)),
+      and(
+        eq(projectIngredientPacks.projectId, projectId),
+        inArray(projectIngredientPacks.sourcePackId, ingredientPackIds),
+      ),
     );
 }
 
@@ -231,21 +237,20 @@ export async function syncProjectIngredientPacks(
     const currentById = new Map(current.map((pack) => [pack.sourcePackId, pack]));
     const additions = desiredIds.filter((id) => !currentById.has(id));
     const missing = additions.find((id) => !availableById.has(id));
-    if (missing) throw Object.assign(new Error(`Ingredient pack not found: ${missing}.`), { statusCode: 400 });
+    if (missing)
+      throw Object.assign(new Error(`Ingredient pack not found: ${missing}.`), { statusCode: 400 });
     const removed = current.filter((pack) => !desiredIds.includes(pack.sourcePackId));
 
     if (removed.length) {
-      await tx
-        .delete(projectIngredientPacks)
-        .where(
-          and(
-            eq(projectIngredientPacks.projectId, projectId),
-            inArray(
-              projectIngredientPacks.sourcePackId,
-              removed.map((pack) => pack.sourcePackId),
-            ),
+      await tx.delete(projectIngredientPacks).where(
+        and(
+          eq(projectIngredientPacks.projectId, projectId),
+          inArray(
+            projectIngredientPacks.sourcePackId,
+            removed.map((pack) => pack.sourcePackId),
           ),
-        );
+        ),
+      );
     }
     if (additions.length) {
       const packs = additions.flatMap((id) => {
@@ -345,14 +350,12 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return merged;
   });
 
-  // Keep the former tag-pack routes as compatibility aliases for existing clients.
-  for (const routePath of ["/api/ingredient-pack-catalog", "/api/tag-pack-catalog"])
-    app.get(routePath, async (request) => getIngredientPackCatalog(context, request.userId));
-  for (const routePath of ["/api/ingredient-packs", "/api/tag-packs"])
-    app.get(routePath, async (request) => getIngredientPacks(context, request.userId));
+  app.get("/api/ingredient-pack-catalog", async (request) =>
+    getIngredientPackCatalog(context, request.userId),
+  );
+  app.get("/api/ingredient-packs", async (request) => getIngredientPacks(context, request.userId));
 
-  for (const routePath of ["/api/ingredient-pack-categories", "/api/tag-pack-categories"])
-    app.post(routePath, async (request, reply) => {
+  app.post("/api/ingredient-pack-categories", async (request, reply) => {
     const input = parseWith(createIngredientPackCategoryInputSchema, request.body);
     const catalog = await getIngredientPackCatalog(context, request.userId);
     if (catalog.categories.some((category) => normalize(category.name) === normalize(input.name))) {
@@ -378,11 +381,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(201).send(userNodeResponse(created));
   });
 
-  for (const routePath of [
-    "/api/ingredient-pack-categories/:id",
-    "/api/tag-pack-categories/:id",
-  ])
-    app.patch(routePath, async (request, reply) => {
+  app.patch("/api/ingredient-pack-categories/:id", async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
@@ -410,11 +409,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return userNodeResponse(updated);
   });
 
-  for (const routePath of [
-    "/api/ingredient-pack-categories/:id",
-    "/api/tag-pack-categories/:id",
-  ])
-    app.delete(routePath, async (request, reply) => {
+  app.delete("/api/ingredient-pack-categories/:id", async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
@@ -429,7 +424,10 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     if (!target) return notFound(reply, "Custom ingredient pack category not found.");
     if (target.systemKey)
       return reply.code(409).send({
-        error: { code: "PROTECTED_NODE", message: "The default My Packs category cannot be deleted." },
+        error: {
+          code: "PROTECTED_NODE",
+          message: "The default My Packs category cannot be deleted.",
+        },
       });
     const childIds = nodes
       .filter((node) => node.kind === "collection" && node.parentId === id)
@@ -440,7 +438,10 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
           .update(ingredientPacks)
           .set({ collectionId: defaults.collection.id, ...touchUpdatedAt })
           .where(
-            and(eq(ingredientPacks.userId, request.userId), inArray(ingredientPacks.collectionId, childIds)),
+            and(
+              eq(ingredientPacks.userId, request.userId),
+              inArray(ingredientPacks.collectionId, childIds),
+            ),
           );
         await tx
           .delete(ingredientPackCatalogNodes)
@@ -463,8 +464,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(204).send();
   });
 
-  for (const routePath of ["/api/ingredient-pack-collections", "/api/tag-pack-collections"])
-    app.post(routePath, async (request, reply) => {
+  app.post("/api/ingredient-pack-collections", async (request, reply) => {
     const input = parseWith(createIngredientPackCollectionInputSchema, request.body);
     const catalog = await getIngredientPackCatalog(context, request.userId);
     if (!catalog.categories.some((category) => category.id === input.categoryId)) {
@@ -480,7 +480,10 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
       )
     ) {
       return reply.code(409).send({
-        error: { code: "DUPLICATE_NAME", message: "That category already has a collection with this name." },
+        error: {
+          code: "DUPLICATE_NAME",
+          message: "That category already has a collection with this name.",
+        },
       });
     }
     const [created] = await context.db
@@ -498,11 +501,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(201).send(userNodeResponse(created));
   });
 
-  for (const routePath of [
-    "/api/ingredient-pack-collections/:id",
-    "/api/tag-pack-collections/:id",
-  ])
-    app.patch(routePath, async (request, reply) => {
+  app.patch("/api/ingredient-pack-collections/:id", async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
@@ -539,11 +538,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return userNodeResponse(updated);
   });
 
-  for (const routePath of [
-    "/api/ingredient-pack-collections/:id",
-    "/api/tag-pack-collections/:id",
-  ])
-    app.delete(routePath, async (request, reply) => {
+  app.delete("/api/ingredient-pack-collections/:id", async (request, reply) => {
     const { id } = parseWith(nodeParams, request.params);
     if (!z.uuid().safeParse(id).success)
       return reply.code(409).send({
@@ -563,13 +558,18 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     if (!target) return notFound(reply, "Custom ingredient pack collection not found.");
     if (target.systemKey)
       return reply.code(409).send({
-        error: { code: "PROTECTED_NODE", message: "The default Unsorted collection cannot be deleted." },
+        error: {
+          code: "PROTECTED_NODE",
+          message: "The default Unsorted collection cannot be deleted.",
+        },
       });
     await context.db.transaction(async (tx) => {
       await tx
         .update(ingredientPacks)
         .set({ collectionId: defaults.collection.id, ...touchUpdatedAt })
-        .where(and(eq(ingredientPacks.userId, request.userId), eq(ingredientPacks.collectionId, id)));
+        .where(
+          and(eq(ingredientPacks.userId, request.userId), eq(ingredientPacks.collectionId, id)),
+        );
       await tx
         .delete(ingredientPackCatalogNodes)
         .where(
@@ -582,11 +582,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(204).send();
   });
 
-  for (const routePath of [
-    "/api/projects/:projectId/ingredient-packs",
-    "/api/projects/:projectId/tag-packs",
-  ])
-    app.get(routePath, async (request, reply) => {
+  app.get("/api/projects/:projectId/ingredient-packs", async (request, reply) => {
     const { projectId } = parseWith(z.object({ projectId: z.uuid() }), request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
@@ -597,8 +593,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return rows.map(projectIngredientPackResponse);
   });
 
-  for (const routePath of ["/api/ingredient-packs", "/api/tag-packs"])
-    app.post(routePath, async (request, reply) => {
+  app.post("/api/ingredient-packs", async (request, reply) => {
     const input = parseWith(createIngredientPackInputSchema, request.body);
     const catalog = await getIngredientPackCatalog(context, request.userId);
     if (!catalog.collections.some((collection) => collection.id === input.collectionId)) {
@@ -609,11 +604,15 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     if (
       catalog.packs.some(
         (pack) =>
-          pack.collectionId === input.collectionId && normalize(pack.name) === normalize(input.name),
+          pack.collectionId === input.collectionId &&
+          normalize(pack.name) === normalize(input.name),
       )
     ) {
       return reply.code(409).send({
-        error: { code: "DUPLICATE_NAME", message: "That collection already has a pack with this name." },
+        error: {
+          code: "DUPLICATE_NAME",
+          message: "That collection already has a pack with this name.",
+        },
       });
     }
     const [created] = await context.db
@@ -631,16 +630,19 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(201).send(customIngredientPackResponse(created, input.collectionId));
   });
 
-  for (const routePath of ["/api/ingredient-packs/:id", "/api/tag-packs/:id"])
-    app.patch(routePath, async (request, reply) => {
+  app.patch("/api/ingredient-packs/:id", async (request, reply) => {
     const { id } = parseWith(ingredientPackParams, request.params);
-    if (!z.uuid().safeParse(id).success) return notFound(reply, "Custom ingredient pack not found.");
+    if (!z.uuid().safeParse(id).success)
+      return notFound(reply, "Custom ingredient pack not found.");
     const input = parseWith(updateIngredientPackInputSchema, request.body);
     if (input.collectionId !== undefined) {
       const catalog = await getIngredientPackCatalog(context, request.userId);
       if (!catalog.collections.some((collection) => collection.id === input.collectionId)) {
         return reply.code(400).send({
-          error: { code: "BAD_REQUEST", message: "Parent ingredient pack collection was not found." },
+          error: {
+            code: "BAD_REQUEST",
+            message: "Parent ingredient pack collection was not found.",
+          },
         });
       }
     }
@@ -662,10 +664,10 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return customIngredientPackResponse(updated, defaults.collection.id);
   });
 
-  for (const routePath of ["/api/ingredient-packs/:id", "/api/tag-packs/:id"])
-    app.delete(routePath, async (request, reply) => {
+  app.delete("/api/ingredient-packs/:id", async (request, reply) => {
     const { id } = parseWith(ingredientPackParams, request.params);
-    if (!z.uuid().safeParse(id).success) return notFound(reply, "Custom ingredient pack not found.");
+    if (!z.uuid().safeParse(id).success)
+      return notFound(reply, "Custom ingredient pack not found.");
     const [deleted] = await context.db
       .delete(ingredientPacks)
       .where(and(eq(ingredientPacks.id, id), eq(ingredientPacks.userId, request.userId)))
@@ -674,11 +676,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(204).send();
   });
 
-  for (const routePath of [
-    "/api/projects/:projectId/ingredient-packs",
-    "/api/projects/:projectId/tag-packs",
-  ])
-    app.put(routePath, async (request, reply) => {
+  app.put("/api/projects/:projectId/ingredient-packs", async (request, reply) => {
     const { projectId } = parseWith(z.object({ projectId: z.uuid() }), request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
@@ -692,11 +690,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return rows.map(projectIngredientPackResponse);
   });
 
-  for (const routePath of [
-    "/api/projects/:projectId/ingredient-packs/:packId/import",
-    "/api/projects/:projectId/tag-packs/:packId/import",
-  ])
-    app.post(routePath, async (request, reply) => {
+  app.post("/api/projects/:projectId/ingredient-packs/:packId/import", async (request, reply) => {
     const { projectId, packId } = parseWith(projectIngredientPackParams, request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
@@ -713,11 +707,7 @@ export async function registerSetupRoutes(app: FastifyInstance, context: AppCont
     return reply.code(201).send(projectIngredientPackResponse(row));
   });
 
-  for (const routePath of [
-    "/api/projects/:projectId/ingredient-packs/:packId",
-    "/api/projects/:projectId/tag-packs/:packId",
-  ])
-    app.delete(routePath, async (request, reply) => {
+  app.delete("/api/projects/:projectId/ingredient-packs/:packId", async (request, reply) => {
     const { projectId, packId } = parseWith(projectIngredientPackParams, request.params);
     if (!(await ownsProject(context, request.userId, projectId)))
       return notFound(reply, "Project not found.");
