@@ -267,18 +267,18 @@ export async function registerImportRoutes(
         typeof input.project.settings?.notes === "string" &&
         input.project.settings.notes.trim()
       ) {
-        const legacyNotes = input.project.settings.notes.trim();
+        const archivedNotes = input.project.settings.notes.trim();
         await tx.insert(projectNotes).values({
           projectId: project.id,
           title: "Project Notes",
           document: {
             type: "doc",
-            content: legacyNotes.split(/\r?\n/).map((line) => ({
+            content: archivedNotes.split(/\r?\n/).map((line) => ({
               type: "paragraph",
               ...(line ? { content: [{ type: "text", text: line }] } : {}),
             })),
           },
-          plainText: legacyNotes,
+          plainText: archivedNotes,
           pinned: true,
         });
       }

@@ -32,6 +32,7 @@ export function ChatEditor({
       MarkdownEditingShortcuts,
       StarterKit.configure({
         dropcursor: false,
+        underline: false,
       }),
       Underline,
       Placeholder.configure({
@@ -46,7 +47,10 @@ export function ChatEditor({
     content: value,
     editorProps: {
       attributes: {
+        "aria-label": "Chat message",
+        "aria-multiline": "true",
         class: "mention-textarea chat-input prose prose-sm prose-invert chat-markdown",
+        role: "textbox",
         spellcheck: "false",
       },
     },

@@ -8456,7 +8456,7 @@ button.mobile-only-tab {
   color: var(--c-5c5c5c);
 }
 
-/* Phone workspace shell. Kept last so it can replace the legacy responsive workspace rules. */
+/* Phone workspace shell. */
 .mobile-project-nav,
 .mobile-editor-context,
 .mobile-editor-tools,

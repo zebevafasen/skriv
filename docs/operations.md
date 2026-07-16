@@ -1,29 +1,22 @@
-# Unified operations
+# Operations
 
 ## Product boundaries
 
-Web and desktop share features and archive contracts but never share a live store. PostgreSQL records remain account/workspace scoped. Desktop records remain in `%LOCALAPPDATA%\Skriv\skriv.sqlite3`. Shared UI calls only `SkrivClient`; a shared feature change must update and test both adapters.
+Web and desktop share features and archive contracts but never share a live store. PostgreSQL records remain account scoped. Desktop records remain in `%LOCALAPPDATA%\Skriv\skriv.sqlite3`. A shared feature must update and test both `SkrivClient` adapters.
 
-## CI and merge gate
+## Main branch and CI
 
-`Unified CI` has required `quality`, `web-e2e`, and `windows` jobs. It builds the hosted output and unsigned current-user NSIS installer without releasing either artifact. Protect `main` with these checks, the Vercel preview check, and explicit owner approval. Auto-merge stays disabled for unification.
+Unified CI owns the required `quality`, `web-e2e`, and `windows` checks. Protect `main` as documented in `.github/BRANCH_PROTECTION.md`. Database deployment uses generated additive migrations only: run `pnpm db:generate`, review the SQL, rehearse it against staging, then apply it with `pnpm db:migrate`. Direct schema pushes and one-off cleanup commands are intentionally unavailable.
 
-Before the merge:
+## Archives and persistence
 
-1. Apply generated additive migrations to staging PostgreSQL.
-2. Deploy a preview with staging-only database, Blob, authentication, encryption, and AI secrets.
-3. Install the CI desktop artifact and run the parity checklist on Windows.
-4. Transfer a v5 archive desktop → web and web → desktop, including images, revisions, and Chat.
-5. Verify responsive mobile browser behavior and desktop offline non-AI behavior.
-6. Confirm production was untouched and obtain written approval.
-7. Back up production PostgreSQL, rerun checks, and merge with a merge commit.
+Schema-v5 `.skriv` archives are the current portable transfer format. Schema-v4 JSON import remains supported solely for existing exports. Desktop migrations and the historical physical ingredient-pack table names are permanent compatibility data; application APIs use current ingredient-pack terminology.
 
-## Hosted migrations and archives
+Desktop SQLite uses foreign keys, WAL, compiled migrations, safety snapshots, portable dirty-project backups, and a clean-shutdown backup. Credentials are never included in archives.
 
-Deployment builds never run `drizzle push` or mutate a database. Generate migrations with `pnpm db:generate`; rehearse them with `pnpm db:migrate` against staging.
+## Incident response
 
-Hosted v5 archives use an environment-specific private Vercel Blob store. Import issues a 15-minute exact-path signed PUT URL; finalization validates ZIP paths, limits, checksums, and Zod content, imports in one PostgreSQL transaction with remapped identifiers, and deletes the Blob in `finally`. Export builds the same format and returns a 15-minute signed GET URL. A daily authenticated cron removes stale rows and blobs.
-
-## Desktop recovery
-
-The desktop database uses foreign keys, WAL, compiled migrations, and safety snapshots. Portable project snapshots are retained locally after dirty mutations and clean close. The desktop OpenRouter key is stored under service `com.zebevafasen.skriv`; hosted credentials are separately encrypted and user scoped. Credentials are excluded from archives.
+- For a hosted regression, stop deployment, preserve logs, restore from the production backup if data was affected, and ship a reviewed fix.
+- For a desktop regression, leave the affected release available while triaging unless it is actively dangerous. Never replace artifacts under an existing version.
+- Roll desktop users forward with a higher patch version; the updater rejects downgrades.
+- Never request API keys or private manuscript text in issue reports or logs.

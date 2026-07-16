@@ -14,6 +14,7 @@ import {
   sceneMetadataSchema,
   selectionActionSchema,
   ingredientPackSchema,
+  legacyProjectArchiveV4Schema,
   syncProjectIngredientPacksInputSchema,
   updateProjectNoteInputSchema,
   updateProjectInputSchema,
@@ -49,11 +50,11 @@ describe("shared contracts", () => {
       }),
     ).toMatchObject({ language: "General English", ingredientPackIds: [] });
     expect(
-      createProjectInputSchema.parse({ title: "Legacy Story", tagPackIds: ["pack.legacy"] }),
-    ).toMatchObject({ ingredientPackIds: ["pack.legacy"] });
-    expect(syncProjectIngredientPacksInputSchema.parse({ packIds: ["pack.legacy"] })).toEqual({
-      ingredientPackIds: ["pack.legacy"],
-    });
+      createProjectInputSchema.safeParse({ title: "Old client", tagPackIds: ["pack.old"] }).success,
+    ).toBe(false);
+    expect(syncProjectIngredientPacksInputSchema.safeParse({ packIds: ["pack.old"] }).success).toBe(
+      false,
+    );
     expect(manuscriptExportOptionsSchema.parse({ format: "docx" })).toMatchObject({
       titlePage: true,
       includeEmptyScenes: false,
@@ -70,6 +71,29 @@ describe("shared contracts", () => {
         updatedAt: null,
       }).success,
     ).toBe(true);
+  });
+
+  it("keeps schema-v4 project archives importable without restoring runtime aliases", () => {
+    const archive = legacyProjectArchiveV4Schema.parse({
+      schemaVersion: 4,
+      project: { title: "Imported story", settings: { notes: "Archived note" } },
+      manuscript: [],
+      compendium: [],
+      notes: [],
+      projectTagPacks: [
+        {
+          sourcePackId: "builtin.genre.fantasy",
+          name: "Fantasy",
+          ownership: "builtin",
+          values: { genres: ["genre.fantasy"], themes: [], tags: [] },
+        },
+      ],
+    });
+    expect(archive.project.title).toBe("Imported story");
+    expect(archive.projectTagPacks[0]).toMatchObject({
+      sourcePackId: "builtin.genre.fantasy",
+      name: "Fantasy",
+    });
   });
   it("requires an event for toward-event generation", () => {
     const result = generationRequestSchema.safeParse({

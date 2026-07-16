@@ -7,8 +7,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import "./desktop.css";
 import { DesktopSettingsPage } from "./DesktopSettingsPage.js";
 import { createDesktopClient } from "./native/desktop-client.js";
+import { createDesktopUpdateService, DesktopUpdateProvider } from "./updates/UpdateProvider.js";
 
 type DatabaseStatus = { ready: boolean; error: string | null };
 type DatabaseSnapshot = { name: string; createdAt: string; size: number };
@@ -82,6 +84,7 @@ async function start() {
   }
   const client = createDesktopClient();
   configureSkrivClient(client);
+  const updateService = createDesktopUpdateService(client, flushPendingPersistence);
   let closing = false;
   await getCurrentWindow().onCloseRequested(async (event) => {
     if (closing) return;
@@ -99,7 +102,9 @@ async function start() {
   reactRoot.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <DesktopUpdateProvider service={updateService}>
+          <RouterProvider router={router} />
+        </DesktopUpdateProvider>
       </QueryClientProvider>
     </StrictMode>,
   );

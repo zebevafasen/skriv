@@ -1,12 +1,12 @@
 # Required `main` protection
 
-Configure this ruleset in GitHub before opening the unification pull request:
+Configure a GitHub ruleset for `main` with these ongoing release requirements:
 
-- Require a pull request and disallow direct pushes.
-- Require the `quality`, `web-e2e`, and `windows` checks from `Unified CI`.
-- Require the Vercel preview deployment check.
-- Require the repository owner approval; dismiss stale approvals after new commits.
-- Disable auto-merge for the repository during the unification review.
-- Allow merge commits and use one for the final integration so the cutover is reversible as a unit.
+- Require pull requests and disallow direct pushes.
+- Require the `quality`, `web-e2e`, and `windows` jobs from Unified CI.
+- Require the Vercel preview deployment for hosted changes.
+- Dismiss stale approvals after new commits and require repository-owner approval.
+- Block force pushes and branch deletion.
+- Allow the repository owner to choose squash, rebase, or merge commits according to the change.
 
-Do not change the production branch or deploy the integration branch as production before the manual checklist is complete.
+Desktop releases are not created by pushes or tags. Dispatch **Desktop Release** from a clean `main` commit whose committed desktop version matches the workflow input. Publish its draft only after completing `docs/desktop-release.md`.

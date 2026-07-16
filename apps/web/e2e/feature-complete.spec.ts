@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createProject, deleteProject } from "./helpers";
 
 test.setTimeout(120_000);
 
@@ -15,21 +16,16 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
   });
   await page.reload();
 
-  await page.getByRole("button", { name: "Create story" }).click();
-  await page.getByPlaceholder("The Last Ember").fill(`Playwright Story ${Date.now()}`);
-  await page.getByRole("button", { name: "Create project" }).click();
-  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
-  const projectId = page.url().split("/").at(-1);
-  if (!projectId) throw new Error("Project ID was not present in the URL.");
+  const projectId = await createProject(page, "Playwright Story");
   const ingredientPacksResponse = await page.request.get("/api/ingredient-packs");
   const ingredientPacks = (await ingredientPacksResponse.json()) as Array<{
     id: string;
     values: { tags: string[] };
   }>;
-  const tagPack = ingredientPacks.find((pack) => pack.values.tags.length > 0);
-  if (!tagPack) throw new Error("Expected a built-in ingredient pack with tag suggestions.");
+  const ingredientPack = ingredientPacks.find((pack) => pack.values.tags.length > 0);
+  if (!ingredientPack) throw new Error("Expected a built-in ingredient pack with tag suggestions.");
   const importPackResponse = await page.request.post(
-    `/api/projects/${projectId}/ingredient-packs/${tagPack.id}/import`,
+    `/api/projects/${projectId}/ingredient-packs/${ingredientPack.id}/import`,
   );
   expect(importPackResponse.ok()).toBe(true);
 
@@ -205,7 +201,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await expect(page).toHaveURL(/tab=chat/);
     await page.getByRole("button", { name: "New thread" }).click();
     await expect(page).toHaveURL(/thread=[0-9a-f-]+/);
-    const composer = page.getByPlaceholder("Ask anything about this project...");
+    const composer = page.getByRole("textbox", { name: "Chat message" });
     await composer.fill("What changed in the observatory?");
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.locator(".chat-message.assistant").last()).toContainText(
@@ -233,6 +229,6 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await renameDialog.getByRole("button", { name: "Save" }).click();
     await expect(page.locator(".workspace-project-title")).toHaveText("Renamed Playwright Story");
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
+    await deleteProject(page, projectId);
   }
 });

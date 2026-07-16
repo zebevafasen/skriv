@@ -1,8 +1,4 @@
-import type {
-  CompendiumEntry,
-  ContentPackage,
-  ExtractCompendiumResponse,
-} from "@skriv/contracts";
+import type { CompendiumEntry, ContentPackage, ExtractCompendiumResponse } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -125,7 +121,7 @@ export function IdeationPanel({
     premise: [],
     entity: [],
   });
-  const [alternatives, setAlternatives] = useState<string[]>([]);
+  const [alternatives, setAlternatives] = useState<Array<{ id: string; text: string }>>([]);
   const [model, setModel] = useState("");
   const [ingredientPackManagerOpen, setIngredientPackManagerOpen] = useState(false);
   const [ingredientPackPickerOpen, setIngredientPackPickerOpen] = useState(false);
@@ -201,7 +197,8 @@ export function IdeationPanel({
         count: 3,
         modelOverride: model && model !== settings.data?.baseModel ? model : null,
       }),
-    onSuccess: (result) => setAlternatives(result.alternatives),
+    onSuccess: (result) =>
+      setAlternatives(result.alternatives.map((text) => ({ id: crypto.randomUUID(), text }))),
   });
   const syncIngredientPacks = useMutation({
     mutationFn: (ingredientPackIds: string[]) =>
@@ -381,8 +378,8 @@ export function IdeationPanel({
         <div className="ideation-transition-choice">
           <h4>Build a starter Compendium first?</h4>
           <p>
-            Skriv can extract premise-supported characters, places, objects, factions, and lore
-            for you to review before writing.
+            Skriv can extract premise-supported characters, places, objects, factions, and lore for
+            you to review before writing.
           </p>
           <div className="button-row">
             <button
@@ -457,11 +454,11 @@ export function IdeationPanel({
                             current.map((entry) =>
                               entry.id === draft.id
                                 ? {
-                                  ...entry,
-                                  name,
-                                  duplicateEntryId: duplicate?.id ?? null,
-                                  duplicateEntryRevision: duplicate?.revision ?? null,
-                                }
+                                    ...entry,
+                                    name,
+                                    duplicateEntryId: duplicate?.id ?? null,
+                                    duplicateEntryRevision: duplicate?.revision ?? null,
+                                  }
                                 : entry,
                             ),
                           );
@@ -477,9 +474,9 @@ export function IdeationPanel({
                             current.map((entry) =>
                               entry.id === draft.id
                                 ? {
-                                  ...entry,
-                                  typeId: event.target.value as ExtractionReview["typeId"],
-                                }
+                                    ...entry,
+                                    typeId: event.target.value as ExtractionReview["typeId"],
+                                  }
                                 : entry,
                             ),
                           )
@@ -676,9 +673,9 @@ export function IdeationPanel({
         </div>
       </div>
       {definitions.error ||
-        metadata.error ||
-        ingredientPackCatalog.error ||
-        importedIngredientPacks.error ? (
+      metadata.error ||
+      ingredientPackCatalog.error ||
+      importedIngredientPacks.error ? (
         <ErrorNotice
           error={
             definitions.error ??
@@ -747,7 +744,9 @@ export function IdeationPanel({
 
             {importedIngredientPacks.data?.length ? (
               <IngredientPackPicker
-                catalog={ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }}
+                catalog={
+                  ingredientPackCatalog.data ?? { categories: [], collections: [], packs: [] }
+                }
                 selectedIds={
                   new Set((importedIngredientPacks.data ?? []).map((pack) => pack.sourcePackId))
                 }
@@ -773,7 +772,9 @@ export function IdeationPanel({
                     ),
                 )}
                 disabled={syncIngredientPacks.isPending}
-                onSelectionChange={(packIds) => syncIngredientPacks.mutate(packIds)}
+                onSelectionChange={(ingredientPackIds) =>
+                  syncIngredientPacks.mutate(ingredientPackIds)
+                }
                 hideToolbar={true}
                 selectedOnly={true}
               />
@@ -810,7 +811,9 @@ export function IdeationPanel({
                   ),
               )}
               disabled={syncIngredientPacks.isPending}
-              onSelectionChange={(packIds) => syncIngredientPacks.mutate(packIds)}
+              onSelectionChange={(ingredientPackIds) =>
+                syncIngredientPacks.mutate(ingredientPackIds)
+              }
               onManage={() => {
                 setIngredientPackPickerOpen(false);
                 setIngredientPackManagerOpen(true);
@@ -856,13 +859,13 @@ export function IdeationPanel({
             {generate.error ? <ErrorNotice error={generate.error} /> : null}
             <div className="alternative-list">
               {alternatives.map((alternative) => (
-                <article key={alternative}>
-                  <p>{alternative}</p>
+                <article key={alternative.id}>
+                  <p>{alternative.text}</p>
                   <button
                     type="button"
                     className="button ghost compact"
                     disabled={save.isPending}
-                    onClick={() => void choosePremise(alternative)}
+                    onClick={() => void choosePremise(alternative.text)}
                   >
                     <Check size={14} /> Use this premise
                   </button>
@@ -1326,9 +1329,9 @@ function UnifiedTagInput({
               </button>
             ))}
             {input.trim() &&
-              !suggestions.some(
-                (item) => item.label.toLocaleLowerCase() === input.trim().toLocaleLowerCase(),
-              ) ? (
+            !suggestions.some(
+              (item) => item.label.toLocaleLowerCase() === input.trim().toLocaleLowerCase(),
+            ) ? (
               <button
                 type="button"
                 className="create-tag"

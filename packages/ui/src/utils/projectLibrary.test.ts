@@ -71,19 +71,21 @@ describe("project library filtering and sorting", () => {
     ).toEqual(["Untethered", "The Second Star", "Amber Roads"]);
   });
 
-  it("handles legacy projects whose author or series metadata is absent", () => {
-    const legacyProjects = projects.map((project) => ({
+  it("handles saved projects whose author or series metadata is absent", () => {
+    const projectsWithoutOptionalMetadata = projects.map((project) => ({
       ...project,
       settings: { ...project.settings, author: undefined, series: undefined },
     })) as unknown as typeof projects;
 
     expect(
-      filterAndSortProjects(legacyProjects, "second", "series", "ascending").map(
+      filterAndSortProjects(projectsWithoutOptionalMetadata, "second", "series", "ascending").map(
         (item) => item.title,
       ),
     ).toEqual(["The Second Star"]);
     expect(
-      filterAndSortProjects(legacyProjects, "", "series", "ascending").map((item) => item.title),
+      filterAndSortProjects(projectsWithoutOptionalMetadata, "", "series", "ascending").map(
+        (item) => item.title,
+      ),
     ).toEqual(["Amber Roads", "The Second Star", "Untethered"]);
   });
 });

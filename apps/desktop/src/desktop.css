@@ -1,0 +1,30 @@
+.desktop-update-banner {
+  position: fixed;
+  z-index: 80;
+  top: 12px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 24px);
+  padding: 10px 12px 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-50%);
+}
+
+.desktop-update-progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 620px) {
+  .desktop-update-banner {
+    right: 10px;
+    left: 10px;
+    justify-content: space-between;
+    transform: none;
+  }
+}

@@ -1,9 +1,4 @@
-import {
-  type CompendiumEntry,
-  type Project,
-  type Scene,
-  storyLanguages,
-} from "@skriv/contracts";
+import { type CompendiumEntry, type Project, type Scene, storyLanguages } from "@skriv/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { Book, Image as ImageIcon, Info, Layers3, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +24,7 @@ export function ProjectSettingsPanel({
   const [authorDraft, setAuthorDraft] = useState(project.settings.author);
   const authorFocused = useRef(false);
   const authorProjectId = useRef(project.id);
-  const legacyLabels = useMemo(() => scenes.flatMap((scene) => scene.metadata.labels), [scenes]);
+  const savedLabels = useMemo(() => scenes.flatMap((scene) => scene.metadata.labels), [scenes]);
 
   useEffect(() => {
     const projectChanged = authorProjectId.current !== project.id;
@@ -373,7 +368,7 @@ export function ProjectSettingsPanel({
         open={labelManagerOpen}
         projectId={projectId}
         configuredPacks={project.settings.labelPacks}
-        legacyLabels={legacyLabels}
+        savedLabels={savedLabels}
         onClose={() => setLabelManagerOpen(false)}
         onSaved={() => client.invalidateQueries({ queryKey: ["project-tree", projectId] })}
       />

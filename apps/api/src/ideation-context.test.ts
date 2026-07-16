@@ -63,14 +63,14 @@ describe("Ideation Compendium context", () => {
     expect(formatted).not.toContain("[Entry Name: Second]");
   });
 
-  it("injects canonical context for a legacy prompt without changing creative direction", () => {
-    const legacy = prompt(
+  it("injects canonical context for a saved custom prompt that predates selected_context", () => {
+    const savedCustomPrompt = prompt(
       [{ role: "user", content: "Direction: {{user_instructions}}" }],
       ["user_instructions"],
     );
     const messages = ideationPromptMessages(
       "ideation.premise",
-      legacy,
+      savedCustomPrompt,
       { user_instructions: "Make it tender." },
       "[Entry Name: Evelyn]\nCanonical fact.",
     );

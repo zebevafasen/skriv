@@ -10,21 +10,21 @@ export function LabelPackManager({
   open,
   projectId,
   configuredPacks,
-  legacyLabels,
+  savedLabels,
   onClose,
   onSaved,
 }: {
   open: boolean;
   projectId: string;
   configuredPacks: SceneLabelPack[] | undefined;
-  legacyLabels: SceneLabel[];
+  savedLabels: SceneLabel[];
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
   const dialog = useAppDialog();
   const library = useMemo(
-    () => projectLabelLibrary(configuredPacks, legacyLabels),
-    [configuredPacks, legacyLabels],
+    () => projectLabelLibrary(configuredPacks, savedLabels),
+    [configuredPacks, savedLabels],
   );
   const [draftPacks, setDraftPacks] = useState<SceneLabelPack[]>(library.userPacks);
   const [selectedPackId, setSelectedPackId] = useState("user.default");

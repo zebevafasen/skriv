@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { createProject, deleteProject } from "./helpers";
 
 async function writingScrollTop(page: Page) {
   return page.locator(".continuous-editor-prose").evaluate((prose) => {
@@ -15,12 +16,7 @@ async function writingScrollTop(page: Page) {
 
 test("restores the writing position after visiting Outline or Notes", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Create story" }).click();
-  await page.getByPlaceholder("The Last Ember").fill(`Location Memory ${Date.now()}`);
-  await page.getByRole("button", { name: "Create project" }).click();
-  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
-  const projectId = page.url().split("/").at(-1);
-  if (!projectId) throw new Error("Project ID was not present in the URL.");
+  const projectId = await createProject(page, "Location Memory");
 
   try {
     const treeResponse = await page.request.get(`/api/projects/${projectId}/tree`);
@@ -58,6 +54,6 @@ test("restores the writing position after visiting Outline or Notes", async ({ p
     await page.getByRole("button", { name: "Write" }).click();
     await expect.poll(() => writingScrollTop(page)).toBeGreaterThan(beforeNotes - 20);
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
+    await deleteProject(page, projectId);
   }
 });

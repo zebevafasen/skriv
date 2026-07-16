@@ -8,29 +8,31 @@ describe("scene label packs", () => {
     expect(library.userPacks[0]?.id).toBe("user.default");
   });
 
-  it("preserves unmatched legacy labels in My Labels", () => {
-    const legacy = {
+  it("preserves unmatched saved labels in My Labels", () => {
+    const savedLabel = {
       id: crypto.randomUUID(),
       definitionId: null,
       text: "Foreshadowing",
       color: "amber" as const,
     };
-    const library = projectLabelLibrary(undefined, [legacy]);
+    const library = projectLabelLibrary(undefined, [savedLabel]);
     const migrated = library.userPacks[0]?.labels[0];
     expect(migrated).toMatchObject({ name: "Foreshadowing", color: "orange" });
-    expect(findLabelDefinition(library.allPacks, legacy)?.definition.name).toBe("Foreshadowing");
+    expect(findLabelDefinition(library.allPacks, savedLabel)?.definition.name).toBe(
+      "Foreshadowing",
+    );
     expect(safeLabelColor("yellow")).toBe("orange");
   });
 
-  it("recognizes matching legacy labels as built-in definitions", () => {
-    const legacy = {
+  it("recognizes matching saved labels as built-in definitions", () => {
+    const savedLabel = {
       id: crypto.randomUUID(),
       definitionId: null,
       text: "Draft",
       color: "slate" as const,
     };
-    const library = projectLabelLibrary(undefined, [legacy]);
+    const library = projectLabelLibrary(undefined, [savedLabel]);
     expect(library.userPacks[0]?.labels).toEqual([]);
-    expect(findLabelDefinition(library.allPacks, legacy)?.pack.id).toBe("builtin.status");
+    expect(findLabelDefinition(library.allPacks, savedLabel)?.pack.id).toBe("builtin.status");
   });
 });

@@ -14,11 +14,11 @@ export type IngredientDefinition = {
 
 export function toggleIngredientPackSelection(
   selectedIds: ReadonlySet<string>,
-  packIds: string[],
+  ingredientPackIds: string[],
 ): string[] {
   const next = new Set(selectedIds);
-  const allSelected = packIds.length > 0 && packIds.every((id) => next.has(id));
-  for (const id of packIds) allSelected ? next.delete(id) : next.add(id);
+  const allSelected = ingredientPackIds.length > 0 && ingredientPackIds.every((id) => next.has(id));
+  for (const id of ingredientPackIds) allSelected ? next.delete(id) : next.add(id);
   return [...next];
 }
 
@@ -99,17 +99,15 @@ export function IngredientPackPicker({
   const [query, setQuery] = useState("");
   const [ownership, setOwnership] = useState<"all" | "builtin" | "user">("all");
   const [sort, setSort] = useState<"catalog" | "name" | "ownership">("catalog");
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set());
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const definitionById = useMemo(
     () => new Map(definitions.map((definition) => [definition.id, definition])),
     [definitions],
   );
 
-  const updateSelection = (packIds: string[]) => {
-    onSelectionChange(toggleIngredientPackSelection(selectedIds, packIds));
+  const updateSelection = (ingredientPackIds: string[]) => {
+    onSelectionChange(toggleIngredientPackSelection(selectedIds, ingredientPackIds));
   };
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -167,38 +165,38 @@ export function IngredientPackPicker({
       <legend>Ingredient packs</legend>
       {!hideToolbar ? (
         <div className="ingredient-pack-toolbar">
-        <div className="ingredient-pack-search">
-          <Search size={14} aria-hidden="true" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search ingredient packs and ingredients"
-            aria-label="Search ingredient packs"
-          />
-        </div>
-        <select
-          value={ownership}
-          onChange={(event) => setOwnership(event.target.value as typeof ownership)}
-          aria-label="Filter ingredient packs by ownership"
-        >
-          <option value="all">All ownership</option>
-          <option value="builtin">Built-in</option>
-          <option value="user">Custom</option>
-        </select>
-        <select
-          value={sort}
-          onChange={(event) => setSort(event.target.value as typeof sort)}
-          aria-label="Sort ingredient packs"
-        >
-          <option value="catalog">Catalog order</option>
-          <option value="name">A–Z</option>
-          <option value="ownership">Ownership</option>
-        </select>
-        {onManage ? (
-          <button type="button" className="button ghost compact" onClick={onManage}>
-            <Settings2 size={14} /> Manage
-          </button>
-        ) : null}
+          <div className="ingredient-pack-search">
+            <Search size={14} aria-hidden="true" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search ingredient packs and ingredients"
+              aria-label="Search ingredient packs"
+            />
+          </div>
+          <select
+            value={ownership}
+            onChange={(event) => setOwnership(event.target.value as typeof ownership)}
+            aria-label="Filter ingredient packs by ownership"
+          >
+            <option value="all">All ownership</option>
+            <option value="builtin">Built-in</option>
+            <option value="user">Custom</option>
+          </select>
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as typeof sort)}
+            aria-label="Sort ingredient packs"
+          >
+            <option value="catalog">Catalog order</option>
+            <option value="name">A–Z</option>
+            <option value="ownership">Ownership</option>
+          </select>
+          {onManage ? (
+            <button type="button" className="button ghost compact" onClick={onManage}>
+              <Settings2 size={14} /> Manage
+            </button>
+          ) : null}
         </div>
       ) : null}
       <div className="ingredient-category-list">
@@ -235,7 +233,9 @@ export function IngredientPackPicker({
                   }
                 >
                   <span className="ingredient-category-copy">
-                    <span className="eyebrow" style={{ fontSize: '9px', marginBottom: '-2px' }}>Category</span>
+                    <span className="eyebrow" style={{ fontSize: "9px", marginBottom: "-2px" }}>
+                      Category
+                    </span>
                     <strong>{category.name}</strong>
                     <small>{category.description}</small>
                     <span className="ingredient-hierarchy-counts">
@@ -252,9 +252,12 @@ export function IngredientPackPicker({
                 <div className="ingredient-category-contents">
                   <div className="ingredient-collection-list">
                     {collections.map(({ collection, allPacks: collectionPacks, packs }) => {
-                      const packIds = collectionPacks.map((pack) => pack.id);
-                      const selectedCount = packIds.filter((id) => selectedIds.has(id)).length;
-                      const fullySelected = packIds.length > 0 && selectedCount === packIds.length;
+                      const ingredientPackIds = collectionPacks.map((pack) => pack.id);
+                      const selectedCount = ingredientPackIds.filter((id) =>
+                        selectedIds.has(id),
+                      ).length;
+                      const fullySelected =
+                        ingredientPackIds.length > 0 && selectedCount === ingredientPackIds.length;
                       const partiallySelected = selectedCount > 0 && !fullySelected;
                       const collectionExpanded =
                         expandedCollections.has(collection.id) || queryActive;
@@ -268,8 +271,8 @@ export function IngredientPackPicker({
                               checked={fullySelected}
                               mixed={partiallySelected}
                               label={`Select every ingredient pack in ${collection.name}`}
-                              disabled={disabled || packIds.length === 0}
-                              onChange={() => updateSelection(packIds)}
+                              disabled={disabled || ingredientPackIds.length === 0}
+                              onChange={() => updateSelection(ingredientPackIds)}
                             />
                             <button
                               type="button"
@@ -286,11 +289,21 @@ export function IngredientPackPicker({
                               }
                             >
                               <span className="ingredient-collection-copy">
-                                <span className="eyebrow" style={{ fontSize: '9px', marginBottom: '-2px', color: 'var(--muted)' }}>Collection</span>
+                                <span
+                                  className="eyebrow"
+                                  style={{
+                                    fontSize: "9px",
+                                    marginBottom: "-2px",
+                                    color: "var(--muted)",
+                                  }}
+                                >
+                                  Collection
+                                </span>
                                 <strong>{collection.name}</strong>
                                 <small>{collection.description}</small>
                                 <span className="ingredient-hierarchy-counts">
-                                  {selectedCount}/{packIds.length} ingredient packs selected
+                                  {selectedCount}/{ingredientPackIds.length} ingredient packs
+                                  selected
                                 </span>
                               </span>
                               <span className={`ownership-badge ${collection.ownership}`}>
@@ -375,10 +388,7 @@ export function IngredientPackPickerModal({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a mouse convenience
     // biome-ignore lint/a11y/noStaticElementInteractions: backdrop is not keyboard-interactive
-    <div
-      className="modal-backdrop ingredient-pack-picker-backdrop"
-      onClick={onClose}
-    >
+    <div className="modal-backdrop ingredient-pack-picker-backdrop" onClick={onClose}>
       <div
         className="modal ingredient-pack-picker-modal"
         role="dialog"
@@ -386,7 +396,14 @@ export function IngredientPackPickerModal({
         aria-labelledby="ingredient-pack-picker-title"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
-        style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}
+        style={{
+          width: "min(1400px, calc(100% - 30px))",
+          maxHeight: "85vh",
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
+        }}
       >
         <header>
           <div>

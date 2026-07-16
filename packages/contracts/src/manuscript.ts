@@ -191,19 +191,14 @@ export const createProjectInputSchema = z
     title: z.string().trim().min(1).max(300),
     author: z.string().max(100).default(""),
     language: storyLanguageSchema.default("General English"),
-    ingredientPackIds: z.array(z.string().min(1)).max(250).optional(),
-    /** @deprecated Use ingredientPackIds. */
-    tagPackIds: z.array(z.string().min(1)).max(250).optional(),
+    ingredientPackIds: z.array(z.string().min(1)).max(250).default([]),
     outline: outlineSourceSchema.default({ kind: "blank" }),
     compendiumCopy: z
       .object({ sourceProjectId: idSchema, entryIds: z.array(idSchema).max(1_000) })
       .nullable()
       .default(null),
   })
-  .transform(({ ingredientPackIds, tagPackIds, ...input }) => ({
-    ...input,
-    ingredientPackIds: ingredientPackIds ?? tagPackIds ?? [],
-  }));
+  .strict();
 
 export const updateProjectInputSchema = z.object({
   title: z.string().trim().max(300).optional(),

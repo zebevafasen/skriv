@@ -1,13 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { createProject, deleteProject } from "./helpers";
 
 test("switches manuscript scope through the hierarchical viewing menu", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Create story" }).click();
-  await page.getByPlaceholder("The Last Ember").fill(`Scope Picker Test ${Date.now()}`);
-  await page.getByRole("button", { name: "Create project" }).click();
-  await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+/);
-  const projectId = page.url().split("/").at(-1);
-  if (!projectId) throw new Error("Project ID was not present in the URL.");
+  const projectId = await createProject(page, "Scope Picker Test");
 
   try {
     const viewingMode = page.getByRole("button", { name: "Manuscript navigator" });
@@ -42,6 +38,6 @@ test("switches manuscript scope through the hierarchical viewing menu", async ({
     await expect(page).not.toHaveURL(/scope=/);
     await expect(viewingMode).toContainText("Everything");
   } finally {
-    await page.request.delete(`/api/projects/${projectId}`, { timeout: 5_000 }).catch(() => null);
+    await deleteProject(page, projectId);
   }
 });

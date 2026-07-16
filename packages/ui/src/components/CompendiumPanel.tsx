@@ -92,7 +92,11 @@ function CompendiumDescriptionEditor({
   const editor = useEditor({
     extensions: [
       MarkdownEditingShortcuts,
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, codeBlock: false }),
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        codeBlock: false,
+        underline: false,
+      }),
       Underline,
       Placeholder.configure({ placeholder: "Write a description…" }),
       MentionsHighlighter.configure({ entries: mentionEntries }),

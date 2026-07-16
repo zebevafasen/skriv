@@ -57,20 +57,3 @@ export type IngredientPackCollectionDefinition = z.infer<
   typeof ingredientPackCollectionDefinitionSchema
 >;
 export type BuiltinIngredientPack = z.infer<typeof builtinIngredientPackSchema>;
-
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackValuesSchema = ingredientPackValuesSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackCategoryDefinitionSchema = ingredientPackCategoryDefinitionSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const tagPackCollectionDefinitionSchema = ingredientPackCollectionDefinitionSchema;
-/** @deprecated Use Ingredient Pack terminology. */
-export const builtinTagPackSchema = builtinIngredientPackSchema;
-/** @deprecated Use IngredientPackValues. */
-export type TagPackValues = IngredientPackValues;
-/** @deprecated Use IngredientPackCategoryDefinition. */
-export type TagPackCategoryDefinition = IngredientPackCategoryDefinition;
-/** @deprecated Use IngredientPackCollectionDefinition. */
-export type TagPackCollectionDefinition = IngredientPackCollectionDefinition;
-/** @deprecated Use BuiltinIngredientPack. */
-export type BuiltinTagPack = BuiltinIngredientPack;
