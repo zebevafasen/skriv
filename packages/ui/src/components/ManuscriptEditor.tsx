@@ -487,7 +487,7 @@ function extractScene(editor: Editor, sceneId: string) {
   };
 }
 
-function findSceneBlock(doc: any, pos: number) {
+function findSceneBlock(doc: ProseMirrorNode, pos: number) {
   const resolved = doc.resolve(pos);
   for (let d = resolved.depth; d > 0; d--) {
     const node = resolved.node(d);
@@ -526,7 +526,8 @@ const CrossSceneSelectionHandler = Extension.create({
       });
 
       for (let i = rangesToDelete.length - 1; i >= 0; i--) {
-        const range = rangesToDelete[i]!;
+        const range = rangesToDelete[i];
+        if (!range) continue;
         tr.delete(range.from, range.to);
       }
 
@@ -579,7 +580,8 @@ const CrossSceneSelectionHandler = Extension.create({
             });
 
             for (let i = rangesToDelete.length - 1; i >= 0; i--) {
-              const range = rangesToDelete[i]!;
+              const range = rangesToDelete[i];
+              if (!range) continue;
               tr.delete(range.from, range.to);
             }
 

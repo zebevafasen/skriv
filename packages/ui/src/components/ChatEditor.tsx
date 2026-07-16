@@ -79,7 +79,7 @@ export function ChatEditor({
   });
 
   useEffect(() => {
-    if (editor && editor.isEmpty && value === "") {
+    if (editor?.isEmpty && value === "") {
       // Do nothing, already empty
     } else if (editor && value === "") {
       editor.commands.setContent("");

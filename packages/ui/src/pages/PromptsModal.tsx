@@ -289,7 +289,9 @@ function PromptListGroup({
                   >
                     <span>
                       <strong>{prompt.name}</strong>
-                      <em>{ownership === "builtin" ? "BUILTIN" : "CUSTOM"}</em>
+                      <em className="prompt-ownership">
+                        {ownership === "builtin" ? "BUILTIN" : "CUSTOM"}
+                      </em>
                     </span>
                     <small>{workflowLabels[prompt.workflow]}</small>
                     {ownership === "builtin" ? (

@@ -21,6 +21,14 @@ pnpm web:dev
 
 Desktop development uses `pnpm desktop:dev`.
 
+## Windows early access
+
+Desktop releases are distributed as Windows x64 installers through GitHub Releases. Non-AI writing works offline; installation may still require internet access when Windows needs to install WebView2. AI features connect directly to OpenRouter after the user adds an API key in Settings.
+
+Projects are stored locally under `%LOCALAPPDATA%\Skriv`. Updates are installed manually by downloading a newer installer from the official GitHub Releases page. Before installing or updating, review the [desktop release guide](docs/desktop-release.md), [privacy notice](PRIVACY.md), and [changelog](CHANGELOG.md).
+
+Skriv is proprietary during alpha and is not open-source software. Official alpha binaries may be used for personal, non-commercial evaluation; the source code is available for inspection only. See [LICENSE](LICENSE) for the complete terms.
+
 Common verification commands:
 
 ```powershell
@@ -33,6 +41,7 @@ pnpm web:e2e
 pnpm test:native
 pnpm desktop:build
 pnpm desktop:e2e
+pnpm desktop:release-check
 ```
 
 ## Repository layout

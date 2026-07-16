@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { DesktopSettingsPage } from "./DesktopSettingsPage.js";
 import { createDesktopClient } from "./native/desktop-client.js";
 
 type DatabaseStatus = { ready: boolean; error: string | null };
@@ -71,7 +72,7 @@ function RecoveryScreen({ error }: { error: string }) {
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found.");
 const reactRoot = createRoot(root);
-const { queryClient, router } = createSkrivRouter();
+const { queryClient, router } = createSkrivRouter({ settingsComponent: DesktopSettingsPage });
 
 async function start() {
   const status = await invoke<DatabaseStatus>("database_status");

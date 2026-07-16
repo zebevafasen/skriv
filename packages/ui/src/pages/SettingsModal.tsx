@@ -194,8 +194,8 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                   <div>
                     <strong>Your work is backed up automatically</strong>
                     <p>
-                      A backup is created every hour while the app is running. Open the backups folder
-                      to retrieve individual scenes in plain text.
+                      Changed projects are saved as portable .skriv archives at most every 15 minutes
+                      and when Skriv closes cleanly. Daily database snapshots provide whole-library recovery.
                     </p>
                   </div>
                 </div>
