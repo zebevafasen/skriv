@@ -14,10 +14,11 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
+import { CompendiumMentionText } from "./CompendiumMentionText.js";
 import { ModelSelect } from "./ModelSelect.js";
 import { IngredientPackPickerModal, IngredientPackPicker } from "./IngredientPackPicker.js";
 import { IngredientPackCatalogManager } from "./IngredientPackCatalogManager.js";
-import { MentionTextarea } from "./MentionTextarea.js";
+import { MentionEditor } from "./MentionEditor.js";
 
 type Value = { definitionId: string | null; label: string; locked: boolean };
 type IdeationSavePayload = {
@@ -62,6 +63,7 @@ export function IdeationPanel({
   entries,
   firstScene,
   onOpenCompendium,
+  onOpenEntry,
   onOpenFirstScene,
   onGenerateFirstScene,
 }: {
@@ -70,6 +72,7 @@ export function IdeationPanel({
   entries: CompendiumEntry[];
   firstScene: { id: string; plainText: string } | null;
   onOpenCompendium: () => void;
+  onOpenEntry: (entryIds: string[], direct: boolean) => void;
   onOpenFirstScene: () => void;
   onGenerateFirstScene: (options: {
     instructions: string;
@@ -547,7 +550,8 @@ export function IdeationPanel({
             <h4>Set up the first Scene</h4>
             <p>The result will open in the editor as a provisional candidate.</p>
           </div>
-          <MentionTextarea
+          <MentionEditor
+            ariaLabel="Opening direction"
             value={openingInstructions}
             entries={referenceEntries}
             placeholder="Optional opening direction…"
@@ -860,7 +864,14 @@ export function IdeationPanel({
             <div className="alternative-list">
               {alternatives.map((alternative) => (
                 <article key={alternative.id}>
-                  <p>{alternative.text}</p>
+                  <p>
+                    <CompendiumMentionText
+                      text={alternative.text}
+                      entries={entries}
+                      includeUntracked
+                      onOpenEntry={onOpenEntry}
+                    />
+                  </p>
                   <button
                     type="button"
                     className="button ghost compact"
@@ -872,19 +883,22 @@ export function IdeationPanel({
                 </article>
               ))}
             </div>
-            <label className="content-field">
-              Active premise
-              <textarea
+            <div className="content-field premise-content-field">
+              <span>Active premise</span>
+              <MentionEditor
+                ariaLabel="Active premise"
+                wrapperClassName="premise-mention-editor"
                 value={premise}
-                onChange={(event) => {
-                  setPremise(event.target.value);
+                entries={entries}
+                onValueChange={(value) => {
+                  setPremise(value);
                   setDevelopmentStage("idle");
                   setSourcePremiseRevision(null);
                   setExtractionReview([]);
                 }}
                 placeholder="Your project premise will live here…"
               />
-            </label>
+            </div>
             <button
               type="button"
               className="button ghost"
@@ -1136,9 +1150,9 @@ function AdditionalInstructions({
           ))}
         </fieldset>
       ) : null}
-      <MentionTextarea
+      <MentionEditor
+        ariaLabel="Ideation instructions"
         wrapperClassName="ideation-instructions-input"
-        className="ideation-instructions-textarea"
         value={value}
         entries={entries}
         onValueChange={onValueChange}

@@ -37,7 +37,7 @@ import {
 } from "react";
 import { skriv } from "../api.js";
 import { ErrorNotice } from "../components/AppShell.js";
-import { CompendiumEntryDrawer, CompendiumPanel } from "../components/CompendiumPanel.js";
+import { CompendiumEntryDrawer, CompendiumPanel, type CompendiumPanelHandle } from "../components/CompendiumPanel.js";
 import { useAppDialog } from "../components/DialogProvider.js";
 import { ExportDialog } from "../components/ExportDialog.js";
 import { useSettings } from "../components/SettingsProvider.js";
@@ -227,7 +227,15 @@ export function ProjectPage() {
   };
   const [previewEntryIds, setPreviewEntryIds] = useState<string[]>([]);
   const editorRef = useRef<ManuscriptEditorHandle | null>(null);
-  useEffect(() => registerPersistenceFlusher(async () => editorRef.current?.flush()), []);
+  const compendiumPanelRef = useRef<CompendiumPanelHandle | null>(null);
+  const handleExtractCompendium = useCallback((text: string) => {
+    setCompendiumOpen(true);
+    compendiumPanelRef.current?.extractText(text);
+  }, []);
+  useEffect(() => {
+    const flushPersistence = async () => editorRef.current?.flush();
+    return registerPersistenceFlusher(flushPersistence);
+  }, []);
   const tree = useQuery({
     queryKey: ["project-tree", projectId],
     queryFn: () => skriv().projects.tree(projectId),
@@ -882,10 +890,14 @@ export function ProjectPage() {
             />
           ) : null}
           <CompendiumPanel
+            ref={compendiumPanelRef}
             projectId={projectId}
             entries={compendium.data ?? []}
             selectedEntryId={selectedEntryId}
             onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
+            aiConfigured={aiConfigured}
+            activeSceneText={selectedLocation?.scene?.plainText || ""}
+            editorRef={editorRef}
           />
           <div className="manuscript-main">
             <div className="manuscript-view-content">
@@ -919,6 +931,7 @@ export function ProjectPage() {
                       onFirstSceneGenerationIntentConsumed={() =>
                         setFirstSceneGenerationIntent(null)
                       }
+                      onExtractCompendium={handleExtractCompendium}
                     />
                   </DeferredWorkspace>
                 </div>
@@ -943,7 +956,15 @@ export function ProjectPage() {
               ) : null}
               {view === "notes" ? (
                 <DeferredWorkspace name="notes">
-                  <ProjectNotesPanel projectId={projectId} />
+                  <ProjectNotesPanel
+                    projectId={projectId}
+                    entries={compendium.data ?? []}
+                    onOpenEntry={(entryIds, direct) => {
+                      if (direct && entryIds.length === 1)
+                        void updateSearch({ entry: entryIds[0] });
+                      else setPreviewEntryIds(entryIds);
+                    }}
+                  />
                 </DeferredWorkspace>
               ) : null}
             </div>
@@ -967,6 +988,11 @@ export function ProjectPage() {
               entries={compendium.data ?? []}
               firstScene={allScenes[0] ?? null}
               onOpenCompendium={() => setIdeationCompendiumOpen(true)}
+              onOpenEntry={(entryIds, direct) => {
+                if (direct && entryIds.length === 1)
+                  void updateSearch({ entry: entryIds[0] });
+                else setPreviewEntryIds(entryIds);
+              }}
               onOpenFirstScene={() => void openFirstScene()}
               onGenerateFirstScene={(options) => void generateFirstScene(options)}
             />
@@ -1000,10 +1026,14 @@ export function ProjectPage() {
                   </button>
                 </div>
                 <CompendiumPanel
+                  ref={compendiumPanelRef}
                   projectId={projectId}
                   entries={compendium.data ?? []}
                   selectedEntryId={selectedEntryId}
                   onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
+                  aiConfigured={aiConfigured}
+                  activeSceneText={selectedLocation?.scene?.plainText || ""}
+                  editorRef={editorRef}
                 />
               </section>
               <CompendiumEntryDrawer
@@ -1032,10 +1062,14 @@ export function ProjectPage() {
             />
           ) : null}
           <CompendiumPanel
+            ref={compendiumPanelRef}
             projectId={projectId}
             entries={compendium.data ?? []}
             selectedEntryId={selectedEntryId}
             onSelect={(entry) => void updateSearch({ entry: entry ?? undefined })}
+            aiConfigured={aiConfigured}
+            activeSceneText={selectedLocation?.scene?.plainText || ""}
+            editorRef={editorRef}
           />
           <div className="manuscript-main">
             <DeferredWorkspace name="chat">

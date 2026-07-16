@@ -1,16 +1,9 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
 import { Activity, ChevronDown, Eraser, Play, Trash } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { MentionTextarea } from "../MentionTextarea.js";
+import { MentionEditor } from "../MentionEditor.js";
 import { ModelSelect } from "../ModelSelect.js";
 import { useEditorActions } from "./EditorActionsContext.js";
-
-function autoResize(element: HTMLTextAreaElement | null) {
-  if (!element) return;
-  element.style.height = "auto";
-  element.style.height = `${element.scrollHeight}px`;
-}
 
 function SceneBeatView(props: NodeViewProps) {
   const { aiConfigured, baseModel, entries, models, startGeneration } = useEditorActions();
@@ -24,14 +17,6 @@ function SceneBeatView(props: NodeViewProps) {
     eventTarget,
     collapsed,
   } = props.node.attrs;
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const eventTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    autoResize(textareaRef.current);
-    autoResize(eventTextareaRef.current);
-  });
 
   const updateAttr = (key: string, value: unknown) => {
     props.updateAttributes({ [key]: value });
@@ -145,9 +130,10 @@ function SceneBeatView(props: NodeViewProps) {
             </button>
           </div>
 
-          <MentionTextarea
-            ref={textareaRef}
-            className="scene-beat-textarea"
+          <MentionEditor
+            ariaLabel="Scene Beat instructions"
+            className="scene-beat-editor"
+            spellCheck={false}
             placeholder={
               workflow === "prose.start"
                 ? "Describe how the scene should start..."
@@ -159,9 +145,10 @@ function SceneBeatView(props: NodeViewProps) {
           />
 
           {workflow === "prose.toward_event" && (
-            <MentionTextarea
-              ref={eventTextareaRef}
-              className="scene-beat-textarea"
+            <MentionEditor
+              ariaLabel="Scene Beat goal"
+              className="scene-beat-editor"
+              spellCheck={false}
               wrapperClassName="scene-beat-event"
               placeholder="Describe what the final event of this generation should be..."
               value={eventTarget || ""}

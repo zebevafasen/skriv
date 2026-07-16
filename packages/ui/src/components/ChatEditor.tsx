@@ -1,13 +1,12 @@
 import type { CompendiumEntry } from "@skriv/contracts";
-import { findMentions } from "@skriv/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { CompendiumMentions, setCompendiumMentionEntries } from "../editor/CompendiumMentions.js";
 import { MarkdownEditingShortcuts } from "../editor/MarkdownEditing.js";
-import { setMentionDecorations, SkrivDecorations } from "../editor/SkrivDecorations.js";
 
 interface ChatEditorProps {
   value: string;
@@ -24,9 +23,6 @@ export function ChatEditor({
   onKeyDown,
   wrapperClassName = "",
 }: ChatEditorProps) {
-  const entriesRef = useRef(entries);
-  entriesRef.current = entries;
-
   const editor = useEditor({
     extensions: [
       MarkdownEditingShortcuts,
@@ -42,14 +38,14 @@ export function ChatEditor({
         transformPastedText: false,
         transformCopiedText: false,
       }),
-      SkrivDecorations,
+      CompendiumMentions.configure({ entries, includeUntracked: true }),
     ],
     content: value,
     editorProps: {
       attributes: {
         "aria-label": "Chat message",
         "aria-multiline": "true",
-        class: "mention-textarea chat-input prose prose-sm prose-invert chat-markdown",
+        class: "chat-input prose prose-sm prose-invert chat-markdown",
         role: "textbox",
         spellcheck: "false",
       },
@@ -57,24 +53,12 @@ export function ChatEditor({
     onUpdate: ({ editor }) => {
       // @ts-expect-error - Markdown is available via tiptap-markdown
       onChange(editor.storage.markdown.getMarkdown());
-
-      // Highlight mentions
-      const mentions: Array<{ from: number; to: number; entryIds: string[] }> = [];
-      editor.state.doc.descendants((node, position) => {
-        if (!node.isText || !node.text) return;
-        for (const match of findMentions(node.text, entriesRef.current, {
-          includeUntracked: true,
-        })) {
-          mentions.push({
-            from: position + match.from,
-            to: position + match.to,
-            entryIds: match.entryIds,
-          });
-        }
-      });
-      setMentionDecorations(editor, mentions);
     },
   });
+
+  useEffect(() => {
+    if (editor) setCompendiumMentionEntries(editor, entries);
+  }, [editor, entries]);
 
   useEffect(() => {
     if (editor?.isEmpty && value === "") {

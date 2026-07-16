@@ -2,13 +2,11 @@ import { type Editor, Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
-export type EditorMention = { from: number; to: number; entryIds: string[] };
 type DecorationState = {
   candidate:
     | { kind: "insertion"; position: number; text: string }
     | { kind: "replacement"; from: number; to: number; text: string }
     | null;
-  mentions: EditorMention[];
 };
 const key = new PluginKey<DecorationState>("skrivDecorations");
 
@@ -19,7 +17,7 @@ export const SkrivDecorations = Extension.create({
       new Plugin<DecorationState>({
         key,
         state: {
-          init: () => ({ candidate: null, mentions: [] }),
+          init: () => ({ candidate: null }),
           apply(transaction, previous) {
             const metadata = transaction.getMeta(key) as Partial<DecorationState> | undefined;
             const mappedCandidate = previous.candidate
@@ -39,13 +37,6 @@ export const SkrivDecorations = Extension.create({
                 metadata && "candidate" in metadata
                   ? (metadata.candidate ?? null)
                   : mappedCandidate,
-              mentions:
-                metadata?.mentions ??
-                previous.mentions.map((mention) => ({
-                  ...mention,
-                  from: transaction.mapping.map(mention.from),
-                  to: transaction.mapping.map(mention.to),
-                })),
             };
           },
         },
@@ -53,13 +44,7 @@ export const SkrivDecorations = Extension.create({
           decorations(state) {
             const pluginState = key.getState(state);
             if (!pluginState) return DecorationSet.empty;
-            const decorations: Decoration[] = pluginState.mentions.map((mention) =>
-              Decoration.inline(mention.from, mention.to, {
-                class: "compendium-mention",
-                spellcheck: "false",
-                "data-entry-ids": mention.entryIds.join(","),
-              }),
-            );
+            const decorations: Decoration[] = [];
             if (pluginState.candidate) {
               const candidate = pluginState.candidate;
               const position = candidate.kind === "insertion" ? candidate.position : candidate.from;
@@ -111,8 +96,4 @@ export function setCandidateDecoration(
   candidate: DecorationState["candidate"],
 ): void {
   editor.view.dispatch(editor.state.tr.setMeta(key, { candidate }).setMeta("addToHistory", false));
-}
-
-export function setMentionDecorations(editor: Editor, mentions: EditorMention[]): void {
-  editor.view.dispatch(editor.state.tr.setMeta(key, { mentions }).setMeta("addToHistory", false));
 }

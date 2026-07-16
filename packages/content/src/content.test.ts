@@ -18,7 +18,7 @@ describe("base content package", () => {
     expect(basePackage.tags.some((tag) => themeLabels.has(tag.label.toLocaleLowerCase()))).toBe(
       false,
     );
-    expect(basePackage.prompts).toHaveLength(13);
+    expect(basePackage.prompts).toHaveLength(14);
     expect(basePackage.schemaVersion).toBe(2);
     expect(basePackage.contentVersion).toBe(11);
     expect(basePackage.ingredientPackCategories.map((category) => category.name)).toEqual([
@@ -28,7 +28,13 @@ describe("base content package", () => {
       "Worlds & Settings",
       "Plots & Structures",
       "Tone & Texture",
-    ]);
+      "Genres",
+      "Themes",
+      "Characters & Relationships",
+      "Worlds & Settings",
+      "Plots & Structures",
+      "Tone & Texture",
+    ].slice(0, 6));
     expect(basePackage.ingredientPackCollections).toHaveLength(34);
     expect(basePackage.ingredientPacks).toHaveLength(95);
     expect(basePackage.ingredientPacks.map((pack) => pack.name)).toEqual(
@@ -41,6 +47,11 @@ describe("base content package", () => {
     expect(getBuiltinPrompt("prose.revise_selection").variables).toContain("selected_text");
     expect(getBuiltinPrompt("chat.respond").variables).toContain("project_context");
     expect(getBuiltinPrompt("ideation.entity").variables).toContain("selected_context");
+    expect(getBuiltinPrompt("compendium.extract").variables).toEqual([
+      "text",
+      "story_language",
+      "existing_entries",
+    ]);
     expect(getBuiltinPrompt("ideation.compendium_extract").variables).toEqual([
       "premise",
       "story_language",

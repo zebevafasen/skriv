@@ -646,52 +646,47 @@ label small {
   cursor: pointer;
   font-size: 11px;
 }
-.mention-textarea {
-  position: relative;
+.mention-editor {
   width: 100%;
 }
-.mention-textarea .mention-textarea-highlights {
-  position: absolute;
-  inset: 0;
+
+.mention-editor .ProseMirror {
   width: 100%;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  min-height: 90px;
   padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: var(--c-111111);
-  color: transparent;
+  color: var(--text);
   font: inherit;
   line-height: 1.5;
+  outline: none;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  pointer-events: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
-.mention-textarea .mention-textarea-highlights mark {
-  color: transparent;
-  background: transparent;
-  text-decoration: underline dotted var(--accent-bright) 1.5px;
-  text-underline-offset: 3px;
+
+.mention-editor .ProseMirror:focus {
+  border-color: var(--accent-deep);
+  box-shadow: 0 0 0 3px var(--c-e8a74316);
 }
-.mention-textarea textarea {
-  position: relative;
-  z-index: 1;
-  background: transparent;
-  color: var(--text);
-  caret-color: var(--text);
-  -webkit-text-fill-color: currentColor;
+
+.mention-editor .ProseMirror p {
+  margin: 0;
 }
-.mention-textarea textarea::placeholder {
+
+.mention-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
   color: var(--muted);
-  -webkit-text-fill-color: var(--muted);
-}
-.mention-textarea textarea::selection {
-  background: var(--c-64646488);
+  pointer-events: none;
 }
 .chat-input-layer {
   min-height: 58px;
 }
-.chat-input-layer .mention-textarea-highlights,
-.chat-input-layer textarea,
 .chat-input-layer .ProseMirror {
   margin: 0;
   padding: 6px 9px;
@@ -704,16 +699,9 @@ label small {
   white-space: pre-wrap;
   overflow-wrap: break-word;
 }
-.chat-input-layer .mention-textarea-highlights {
-  border: 0;
-  background: transparent;
-}
-.chat-input-layer textarea,
 .chat-input-layer .ProseMirror {
-  resize: vertical;
   overflow-y: auto;
 }
-.chat-composer textarea,
 .chat-composer .ProseMirror {
   border: 0;
   background: transparent;
@@ -3457,7 +3445,7 @@ label small {
   height: 26px;
 }
 
-.outline-scene-card > textarea {
+.outline-scene-card > .outline-summary-editor .ProseMirror {
   width: 100%;
   min-height: 88px;
   padding: 10px;
@@ -3466,10 +3454,9 @@ label small {
   background: transparent;
   color: var(--c-b5b5b5);
   font: 11px / 1.5 var(--sans);
-  resize: vertical;
 }
 
-.outline-scene-card > textarea:focus {
+.outline-scene-card > .outline-summary-editor .ProseMirror:focus {
   box-shadow: inset 0 0 0 1px var(--c-585858);
 }
 
@@ -3497,6 +3484,32 @@ label small {
   color: var(--c-eac181);
   font-size: 9px;
   font-weight: 650;
+}
+
+.outline-compendium-chip {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--c-634b29);
+  border-radius: 4px;
+  background: var(--c-2b241a);
+}
+
+.outline-compendium-chips .outline-compendium-chip button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.outline-compendium-chips .outline-compendium-remove {
+  display: grid;
+  place-items: center;
+  padding: 4px 5px 4px 2px;
+  color: var(--c-b89561);
+}
+
+.outline-compendium-chips .outline-compendium-remove:hover {
+  color: var(--c-fff);
+  background: var(--c-8f3f2f);
 }
 
 .outline-compendium-chips .outline-compendium-add {
@@ -4199,11 +4212,12 @@ label small {
   border-bottom-color: var(--accent);
 }
 
-.scene-beat-textarea {
+.scene-beat-card .scene-beat-editor {
   width: 100%;
   min-height: 48px;
   background: transparent;
   border: none;
+  padding: 2px;
   color: var(--c-e9e9e9);
   font-size: 14px;
   line-height: 1.5;
@@ -4213,7 +4227,7 @@ label small {
   font-family: var(--sans);
 }
 
-.scene-beat-textarea::placeholder {
+.scene-beat-card .scene-beat-editor p.is-editor-empty:first-child::before {
   color: var(--c-5c5c5c);
 }
 
@@ -4221,7 +4235,7 @@ label small {
   margin-top: -8px;
 }
 
-.scene-beat-event .scene-beat-textarea {
+.scene-beat-event .scene-beat-editor {
   border-top: 1px dashed var(--c-404040);
   padding-top: 12px;
 }
@@ -5323,18 +5337,12 @@ label small {
 }
 
 .drawer-field input,
-.drawer-field textarea,
-.drawer-field .mention-textarea-highlights {
+.drawer-field textarea {
   border-color: var(--c-525252);
   background: var(--c-242424);
 }
 
-.drawer-field .mention-textarea textarea {
-  background: transparent;
-}
-
-.description-field textarea,
-.description-field .mention-textarea-highlights {
+.description-field textarea {
   min-height: 175px;
   resize: vertical;
   font: 14px / 1.65 var(--sans);
@@ -5499,6 +5507,23 @@ label small {
   font: 16px / 1.7 var(--serif);
 }
 
+.content-field > .premise-mention-editor .ProseMirror {
+  min-height: 300px;
+  font: 16px / 1.7 var(--serif);
+}
+
+.premise-content-field {
+  display: grid;
+  gap: 7px;
+  color: var(--c-bebebe);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mention-editor .compendium-mention {
+  cursor: text;
+}
+
 .selection-readout {
   display: flex;
   flex-wrap: wrap;
@@ -5647,13 +5672,11 @@ label small {
 }
 
 .ideation-instructions-input,
-.ideation-instructions-input .mention-textarea-highlights,
-.ideation-instructions-input textarea {
+.ideation-instructions-input .ProseMirror {
   min-height: 126px;
 }
 
-.ideation-instructions-input .mention-textarea-highlights,
-.ideation-instructions-input textarea {
+.ideation-instructions-input .ProseMirror {
   margin: 0;
   padding: 10px 12px;
   overflow: auto;
@@ -5661,10 +5684,6 @@ label small {
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-}
-
-.ideation-instructions-input textarea {
-  resize: vertical;
 }
 
 .ideation-compendium-layer {
@@ -5764,6 +5783,48 @@ label small {
 .export-dialog {
   width: min(540px, calc(100% - 30px));
 }
+.compendium-extraction-dialog {
+  width: min(1400px, calc(100% - 30px));
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+.compendium-extraction-dialog .ideation-extraction-list {
+  flex: 1;
+  max-height: none;
+  overflow-y: auto;
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(620px, 1fr));
+  gap: 16px;
+}
+.compendium-extraction-dialog .ideation-extraction-card {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+  align-items: start;
+}
+.compendium-extraction-dialog .ideation-extraction-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.compendium-extraction-dialog .ideation-extraction-card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+@media (max-width: 700px) {
+  .compendium-extraction-dialog .ideation-extraction-list {
+    grid-template-columns: 1fr;
+  }
+  .compendium-extraction-dialog .ideation-extraction-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 .export-dialog .drawer-toolbar h2 {
   margin-bottom: 12px;
 }
@@ -6943,7 +7004,20 @@ button.mobile-only-tab {
 .notebook-prose h2,
 .notebook-prose h3 {
   margin: 1.3em 0 0.55em;
+  font-weight: 700;
   line-height: 1.25;
+}
+
+.notebook-prose h1 {
+  font-size: 1.7em;
+}
+
+.notebook-prose h2 {
+  font-size: 1.4em;
+}
+
+.notebook-prose h3 {
+  font-size: 1.2em;
 }
 
 .notebook-prose blockquote {
@@ -9112,9 +9186,8 @@ button.mobile-only-tab {
     min-height: 40px;
   }
 
-  .outline-scene-card > textarea {
+  .outline-scene-card > .outline-summary-editor .ProseMirror {
     min-height: 96px;
-    resize: none;
   }
 
   .outline-scene-meta-grid {
@@ -9261,7 +9334,6 @@ button.mobile-only-tab {
     backdrop-filter: blur(10px);
   }
 
-  .chat-composer textarea,
   .chat-composer .ProseMirror {
     max-height: min(150px, 24vh);
     overflow-y: auto;

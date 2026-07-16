@@ -20,6 +20,10 @@ import {
   updateProjectInputSchema,
   updateProjectNoteInputSchema,
   updateSceneInputSchema,
+  extractCompendiumFromTextInputSchema,
+  extractCompendiumFromTextResponseSchema,
+  importExtractedCompendiumFromTextInputSchema,
+  importExtractedCompendiumResponseSchema,
   type ChatStreamEvent,
   type CompendiumContent,
   type GenerationRequest,
@@ -47,7 +51,14 @@ import {
   userCollections,
   userDefinitions,
 } from "./schema.js";
-import { handleSettingsAndPrompts } from "./settings-prompts.js";
+import { handleSettingsAndPrompts, resolvePrompt } from "./settings-prompts.js";
+import { completeNativeAi } from "./native-ai.js";
+import { protectedProtocolMessage, renderPrompt, normalizeCompendiumContent } from "@skriv/core";
+import {
+  richTextContent,
+  appendCompendiumContent,
+  parseExtraction,
+} from "./ideation.js";
 import { handleGenerationRoutes, streamLocalGeneration } from "./generation.js";
 import { handleChatRoutes, streamLocalChat } from "./chat.js";
 import { handleCatalogRoutes } from "./catalog.js";
@@ -841,7 +852,180 @@ async function handleNotes(db: LocalDatabase, method: string, path: string, body
   return null;
 }
 
+function formatExistingEntries(entries: (typeof compendiumEntries.$inferSelect)[]): string {
+  const regular = entries.filter((entry) => !entry.singletonKey);
+  if (regular.length === 0) return "No existing entries.";
+  return regular
+    .map((entry) => {
+      const type = entry.typeId.replace("story.", "");
+      const name = entry.name;
+      const aliases = entry.aliases && entry.aliases.length ? ` (aliases: ${entry.aliases.join(", ")})` : "";
+      const descText = normalizeCompendiumContent(entry.content);
+      return `- ${name}${aliases} [${type}]: ${descText}`;
+    })
+    .join("\n");
+}
+
 async function handleCompendium(db: LocalDatabase, method: string, path: string, body: unknown) {
+  const extractMatch = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium\/extract$/i);
+  if (extractMatch && method === "POST") {
+    const projectId = idSchema.parse(extractMatch[1]);
+    const [project] = await db
+      .select({ settings: projects.settings })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    if (!project) notFound("Project not found.");
+
+    const existing = await db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+
+    const input = extractCompendiumFromTextInputSchema.parse(body ?? {});
+    const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
+    const model = input.modelOverride ?? settings?.baseModel ?? "openrouter/auto";
+
+    const prompt = await resolvePrompt(db, "compendium.extract");
+    const completion = await completeNativeAi({
+      model,
+      maxTokens: 4_000,
+      messages: [
+        protectedProtocolMessage("compendium.extract"),
+        ...renderPrompt(prompt, {
+          text: input.text,
+          story_language: project.settings.language,
+          existing_entries: formatExistingEntries(existing),
+        }),
+      ],
+    });
+    const byName = new Map<string, (typeof existing)[number]>();
+    for (const entry of existing.filter((item) => !item.singletonKey)) {
+      for (const name of [entry.name, ...entry.aliases])
+        byName.set(name.trim().toLocaleLowerCase(), entry);
+    }
+
+    const parsed = parseExtraction(completion.text);
+    const suggestions = parsed.entries.map((entry) => {
+      const duplicate = byName.get(entry.name.trim().toLocaleLowerCase());
+      return {
+        ...entry,
+        id: crypto.randomUUID(),
+        duplicateEntryId: duplicate?.id ?? null,
+        duplicateEntryRevision: duplicate?.revision ?? null,
+      };
+    });
+
+    return extractCompendiumFromTextResponseSchema.parse({
+      suggestions,
+      model,
+      promptId: prompt.id,
+    });
+  }
+
+  const importMatch = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium\/import$/i);
+  if (importMatch && method === "POST") {
+    const projectId = idSchema.parse(importMatch[1]);
+    const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1);
+    if (!project) notFound("Project not found.");
+
+    const input = importExtractedCompendiumFromTextInputSchema.parse(body);
+
+    const allEntries = await db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+    const regularEntries = allEntries.filter((entry) => entry.singletonKey === null);
+    const byName = new Map<string, (typeof regularEntries)[number]>();
+    for (const entry of regularEntries) {
+      for (const name of [entry.name, ...entry.aliases]) {
+        byName.set(name.trim().toLocaleLowerCase(), entry);
+      }
+    }
+    const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
+
+    const incoming = new Set<string>();
+    const appendTargets = new Set<string>();
+    const conflicts = input.entries.flatMap((entry) => {
+      const normalized = entry.name.trim().toLocaleLowerCase();
+      const matched = byName.get(normalized) ?? null;
+      const repeated = incoming.has(normalized);
+      incoming.add(normalized);
+      if (entry.existingEntryId && entry.expectedExistingRevision) {
+        const target = byId.get(entry.existingEntryId);
+        const repeatedTarget = appendTargets.has(entry.existingEntryId);
+        appendTargets.add(entry.existingEntryId);
+        if (
+          !target ||
+          target.revision !== entry.expectedExistingRevision ||
+          matched?.id !== target.id ||
+          repeated ||
+          repeatedTarget
+        ) {
+          return [{ name: entry.name, existingEntryId: entry.existingEntryId }];
+        }
+        return [];
+      }
+      return matched || repeated
+        ? [{ name: entry.name, existingEntryId: matched?.id ?? null }]
+        : [];
+    });
+
+    if (conflicts.length) {
+      conflict("One or more destination entries changed. Run extraction again before importing.", conflicts);
+    }
+
+    const imported = await db.transaction(async (tx) => {
+      const results = [];
+      for (const entry of input.entries) {
+        if (entry.existingEntryId && entry.expectedExistingRevision) {
+          const existing = byId.get(entry.existingEntryId);
+          if (!existing) throw new Error("Compendium entry not found.");
+          const [updated] = await tx
+            .update(compendiumEntries)
+            .set({
+              content: appendCompendiumContent(existing.content, entry.description),
+              revision: existing.revision + 1,
+              ...touchUpdatedAt,
+            })
+            .where(
+              and(
+                eq(compendiumEntries.id, existing.id),
+                eq(compendiumEntries.revision, entry.expectedExistingRevision),
+              ),
+            )
+            .returning();
+          if (!updated) {
+            throw new AppError("Compendium entry changed while it was being updated.", "CONFLICT");
+          }
+          results.push(entryResponse(updated));
+          continue;
+        }
+        const [created] = await tx
+          .insert(compendiumEntries)
+          .values({
+            id: crypto.randomUUID(),
+            projectId,
+            name: entry.name,
+            typeId: entry.typeId,
+            aliases: [],
+            labels: [],
+            trackingEnabled: true,
+            matchExclusions: [],
+            activationMode: "mention",
+            caseSensitive: false,
+            content: richTextContent(entry.description),
+            singletonKey: null,
+          })
+          .returning();
+        if (!created) throw new AppError("Compendium entry creation failed.", "DATABASE_ERROR");
+        results.push(entryResponse(created));
+      }
+      return results;
+    });
+
+    return importExtractedCompendiumResponseSchema.parse(imported);
+  }
   const projectEntries = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium$/i);
   if (projectEntries) {
     const projectId = idSchema.parse(projectEntries[1]);

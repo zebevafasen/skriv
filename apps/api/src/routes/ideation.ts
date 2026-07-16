@@ -129,7 +129,7 @@ export function parseCompendiumExtraction(value: string) {
   throw lastError;
 }
 
-function richTextContent(text: string) {
+export function richTextContent(text: string) {
   return {
     kind: "rich_text" as const,
     plainText: text,

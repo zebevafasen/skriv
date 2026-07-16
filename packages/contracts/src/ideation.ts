@@ -1,22 +1,6 @@
 import { z } from "zod";
-import { compendiumEntrySchema } from "./compendium.js";
+import { compendiumEntrySchema, extractedCompendiumDraftSchema } from "./compendium.js";
 import { idSchema } from "./primitives.js";
-
-export const extractedCompendiumTypeIdSchema = z.enum([
-  "story.character",
-  "story.location",
-  "story.object",
-  "story.faction",
-  "story.lore",
-  "story.other",
-]);
-
-export const extractedCompendiumDraftSchema = z.object({
-  name: z.string().trim().min(1).max(300),
-  typeId: extractedCompendiumTypeIdSchema,
-  description: z.string().trim().min(1).max(10_000),
-  evidence: z.string().trim().min(1).max(2_000),
-});
 
 export const extractCompendiumInputSchema = z.object({
   modelOverride: z.string().min(1).nullable().default(null),

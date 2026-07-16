@@ -54,6 +54,7 @@ const workflowLabels: Record<WorkflowKey, string> = {
   "ideation.premise": "Premise generation",
   "ideation.entity": "Entity ideation",
   "ideation.compendium_extract": "Premise compendium extraction",
+  "compendium.extract": "Compendium extraction",
   "context.extract": "Smart context extraction",
   "summary.scene": "Scene summary",
   "chat.respond": "Project chat",

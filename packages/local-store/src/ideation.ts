@@ -6,8 +6,9 @@ import {
   extractedCompendiumDraftSchema,
   generateSceneSummaryInputSchema,
   importExtractedCompendiumInputSchema,
+  type CompendiumContent,
 } from "@skriv/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
+import { protectedProtocolMessage, renderPrompt, normalizeCompendiumContent } from "@skriv/core";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";
@@ -106,7 +107,7 @@ async function modelFor(db: LocalDatabase, override?: string | null) {
   return settings?.baseModel || "openrouter/auto";
 }
 
-function richTextContent(text: string) {
+export function richTextContent(text: string) {
   return {
     kind: "rich_text" as const,
     plainText: text,
@@ -120,7 +121,34 @@ function richTextContent(text: string) {
   };
 }
 
-function parseExtraction(value: string) {
+export function appendCompendiumContent(
+  content: CompendiumContent,
+  appendedText: string,
+): CompendiumContent {
+  const text = appendedText.trim();
+  if (content.kind === "text") {
+    return { kind: "text", text: [content.text.trimEnd(), text].filter(Boolean).join("\n\n") };
+  }
+  const existingText = normalizeCompendiumContent(content).trimEnd();
+  const appended = richTextContent(text);
+  if (content.kind === "selection") {
+    return richTextContent([existingText, text].filter(Boolean).join("\n\n"));
+  }
+  return {
+    kind: "rich_text",
+    plainText: [existingText, text].filter(Boolean).join("\n\n"),
+    document: {
+      ...content.document,
+      type: content.document.type ?? "doc",
+      content: [
+        ...(existingText ? (content.document.content ?? []) : []),
+        ...(appended.document.content ?? []),
+      ],
+    },
+  };
+}
+
+export function parseExtraction(value: string) {
   const clean = value.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   const fenced = clean.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)?.[1];
   const embedded = clean.slice(clean.indexOf("{"), clean.lastIndexOf("}") + 1);
@@ -365,7 +393,7 @@ export async function handleIdeationRoutes(
             .set({
               name: entry.name,
               typeId: entry.typeId,
-              content: richTextContent(entry.description),
+              content: appendCompendiumContent(existing.content, entry.description),
               revision: existing.revision + 1,
               ...touchUpdatedAt,
             })
