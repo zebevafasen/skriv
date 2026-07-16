@@ -246,10 +246,10 @@ test("responsive controls retain touch-friendly targets", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/");
 
-  const navLinks = page.locator(".global-nav a");
-  await expect(navLinks).toHaveCount(3);
+  const navControls = page.locator(".global-nav a, .global-nav button");
+  await expect(navControls).toHaveCount(3);
   for (let index = 0; index < 3; index += 1) {
-    const box = await navLinks.nth(index).boundingBox();
+    const box = await navControls.nth(index).boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);
     expect(box?.height).toBeGreaterThanOrEqual(44);
   }

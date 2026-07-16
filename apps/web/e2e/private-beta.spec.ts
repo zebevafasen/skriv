@@ -95,7 +95,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     const titleInput = page.getByRole("textbox", { name: "Entry name" });
     await titleInput.fill("Evelyn");
     await page.getByPlaceholder("Add aliases, …").fill("Evie");
-    await page.getByPlaceholder("Write a description…").fill("A determined cartographer.");
+    await page.locator(".compendium-description-prose").fill("A determined cartographer.");
     const savedEntry = page.waitForResponse(
       (response) =>
         response.request().method() === "PATCH" && response.url().includes("/api/compendium/"),
