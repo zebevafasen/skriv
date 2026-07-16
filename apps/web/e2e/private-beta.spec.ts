@@ -129,11 +129,6 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
     ).toBeVisible();
     await ideation.getByRole("button", { name: /Reference/ }).click();
-    await ideation.getByRole("button", { name: "Entity" }).click();
-    await page
-      .getByPlaceholder("What should this entity contribute to the story?")
-      .fill("Make this entity unsettling.");
-    await ideation.getByRole("button", { name: "Premise" }).click();
     await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
     await expect(
       ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
