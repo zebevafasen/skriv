@@ -35,6 +35,7 @@ function mentionDecorations(
       decorations.push(
         Decoration.inline(position + match.from, position + match.to, {
           class: "compendium-mention",
+          nodeName: "mark",
           spellcheck: "false",
           "data-entry-ids": match.entryIds.join(","),
         }),

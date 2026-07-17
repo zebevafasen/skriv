@@ -43,6 +43,7 @@ describe("CompendiumMentions", () => {
 
     const initial = element.querySelector<HTMLElement>(".compendium-mention");
     expect(initial?.textContent).toBe("Zebe");
+    expect(initial?.tagName).toBe("MARK");
     expect(initial?.dataset.entryIds).toBe(zebe.id);
     let click: ReturnType<typeof compendiumMentionClick>;
     initial?.addEventListener("click", (event) => {
