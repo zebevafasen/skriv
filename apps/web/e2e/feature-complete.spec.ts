@@ -125,7 +125,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
       ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
     ).toBeVisible();
     await ideation.getByRole("button", { name: /Reference/ }).click();
-    await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
+    await expect(premiseInstructions).toHaveText("Let Evie complicate the central relationship.");
     await expect(
       ideation.locator(".ideation-reference-chips", { hasText: "Evelyn" }),
     ).toBeVisible();
@@ -138,7 +138,7 @@ test("writes, outlines, summarizes, and edits a continuous manuscript", async ({
     await page.getByRole("button", { name: "Close entry" }).click();
     await page.getByRole("button", { name: "Close Compendium" }).click();
     await expect(ideationCompendium).toBeHidden();
-    await expect(premiseInstructions).toHaveValue("Let Evie complicate the central relationship.");
+    await expect(premiseInstructions).toHaveText("Let Evie complicate the central relationship.");
 
     const tagGroup = ideation.locator(".unified-tags").filter({
       has: page.locator(".field-label", { hasText: "Tags" }),
