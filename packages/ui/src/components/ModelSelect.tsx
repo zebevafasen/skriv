@@ -236,7 +236,7 @@ export function ModelSelect({
                         color: isSelected ? "var(--accent-bright)" : "var(--text)",
                       }}
                       onMouseEnter={(e) => {
-                        if (!isSelected) e.currentTarget.style.background = "var(--surface-2)";
+                        if (!isSelected) e.currentTarget.style.background = "var(--surface-3)";
                       }}
                       onMouseLeave={(e) => {
                         if (!isSelected) e.currentTarget.style.background = "transparent";

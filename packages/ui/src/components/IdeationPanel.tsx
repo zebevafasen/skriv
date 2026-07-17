@@ -559,9 +559,9 @@ export function IdeationPanel({
         </div>
       </div>
       {definitions.error ||
-      metadata.error ||
-      ingredientPackCatalog.error ||
-      importedIngredientPacks.error ? (
+        metadata.error ||
+        ingredientPackCatalog.error ||
+        importedIngredientPacks.error ? (
         <ErrorNotice
           error={
             definitions.error ??
@@ -783,7 +783,7 @@ export function IdeationPanel({
             </div>
             <button
               type="button"
-              className="button ghost"
+              className="button primary full"
               disabled={save.isPending}
               onClick={persistIngredients}
             >
@@ -1225,9 +1225,9 @@ function UnifiedTagInput({
               </button>
             ))}
             {input.trim() &&
-            !suggestions.some(
-              (item) => item.label.toLocaleLowerCase() === input.trim().toLocaleLowerCase(),
-            ) ? (
+              !suggestions.some(
+                (item) => item.label.toLocaleLowerCase() === input.trim().toLocaleLowerCase(),
+              ) ? (
               <button
                 type="button"
                 className="create-tag"
