@@ -18,7 +18,6 @@ const ProjectPage = lazy(() =>
   import("./pages/ProjectPage.js").then((module) => ({ default: module.ProjectPage })),
 );
 
-
 type ProjectSearch = {
   tab?: "chat" | "compendium" | "ideation" | "settings";
   view?: "outline" | "notes";
@@ -96,11 +95,7 @@ export function createSkrivRouter(options: SkrivRouterOptions = {}) {
       })
     : null;
   const routeTree = authenticationRoute
-    ? rootRoute.addChildren([
-        libraryRoute,
-        projectRoute,
-        authenticationRoute,
-      ])
+    ? rootRoute.addChildren([libraryRoute, projectRoute, authenticationRoute])
     : rootRoute.addChildren([libraryRoute, projectRoute]);
   const router = createRouter({
     routeTree,

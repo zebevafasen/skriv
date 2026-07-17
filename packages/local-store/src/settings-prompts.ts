@@ -73,11 +73,7 @@ export async function handleSettingsAndPrompts(
   }
 
   if (path === "/api/settings/app") {
-    const [currentRow] = await db
-      .select()
-      .from(appSettings)
-      .where(eq(appSettings.id, 1))
-      .limit(1);
+    const [currentRow] = await db.select().from(appSettings).where(eq(appSettings.id, 1)).limit(1);
     const current = appSettingsSchema.parse(currentRow ?? {});
     if (method === "GET") return current;
     if (method === "PATCH") {

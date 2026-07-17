@@ -768,9 +768,7 @@ export function ProjectPage() {
               </div>
               <div className="manuscript-scope-stats workspace-scope-stats" aria-live="polite">
                 <strong>{new Intl.NumberFormat().format(scopedWordCount)} words</strong>
-                <span>
-                  {scope.kind === "story" ? "Full Manuscript" : scopeLabel.primary}
-                </span>
+                <span>{scope.kind === "story" ? "Full Manuscript" : scopeLabel.primary}</span>
               </div>
             </>
           ) : null}
@@ -805,10 +803,24 @@ export function ProjectPage() {
                 >
                   <Settings size={16} /> Project settings
                 </button>
-                <button type="button" onClick={() => { setMoreOpen(false); openPrompts(); }} role="menuitem">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    openPrompts();
+                  }}
+                  role="menuitem"
+                >
                   <FileText size={16} /> Prompts
                 </button>
-                <button type="button" onClick={() => { setMoreOpen(false); openSettings(); }} role="menuitem">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    openSettings();
+                  }}
+                  role="menuitem"
+                >
                   <Settings size={16} /> App settings
                 </button>
                 <button
@@ -865,7 +877,10 @@ export function ProjectPage() {
       {!credential.isLoading && !aiConfigured ? (
         <div className="ai-key-guidance" role="status">
           AI actions are disabled until an OpenRouter key is configured. Non-AI writing remains
-          fully offline. <button type="button" className="link" onClick={openSettings}>Open Settings</button>
+          fully offline.{" "}
+          <button type="button" className="link" onClick={openSettings}>
+            Open Settings
+          </button>
         </div>
       ) : null}
 

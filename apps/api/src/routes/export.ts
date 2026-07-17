@@ -83,7 +83,16 @@ async function loadProject(context: AppContext, id: string) {
     .select()
     .from(projectIngredientPacks)
     .where(eq(projectIngredientPacks.projectId, id));
-  return { project, actRows, chapterRows, sceneRows, entries, categories, notes, importedIngredientPacks };
+  return {
+    project,
+    actRows,
+    chapterRows,
+    sceneRows,
+    entries,
+    categories,
+    notes,
+    importedIngredientPacks,
+  };
 }
 
 function jsonPayload(rows: NonNullable<ExportRows>) {

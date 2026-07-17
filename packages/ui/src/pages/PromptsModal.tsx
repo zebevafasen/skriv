@@ -30,13 +30,7 @@ type PromptCategory = "prose" | "ideation" | "context" | "summary" | "chat";
 
 const workflowKeys = Object.keys(workflowVariables) as WorkflowKey[];
 const promptRoles: PromptMessage["role"][] = ["system", "developer", "user", "assistant"];
-const promptCategoryOrder: PromptCategory[] = [
-  "prose",
-  "ideation",
-  "context",
-  "summary",
-  "chat",
-];
+const promptCategoryOrder: PromptCategory[] = ["prose", "ideation", "context", "summary", "chat"];
 const promptCategoryLabels: Record<PromptCategory, string> = {
   prose: "Prose",
   ideation: "Ideation",
@@ -294,9 +288,7 @@ function PromptListGroup({
                       </em>
                     </span>
                     <small>{workflowLabels[prompt.workflow]}</small>
-                    {ownership === "builtin" ? (
-                      <code>{normalizedBuiltinId(prompt.id)}</code>
-                    ) : null}
+                    {ownership === "builtin" ? <code>{normalizedBuiltinId(prompt.id)}</code> : null}
                   </button>
                 ))}
               </div>
@@ -408,11 +400,7 @@ export function PromptsModal({ onClose }: { onClose: () => void }) {
   return createPortal(
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a mouse convenience
     // biome-ignore lint/a11y/noStaticElementInteractions: backdrop is not keyboard-interactive
-    <div
-      className="modal-backdrop"
-      onClick={onClose}
-      style={{ zIndex: 50 }}
-    >
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 50 }}>
       <div
         className="modal prompts-page"
         role="dialog"
@@ -420,18 +408,34 @@ export function PromptsModal({ onClose }: { onClose: () => void }) {
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
-        style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column' }}
+        style={{
+          width: "min(1400px, calc(100% - 30px))",
+          maxHeight: "85vh",
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        <section className="page-heading prompt-page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <section
+          className="page-heading prompt-page-heading"
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+        >
           <div>
             <h1 style={{ marginTop: 0 }}>Prompt Registry</h1>
-            <p>Inspect built-in instructions and tailor custom prompts for each writing workflow.</p>
+            <p>
+              Inspect built-in instructions and tailor custom prompts for each writing workflow.
+            </p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: "flex", gap: "10px" }}>
             <button type="button" className="button primary" onClick={() => openCreate()}>
               <Plus size={17} /> Create prompt
             </button>
-            <button type="button" className="icon-button" onClick={onClose} aria-label="Close prompts">
+            <button
+              type="button"
+              className="icon-button"
+              onClick={onClose}
+              aria-label="Close prompts"
+            >
               <X size={20} />
             </button>
           </div>
@@ -634,7 +638,9 @@ export function PromptsModal({ onClose }: { onClose: () => void }) {
                   <input
                     value={createDraft.name}
                     placeholder="My custom prompt"
-                    onChange={(event) => setCreateDraft({ ...createDraft, name: event.target.value })}
+                    onChange={(event) =>
+                      setCreateDraft({ ...createDraft, name: event.target.value })
+                    }
                   />
                 </label>
               </div>
@@ -658,6 +664,6 @@ export function PromptsModal({ onClose }: { onClose: () => void }) {
         ) : null}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

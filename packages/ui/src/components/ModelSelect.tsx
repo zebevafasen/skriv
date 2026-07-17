@@ -139,7 +139,7 @@ export function ModelSelect({
           alignItems: "center",
           justifyContent: "space-between",
           width: "100%",
-          background: "var(--c-111111)",
+          background: "var(--surface)",
           border: "1px solid var(--border)",
           borderRadius: "8px",
           padding: "10px 12px",
@@ -181,7 +181,7 @@ export function ModelSelect({
               background: "var(--surface-2)",
               border: "1px solid var(--border)",
               borderRadius: "10px",
-              boxShadow: "0 24px 70px var(--c-000c)",
+              boxShadow: "0 24px 70px var(--shadow-large)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
@@ -196,7 +196,7 @@ export function ModelSelect({
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
                   width: "100%",
-                  background: "var(--c-111111)",
+                  background: "var(--surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "6px",
                   padding: "8px 10px",

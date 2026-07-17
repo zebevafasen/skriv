@@ -27,9 +27,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
+    "targets": ["nsis"],
     "category": "Productivity",
     "shortDescription": "A private fiction-writing workspace",
     "longDescription": "Skriv is a private, offline-first workspace for planning and writing long-form fiction.",

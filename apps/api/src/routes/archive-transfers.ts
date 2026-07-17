@@ -11,7 +11,10 @@ import { z } from "zod";
 import type { AppContext } from "../context.js";
 import { notFound, parseWith } from "../http.js";
 import { ownsProject } from "../ownership.js";
-import { importHostedProjectArchive, loadHostedProjectArchive } from "../archives/hosted-project.js";
+import {
+  importHostedProjectArchive,
+  loadHostedProjectArchive,
+} from "../archives/hosted-project.js";
 
 const transferParams = z.object({ id: z.uuid() });
 const exportParams = z.object({ id: z.uuid() });
@@ -67,7 +70,12 @@ export async function cleanupArchiveTransfers(context: AppContext): Promise<numb
     removedPaths.add(row.pathname);
   }
   if (rows.length)
-    await context.db.delete(archiveTransfers).where(inArray(archiveTransfers.id, rows.map((row) => row.id)));
+    await context.db.delete(archiveTransfers).where(
+      inArray(
+        archiveTransfers.id,
+        rows.map((row) => row.id),
+      ),
+    );
 
   let cursor: string | undefined;
   do {
@@ -103,24 +111,48 @@ export async function registerArchiveTransferRoutes(
       expiresAt: new Date(validUntil),
     });
     const { presignedUrl } = await signedUrl(context, pathname, "put", validUntil);
-    return reply.code(201).send({ transferId: id, uploadUrl: presignedUrl, expiresAt: new Date(validUntil).toISOString() });
+    return reply.code(201).send({
+      transferId: id,
+      uploadUrl: presignedUrl,
+      expiresAt: new Date(validUntil).toISOString(),
+    });
   });
 
   app.post("/api/archive-transfers/:id/import", async (request, reply) => {
     const { id } = parseWith(transferParams, request.params);
-    const [transfer] = await context.db.select().from(archiveTransfers).where(and(
-      eq(archiveTransfers.id, id),
-      eq(archiveTransfers.userId, request.userId),
-      eq(archiveTransfers.kind, "import"),
-    )).limit(1);
-    if (!transfer || transfer.expiresAt.getTime() <= Date.now()) return notFound(reply, "Archive transfer not found.");
+    const [transfer] = await context.db
+      .select()
+      .from(archiveTransfers)
+      .where(
+        and(
+          eq(archiveTransfers.id, id),
+          eq(archiveTransfers.userId, request.userId),
+          eq(archiveTransfers.kind, "import"),
+        ),
+      )
+      .limit(1);
+    if (!transfer || transfer.expiresAt.getTime() <= Date.now())
+      return notFound(reply, "Archive transfer not found.");
     try {
-      const result = await get(transfer.pathname, { access: "private", useCache: false, ...blobOptions(context) });
+      const result = await get(transfer.pathname, {
+        access: "private",
+        useCache: false,
+        ...blobOptions(context),
+      });
       if (result?.statusCode !== 200) return notFound(reply, "Uploaded archive not found.");
       if (result.blob.size > MAX_ARCHIVE_UNCOMPRESSED_BYTES)
-        return reply.code(413).send({ error: { code: "VALIDATION_ERROR", message: "Archive exceeds 250 MiB." } });
-      const decoded = await decodeProjectArchive(new Uint8Array(await new Response(result.stream).arrayBuffer()));
-      const imported = await importHostedProjectArchive(context, request.userId, decoded.project, decoded.assets);
+        return reply
+          .code(413)
+          .send({ error: { code: "VALIDATION_ERROR", message: "Archive exceeds 250 MiB." } });
+      const decoded = await decodeProjectArchive(
+        new Uint8Array(await new Response(result.stream).arrayBuffer()),
+      );
+      const imported = await importHostedProjectArchive(
+        context,
+        request.userId,
+        decoded.project,
+        decoded.assets,
+      );
       return reply.code(201).send(imported);
     } finally {
       await del(transfer.pathname, blobOptions(context)).catch(() => undefined);
@@ -130,7 +162,8 @@ export async function registerArchiveTransferRoutes(
 
   app.post("/api/projects/:id/archive-transfers/export", async (request, reply) => {
     const { id: projectId } = parseWith(exportParams, request.params);
-    if (!(await ownsProject(context, request.userId, projectId))) return notFound(reply, "Project not found.");
+    if (!(await ownsProject(context, request.userId, projectId)))
+      return notFound(reply, "Project not found.");
     const loaded = await loadHostedProjectArchive(context, projectId);
     if (!loaded) return notFound(reply, "Project not found.");
     const id = crypto.randomUUID();
@@ -162,7 +195,9 @@ export async function registerArchiveTransferRoutes(
   app.get("/api/internal/archive-transfers/cleanup", async (request, reply) => {
     const expected = context.env.CRON_SECRET;
     if (!expected || request.headers.authorization !== `Bearer ${expected}`)
-      return reply.code(403).send({ error: { code: "FORBIDDEN", message: "Cleanup authorization failed." } });
+      return reply
+        .code(403)
+        .send({ error: { code: "FORBIDDEN", message: "Cleanup authorization failed." } });
     return { removed: await cleanupArchiveTransfers(context) };
   });
 }

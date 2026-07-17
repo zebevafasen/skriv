@@ -77,7 +77,9 @@ export function ErrorNotice({ error }: { error: unknown }) {
       {credentialMissing ? (
         <>
           {" "}
-          <button type="button" className="link" onClick={openSettings}>Open Settings</button>
+          <button type="button" className="link" onClick={openSettings}>
+            Open Settings
+          </button>
         </>
       ) : null}
     </div>

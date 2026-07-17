@@ -11,11 +11,7 @@ describe("project ingredient pack cleanup", () => {
       { definitionId: null, label: "Freeform" },
     ];
     expect(
-      removeIngredientPackOnlyValues(
-        values,
-        new Set(["unique", "shared"]),
-        new Set(["shared"]),
-      ),
+      removeIngredientPackOnlyValues(values, new Set(["unique", "shared"]), new Set(["shared"])),
     ).toEqual(values.slice(1));
   });
 });

@@ -488,36 +488,46 @@ export function ChatPanel({
                 <strong className="chat-message-author">
                   {message.role === "user" ? "You" : "Skriv"}
                   {message.role === "assistant" && message.model && (
-                    <span title={`Model: ${message.model}`} className="chat-info-icon" style={{ marginLeft: 6, opacity: 0.5 }}>
+                    <span
+                      title={`Model: ${message.model}`}
+                      className="chat-info-icon"
+                      style={{ marginLeft: 6, opacity: 0.5 }}
+                    >
                       <Info size={12} />
                     </span>
                   )}
                   {message.role === "user" && (
-                    <span 
-                      title={thread.data.contextSources.length > 0 ? `Context:\n${
-                        Array.from(
-                          thread.data.contextSources.reduce((map, source) => {
-                            let found = false;
-                            for (const group of contextGroups) {
-                              const option = group.items.find((o) => sourceKey(o.source) === sourceKey(source));
-                              if (option) {
-                                const list = map.get(group.label) || [];
-                                list.push(option.label);
-                                map.set(group.label, list);
-                                found = true;
-                                break;
-                              }
-                            }
-                            if (!found) {
-                              const list = map.get("Other") || [];
-                              list.push(source.kind);
-                              map.set("Other", list);
-                            }
-                            return map;
-                          }, new Map<string, string[]>())
-                        ).map(([group, labels]) => `${group}:\n  ${labels.join("\n  ")}`).join("\n\n")
-                      }` : "Context:\nNone"} 
-                      className="chat-info-icon" 
+                    <span
+                      title={
+                        thread.data.contextSources.length > 0
+                          ? `Context:\n${Array.from(
+                              thread.data.contextSources.reduce((map, source) => {
+                                let found = false;
+                                for (const group of contextGroups) {
+                                  const option = group.items.find(
+                                    (o) => sourceKey(o.source) === sourceKey(source),
+                                  );
+                                  if (option) {
+                                    const list = map.get(group.label) || [];
+                                    list.push(option.label);
+                                    map.set(group.label, list);
+                                    found = true;
+                                    break;
+                                  }
+                                }
+                                if (!found) {
+                                  const list = map.get("Other") || [];
+                                  list.push(source.kind);
+                                  map.set("Other", list);
+                                }
+                                return map;
+                              }, new Map<string, string[]>()),
+                            )
+                              .map(([group, labels]) => `${group}:\n  ${labels.join("\n  ")}`)
+                              .join("\n\n")}`
+                          : "Context:\nNone"
+                      }
+                      className="chat-info-icon"
                       style={{ marginLeft: 6, opacity: 0.5 }}
                     >
                       <Info size={12} />
@@ -538,7 +548,9 @@ export function ChatPanel({
                 <small>
                   {message.status === "streaming" ? (
                     <span className="chat-typing-indicator" title="Streaming...">
-                      <span /><span /><span />
+                      <span />
+                      <span />
+                      <span />
                     </span>
                   ) : (
                     <>
@@ -697,11 +709,7 @@ export function ChatPanel({
                   setStreaming(true);
                   controller.current = new AbortController();
                   try {
-                    await skriv().chat.regenerate(
-                      threadId,
-                      applyEvent,
-                      controller.current.signal,
-                    );
+                    await skriv().chat.regenerate(threadId, applyEvent, controller.current.signal);
                   } finally {
                     setStreaming(false);
                     controller.current = null;

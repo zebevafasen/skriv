@@ -45,9 +45,10 @@ function statusCode(status: number): AppErrorCode {
 async function responseError(response: Response, path: string): Promise<AppError> {
   const payload = (await response.json().catch(() => null)) as ErrorPayload | null;
   const supplied = payload?.error?.code;
-  const code = supplied && codes.has(supplied as AppErrorCode)
-    ? (supplied as AppErrorCode)
-    : statusCode(response.status);
+  const code =
+    supplied && codes.has(supplied as AppErrorCode)
+      ? (supplied as AppErrorCode)
+      : statusCode(response.status);
   if (code === "UNAUTHORIZED" && !path.startsWith("/api/auth/")) {
     window.location.assign("/login");
   }
@@ -101,7 +102,8 @@ async function streamNdjson<T extends { type: string }>(
     ...init,
     headers,
   });
-  if (!response.body) throw new AppError("The response stream was unavailable.", "NETWORK_ERROR", undefined, true);
+  if (!response.body)
+    throw new AppError("The response stream was unavailable.", "NETWORK_ERROR", undefined, true);
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
   let terminalReceived = false;
@@ -168,7 +170,10 @@ export function createWebClient() {
           "/api/generations",
           { method: "POST", body: JSON.stringify(input), ...(signal ? { signal } : {}) },
           onEvent,
-          (event) => ["generation.completed", "generation.failed", "generation.cancelled"].includes(event.type),
+          (event) =>
+            ["generation.completed", "generation.failed", "generation.cancelled"].includes(
+              event.type,
+            ),
         );
       },
       chat(path: string, content, onEvent, signal) {
@@ -219,12 +224,20 @@ export function createWebClient() {
             body: file,
           });
           if (!upload.ok)
-            throw new AppError(`Archive upload failed (${upload.status}).`, "NETWORK_ERROR", undefined, true);
+            throw new AppError(
+              `Archive upload failed (${upload.status}).`,
+              "NETWORK_ERROR",
+              undefined,
+              true,
+            );
           return transport.request(`/api/archive-transfers/${transfer.transferId}/import`, {
             method: "POST",
           });
         }
-        return transport.request("/api/projects/import", { method: "POST", body: await file.text() });
+        return transport.request("/api/projects/import", {
+          method: "POST",
+          body: await file.text(),
+        });
       },
     },
     {

@@ -98,8 +98,6 @@ async function metadataEntries(db: LocalDatabase, projectId: string) {
   );
 }
 
-
-
 async function modelFor(db: LocalDatabase, override?: string | null) {
   if (override) return override;
   const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);

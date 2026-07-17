@@ -58,12 +58,8 @@
           "name": "acts_project_id_projects_id_fk",
           "tableFrom": "acts",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -250,12 +246,8 @@
           "name": "chapters_act_id_acts_id_fk",
           "tableFrom": "chapters",
           "tableTo": "acts",
-          "columnsFrom": [
-            "act_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["act_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -355,12 +347,8 @@
           "name": "chat_messages_thread_id_chat_threads_id_fk",
           "tableFrom": "chat_messages",
           "tableTo": "chat_threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -446,12 +434,8 @@
           "name": "chat_threads_project_id_projects_id_fk",
           "tableFrom": "chat_threads",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -519,10 +503,7 @@
       "indexes": {
         "compendium_categories_project_name_idx": {
           "name": "compendium_categories_project_name_idx",
-          "columns": [
-            "project_id",
-            "normalized_name"
-          ],
+          "columns": ["project_id", "normalized_name"],
           "isUnique": true
         }
       },
@@ -531,12 +512,8 @@
           "name": "compendium_categories_project_id_projects_id_fk",
           "tableFrom": "compendium_categories",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -670,10 +647,7 @@
       "indexes": {
         "compendium_singleton_idx": {
           "name": "compendium_singleton_idx",
-          "columns": [
-            "project_id",
-            "singleton_key"
-          ],
+          "columns": ["project_id", "singleton_key"],
           "isUnique": true
         }
       },
@@ -682,12 +656,8 @@
           "name": "compendium_entries_project_id_projects_id_fk",
           "tableFrom": "compendium_entries",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -912,12 +882,8 @@
           "name": "generations_scene_id_scenes_id_fk",
           "tableFrom": "generations",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -999,18 +965,12 @@
       "indexes": {
         "ingredient_nodes_system_idx": {
           "name": "ingredient_nodes_system_idx",
-          "columns": [
-            "system_key"
-          ],
+          "columns": ["system_key"],
           "isUnique": true
         },
         "ingredient_nodes_parent_name_idx": {
           "name": "ingredient_nodes_parent_name_idx",
-          "columns": [
-            "kind",
-            "parent_id",
-            "normalized_name"
-          ],
+          "columns": ["kind", "parent_id", "normalized_name"],
           "isUnique": true
         }
       },
@@ -1085,9 +1045,7 @@
       "indexes": {
         "ingredient_packs_name_idx": {
           "name": "ingredient_packs_name_idx",
-          "columns": [
-            "normalized_name"
-          ],
+          "columns": ["normalized_name"],
           "isUnique": true
         }
       },
@@ -1232,22 +1190,15 @@
           "name": "project_ingredient_packs_project_id_projects_id_fk",
           "tableFrom": "project_ingredient_packs",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "project_ingredient_packs_project_id_source_pack_id_pk": {
-          "columns": [
-            "project_id",
-            "source_pack_id"
-          ],
+          "columns": ["project_id", "source_pack_id"],
           "name": "project_ingredient_packs_project_id_source_pack_id_pk"
         }
       },
@@ -1332,12 +1283,8 @@
           "name": "project_notes_project_id_projects_id_fk",
           "tableFrom": "project_notes",
           "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["project_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1537,12 +1484,8 @@
           "name": "scene_revisions_scene_id_scenes_id_fk",
           "tableFrom": "scene_revisions",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1635,12 +1578,8 @@
           "name": "scenes_chapter_id_chapters_id_fk",
           "tableFrom": "scenes",
           "tableTo": "chapters",
-          "columnsFrom": [
-            "chapter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chapter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1754,10 +1693,7 @@
       "indexes": {
         "definitions_kind_label_idx": {
           "name": "definitions_kind_label_idx",
-          "columns": [
-            "kind",
-            "normalized_label"
-          ],
+          "columns": ["kind", "normalized_label"],
           "isUnique": true
         }
       },
@@ -1805,12 +1741,8 @@
           "name": "workflow_bindings_prompt_definition_id_prompt_definitions_id_fk",
           "tableFrom": "workflow_bindings",
           "tableTo": "prompt_definitions",
-          "columnsFrom": [
-            "prompt_definition_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["prompt_definition_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }

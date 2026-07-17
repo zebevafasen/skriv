@@ -18,7 +18,7 @@ export function generateRandomTitle(): string {
     `The ${adj} ${noun}: ${noun2} of the ${loc}`,
     `${adj} ${noun}s`,
     `A ${noun} of ${adj} ${noun2}s`,
-    `${loc} of the ${adj} ${noun}`
+    `${loc} of the ${adj} ${noun}`,
   ];
 
   return pickRandom(patterns);

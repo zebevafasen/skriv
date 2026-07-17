@@ -124,11 +124,9 @@ export async function registerProjectRoutes(
     const packs = await getIngredientPacks(context, request.userId);
     const selectedPacks = input.ingredientPackIds.map((id) => packs.find((pack) => pack.id === id));
     if (selectedPacks.some((pack) => !pack)) {
-      return reply
-        .code(400)
-        .send({
-          error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." },
-        });
+      return reply.code(400).send({
+        error: { code: "BAD_REQUEST", message: "One or more ingredient packs were not found." },
+      });
     }
     const validSelectedPacks = [
       ...new Map(

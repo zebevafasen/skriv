@@ -91,45 +91,49 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error);
-    const status = error instanceof AppError
-      ? ({
-          BAD_REQUEST: 400,
-          VALIDATION_ERROR: 400,
-          UNAUTHORIZED: 401,
-          FORBIDDEN: 403,
-          NOT_FOUND: 404,
-          CONFLICT: 409,
-          CANCELLED: 409,
-          RATE_LIMITED: 429,
-          UNSUPPORTED: 501,
-          PROVIDER_ERROR: 502,
-          NETWORK_ERROR: 503,
-          CREDENTIAL_ERROR: 400,
-          DATABASE_ERROR: 500,
-          FILE_ERROR: 500,
-          INTERNAL_ERROR: 500,
-        } as const)[error.code]
-      : typeof error === "object" &&
-      error !== null &&
-      "statusCode" in error &&
-      typeof error.statusCode === "number"
-        ? error.statusCode
-        : 500;
-    const code = error instanceof AppError
-      ? error.code
-      : status === 400
-        ? "VALIDATION_ERROR"
-        : status === 401
-          ? "UNAUTHORIZED"
-          : status === 403
-            ? "FORBIDDEN"
-            : status === 404
-              ? "NOT_FOUND"
-              : status === 409
-                ? "CONFLICT"
-                : status === 429
-                  ? "RATE_LIMITED"
-                  : "INTERNAL_ERROR";
+    const status =
+      error instanceof AppError
+        ? (
+            {
+              BAD_REQUEST: 400,
+              VALIDATION_ERROR: 400,
+              UNAUTHORIZED: 401,
+              FORBIDDEN: 403,
+              NOT_FOUND: 404,
+              CONFLICT: 409,
+              CANCELLED: 409,
+              RATE_LIMITED: 429,
+              UNSUPPORTED: 501,
+              PROVIDER_ERROR: 502,
+              NETWORK_ERROR: 503,
+              CREDENTIAL_ERROR: 400,
+              DATABASE_ERROR: 500,
+              FILE_ERROR: 500,
+              INTERNAL_ERROR: 500,
+            } as const
+          )[error.code]
+        : typeof error === "object" &&
+            error !== null &&
+            "statusCode" in error &&
+            typeof error.statusCode === "number"
+          ? error.statusCode
+          : 500;
+    const code =
+      error instanceof AppError
+        ? error.code
+        : status === 400
+          ? "VALIDATION_ERROR"
+          : status === 401
+            ? "UNAUTHORIZED"
+            : status === 403
+              ? "FORBIDDEN"
+              : status === 404
+                ? "NOT_FOUND"
+                : status === 409
+                  ? "CONFLICT"
+                  : status === 429
+                    ? "RATE_LIMITED"
+                    : "INTERNAL_ERROR";
     const message = error instanceof Error ? error.message : "Request failed.";
     return reply.code(status).send({
       error: {

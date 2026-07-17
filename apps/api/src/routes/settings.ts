@@ -155,13 +155,8 @@ export async function registerSettingsRoutes(
     const testAi = context.env.NODE_ENV === "test" && context.defaultAi?.name === "fake";
     return openRouterCredentialStatusSchema.parse({
       configured: Boolean(credential || context.env.OPENROUTER_API_KEY || testAi),
-      source: credential
-        ? "user"
-        : context.env.OPENROUTER_API_KEY || testAi
-          ? "server"
-          : "none",
-      lastFour:
-        credential?.secretLastFour ?? (context.env.OPENROUTER_API_KEY.slice(-4) || null),
+      source: credential ? "user" : context.env.OPENROUTER_API_KEY || testAi ? "server" : "none",
+      lastFour: credential?.secretLastFour ?? (context.env.OPENROUTER_API_KEY.slice(-4) || null),
     });
   });
 

@@ -45,9 +45,7 @@ describe("portable schema-v5 archives", () => {
     expect(decoded.project.project.title).toBe("Portable story");
     expect(decoded.project.project.settings.coverArtworkSeed).toBe(archivedProject.project.id);
     expect(decoded.project.assets).toEqual(archivedProject.assets);
-    expect(decoded.assets).toEqual([
-      { path: "assets/cover.png", mime: "image/png", bytes: cover },
-    ]);
+    expect(decoded.assets).toEqual([{ path: "assets/cover.png", mime: "image/png", bytes: cover }]);
     expect(decoded.manifest.entries.map((entry) => entry.path)).toEqual([
       "project.json",
       "assets/cover.png",

@@ -1392,7 +1392,11 @@ export const ManuscriptEditor = forwardRef<
                 onClick={() => {
                   const latestModel = localStorage.getItem("skriv-latest-model");
                   const attrs = latestModel ? { modelOverride: latestModel } : {};
-                  editor?.chain().focus().insertContent([{ type: "sceneBeat", attrs }, { type: "paragraph" }]).run();
+                  editor
+                    ?.chain()
+                    .focus()
+                    .insertContent([{ type: "sceneBeat", attrs }, { type: "paragraph" }])
+                    .run();
                 }}
               >
                 <Sparkles size={15} /> <span>AI</span>
@@ -1632,7 +1636,11 @@ export const ManuscriptEditor = forwardRef<
               onClick={() => {
                 const latestModel = localStorage.getItem("skriv-latest-model");
                 const attrs = latestModel ? { modelOverride: latestModel } : {};
-                editor?.chain().focus().insertContent([{ type: "sceneBeat", attrs }, { type: "paragraph" }]).run();
+                editor
+                  ?.chain()
+                  .focus()
+                  .insertContent([{ type: "sceneBeat", attrs }, { type: "paragraph" }])
+                  .run();
               }}
             >
               <Sparkles size={15} /> AI /

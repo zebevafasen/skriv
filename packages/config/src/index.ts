@@ -23,10 +23,7 @@ const serverEnvSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     API_PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
     WEB_ORIGIN: z.url().default("http://localhost:5173"),
-    DATABASE_URL: z
-      .string()
-      .min(1)
-      .default("postgresql://skriv:skriv@localhost:5433/skriv"),
+    DATABASE_URL: z.string().min(1).default("postgresql://skriv:skriv@localhost:5433/skriv"),
     BETTER_AUTH_SECRET: z
       .string()
       .min(32)

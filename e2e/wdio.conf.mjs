@@ -15,15 +15,7 @@ if (!dataDirectory.startsWith(`${tempRoot}${path.sep}`)) {
 }
 process.env.SKRIV_DATA_DIR = dataDirectory;
 
-const application = path.join(
-  root,
-  "apps",
-  "desktop",
-  "src-tauri",
-  "target",
-  "debug",
-  "skriv.exe",
-);
+const application = path.join(root, "apps", "desktop", "src-tauri", "target", "debug", "skriv.exe");
 const installedTauriDriver = path.join(os.homedir(), ".cargo", "bin", "tauri-driver.exe");
 const tauriDriverPort = 4544;
 const nativeDriverPort = 4545;

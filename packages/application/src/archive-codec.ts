@@ -56,15 +56,18 @@ function parseCentralDirectory(bytes: Uint8Array): string[] {
     if (offset + 46 > bytes.length || view.getUint32(offset, true) !== 0x02014b50)
       throw new AppError("The archive ZIP directory is malformed.", "VALIDATION_ERROR");
     const flags = view.getUint16(offset + 8, true);
-    if ((flags & 1) !== 0) throw new AppError("Encrypted ZIP entries are unsupported.", "VALIDATION_ERROR");
+    if ((flags & 1) !== 0)
+      throw new AppError("Encrypted ZIP entries are unsupported.", "VALIDATION_ERROR");
     const size = view.getUint32(offset + 24, true);
     const nameLength = view.getUint16(offset + 28, true);
     const extraLength = view.getUint16(offset + 30, true);
     const commentLength = view.getUint16(offset + 32, true);
     const nameStart = offset + 46;
     const name = decoder.decode(bytes.subarray(nameStart, nameStart + nameLength));
-    if (!validPath(name)) throw new AppError("The archive contains an unsafe path.", "VALIDATION_ERROR");
-    if (!seen.add(name)) throw new AppError("The archive contains a duplicate path.", "VALIDATION_ERROR");
+    if (!validPath(name))
+      throw new AppError("The archive contains an unsafe path.", "VALIDATION_ERROR");
+    if (!seen.add(name))
+      throw new AppError("The archive contains a duplicate path.", "VALIDATION_ERROR");
     if (name.startsWith("assets/") && size > MAX_ARCHIVE_ASSET_BYTES)
       throw new AppError("An archive asset exceeds 20 MiB.", "VALIDATION_ERROR");
     total += size;
@@ -96,7 +99,8 @@ export async function encodeProjectArchive(
   for (const asset of assets) {
     if (!validPath(asset.path) || !asset.path.startsWith("assets/"))
       throw new AppError("An archive asset has an invalid path.", "VALIDATION_ERROR");
-    if (files[asset.path]) throw new AppError("An archive asset path is duplicated.", "VALIDATION_ERROR");
+    if (files[asset.path])
+      throw new AppError("An archive asset path is duplicated.", "VALIDATION_ERROR");
     if (asset.bytes.length > MAX_ARCHIVE_ASSET_BYTES)
       throw new AppError("An archive asset exceeds 20 MiB.", "VALIDATION_ERROR");
     total += asset.bytes.length;
@@ -117,7 +121,10 @@ export async function encodeProjectArchive(
     exportedAt: new Date().toISOString(),
     entries,
   });
-  return zipSync({ "manifest.json": encoder.encode(JSON.stringify(manifest, null, 2)), ...files }, { level: 6 });
+  return zipSync(
+    { "manifest.json": encoder.encode(JSON.stringify(manifest, null, 2)), ...files },
+    { level: 6 },
+  );
 }
 
 export async function decodeProjectArchive(bytes: Uint8Array): Promise<DecodedProjectArchive> {
@@ -131,7 +138,11 @@ export async function decodeProjectArchive(bytes: Uint8Array): Promise<DecodedPr
       "VALIDATION_ERROR",
     );
   }
-  if (!directoryNames.includes("manifest.json") || !files["manifest.json"] || !files["project.json"])
+  if (
+    !directoryNames.includes("manifest.json") ||
+    !files["manifest.json"] ||
+    !files["project.json"]
+  )
     throw new AppError("The archive manifest or project payload is missing.", "VALIDATION_ERROR");
   const manifest = projectArchiveManifestV5Schema.parse(
     JSON.parse(decoder.decode(files["manifest.json"])),
@@ -150,7 +161,11 @@ export async function decodeProjectArchive(bytes: Uint8Array): Promise<DecodedPr
   const project = projectArchiveV5Schema.parse(JSON.parse(decoder.decode(files["project.json"])));
   const assets = manifest.entries
     .filter((entry) => entry.path.startsWith("assets/"))
-    .map((entry) => ({ path: entry.path, mime: entry.mime ?? "application/octet-stream", bytes: files[entry.path] as Uint8Array }));
+    .map((entry) => ({
+      path: entry.path,
+      mime: entry.mime ?? "application/octet-stream",
+      bytes: files[entry.path] as Uint8Array,
+    }));
   if (project.assets.some((reference) => !assets.some((asset) => asset.path === reference.path)))
     throw new AppError("An archive image is missing.", "VALIDATION_ERROR");
   return { manifest, project, assets };

@@ -23,7 +23,13 @@ import { ModelSelect } from "../components/ModelSelect.js";
 type Model = { id: string; name: string; contextLength: number };
 type DatabaseSnapshot = { name: string; createdAt: string; size: number };
 
-export function SettingsModal({ onClose, extraSection = null }: { onClose: () => void; extraSection?: ReactNode }) {
+export function SettingsModal({
+  onClose,
+  extraSection = null,
+}: {
+  onClose: () => void;
+  extraSection?: ReactNode;
+}) {
   const app = skriv();
   const backups = app.backups;
   const client = useQueryClient();
@@ -99,17 +105,23 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
   const backupNow = useMutation({
     mutationFn: () =>
       backups?.backupNow() ??
-      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
+      Promise.reject(
+        new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED"),
+      ),
   });
   const openBackupFolder = useMutation({
     mutationFn: () =>
       backups?.openBackupFolder() ??
-      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
+      Promise.reject(
+        new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED"),
+      ),
   });
   const restoreSnapshot = useMutation({
     mutationFn: (name: string) =>
       backups?.restoreDatabaseSnapshot(name) ??
-      Promise.reject(new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED")),
+      Promise.reject(
+        new AppError("Local backups are unavailable on this platform.", "UNSUPPORTED"),
+      ),
   });
   const credentialSummary = credential.data?.configured
     ? credential.data.source === "keychain"
@@ -124,11 +136,7 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
   return createPortal(
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a mouse convenience
     // biome-ignore lint/a11y/noStaticElementInteractions: backdrop is not keyboard-interactive
-    <div
-      className="modal-backdrop"
-      onClick={onClose}
-      style={{ zIndex: 50 }}
-    >
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 50 }}>
       <div
         className="modal settings-modal"
         role="dialog"
@@ -136,9 +144,25 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
-        style={{ width: 'min(1400px, calc(100% - 30px))', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}
+        style={{
+          width: "min(1400px, calc(100% - 30px))",
+          maxHeight: "85vh",
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
+        }}
       >
-        <section className="page-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '6px' }}>
+        <section
+          className="page-heading"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            width: "100%",
+            marginBottom: "6px",
+          }}
+        >
           <div>
             <h1 style={{ marginTop: 0 }}>Settings</h1>
             <p>
@@ -146,17 +170,30 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
               {app.capabilities.localBackups ? ", plus local recovery" : ""}.
             </p>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Close settings">
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onClose}
+            aria-label="Close settings"
+          >
             <X size={20} />
           </button>
         </section>
         {appSettings.error || settings.error || models.error || credential.error ? (
-          <ErrorNotice error={appSettings.error ?? settings.error ?? models.error ?? credential.error} />
+          <ErrorNotice
+            error={appSettings.error ?? settings.error ?? models.error ?? credential.error}
+          />
         ) : null}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px', alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+            gap: "24px",
+            alignItems: "start",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {appDraft ? (
               <section className="settings-card">
                 <div className="settings-heading">
@@ -180,7 +217,11 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                     ))}
                   </select>
                 </div>
-                <button type="button" className="button primary" onClick={() => saveApp.mutate(appDraft)}>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={() => saveApp.mutate(appDraft)}
+                >
                   <Save size={16} /> Save appearance
                 </button>
                 {saveApp.error ? <ErrorNotice error={saveApp.error} /> : null}
@@ -197,16 +238,25 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                   <div>
                     <strong>Your work is backed up automatically</strong>
                     <p>
-                      Changed projects are saved as portable .skriv archives at most every 15 minutes
-                      and when Skriv closes cleanly. Daily database snapshots provide whole-library recovery.
+                      Changed projects are saved as portable .skriv archives at most every 15
+                      minutes and when Skriv closes cleanly. Daily database snapshots provide
+                      whole-library recovery.
                     </p>
                   </div>
                 </div>
                 <div className="button-row">
-                  <button type="button" className="button primary" onClick={() => backupNow.mutate()}>
+                  <button
+                    type="button"
+                    className="button primary"
+                    onClick={() => backupNow.mutate()}
+                  >
                     <HardDriveDownload size={16} /> Back up now
                   </button>
-                  <button type="button" className="button ghost" onClick={() => openBackupFolder.mutate()}>
+                  <button
+                    type="button"
+                    className="button ghost"
+                    onClick={() => openBackupFolder.mutate()}
+                  >
                     <FolderOpen size={16} /> Open backup folder
                   </button>
                 </div>
@@ -235,10 +285,16 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                     </div>
                   ))}
                 </div>
-                {backupNow.error || openBackupFolder.error || restoreSnapshot.error || snapshots.error ? (
+                {backupNow.error ||
+                openBackupFolder.error ||
+                restoreSnapshot.error ||
+                snapshots.error ? (
                   <ErrorNotice
                     error={
-                      backupNow.error ?? openBackupFolder.error ?? restoreSnapshot.error ?? snapshots.error
+                      backupNow.error ??
+                      openBackupFolder.error ??
+                      restoreSnapshot.error ??
+                      snapshots.error
                     }
                   />
                 ) : null}
@@ -246,8 +302,7 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
             ) : null}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {draft ? (
               <section className="settings-card">
                 <div className="settings-heading">
@@ -281,7 +336,9 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                       autoComplete="off"
                       value={openRouterKey}
                       onChange={(event) => setOpenRouterKey(event.target.value)}
-                      placeholder={credential.data?.configured ? "Enter a replacement key" : "sk-or-v1-…"}
+                      placeholder={
+                        credential.data?.configured ? "Enter a replacement key" : "sk-or-v1-…"
+                      }
                     />
                     <button
                       type="button"
@@ -291,7 +348,8 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                     >
                       {saveCredential.isPending ? "Validating…" : "Save key"}
                     </button>
-                    {credential.data?.source === "keychain" || credential.data?.source === "user" ? (
+                    {credential.data?.source === "keychain" ||
+                    credential.data?.source === "user" ? (
                       <button
                         type="button"
                         className="button danger"
@@ -368,6 +426,6 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

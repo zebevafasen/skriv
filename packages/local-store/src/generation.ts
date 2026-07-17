@@ -33,8 +33,6 @@ function conflict(message: string, details?: unknown): never {
   throw new AppError(message, "CONFLICT", details);
 }
 
-
-
 async function generationContext(db: LocalDatabase, input: GenerationRequest) {
   const [scene] = await db.select().from(scenes).where(eq(scenes.id, input.sceneId)).limit(1);
   if (!scene) notFound("Scene not found.");

@@ -243,11 +243,9 @@ export function IngredientPackCatalogManager({
                         disabled={busy || collection.protected}
                         onChange={(event) =>
                           void run(async () => {
-                            await skriv().ideation.updateCatalogNode(
-                              "collections",
-                              collection.id,
-                              { categoryId: event.target.value },
-                            );
+                            await skriv().ideation.updateCatalogNode("collections", collection.id, {
+                              categoryId: event.target.value,
+                            });
                           })
                         }
                       >

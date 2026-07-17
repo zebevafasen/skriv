@@ -18,7 +18,9 @@ export function SettingsProvider({
   const [isPromptsOpen, setIsPromptsOpen] = useState(false);
 
   return (
-    <SettingsContext.Provider value={{ openSettings: () => setIsOpen(true), openPrompts: () => setIsPromptsOpen(true) }}>
+    <SettingsContext.Provider
+      value={{ openSettings: () => setIsOpen(true), openPrompts: () => setIsPromptsOpen(true) }}
+    >
       {children}
       {isOpen ? (
         <SettingsModal
