@@ -1,4 +1,4 @@
-import type { CompendiumEntry, ContentPackage, ExtractCompendiumResponse } from "@skriv/contracts";
+import type { CompendiumEntry, ContentPackage } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -14,10 +14,18 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
 import { ErrorNotice } from "./AppShell.js";
+import {
+  CompendiumExtractionReview,
+  extractionReviewImportEntries,
+  extractionReviewIsValid,
+  prepareExtractionReview,
+  type ExtractionReviewDraft,
+} from "./CompendiumExtractionReview.js";
+import { CompendiumMentionText } from "./CompendiumMentionText.js";
 import { ModelSelect } from "./ModelSelect.js";
 import { IngredientPackPickerModal, IngredientPackPicker } from "./IngredientPackPicker.js";
 import { IngredientPackCatalogManager } from "./IngredientPackCatalogManager.js";
-import { MentionTextarea } from "./MentionTextarea.js";
+import { MentionEditor } from "./MentionEditor.js";
 
 type Value = { definitionId: string | null; label: string; locked: boolean };
 type IdeationSavePayload = {
@@ -34,19 +42,7 @@ type Collection = {
 };
 type CustomDefinition = { id: string; kind: "genre" | "theme" | "tag"; label: string };
 type EntityAlternative = { id: string; name: string; description: string };
-type ExtractionReview = ExtractCompendiumResponse["suggestions"][number] & {
-  selected: boolean;
-};
 export const DEFAULT_FIRST_SCENE_TARGET_LENGTH = 1_000;
-
-export function prepareExtractionReview(
-  suggestions: ExtractCompendiumResponse["suggestions"],
-): ExtractionReview[] {
-  return suggestions.map((suggestion) => ({
-    ...suggestion,
-    selected: true,
-  }));
-}
 type Definitions = {
   package: ContentPackage;
   enabled: boolean;
@@ -62,6 +58,7 @@ export function IdeationPanel({
   entries,
   firstScene,
   onOpenCompendium,
+  onOpenEntry,
   onOpenFirstScene,
   onGenerateFirstScene,
 }: {
@@ -70,6 +67,7 @@ export function IdeationPanel({
   entries: CompendiumEntry[];
   firstScene: { id: string; plainText: string } | null;
   onOpenCompendium: () => void;
+  onOpenEntry: (entryIds: string[], direct: boolean) => void;
   onOpenFirstScene: () => void;
   onGenerateFirstScene: (options: {
     instructions: string;
@@ -130,7 +128,7 @@ export function IdeationPanel({
   const [developmentStage, setDevelopmentStage] = useState<"idle" | "choice" | "review" | "setup">(
     "idle",
   );
-  const [extractionReview, setExtractionReview] = useState<ExtractionReview[]>([]);
+  const [extractionReview, setExtractionReview] = useState<ExtractionReviewDraft[]>([]);
   const [sourcePremiseRevision, setSourcePremiseRevision] = useState<number | null>(null);
   const [openingInstructions, setOpeningInstructions] = useState("");
   const [firstSceneTargetLength, setFirstSceneTargetLength] = useState<number | null>(
@@ -268,15 +266,7 @@ export function IdeationPanel({
       if (sourcePremiseRevision === null) throw new Error("Run extraction again.");
       return skriv().ideation.importCompendium(projectId, {
         sourcePremiseRevision,
-        entries: extractionReview
-          .filter((entry) => entry.selected)
-          .map(({ name, typeId, description, duplicateEntryId, duplicateEntryRevision }) => ({
-            name,
-            typeId,
-            description,
-            existingEntryId: duplicateEntryId,
-            expectedExistingRevision: duplicateEntryRevision,
-          })),
+        entries: extractionReviewImportEntries(extractionReview),
       });
     },
     onSuccess: async () => {
@@ -334,18 +324,6 @@ export function IdeationPanel({
     setExtractionReview([]);
     setSourcePremiseRevision(null);
     await save.mutateAsync(payload).catch(() => undefined);
-  };
-  const duplicateForName = (name: string) => {
-    const normalized = name.trim().normalize("NFKC").toLocaleLowerCase();
-    return (
-      entries.find(
-        (entry) =>
-          !entry.singleton &&
-          [entry.name, ...entry.aliases].some(
-            (candidate) => candidate.trim().normalize("NFKC").toLocaleLowerCase() === normalized,
-          ),
-      ) ?? null
-    );
   };
   const developmentPanel = premise.trim() ? (
     <section className="ideation-development">
@@ -420,102 +398,11 @@ export function IdeationPanel({
             </button>
           </div>
           {extractionReview.length ? (
-            <div className="ideation-extraction-list">
-              {extractionReview.map((draft) => (
-                <article
-                  className={`ideation-extraction-card ${draft.duplicateEntryId ? "duplicate" : ""}`}
-                  key={draft.id}
-                >
-                  <label className="ideation-extraction-select">
-                    <input
-                      type="checkbox"
-                      checked={draft.selected}
-                      onChange={(event) =>
-                        setExtractionReview((current) =>
-                          current.map((entry) =>
-                            entry.id === draft.id
-                              ? { ...entry, selected: event.target.checked }
-                              : entry,
-                          ),
-                        )
-                      }
-                    />
-                    Include
-                  </label>
-                  <div className="ideation-extraction-fields">
-                    <label>
-                      Name
-                      <input
-                        value={draft.name}
-                        onChange={(event) => {
-                          const name = event.target.value;
-                          const duplicate = duplicateForName(name);
-                          setExtractionReview((current) =>
-                            current.map((entry) =>
-                              entry.id === draft.id
-                                ? {
-                                    ...entry,
-                                    name,
-                                    duplicateEntryId: duplicate?.id ?? null,
-                                    duplicateEntryRevision: duplicate?.revision ?? null,
-                                  }
-                                : entry,
-                            ),
-                          );
-                        }}
-                      />
-                    </label>
-                    <label>
-                      Category
-                      <select
-                        value={draft.typeId}
-                        onChange={(event) =>
-                          setExtractionReview((current) =>
-                            current.map((entry) =>
-                              entry.id === draft.id
-                                ? {
-                                    ...entry,
-                                    typeId: event.target.value as ExtractionReview["typeId"],
-                                  }
-                                : entry,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="story.character">Character</option>
-                        <option value="story.location">Location</option>
-                        <option value="story.object">Object / Item</option>
-                        <option value="story.faction">Faction</option>
-                        <option value="story.lore">Lore</option>
-                        <option value="story.other">Other</option>
-                      </select>
-                    </label>
-                  </div>
-                  <label className="content-field">
-                    Description
-                    <textarea
-                      value={draft.description}
-                      onChange={(event) =>
-                        setExtractionReview((current) =>
-                          current.map((entry) =>
-                            entry.id === draft.id
-                              ? { ...entry, description: event.target.value }
-                              : entry,
-                          ),
-                        )
-                      }
-                    />
-                  </label>
-                  <blockquote>“{draft.evidence}”</blockquote>
-                  {draft.duplicateEntryId ? (
-                    <small>
-                      An entry with this name or alias already exists. This description will be
-                      appended to it as a new paragraph.
-                    </small>
-                  ) : null}
-                </article>
-              ))}
-            </div>
+            <CompendiumExtractionReview
+              drafts={extractionReview}
+              entries={entries}
+              onChange={setExtractionReview}
+            />
           ) : (
             <p>No clearly supported Compendium entries were found in this premise.</p>
           )}
@@ -523,9 +410,7 @@ export function IdeationPanel({
             <button
               type="button"
               className="button primary"
-              disabled={
-                importCompendium.isPending || !extractionReview.some((entry) => entry.selected)
-              }
+              disabled={importCompendium.isPending || !extractionReviewIsValid(extractionReview)}
               onClick={() => importCompendium.mutate()}
             >
               <Check size={15} />
@@ -547,7 +432,8 @@ export function IdeationPanel({
             <h4>Set up the first Scene</h4>
             <p>The result will open in the editor as a provisional candidate.</p>
           </div>
-          <MentionTextarea
+          <MentionEditor
+            ariaLabel="Opening direction"
             value={openingInstructions}
             entries={referenceEntries}
             placeholder="Optional opening direction…"
@@ -860,7 +746,14 @@ export function IdeationPanel({
             <div className="alternative-list">
               {alternatives.map((alternative) => (
                 <article key={alternative.id}>
-                  <p>{alternative.text}</p>
+                  <p>
+                    <CompendiumMentionText
+                      text={alternative.text}
+                      entries={entries}
+                      includeUntracked
+                      onOpenEntry={onOpenEntry}
+                    />
+                  </p>
                   <button
                     type="button"
                     className="button ghost compact"
@@ -872,19 +765,22 @@ export function IdeationPanel({
                 </article>
               ))}
             </div>
-            <label className="content-field">
-              Active premise
-              <textarea
+            <div className="content-field premise-content-field">
+              <span>Active premise</span>
+              <MentionEditor
+                ariaLabel="Active premise"
+                wrapperClassName="premise-mention-editor"
                 value={premise}
-                onChange={(event) => {
-                  setPremise(event.target.value);
+                entries={entries}
+                onValueChange={(value) => {
+                  setPremise(value);
                   setDevelopmentStage("idle");
                   setSourcePremiseRevision(null);
                   setExtractionReview([]);
                 }}
                 placeholder="Your project premise will live here…"
               />
-            </label>
+            </div>
             <button
               type="button"
               className="button ghost"
@@ -1136,9 +1032,9 @@ function AdditionalInstructions({
           ))}
         </fieldset>
       ) : null}
-      <MentionTextarea
+      <MentionEditor
+        ariaLabel="Ideation instructions"
         wrapperClassName="ideation-instructions-input"
-        className="ideation-instructions-textarea"
         value={value}
         entries={entries}
         onValueChange={onValueChange}

@@ -3,11 +3,18 @@ import { basePackage } from "@skriv/content";
 import {
   compendiumTypeIdSchema,
   extractCompendiumInputSchema,
-  extractedCompendiumDraftSchema,
   generateSceneSummaryInputSchema,
   importExtractedCompendiumInputSchema,
 } from "@skriv/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
+import {
+  appendCompendiumContent,
+  parseCompendiumExtraction,
+  prepareCompendiumExtractionSuggestions,
+  protectedProtocolMessage,
+  renderPrompt,
+  richTextCompendiumContent,
+  validateCompendiumImport,
+} from "@skriv/core";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";
@@ -65,9 +72,6 @@ const collectionSchema = z.object({
   kind: z.enum(["genre", "theme", "tag"]),
   values: z.array(z.object({ definitionId: z.string().nullable(), label: z.string().min(1) })),
 });
-const extractionResultSchema = z.object({
-  entries: z.array(extractedCompendiumDraftSchema).max(30),
-});
 
 function notFound(message: string): never {
   throw new AppError(message, "NOT_FOUND");
@@ -102,35 +106,6 @@ async function modelFor(db: LocalDatabase, override?: string | null) {
   if (override) return override;
   const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
   return settings?.baseModel || "openrouter/auto";
-}
-
-function richTextContent(text: string) {
-  return {
-    kind: "rich_text" as const,
-    plainText: text,
-    document: {
-      type: "doc",
-      content: text.split(/\r?\n/).map((line) => ({
-        type: "paragraph",
-        ...(line ? { content: [{ type: "text", text: line }] } : {}),
-      })),
-    },
-  };
-}
-
-function parseExtraction(value: string) {
-  const clean = value.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  const fenced = clean.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)?.[1];
-  const embedded = clean.slice(clean.indexOf("{"), clean.lastIndexOf("}") + 1);
-  for (const candidate of [clean, fenced, embedded]) {
-    if (!candidate) continue;
-    try {
-      return extractionResultSchema.parse(JSON.parse(candidate));
-    } catch {
-      // Try the next safe extraction form.
-    }
-  }
-  throw new AppError("The model did not return valid Compendium JSON.", "PROVIDER_ERROR");
 }
 
 export async function handleIdeationRoutes(
@@ -312,22 +287,13 @@ export async function handleIdeationRoutes(
       .select()
       .from(compendiumEntries)
       .where(eq(compendiumEntries.projectId, projectId));
-    const byName = new Map<string, (typeof existing)[number]>();
-    for (const entry of existing.filter((item) => !item.singletonKey)) {
-      for (const name of [entry.name, ...entry.aliases])
-        byName.set(name.trim().toLocaleLowerCase(), entry);
-    }
+    const regularEntries = existing.filter((item) => !item.singletonKey);
     return {
       sourcePremiseRevision: premise.revision,
-      suggestions: parseExtraction(completion.text).entries.map((entry) => {
-        const duplicate = byName.get(entry.name.trim().toLocaleLowerCase());
-        return {
-          ...entry,
-          id: crypto.randomUUID(),
-          duplicateEntryId: duplicate?.id ?? null,
-          duplicateEntryRevision: duplicate?.revision ?? null,
-        };
-      }),
+      suggestions: prepareCompendiumExtractionSuggestions(
+        parseCompendiumExtraction(completion.text).entries,
+        regularEntries,
+      ),
       model,
       promptId: prompt.id,
     };
@@ -342,35 +308,36 @@ export async function handleIdeationRoutes(
     if (metadata.get("premise")?.revision !== input.sourcePremiseRevision) {
       conflict("The premise changed after extraction. Run extraction again.");
     }
+    const allEntries = await db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+    const regularEntries = allEntries.filter((entry) => !entry.singletonKey);
+    const conflicts = validateCompendiumImport(input.entries, regularEntries);
+    if (conflicts.length) {
+      conflict(
+        "One or more destination entries changed. Run extraction again before importing.",
+        conflicts,
+      );
+    }
+    const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
     return db.transaction(async (tx) => {
       const result = [];
       for (const entry of input.entries) {
-        if (entry.existingEntryId) {
-          const [existing] = await tx
-            .select()
-            .from(compendiumEntries)
-            .where(eq(compendiumEntries.id, entry.existingEntryId))
-            .limit(1);
-          if (
-            !existing ||
-            existing.projectId !== projectId ||
-            existing.revision !== entry.expectedExistingRevision
-          ) {
-            conflict("A matching Compendium entry changed. Run extraction again.");
-          }
+        if (entry.existingEntryId && entry.expectedExistingRevision) {
+          const existing = byId.get(entry.existingEntryId);
+          if (!existing) conflict("A matching Compendium entry changed. Run extraction again.");
           const [updated] = await tx
             .update(compendiumEntries)
             .set({
-              name: entry.name,
-              typeId: entry.typeId,
-              content: richTextContent(entry.description),
+              content: appendCompendiumContent(existing.content, entry.description),
               revision: existing.revision + 1,
               ...touchUpdatedAt,
             })
             .where(
               and(
                 eq(compendiumEntries.id, existing.id),
-                eq(compendiumEntries.revision, existing.revision),
+                eq(compendiumEntries.revision, entry.expectedExistingRevision),
               ),
             )
             .returning();
@@ -391,7 +358,7 @@ export async function handleIdeationRoutes(
               matchExclusions: [],
               activationMode: "mention",
               caseSensitive: false,
-              content: richTextContent(entry.description),
+              content: richTextCompendiumContent(entry.description),
             })
             .returning();
           if (!created) throw new AppError("Compendium import failed.", "DATABASE_ERROR");

@@ -1,4 +1,4 @@
-import type { ProjectNote } from "@skriv/contracts";
+import type { CompendiumEntry, ProjectNote } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -8,6 +8,12 @@ import StarterKit from "@tiptap/starter-kit";
 import { ArrowLeft, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { skriv } from "../api.js";
+import {
+  CompendiumMentions,
+  compendiumMentionClick,
+  setCompendiumMentionEntries,
+} from "../editor/CompendiumMentions.js";
+import { MarkdownEditingShortcuts } from "../editor/MarkdownEditing.js";
 import { registerPersistenceFlusher } from "../persistence.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
@@ -24,11 +30,15 @@ function sortNotes(notes: ProjectNote[]) {
 
 function NoteEditor({
   note,
+  entries,
+  onOpenEntry,
   onBack,
   onSaved,
   onDeleted,
 }: {
   note: ProjectNote;
+  entries: CompendiumEntry[];
+  onOpenEntry: (entryIds: string[], direct: boolean) => void;
   onBack: () => void;
   onSaved: (note: ProjectNote) => void;
   onDeleted: () => void;
@@ -42,7 +52,9 @@ function NoteEditor({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueue = useRef<Promise<ProjectNote | null>>(Promise.resolve(null));
   const onSavedRef = useRef(onSaved);
+  const onOpenEntryRef = useRef(onOpenEntry);
   onSavedRef.current = onSaved;
+  onOpenEntryRef.current = onOpenEntry;
   const nativeSpellcheck = skriv().capabilities.platform !== "desktop";
 
   const persist = useCallback(
@@ -71,6 +83,7 @@ function NoteEditor({
 
   const editor = useEditor({
     extensions: [
+      MarkdownEditingShortcuts,
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         codeBlock: false,
@@ -78,10 +91,17 @@ function NoteEditor({
       }),
       Underline,
       Placeholder.configure({ placeholder: "Start writing this note..." }),
+      CompendiumMentions.configure({ entries, includeUntracked: true }),
     ],
     content: note.document as JSONContent,
     editorProps: {
       attributes: { class: "notebook-prose", spellcheck: String(nativeSpellcheck) },
+      handleClick(_view, _position, event) {
+        const mention = compendiumMentionClick(event);
+        if (!mention) return false;
+        onOpenEntryRef.current(mention.entryIds, mention.direct);
+        return true;
+      },
     },
     onSelectionUpdate({ editor: current }) {
       const { from, to, empty } = current.state.selection;
@@ -110,6 +130,10 @@ function NoteEditor({
       }, 700);
     },
   });
+
+  useEffect(() => {
+    if (editor) setCompendiumMentionEntries(editor, entries);
+  }, [editor, entries]);
 
   const flush = useCallback(async () => {
     if (saveTimer.current) {
@@ -279,7 +303,15 @@ function NoteEditor({
   );
 }
 
-export function ProjectNotesPanel({ projectId }: { projectId: string }) {
+export function ProjectNotesPanel({
+  projectId,
+  entries,
+  onOpenEntry,
+}: {
+  projectId: string;
+  entries: CompendiumEntry[];
+  onOpenEntry: (entryIds: string[], direct: boolean) => void;
+}) {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -375,6 +407,8 @@ export function ProjectNotesPanel({ projectId }: { projectId: string }) {
           <NoteEditor
             key={selected.id}
             note={selected}
+            entries={entries}
+            onOpenEntry={onOpenEntry}
             onBack={() => setSelectedId(null)}
             onSaved={updateCache}
             onDeleted={() => {

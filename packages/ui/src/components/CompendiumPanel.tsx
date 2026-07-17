@@ -1,14 +1,10 @@
 import type { CompendiumCategory, CompendiumEntry } from "@skriv/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/core";
-import { Extension } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { findMentions } from "@skriv/core";
 import {
   BookMarked,
   Box,
@@ -25,56 +21,23 @@ import {
   UserRound,
   UsersRound,
   X,
+  Sparkles,
+  Check,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { createPortal } from "react-dom";
 import { skriv } from "../api.js";
+import { CompendiumMentions, setCompendiumMentionEntries } from "../editor/CompendiumMentions.js";
 import { MarkdownEditingShortcuts } from "../editor/MarkdownEditing.js";
 import { ErrorNotice } from "./AppShell.js";
+import {
+  CompendiumExtractionReview,
+  extractionReviewImportEntries,
+  extractionReviewIsValid,
+  prepareExtractionReview,
+  type ExtractionReviewDraft,
+} from "./CompendiumExtractionReview.js";
 import { useAppDialog } from "./DialogProvider.js";
-
-const MentionsHighlighter = Extension.create<{ entries: CompendiumEntry[] }>({
-  name: "mentionsHighlighter",
-  addOptions() {
-    return { entries: [] };
-  },
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: new PluginKey("mentionsHighlighter"),
-        state: {
-          init() {
-            return DecorationSet.empty;
-          },
-          apply: (tr) => {
-            const doc = tr.doc;
-            const decorations: Decoration[] = [];
-            doc.descendants((node, pos) => {
-              if (node.isText && node.text) {
-                const matches = findMentions(node.text, this.options.entries, {
-                  includeUntracked: true,
-                });
-                for (const match of matches) {
-                  decorations.push(
-                    Decoration.inline(pos + match.from, pos + match.to, {
-                      nodeName: "mark",
-                      class: "compendium-mention",
-                    }),
-                  );
-                }
-              }
-            });
-            return DecorationSet.create(doc, decorations);
-          },
-        },
-        props: {
-          decorations(state) {
-            return this.getState(state);
-          },
-        },
-      }),
-    ];
-  },
-});
 
 function CompendiumDescriptionEditor({
   draft,
@@ -99,7 +62,7 @@ function CompendiumDescriptionEditor({
       }),
       Underline,
       Placeholder.configure({ placeholder: "Write a description…" }),
-      MentionsHighlighter.configure({ entries: mentionEntries }),
+      CompendiumMentions.configure({ entries: mentionEntries, includeUntracked: true }),
     ],
     content:
       draft.content.kind === "rich_text"
@@ -127,15 +90,7 @@ function CompendiumDescriptionEditor({
   });
 
   useEffect(() => {
-    if (editor) {
-      const extension = editor.extensionManager.extensions.find(
-        (e) => e.name === "mentionsHighlighter",
-      );
-      if (extension) {
-        extension.options.entries = mentionEntries;
-        editor.view.dispatch(editor.state.tr);
-      }
-    }
+    if (editor) setCompendiumMentionEntries(editor, mentionEntries);
   }, [editor, mentionEntries]);
 
   return (
@@ -242,22 +197,90 @@ function StoryTypeMenu({
   );
 }
 
-export function CompendiumPanel({
-  projectId,
-  entries,
-  selectedEntryId,
-  onSelect,
-}: {
-  projectId: string;
-  entries: CompendiumEntry[];
-  selectedEntryId: string | null;
-  onSelect: (id: string | null) => void;
-}) {
+export type CompendiumPanelHandle = {
+  extractText: (text: string) => void;
+};
+
+export const CompendiumPanel = forwardRef<
+  CompendiumPanelHandle,
+  {
+    projectId: string;
+    entries: CompendiumEntry[];
+    selectedEntryId: string | null;
+    onSelect: (id: string | null) => void;
+    aiConfigured: boolean;
+    activeSceneText?: string | null;
+    editorRef?: React.RefObject<{ flush: () => Promise<void> } | null>;
+  }
+>(function CompendiumPanel(
+  {
+    projectId,
+    entries,
+    selectedEntryId,
+    onSelect,
+    aiConfigured,
+    activeSceneText = null,
+    editorRef,
+  },
+  ref,
+) {
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ["compendium-categories", projectId],
     queryFn: () => skriv().compendium.categories(projectId),
   });
+
+  const [extractionReview, setExtractionReview] = useState<ExtractionReviewDraft[]>([]);
+  const [extractionModalOpen, setExtractionModalOpen] = useState(false);
+
+  const aiSettings = useQuery({
+    queryKey: ["ai-settings"],
+    queryFn: () => skriv().settings.ai(),
+    enabled: aiConfigured,
+  });
+
+  const extractCompendium = useMutation({
+    mutationFn: async (text: string) => {
+      if (editorRef?.current) {
+        await editorRef.current.flush();
+      }
+      return skriv().compendium.extractCompendium(projectId, {
+        text,
+        modelOverride: aiSettings.data?.baseModel ?? null,
+      });
+    },
+    onMutate: () => {
+      setExtractionModalOpen(true);
+      setExtractionReview([]);
+    },
+    onSuccess: (result) => {
+      setExtractionReview(prepareExtractionReview(result.suggestions));
+    },
+  });
+
+  const importCompendium = useMutation({
+    mutationFn: () => {
+      return skriv().compendium.importCompendium(projectId, {
+        entries: extractionReviewImportEntries(extractionReview),
+      });
+    },
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["compendium", projectId] });
+      setExtractionModalOpen(false);
+      setExtractionReview([]);
+    },
+  });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      extractText: (text: string) => {
+        extractCompendium.mutate(text);
+      },
+    }),
+    [extractCompendium],
+  );
+
   const [search, setSearch] = useState("");
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
@@ -418,6 +441,26 @@ export function CompendiumPanel({
               </>
             ) : null}
           </div>
+          <button
+            type="button"
+            className="icon-button"
+            title={
+              !aiConfigured
+                ? "Configure OpenRouter in Settings"
+                : !activeSceneText?.trim()
+                  ? "No active scene text to extract"
+                  : "Extract entries from active scene"
+            }
+            aria-label="Extract entries from active scene"
+            disabled={!aiConfigured || extractCompendium.isPending || !activeSceneText?.trim()}
+            onClick={() => {
+              if (activeSceneText) {
+                extractCompendium.mutate(activeSceneText);
+              }
+            }}
+          >
+            <Sparkles size={15} />
+          </button>
           <button
             type="button"
             className="icon-button"
@@ -657,9 +700,81 @@ export function CompendiumPanel({
           </section>
         </div>
       ) : null}
+      {extractionModalOpen
+        ? createPortal(
+            <div className="modal-backdrop">
+              <div
+                className="modal compendium-extraction-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="compendium-extract-title"
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <div className="drawer-toolbar">
+                  <div>
+                    <p className="eyebrow">Extract entries</p>
+                    <h2 id="compendium-extract-title">Review extracted entries</h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="Close extract dialog"
+                    disabled={extractCompendium.isPending}
+                    onClick={() => setExtractionModalOpen(false)}
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+
+                {extractCompendium.isPending ? (
+                  <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>
+                    Extracting entries...
+                  </div>
+                ) : extractionReview.length ? (
+                  <CompendiumExtractionReview
+                    drafts={extractionReview}
+                    entries={entries}
+                    onChange={setExtractionReview}
+                  />
+                ) : (
+                  <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>
+                    No clearly supported Compendium entries were found in the text.
+                  </div>
+                )}
+
+                {extractCompendium.error || importCompendium.error ? (
+                  <ErrorNotice error={extractCompendium.error ?? importCompendium.error} />
+                ) : null}
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="button ghost"
+                    disabled={extractCompendium.isPending}
+                    onClick={() => setExtractionModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="button primary"
+                    disabled={
+                      importCompendium.isPending || !extractionReviewIsValid(extractionReview)
+                    }
+                    onClick={() => importCompendium.mutate()}
+                  >
+                    <Check size={15} />{" "}
+                    {importCompendium.isPending ? "Importing…" : "Import entries"}
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </aside>
   );
-}
+});
 
 const contextModes: Array<{
   value: CompendiumEntry["activationMode"];
@@ -1113,6 +1228,7 @@ export function CompendiumEntryDrawer({
                 <strong>Description</strong>
                 <small>Write the information the AI should know about this entry.</small>
                 <CompendiumDescriptionEditor
+                  key={draft.id}
                   draft={draft}
                   setDraft={setDraft}
                   mentionEntries={mentionEntries}

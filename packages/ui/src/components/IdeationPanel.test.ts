@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  clearIngredientValues,
-  DEFAULT_FIRST_SCENE_TARGET_LENGTH,
-  prepareExtractionReview,
-} from "./IdeationPanel.js";
+import { clearIngredientValues, DEFAULT_FIRST_SCENE_TARGET_LENGTH } from "./IdeationPanel.js";
+import { prepareExtractionReview } from "./CompendiumExtractionReview.js";
 
 describe("Ideation ingredient clearing", () => {
   const values = [
@@ -36,12 +33,18 @@ describe("premise development defaults", () => {
     };
     expect(
       prepareExtractionReview([
-        { ...draft, duplicateEntryId: null, duplicateEntryRevision: null },
+        { ...draft, duplicateCandidates: [] },
         {
           ...draft,
           id: crypto.randomUUID(),
-          duplicateEntryId: duplicateId,
-          duplicateEntryRevision: 3,
+          duplicateCandidates: [
+            {
+              id: duplicateId,
+              name: "Mara",
+              typeId: "story.character",
+              revision: 3,
+            },
+          ],
         },
       ]).map((entry) => entry.selected),
     ).toEqual([true, true]);

@@ -9,6 +9,7 @@ import type {
   ContentPackage,
   EditorSettings,
   ExtractCompendiumResponse,
+  ExtractCompendiumFromTextResponse,
   GenerationRequest,
   GenerationStreamEvent,
   IngredientPack,
@@ -176,6 +177,11 @@ export type CompendiumClient = {
   createCategory(projectId: string, input: JsonInput): Promise<CompendiumCategory>;
   updateCategory(categoryId: string, input: JsonInput): Promise<CompendiumCategory>;
   removeCategory(categoryId: string): Promise<void>;
+  extractCompendium(
+    projectId: string,
+    input: JsonInput,
+  ): Promise<ExtractCompendiumFromTextResponse>;
+  importCompendium(projectId: string, input: JsonInput): Promise<CompendiumEntry[]>;
 };
 
 export type IdeationClient = {
@@ -370,6 +376,10 @@ export function createSkrivClient(
       updateCategory: (id, input) =>
         request(transport, `/api/compendium-categories/${id}`, "PATCH", input),
       removeCategory: (id) => request(transport, `/api/compendium-categories/${id}`, "DELETE"),
+      extractCompendium: (projectId, input) =>
+        request(transport, `/api/projects/${projectId}/compendium/extract`, "POST", input),
+      importCompendium: (projectId, input) =>
+        request(transport, `/api/projects/${projectId}/compendium/import`, "POST", input),
     },
     ideation: {
       definitions: () => request(transport, "/api/ideation/definitions"),

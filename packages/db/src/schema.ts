@@ -529,7 +529,7 @@ export const usageEvents = pgTable("usage_events", {
   generationId: uuid("generation_id").references(() => generations.id, { onDelete: "set null" }),
   model: text("model").notNull(),
   role: text("role", {
-    enum: ["writing", "context", "ideation", "summary", "chat", "chat_utility"],
+    enum: ["writing", "context", "ideation", "compendium", "summary", "chat", "chat_utility"],
   }).notNull(),
   inputTokens: integer("input_tokens"),
   outputTokens: integer("output_tokens"),

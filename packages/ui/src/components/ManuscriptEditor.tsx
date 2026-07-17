@@ -8,7 +8,7 @@ import type {
   Scene,
   SelectionAction,
 } from "@skriv/contracts";
-import { findMentions, manuscriptLabels } from "@skriv/core";
+import { manuscriptLabels } from "@skriv/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Editor,
@@ -66,10 +66,11 @@ import React, {
 import { createPortal } from "react-dom";
 import { skriv, streamGeneration } from "../api.js";
 import {
-  SkrivDecorations,
-  setCandidateDecoration,
-  setMentionDecorations,
-} from "../editor/SkrivDecorations.js";
+  CompendiumMentions,
+  compendiumMentionClick,
+  setCompendiumMentionEntries,
+} from "../editor/CompendiumMentions.js";
+import { SkrivDecorations, setCandidateDecoration } from "../editor/SkrivDecorations.js";
 import { generatedProseContent } from "../editor/generatedProse.js";
 import {
   compositeDocument,
@@ -597,21 +598,6 @@ const CrossSceneSelectionHandler = Extension.create({
   },
 });
 
-function refreshMentionDecorations(editor: Editor, entries: CompendiumEntry[]) {
-  const mentions: Array<{ from: number; to: number; entryIds: string[] }> = [];
-  editor.state.doc.descendants((node, position) => {
-    if (!node.isText || !node.text) return;
-    for (const match of findMentions(node.text, entries)) {
-      mentions.push({
-        from: position + match.from,
-        to: position + match.to,
-        entryIds: match.entryIds,
-      });
-    }
-  });
-  setMentionDecorations(editor, mentions);
-}
-
 export type ManuscriptEditorHandle = { flush: () => Promise<void> };
 export type FirstSceneGenerationIntent = {
   id: string;
@@ -635,6 +621,7 @@ export const ManuscriptEditor = forwardRef<
     onSelectScene: (sceneId: string) => void;
     firstSceneGenerationIntent?: FirstSceneGenerationIntent | null;
     onFirstSceneGenerationIntentConsumed?: () => void;
+    onExtractCompendium?: (text: string) => void;
   }
 >(function ManuscriptEditor(
   {
@@ -651,6 +638,7 @@ export const ManuscriptEditor = forwardRef<
     onSelectScene,
     firstSceneGenerationIntent = null,
     onFirstSceneGenerationIntentConsumed,
+    onExtractCompendium,
   },
   ref,
 ) {
@@ -680,7 +668,6 @@ export const ManuscriptEditor = forwardRef<
   const [historyOpen, setHistoryOpen] = useState(false);
   const [revisions, setRevisions] = useState<SceneRevision[]>([]);
   const saveTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-  const mentionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const versionRefs = useRef(new Map(visibleScenes.map((scene) => [scene.id, scene.version])));
   const documentRefs = useRef(
     new Map(visibleScenes.map((scene) => [scene.id, JSON.stringify(scene.document)])),
@@ -688,7 +675,6 @@ export const ManuscriptEditor = forwardRef<
   const onSavedRef = useRef(onSaved);
   const conflictsRef = useRef(conflicts);
   const activeRef = useRef(active);
-  const entriesRef = useRef(entries);
   const cursorRef = useRef(1);
   const abortRef = useRef<AbortController | null>(null);
   const settingsSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -773,6 +759,7 @@ export const ManuscriptEditor = forwardRef<
         SceneBeat,
         LockedSceneBoundaries,
         Placeholder.configure({ placeholder: "Begin the scene… Press / for Skriv." }),
+        CompendiumMentions.configure({ entries, debounceMs: 100 }),
         SkrivDecorations,
       ],
       content: compositeDocument(tree, scope),
@@ -812,9 +799,9 @@ export const ManuscriptEditor = forwardRef<
           const target = event.target as HTMLElement;
           const sceneElement = target.closest<HTMLElement>("[data-scene-id]");
           if (sceneElement?.dataset.sceneId) setActiveSceneId(sceneElement.dataset.sceneId);
-          const decorated = target.closest<HTMLElement>("[data-entry-ids]");
-          if (decorated?.dataset.entryIds) {
-            onOpenEntry(decorated.dataset.entryIds.split(","), event.ctrlKey || event.metaKey);
+          const mention = compendiumMentionClick(event);
+          if (mention) {
+            onOpenEntry(mention.entryIds, mention.direct);
             return true;
           }
           return false;
@@ -857,11 +844,6 @@ export const ManuscriptEditor = forwardRef<
         const extracted = extractScene(current, sceneId);
         if (extracted && documentRefs.current.get(sceneId) === JSON.stringify(extracted.document))
           return;
-        if (mentionTimer.current) clearTimeout(mentionTimer.current);
-        mentionTimer.current = setTimeout(
-          () => refreshMentionDecorations(current, entriesRef.current),
-          100,
-        );
         const previous = saveTimers.current.get(sceneId);
         if (previous) clearTimeout(previous);
         saveTimers.current.set(
@@ -883,9 +865,7 @@ export const ManuscriptEditor = forwardRef<
     conflictsRef.current = conflicts;
   }, [conflicts]);
   useEffect(() => {
-    entriesRef.current = entries;
-    if (!editor) return;
-    refreshMentionDecorations(editor, entries);
+    if (editor) setCompendiumMentionEntries(editor, entries);
   }, [editor, entries]);
   useEffect(() => {
     if (settingsQuery.data) setEditorSettings(settingsQuery.data);
@@ -984,7 +964,6 @@ export const ManuscriptEditor = forwardRef<
   useEffect(
     () => () => {
       for (const timer of saveTimers.current.values()) clearTimeout(timer);
-      if (mentionTimer.current) clearTimeout(mentionTimer.current);
       if (settingsSaveTimer.current) clearTimeout(settingsSaveTimer.current);
       if (editor) {
         for (const sceneId of saveTimers.current.keys()) void saveScene(editor, sceneId);
@@ -1937,6 +1916,18 @@ export const ManuscriptEditor = forwardRef<
                 <Sparkles size={12} /> {label}
               </button>
             ))}
+            <button
+              type="button"
+              disabled={!aiConfigured || !selectionMenu?.text.trim()}
+              onClick={() => {
+                if (selectionMenu && onExtractCompendium) {
+                  onExtractCompendium(selectionMenu.text);
+                  setSelectionMenu(null);
+                }
+              }}
+            >
+              <Sparkles size={12} /> Extract entries
+            </button>
           </div>
         </div>
       ) : null}

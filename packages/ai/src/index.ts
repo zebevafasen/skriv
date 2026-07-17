@@ -113,10 +113,14 @@ export class FakeAIProvider implements AIProvider {
   }
 
   async complete(request: CompletionRequest): Promise<{ text: string; usage: CompletionUsage }> {
-    const isCompendiumExtraction = request.messages.some((message) =>
-      message.content.includes(
-        "Extract useful Compendium entries from the supplied fiction premise.",
-      ),
+    const isCompendiumExtraction = request.messages.some(
+      (message) =>
+        message.content.includes(
+          "Extract useful Compendium entries from the supplied fiction premise.",
+        ) ||
+        message.content.includes(
+          "Each entry must contain only name, typeId, description, and evidence.",
+        ),
     );
     if (isCompendiumExtraction) {
       return {

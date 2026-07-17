@@ -1,13 +1,15 @@
 import type { CompendiumEntry, PromptDefinition } from "@skriv/contracts";
-import { discoverReferences } from "@skriv/core";
+import {
+  appendCompendiumContent,
+  discoverReferences,
+  indexCompendiumEntryNames,
+  parseCompendiumExtraction,
+} from "@skriv/core";
 import { describe, expect, it } from "vitest";
 import {
   formatIdeationContext,
   hasInvalidIdeationReferenceIds,
   ideationPromptMessages,
-  appendCompendiumContent,
-  existingEntryNames,
-  parseCompendiumExtraction,
 } from "./routes/ideation.js";
 
 function entry(name: string, content: string): CompendiumEntry {
@@ -144,9 +146,11 @@ describe("Ideation Compendium context", () => {
 
   it("matches extracted names against existing names and aliases canonically", () => {
     const id = crypto.randomUUID();
-    const names = existingEntryNames([{ id, name: "Mara Vale", aliases: ["The Investigator"] }]);
-    expect(names.get("mara vale")?.id).toBe(id);
-    expect(names.get("the investigator")?.id).toBe(id);
+    const names = indexCompendiumEntryNames([
+      { id, name: "Mara Vale", aliases: ["The Investigator"], revision: 1 },
+    ]);
+    expect(names.get("mara vale")?.[0]?.id).toBe(id);
+    expect(names.get("the investigator")?.[0]?.id).toBe(id);
   });
 
   it("appends extracted details on a new paragraph without replacing existing content", () => {

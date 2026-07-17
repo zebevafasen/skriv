@@ -119,3 +119,80 @@ export type CompendiumContent = z.infer<typeof compendiumContentSchema>;
 export type ContextFragment = z.infer<typeof contextFragmentSchema>;
 export type CompendiumCategory = z.infer<typeof compendiumCategorySchema>;
 export type CompendiumTypeId = z.infer<typeof compendiumTypeIdSchema>;
+
+export const extractedCompendiumTypeIdSchema = z.enum([
+  "story.character",
+  "story.location",
+  "story.object",
+  "story.faction",
+  "story.lore",
+  "story.other",
+]);
+
+export const extractedCompendiumDraftSchema = z.object({
+  name: z.string().trim().min(1).max(300),
+  typeId: extractedCompendiumTypeIdSchema,
+  description: z.string().trim().min(1).max(10_000),
+  evidence: z.string().trim().min(1).max(2_000),
+});
+
+export const compendiumExtractionResultSchema = z.object({
+  entries: z.array(extractedCompendiumDraftSchema).max(30),
+});
+
+export const compendiumDuplicateCandidateSchema = compendiumEntrySchema.pick({
+  id: true,
+  name: true,
+  typeId: true,
+  revision: true,
+});
+
+export const extractedCompendiumSuggestionSchema = extractedCompendiumDraftSchema.extend({
+  id: idSchema,
+  duplicateCandidates: z.array(compendiumDuplicateCandidateSchema).max(100),
+});
+
+export const COMPENDIUM_EXTRACTION_TEXT_MAX_CHARACTERS = 100_000;
+
+export const extractCompendiumFromTextInputSchema = z.object({
+  text: z.string().trim().min(1).max(COMPENDIUM_EXTRACTION_TEXT_MAX_CHARACTERS),
+  modelOverride: z.string().min(1).nullable().default(null),
+});
+
+export const extractCompendiumFromTextResponseSchema = z.object({
+  suggestions: z.array(extractedCompendiumSuggestionSchema).max(30),
+  model: z.string(),
+  promptId: z.string(),
+});
+
+export const importExtractedCompendiumFromTextInputSchema = z
+  .object({
+    entries: z
+      .array(
+        extractedCompendiumDraftSchema.omit({ evidence: true }).extend({
+          existingEntryId: idSchema.nullable().default(null),
+          expectedExistingRevision: z.number().int().positive().nullable().default(null),
+        }),
+      )
+      .min(1)
+      .max(30),
+  })
+  .superRefine((value, context) => {
+    value.entries.forEach((entry, index) => {
+      if (Boolean(entry.existingEntryId) !== Boolean(entry.expectedExistingRevision)) {
+        context.addIssue({
+          code: "custom",
+          path: ["entries", index, "existingEntryId"],
+          message: "Existing entry id and revision must be supplied together.",
+        });
+      }
+    });
+  });
+
+export type ExtractCompendiumFromTextInput = z.infer<typeof extractCompendiumFromTextInputSchema>;
+export type ExtractCompendiumFromTextResponse = z.infer<
+  typeof extractCompendiumFromTextResponseSchema
+>;
+export type ImportExtractedCompendiumFromTextInput = z.infer<
+  typeof importExtractedCompendiumFromTextInputSchema
+>;

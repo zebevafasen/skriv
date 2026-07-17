@@ -20,6 +20,10 @@ import {
   updateProjectInputSchema,
   updateProjectNoteInputSchema,
   updateSceneInputSchema,
+  extractCompendiumFromTextInputSchema,
+  extractCompendiumFromTextResponseSchema,
+  importExtractedCompendiumFromTextInputSchema,
+  importExtractedCompendiumResponseSchema,
   type ChatStreamEvent,
   type CompendiumContent,
   type GenerationRequest,
@@ -47,7 +51,19 @@ import {
   userCollections,
   userDefinitions,
 } from "./schema.js";
-import { handleSettingsAndPrompts } from "./settings-prompts.js";
+import { handleSettingsAndPrompts, resolvePrompt } from "./settings-prompts.js";
+import { completeNativeAi, getNativeModelLimits } from "./native-ai.js";
+import {
+  approximateTokens,
+  appendCompendiumContent,
+  formatCompendiumExtractionContext,
+  parseCompendiumExtraction,
+  prepareCompendiumExtractionSuggestions,
+  protectedProtocolMessage,
+  renderPrompt,
+  richTextCompendiumContent,
+  validateCompendiumImport,
+} from "@skriv/core";
 import { handleGenerationRoutes, streamLocalGeneration } from "./generation.js";
 import { handleChatRoutes, streamLocalChat } from "./chat.js";
 import { handleCatalogRoutes } from "./catalog.js";
@@ -842,6 +858,156 @@ async function handleNotes(db: LocalDatabase, method: string, path: string, body
 }
 
 async function handleCompendium(db: LocalDatabase, method: string, path: string, body: unknown) {
+  const extractMatch = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium\/extract$/i);
+  if (extractMatch && method === "POST") {
+    const projectId = idSchema.parse(extractMatch[1]);
+    const [project] = await db
+      .select({ settings: projects.settings })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    if (!project) notFound("Project not found.");
+
+    const existing = await db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+
+    const input = extractCompendiumFromTextInputSchema.parse(body ?? {});
+    const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
+    const model = input.modelOverride ?? settings?.baseModel ?? "openrouter/auto";
+    const limits = await getNativeModelLimits(model);
+    const maxTokens = Math.min(4_000, limits.maxCompletionTokens);
+    const prompt = await resolvePrompt(db, "compendium.extract");
+    const protocol = protectedProtocolMessage("compendium.extract");
+    const promptOverheadTokens =
+      approximateTokens(protocol.content) +
+      renderPrompt(prompt, {
+        text: "",
+        story_language: project.settings.language,
+        existing_entries: "",
+      }).reduce((total, message) => total + approximateTokens(message.content), 0) +
+      500;
+    const safetyTokens = Math.max(1_024, Math.ceil(limits.contextLength * 0.05));
+    const availableInputTokens =
+      limits.contextLength - maxTokens - safetyTokens - promptOverheadTokens;
+    const storyTokens = approximateTokens(input.text);
+    if (storyTokens > availableInputTokens) {
+      throw new AppError(
+        "The selected text is too long for this model. Select a smaller passage or choose a model with a larger context window.",
+        "BAD_REQUEST",
+      );
+    }
+    const regularEntries = existing.filter((entry) => !entry.singletonKey);
+
+    const completion = await completeNativeAi({
+      model,
+      maxTokens,
+      messages: [
+        protocol,
+        ...renderPrompt(prompt, {
+          text: input.text,
+          story_language: project.settings.language,
+          existing_entries: formatCompendiumExtractionContext(
+            regularEntries,
+            input.text,
+            Math.max(0, availableInputTokens - storyTokens),
+          ),
+        }),
+      ],
+    });
+    let parsed: ReturnType<typeof parseCompendiumExtraction>;
+    try {
+      parsed = parseCompendiumExtraction(completion.text);
+    } catch {
+      throw new AppError(
+        "The model returned an invalid Compendium extraction. Try again or choose another model.",
+        "PROVIDER_ERROR",
+      );
+    }
+    const suggestions = prepareCompendiumExtractionSuggestions(parsed.entries, regularEntries);
+
+    return extractCompendiumFromTextResponseSchema.parse({
+      suggestions,
+      model,
+      promptId: prompt.id,
+    });
+  }
+
+  const importMatch = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium\/import$/i);
+  if (importMatch && method === "POST") {
+    const projectId = idSchema.parse(importMatch[1]);
+    const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1);
+    if (!project) notFound("Project not found.");
+
+    const input = importExtractedCompendiumFromTextInputSchema.parse(body);
+
+    const allEntries = await db
+      .select()
+      .from(compendiumEntries)
+      .where(eq(compendiumEntries.projectId, projectId));
+    const regularEntries = allEntries.filter((entry) => entry.singletonKey === null);
+    const byId = new Map(regularEntries.map((entry) => [entry.id, entry]));
+    const conflicts = validateCompendiumImport(input.entries, regularEntries);
+
+    if (conflicts.length) {
+      conflict(
+        "One or more destination entries changed. Run extraction again before importing.",
+        conflicts,
+      );
+    }
+
+    const imported = await db.transaction(async (tx) => {
+      const results = [];
+      for (const entry of input.entries) {
+        if (entry.existingEntryId && entry.expectedExistingRevision) {
+          const existing = byId.get(entry.existingEntryId);
+          if (!existing) throw new Error("Compendium entry not found.");
+          const [updated] = await tx
+            .update(compendiumEntries)
+            .set({
+              content: appendCompendiumContent(existing.content, entry.description),
+              revision: existing.revision + 1,
+              ...touchUpdatedAt,
+            })
+            .where(
+              and(
+                eq(compendiumEntries.id, existing.id),
+                eq(compendiumEntries.revision, entry.expectedExistingRevision),
+              ),
+            )
+            .returning();
+          if (!updated) {
+            throw new AppError("Compendium entry changed while it was being updated.", "CONFLICT");
+          }
+          results.push(entryResponse(updated));
+          continue;
+        }
+        const [created] = await tx
+          .insert(compendiumEntries)
+          .values({
+            id: crypto.randomUUID(),
+            projectId,
+            name: entry.name,
+            typeId: entry.typeId,
+            aliases: [],
+            labels: [],
+            trackingEnabled: true,
+            matchExclusions: [],
+            activationMode: "mention",
+            caseSensitive: false,
+            content: richTextCompendiumContent(entry.description),
+            singletonKey: null,
+          })
+          .returning();
+        if (!created) throw new AppError("Compendium entry creation failed.", "DATABASE_ERROR");
+        results.push(entryResponse(created));
+      }
+      return results;
+    });
+
+    return importExtractedCompendiumResponseSchema.parse(imported);
+  }
   const projectEntries = path.match(/^\/api\/projects\/([0-9a-f-]+)\/compendium$/i);
   if (projectEntries) {
     const projectId = idSchema.parse(projectEntries[1]);

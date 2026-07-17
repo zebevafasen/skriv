@@ -44,6 +44,7 @@ import {
   Sparkles,
   Tags,
   Trash2,
+  X,
 } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -58,6 +59,7 @@ import {
 import { updateSceneInTree } from "../utils/manuscript.js";
 import { ErrorNotice } from "./AppShell.js";
 import { useAppDialog } from "./DialogProvider.js";
+import { MentionEditor } from "./MentionEditor.js";
 import { LabelPackManager } from "./LabelPackManager.js";
 
 const compendiumTypeOrder = [
@@ -707,9 +709,10 @@ function SceneCard({
   );
 
   const automaticallyMentionedIds = useMemo(() => {
-    const ids = new Set(findMentions(scene.plainText, entries).flatMap((match) => match.entryIds));
+    const scanText = [scene.plainText, metadata.summary].filter(Boolean).join("\n");
+    const ids = new Set(findMentions(scanText, entries).flatMap((match) => match.entryIds));
     return entries.filter((entry) => ids.has(entry.id)).map((entry) => entry.id);
-  }, [entries, scene.plainText]);
+  }, [entries, metadata.summary, scene.plainText]);
   const manualEntryIds = metadata.manualCompendiumEntryIds ?? [];
   const visibleEntryIds = useMemo(
     () => [
@@ -779,7 +782,9 @@ function SceneCard({
       className="outline-scene-card"
       onPointerDown={(event) => {
         if (!(event.target as HTMLElement).closest("button, select, input")) {
-          event.currentTarget.querySelector("textarea")?.focus();
+          event.currentTarget
+            .querySelector<HTMLElement>(".outline-summary-editor [contenteditable='true']")
+            ?.focus();
         }
       }}
     >
@@ -817,19 +822,44 @@ function SceneCard({
           }}
         />
       </header>
-      <textarea
-        aria-label={`${displayLabel} summary`}
+      <MentionEditor
+        ariaLabel={`${displayLabel} summary`}
+        wrapperClassName="outline-summary-editor"
+        className="outline-summary-prose"
         value={metadata.summary}
-        onChange={(event) => changeMetadata({ ...metadata, summary: event.target.value })}
+        entries={entries}
+        onValueChange={(value) => changeMetadata({ ...metadata, summary: value })}
         placeholder="Add summary…"
       />
       <div className="outline-compendium-chips">
         {visibleEntryIds.map((id) => {
           const entry = entries.find((candidate) => candidate.id === id);
+          const removable =
+            manualEntryIds.includes(id) && !automaticallyMentionedIds.includes(id);
           return entry ? (
-            <button type="button" key={id} onClick={() => onOpenEntry([id])}>
-              {entry.name}
-            </button>
+            <span className="outline-compendium-chip" key={id}>
+              <button type="button" onClick={() => onOpenEntry([id])}>
+                {entry.name}
+              </button>
+              {removable ? (
+                <button
+                  type="button"
+                  className="outline-compendium-remove"
+                  aria-label={`Remove ${entry.name} from ${displayLabel}`}
+                  title="Remove manually added entry"
+                  onClick={() =>
+                    changeMetadata({
+                      ...metadata,
+                      manualCompendiumEntryIds: manualEntryIds.filter(
+                        (entryId) => entryId !== id,
+                      ),
+                    })
+                  }
+                >
+                  <X size={10} />
+                </button>
+              ) : null}
+            </span>
           ) : null;
         })}
         <CompendiumEntryPicker
