@@ -46,7 +46,7 @@ yarn-error.log*
 *.swp
 *.swo
 *~
-.screenshots
+screenshots/
 
 # Codex and other local agent state
 .codex/

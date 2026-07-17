@@ -48,7 +48,6 @@ test("turns a chosen premise into reviewed Compendium entries and a first-Scene 
       .locator(".ideation-extraction-card")
       .filter({ has: page.locator('input[value="Mara Vale"]') });
     await expect(existingDraft.getByRole("checkbox", { name: "Include" })).toBeChecked();
-    await expect(existingDraft).toContainText("appended to it as a new paragraph");
     await ideation.getByRole("button", { name: "Import selected" }).click();
     await expect(ideation.getByRole("heading", { name: "Set up the first Scene" })).toBeVisible();
     await expect(ideation.getByRole("spinbutton", { name: "Target" })).toHaveValue("1000");

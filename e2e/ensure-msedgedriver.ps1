@@ -29,26 +29,17 @@ if (-not $webViewVersion) {
 
 $cachePath = [System.IO.Path]::GetFullPath($CacheRoot)
 [System.IO.Directory]::CreateDirectory($cachePath) | Out-Null
-$majorVersion = $webViewVersion.Split(".")[0]
 
 $cachedDrivers = Get-ChildItem -LiteralPath $cachePath -Filter "msedgedriver.exe" -File -Recurse -ErrorAction SilentlyContinue
 foreach ($cachedDriver in $cachedDrivers) {
-  $reportedVersion = (& $cachedDriver.FullName --version 2>$null) -replace "^MSEdgeDriver\s+", ""
-  if ($reportedVersion.Split(".")[0] -eq $majorVersion) {
+  $reportedVersion = ((& $cachedDriver.FullName --version 2>$null) -replace "^MSEdgeDriver\s+", "").Trim()
+  if ($reportedVersion -eq $webViewVersion) {
     Write-Output $cachedDriver.DirectoryName
     exit 0
   }
 }
 
 $driverVersion = $webViewVersion
-try {
-  $latest = (Invoke-WebRequest -Uri "https://msedgedriver.microsoft.com/LATEST_RELEASE_$majorVersion" -UseBasicParsing -TimeoutSec 15).Content.Trim()
-  if ($latest -match "^$majorVersion\.") {
-    $driverVersion = $latest
-  }
-} catch {
-  # The exact WebView2 version is a valid fallback when the release endpoint is unavailable.
-}
 
 $driverDirectory = Join-Path $cachePath $driverVersion
 [System.IO.Directory]::CreateDirectory($driverDirectory) | Out-Null

@@ -69,6 +69,7 @@ export function MentionEditor({
         ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
         "aria-multiline": "true",
         class: className,
+        placeholder,
         role: "textbox",
         spellcheck: String(spellCheck),
       },
@@ -85,6 +86,7 @@ export function MentionEditor({
   useEffect(() => {
     placeholderRef.current = placeholder;
     if (editor && !editor.isDestroyed) {
+      editor.view.dom.setAttribute("placeholder", placeholder);
       editor.view.dispatch(editor.state.tr.setMeta("addToHistory", false));
     }
   }, [editor, placeholder]);

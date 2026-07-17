@@ -44,6 +44,23 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
 
 $manifest = Join-Path $root "apps\desktop\src-tauri\Cargo.toml"
 $cargo = $cargoCommand.Source
+$target = Join-Path $root "apps\desktop\src-tauri\target"
+$targetRootMarker = Join-Path $target ".skriv-workspace-root"
+if ($Command -in @("dev", "build", "e2e-build")) {
+  $normalizedRoot = ([IO.Path]::GetFullPath($root)).TrimEnd("\").ToLowerInvariant()
+  $previousRoot = if (Test-Path $targetRootMarker) {
+    (Get-Content -Raw $targetRootMarker).Trim().ToLowerInvariant()
+  } else {
+    $null
+  }
+  if ((Test-Path $target -PathType Container) -and $previousRoot -ne $normalizedRoot) {
+    Write-Host "Cargo target belongs to a different workspace path; clearing stale desktop build artifacts."
+    & $cargo clean --manifest-path $manifest
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  }
+  New-Item -ItemType Directory -Path $target -Force | Out-Null
+  [IO.File]::WriteAllText($targetRootMarker, $normalizedRoot)
+}
 switch ($Command) {
   "dev" { pnpm --filter @skriv/desktop tauri dev }
   "build" { pnpm --filter @skriv/desktop tauri build }
