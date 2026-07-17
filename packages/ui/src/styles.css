@@ -100,7 +100,7 @@ label small {
   gap: 40px;
   padding: 0 42px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, #000000 95%, transparent);
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
   backdrop-filter: blur(18px);
   position: sticky;
   top: 0;
@@ -1638,7 +1638,7 @@ label small {
 .ingredient-category-contents {
   padding: 10px;
   border-top: 1px solid var(--border);
-  background: color-mix(in srgb, #000000 40%, transparent);
+  background: var(--surface-3);
 }
 .ingredient-pack-grid {
   display: grid;
@@ -1649,7 +1649,7 @@ label small {
 .collection-pack-grid {
   padding: 10px;
   border-top: 1px solid var(--border);
-  background: color-mix(in srgb, #000000 40%, transparent);
+  background: var(--surface-3);
 }
 .ingredient-pack-card {
   min-width: 0;
@@ -2334,7 +2334,7 @@ label small {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(22, 21, 19, 0.95);
+  background: color-mix(in srgb, var(--bg) 95%, transparent);
   backdrop-filter: blur(8px);
 }
 
@@ -2641,7 +2641,7 @@ label small {
 .selection-action-menu button:hover,
 .selection-action-menu button.active {
   background: var(--faint);
-  color: #ffffff;
+  color: var(--bg);
 }
 
 .selection-format-row,
@@ -3336,7 +3336,7 @@ label small {
 
 .outline-inline-title:hover {
   border-color: var(--border);
-  background: color-mix(in srgb, #ffffff 3%, transparent);
+  background: var(--surface-2);
 }
 
 .outline-inline-title-input {
@@ -4064,7 +4064,7 @@ label small {
 .manuscript-structure-heading .title-input:focus {
   min-width: 120px;
   margin-left: 6px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+  border-bottom: 1px dashed var(--accent);
 }
 
 .continuous-scene-block {
@@ -4124,7 +4124,7 @@ label small {
   justify-content: space-between;
   padding: 6px 12px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-3);
   border-top-left-radius: 7px;
   border-top-right-radius: 7px;
 }
@@ -4153,7 +4153,7 @@ label small {
 
 .scene-beat-actions .icon-button:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-3);
 }
 
 .scene-beat-body {
@@ -4258,13 +4258,13 @@ label small {
 }
 
 .scene-beat-segmented button:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   color: var(--text);
 }
 
 .scene-beat-segmented button.active {
-  background: var(--border);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--surface);
 }
 
 .length-presets-row {
@@ -4296,9 +4296,9 @@ label small {
 }
 
 .length-btn.active {
-  background: var(--border);
-  color: #ffffff;
-  border-color: var(--border);
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
 }
 
 .custom-length-input {
@@ -4315,7 +4315,7 @@ label small {
   width: 40px;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text);
   font-size: 12px;
   font-weight: 600;
   outline: none;
@@ -4357,7 +4357,7 @@ label small {
   align-items: center;
   gap: 6px;
   background: var(--accent);
-  color: #000000;
+  color: var(--surface);
   border: none;
   padding: 5px 12px;
   border-radius: 4px;
@@ -6880,7 +6880,7 @@ button.mobile-only-tab {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--surface-1) 88%, #000000);
+  background: var(--surface-2);
 }
 
 .notebook-sidebar-heading {
@@ -7087,7 +7087,7 @@ button.mobile-only-tab {
 
 .note-format-menu button:hover,
 .note-format-menu button.active {
-  color: #ffffff;
+  color: var(--bg);
   background: var(--faint);
 }
 
@@ -7123,18 +7123,18 @@ button.mobile-only-tab {
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
   color: var(--muted);
-  background: var(--surface-1);
+  background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: 999px;
   cursor: pointer;
   transition: all 0.1s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-subtle);
 }
 
 .inline-append-button:hover {
   color: var(--text);
   background: var(--surface-2);
-  border-color: var(--border-medium);
+  border-color: var(--border);
 }
 
 /* Responsive workspace refinements */
@@ -8079,7 +8079,7 @@ button.mobile-only-tab {
 }
 
 .danger-zone {
-  border-color: rgba(225, 29, 72, 0.5);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
 }
 
 .danger-zone h3 {
@@ -8498,13 +8498,13 @@ button.mobile-only-tab {
 }
 
 .settings-toggle-group button:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   color: var(--text);
 }
 
 .settings-toggle-group button.active {
-  background: var(--border);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--surface);
 }
 
 .settings-toggle-group.wrap {
@@ -8627,7 +8627,7 @@ button.mobile-only-tab {
     overflow-y: hidden;
     padding-inline: max(4px, env(safe-area-inset-left)) max(4px, env(safe-area-inset-right));
     border-bottom: 1px solid var(--border);
-    background: color-mix(in srgb, #000000 95%, transparent);
+    background: color-mix(in srgb, var(--surface) 95%, transparent);
     backdrop-filter: blur(14px);
     scrollbar-width: none;
     overscroll-behavior-x: contain;
@@ -9636,7 +9636,7 @@ button.mobile-only-tab {
 }
 
 .workspace-scope-picker .manuscript-scope-trigger.open {
-  box-shadow: inset 0 1px color-mix(in srgb, #ffffff 3%, transparent);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--bg) 3%, transparent);
 }
 
 .workspace-scope-picker .manuscript-scope-trigger:focus-visible {
@@ -9657,7 +9657,7 @@ button.mobile-only-tab {
 
 .workspace-scope-menu .manuscript-scope-option:hover,
 .workspace-scope-menu .manuscript-scope-option:focus-visible {
-  background: var(--surface-2);
+  background: var(--surface-3);
 }
 
 .workspace-scope-menu .manuscript-scope-option[aria-selected="true"] {
@@ -9906,7 +9906,7 @@ body:has(.project-workspace) .topbar,
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+  box-shadow: var(--shadow-dropdown);
   color: var(--muted);
   font-size: 13px;
   text-align: center;
@@ -10120,7 +10120,7 @@ body:has(.project-workspace) .topbar,
     width: 100%;
     height: 100%;
     border: 0;
-    background: color-mix(in srgb, #000000 55%, transparent);
+    background: var(--shadow-medium);
     backdrop-filter: blur(2px);
   }
 }
