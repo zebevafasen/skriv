@@ -240,7 +240,7 @@ export const editorSettings = sqliteTable("editor_settings", {
 
 export const appSettings = sqliteTable("app_settings", {
   id: integer("id").primaryKey().default(1),
-  theme: text("theme", { enum: ["system", "light", "dark", "midnight", "ocean", "forest", "sepia", "parchment"] })
+  theme: text("theme")
     .$type<import("@skriv/contracts").AppSettings["theme"]>()
     .notNull()
     .default("system"),

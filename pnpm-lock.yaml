@@ -283,6 +283,9 @@ importers:
 
   packages/contracts:
     dependencies:
+      '@skriv/themes':
+        specifier: workspace:*
+        version: link:../themes
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -352,6 +355,16 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@26.1.1)(jsdom@28.1.0(@noble/hashes@2.2.0))(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0)(yaml@2.9.0))
 
+  packages/themes:
+    dependencies:
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@26.1.1)(jsdom@28.1.0(@noble/hashes@2.2.0))(vite@8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0)(yaml@2.9.0))
+
   packages/ui:
     dependencies:
       '@dnd-kit/core':
@@ -375,6 +388,9 @@ importers:
       '@skriv/core':
         specifier: workspace:*
         version: link:../core
+      '@skriv/themes':
+        specifier: workspace:*
+        version: link:../themes
       '@tanstack/react-query':
         specifier: 5.101.2
         version: 5.101.2(react@19.2.7)

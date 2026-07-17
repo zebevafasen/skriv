@@ -1,5 +1,9 @@
 import { configureSkrivClient } from "@skriv/application";
-import { createSkrivRouter, flushPendingPersistence } from "@skriv/ui";
+import {
+  createSkrivRouter,
+  flushPendingPersistence,
+  initializeApplicationTheme,
+} from "@skriv/ui";
 import "@skriv/ui/styles.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
@@ -14,6 +18,8 @@ import { createDesktopUpdateService, DesktopUpdateProvider } from "./updates/Upd
 
 type DatabaseStatus = { ready: boolean; error: string | null };
 type DatabaseSnapshot = { name: string; createdAt: string; size: number };
+
+initializeApplicationTheme();
 
 function RecoveryScreen({ error }: { error: string }) {
   const [snapshots, setSnapshots] = useState<DatabaseSnapshot[]>([]);

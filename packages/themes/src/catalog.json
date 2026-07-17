@@ -1,0 +1,16 @@
+{
+  "system": {
+    "label": "System Default",
+    "lightTheme": "light",
+    "darkTheme": "dark"
+  },
+  "themes": {
+    "light": { "label": "Light", "order": 10 },
+    "dark": { "label": "Dark", "order": 20 },
+    "midnight": { "label": "Midnight", "order": 30 },
+    "ocean": { "label": "Ocean", "order": 40 },
+    "forest": { "label": "Forest", "order": 50 },
+    "sepia": { "label": "Sepia", "order": 60 },
+    "parchment": { "label": "Parchment", "order": 70 }
+  }
+}

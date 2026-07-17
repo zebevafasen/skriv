@@ -1,5 +1,6 @@
 import { AppError } from "@skriv/application";
 import type { AiSettings, AppSettings } from "@skriv/contracts";
+import { applicationThemeIdSchema, applicationThemeOptions } from "@skriv/themes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FolderOpen,
@@ -165,16 +166,18 @@ export function SettingsModal({ onClose, extraSection = null }: { onClose: () =>
                   <span>Theme</span>
                   <select
                     value={appDraft.theme}
-                    onChange={(e) => setAppDraft({ ...appDraft, theme: e.target.value as AppSettings["theme"] })}
+                    onChange={(e) =>
+                      setAppDraft({
+                        ...appDraft,
+                        theme: applicationThemeIdSchema.parse(e.target.value),
+                      })
+                    }
                   >
-                    <option value="system">System Default</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="midnight">Midnight</option>
-                    <option value="ocean">Ocean</option>
-                    <option value="forest">Forest</option>
-                    <option value="sepia">Sepia</option>
-                    <option value="parchment">Parchment</option>
+                    {applicationThemeOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <button type="button" className="button primary" onClick={() => saveApp.mutate(appDraft)}>

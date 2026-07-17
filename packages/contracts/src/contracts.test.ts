@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  appSettingsSchema,
   compendiumTypeIdSchema,
   createManuscriptItemInputSchema,
   createProjectInputSchema,
@@ -21,6 +22,22 @@ import {
 } from "./index.js";
 
 describe("shared contracts", () => {
+  it("validates application themes from the shared catalog", () => {
+    for (const theme of [
+      "system",
+      "light",
+      "dark",
+      "midnight",
+      "ocean",
+      "forest",
+      "sepia",
+      "parchment",
+    ]) {
+      expect(appSettingsSchema.safeParse({ theme }).success).toBe(true);
+    }
+    expect(appSettingsSchema.safeParse({ theme: "unknown" }).success).toBe(false);
+  });
+
   it("provides a project-scoped default label pack", () => {
     const settings = projectSettingsSchema.parse({});
     expect(settings.labelPacks).toEqual([

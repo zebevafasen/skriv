@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { BookOpenText, Feather, Library, Settings, Sparkles } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { skriv } from "../api.js";
+import { watchApplicationThemeSelection } from "../application-theme.js";
 import { useSettings } from "./SettingsProvider.js";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -14,14 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (appSettings.data?.theme) {
-      const theme = appSettings.data.theme;
-      if (theme === "system") {
-        document.documentElement.removeAttribute("data-theme");
-      } else {
-        document.documentElement.setAttribute("data-theme", theme);
-      }
-    }
+    return watchApplicationThemeSelection(appSettings.data?.theme ?? "system");
   }, [appSettings.data?.theme]);
 
   useEffect(() => {

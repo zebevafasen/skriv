@@ -1,5 +1,5 @@
 {
-  "name": "@skriv/contracts",
+  "name": "@skriv/themes",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@skriv/themes": "workspace:*",
     "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "vitest": "4.1.10"
   }
 }
