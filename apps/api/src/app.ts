@@ -7,7 +7,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import sensible from "@fastify/sensible";
 import Fastify from "fastify";
-import { createAuth, ensureDevelopmentUser, registerAuth } from "./auth.js";
+import { createAuth, ensureDevelopmentUser, registerAuth, trustedAuthOrigins } from "./auth.js";
 import type { AppContext } from "./context.js";
 import { createProviderResolver } from "./credentials.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
@@ -59,7 +59,7 @@ export async function buildApp(env: ServerEnv = loadServerEnv()) {
   });
 
   await app.register(cors, {
-    origin: env.WEB_ORIGIN,
+    origin: trustedAuthOrigins(env),
     credentials: true,
     exposedHeaders: ["content-disposition"],
   });

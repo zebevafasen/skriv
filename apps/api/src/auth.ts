@@ -18,6 +18,36 @@ import type { AppContext } from "./context.js";
 
 export const DEV_USER_ID = "00000000-0000-4000-8000-000000000001";
 
+type AuthOriginEnv = Pick<
+  ServerEnv,
+  | "WEB_ORIGIN"
+  | "BETTER_AUTH_URL"
+  | "VERCEL_URL"
+  | "VERCEL_BRANCH_URL"
+  | "VERCEL_PROJECT_PRODUCTION_URL"
+>;
+
+function vercelDeploymentOrigin(host: string | undefined): string | null {
+  if (!host) return null;
+  try {
+    const url = new URL(host.includes("://") ? host : `https://${host}`);
+    if (url.protocol !== "https:" || !url.hostname.endsWith(".vercel.app")) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+export function trustedAuthOrigins(env: AuthOriginEnv): string[] {
+  return [
+    env.WEB_ORIGIN,
+    env.BETTER_AUTH_URL,
+    vercelDeploymentOrigin(env.VERCEL_URL),
+    vercelDeploymentOrigin(env.VERCEL_BRANCH_URL),
+    vercelDeploymentOrigin(env.VERCEL_PROJECT_PRODUCTION_URL),
+  ].filter((origin, index, origins): origin is string => Boolean(origin) && origins.indexOf(origin) === index);
+}
+
 export function createAuth(db: Database, env: ServerEnv) {
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -26,7 +56,7 @@ export function createAuth(db: Database, env: ServerEnv) {
     }),
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
-    trustedOrigins: [env.WEB_ORIGIN],
+    trustedOrigins: trustedAuthOrigins(env),
     emailAndPassword: { enabled: true },
   });
 }

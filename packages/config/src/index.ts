@@ -38,6 +38,9 @@ const serverEnvSchema = z
     FAKE_AI_DELAY_MS: z.coerce.number().int().min(0).max(2_000).default(20),
     BLOB_READ_WRITE_TOKEN: z.string().optional(),
     CRON_SECRET: optionalSecret,
+    VERCEL_URL: z.string().trim().min(1).optional(),
+    VERCEL_BRANCH_URL: z.string().trim().min(1).optional(),
+    VERCEL_PROJECT_PRODUCTION_URL: z.string().trim().min(1).optional(),
   })
   .transform((value) => ({
     ...value,
