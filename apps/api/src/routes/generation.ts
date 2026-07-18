@@ -10,11 +10,12 @@ import {
 } from "@skriv/contracts";
 import {
   approximateTokens,
-  budgetFragments,
-  discoverEntries,
+  formatCompendiumFragments,
+  planCompendiumContext,
   protectedProtocolMessage,
   renderPrompt,
-  segmentEntry,
+  sceneCompendiumEntryIds,
+  selectCompendiumContextFragments,
 } from "@skriv/core";
 import {
   acts,
@@ -107,29 +108,16 @@ async function assembleContext(
   ]
     .filter(Boolean)
     .join("\n");
-  const discovered = discoverEntries({
-    entries,
-    scanText,
-    scenePresenceEntryIds: [],
-    maxDepth: settings.recursionDepth,
-    includeSmartCandidates: settings.smartContextEnabled,
-  });
-  const allFragments = discovered.flatMap(segmentEntry);
-  const fixedCandidates = budgetFragments(
-    allFragments.filter((fragment) => fragment.activationSource !== "smart"),
-    8_000,
-  );
-  const smartCandidates = budgetFragments(
-    allFragments.filter((fragment) => fragment.activationSource === "smart"),
-    Math.max(
-      0,
-      8_000 -
-        fixedCandidates.reduce(
-          (sum, fragment) => sum + Math.ceil(fragment.text.length / 4) + 12,
-          0,
-        ),
-    ),
-  );
+  const scenePresenceEntryIds = sceneCompendiumEntryIds(scene.metadata);
+  const { fixedFragments: fixedCandidates, smartFragments: smartCandidates } =
+    planCompendiumContext({
+      entries,
+      scanText,
+      referenceText: [input.instructions, input.eventTarget].filter(Boolean).join("\n"),
+      scenePresenceEntryIds,
+      maxDepth: settings.recursionDepth,
+      includeSmartCandidates: settings.smartContextEnabled,
+    });
   if (!settings.smartContextEnabled || smartCandidates.length === 0) {
     return { fragments: fixedCandidates, fallback: false, premise };
   }
@@ -172,11 +160,10 @@ async function assembleContext(
     });
     clearTimeout(timeout);
     const selected = selectedFragmentsSchema.parse(JSON.parse(result.text));
-    const byId = new Map(smartCandidates.map((fragment) => [fragment.id, fragment]));
-    const selectedSmart = selected.selectedFragmentIds
-      .map((id) => byId.get(id))
-      .filter((value): value is (typeof smartCandidates)[number] => Boolean(value));
-    const fragments = budgetFragments([...fixedCandidates, ...selectedSmart], 8_000);
+    const fragments = selectCompendiumContextFragments(
+      { fixedFragments: fixedCandidates, smartFragments: smartCandidates },
+      selected.selectedFragmentIds,
+    );
     await context.db.insert(usageEvents).values({
       userId,
       projectId,
@@ -192,15 +179,6 @@ async function assembleContext(
   } catch {
     return { fragments: fixedCandidates, fallback: true, premise };
   }
-}
-
-function formatContext(fragments: z.infer<typeof contextFragmentSchema>[]): string {
-  if (fragments.length === 0) return "No Compendium context was selected.";
-  return fragments
-    .map(
-      (fragment) => `[Source: ${fragment.entryName}; Fragment: ${fragment.id}]\n${fragment.text}`,
-    )
-    .join("\n\n");
 }
 
 const SUMMARY_CONTEXT_LIMIT = 12_000;
@@ -366,7 +344,7 @@ export async function registerGenerationRoutes(
           error: { code: "BAD_REQUEST", message: "Choose and save a premise first." },
         });
       }
-      const contextPackage = formatContext(fragments);
+      const contextPackage = formatCompendiumFragments(fragments);
       const planningContext = await prosePlanningContext(
         context,
         ownedRecord.projectId,

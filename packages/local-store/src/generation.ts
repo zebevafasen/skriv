@@ -5,11 +5,18 @@ import {
   type GenerationRequest,
   type GenerationStreamEvent,
 } from "@skriv/contracts";
-import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
+import {
+  formatCompendiumFragments,
+  planCompendiumContext,
+  protectedProtocolMessage,
+  renderPrompt,
+  sceneCompendiumEntryIds,
+  selectCompendiumContextFragments,
+} from "@skriv/core";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import type { LocalDatabase } from "./database.js";
-import { cancelNativeAi, streamNativeAi } from "./native-ai.js";
+import { cancelNativeAi, completeNativeAi, streamNativeAi } from "./native-ai.js";
 import {
   acts,
   aiSettings,
@@ -24,6 +31,13 @@ import {
 import { resolvePrompt } from "./settings-prompts.js";
 
 const cancelInputSchema = z.object({ candidateText: z.string().max(2_000_000).optional() });
+const selectedFragmentsSchema = z.object({ selectedFragmentIds: z.array(z.string()).max(500) });
+
+type LocalContextSettings = {
+  smartContextEnabled: boolean;
+  recursionDepth: number;
+  contextModel: string;
+};
 
 function notFound(message: string): never {
   throw new AppError(message, "NOT_FOUND");
@@ -33,7 +47,11 @@ function conflict(message: string, details?: unknown): never {
   throw new AppError(message, "CONFLICT", details);
 }
 
-async function generationContext(db: LocalDatabase, input: GenerationRequest) {
+async function generationContext(
+  db: LocalDatabase,
+  input: GenerationRequest,
+  settings: LocalContextSettings,
+) {
   const [scene] = await db.select().from(scenes).where(eq(scenes.id, input.sceneId)).limit(1);
   if (!scene) notFound("Scene not found.");
   const [chapter] = await db
@@ -102,10 +120,31 @@ async function generationContext(db: LocalDatabase, input: GenerationRequest) {
   if (input.workflow === "prose.first_scene" && !premise) {
     throw new AppError("Choose and save a premise first.", "BAD_REQUEST");
   }
-  const contextPackage = entries
-    .filter((entry) => entry.activationMode !== "never")
-    .map((entry) => `${entry.name} (${entry.typeId}): ${JSON.stringify(entry.content)}`)
+  const referenceEntries = entries
+    .filter(
+      (entry) => entry.typeId !== "project.instructions" && entry.typeId !== "project.premise",
+    )
+    .map((entry) => ({ ...entry, singleton: entry.singletonKey !== null }));
+  const scanText = [
+    input.workflow === "prose.first_scene" ? premise : "",
+    input.manuscriptBeforeCursor.slice(-12_000),
+    "selectedText" in input ? input.selectedText : "",
+    input.manuscriptAfterCursor.slice(0, 2_000),
+    scene.metadata.summary,
+    input.instructions,
+    input.eventTarget,
+  ]
+    .filter(Boolean)
     .join("\n");
+  const scenePresenceEntryIds = sceneCompendiumEntryIds(scene.metadata);
+  const contextPlan = planCompendiumContext({
+    entries: referenceEntries,
+    scanText,
+    referenceText: [input.instructions, input.eventTarget].filter(Boolean).join("\n"),
+    scenePresenceEntryIds,
+    maxDepth: settings.recursionDepth,
+    includeSmartCandidates: settings.smartContextEnabled,
+  });
   const prior = orderedScenes.slice(0, Math.max(0, sceneIndex));
   const priorSceneSummaries = prior
     .filter((item) => item.metadata.summary.trim())
@@ -120,11 +159,58 @@ async function generationContext(db: LocalDatabase, input: GenerationRequest) {
     scene,
     project,
     premise,
-    contextPackage,
+    contextPlan,
+    scanText,
     priorSceneSummaries,
     previousProse,
     povName,
   };
+}
+
+async function resolveLocalCompendiumContext(
+  db: LocalDatabase,
+  contextPlan: Awaited<ReturnType<typeof generationContext>>["contextPlan"],
+  scanText: string,
+  settings: LocalContextSettings,
+  signal?: AbortSignal,
+) {
+  if (!settings.smartContextEnabled || contextPlan.smartFragments.length === 0) {
+    return { fragments: contextPlan.fixedFragments, fallback: false };
+  }
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal?.addEventListener("abort", cancel, { once: true });
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const prompt = await resolvePrompt(db, "context.extract");
+    const completion = await completeNativeAi(
+      {
+        model: settings.contextModel,
+        maxTokens: 1_000,
+        messages: [
+          protectedProtocolMessage("context.extract"),
+          ...renderPrompt(prompt, {
+            request_context: scanText,
+            candidate_fragments: contextPlan.smartFragments
+              .map((fragment) => `[fragment:${fragment.id}] ${fragment.text}`)
+              .join("\n"),
+          }),
+        ],
+      },
+      controller.signal,
+    );
+    const selected = selectedFragmentsSchema.parse(JSON.parse(completion.text));
+    return {
+      fragments: selectCompendiumContextFragments(contextPlan, selected.selectedFragmentIds),
+      fallback: false,
+    };
+  } catch {
+    if (signal?.aborted) throw new DOMException("AI operation cancelled", "AbortError");
+    return { fragments: contextPlan.fixedFragments, fallback: true };
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", cancel);
+  }
 }
 
 export async function streamLocalGeneration(
@@ -134,9 +220,22 @@ export async function streamLocalGeneration(
   signal?: AbortSignal,
 ): Promise<void> {
   const input = generationRequestSchema.parse(rawInput);
-  const context = await generationContext(db, input);
-  const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
-  const model = input.modelOverride ?? settings?.baseModel ?? "openrouter/auto";
+  const [settingsRow] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
+  const model = input.modelOverride ?? settingsRow?.baseModel ?? "openrouter/auto";
+  const settings: LocalContextSettings = {
+    smartContextEnabled: settingsRow?.smartContextEnabled ?? true,
+    recursionDepth: settingsRow?.recursionDepth ?? 2,
+    contextModel: settingsRow?.contextModel || model,
+  };
+  const context = await generationContext(db, input, settings);
+  const resolvedContext = await resolveLocalCompendiumContext(
+    db,
+    context.contextPlan,
+    context.scanText,
+    settings,
+    signal,
+  );
+  const contextPackage = formatCompendiumFragments(resolvedContext.fragments);
   const prompt = await resolvePrompt(db, input.workflow, input.promptOverrideId);
   const targetLength =
     input.targetLength === null
@@ -156,7 +255,7 @@ export async function streamLocalGeneration(
     protectedProtocolMessage(input.workflow),
     ...renderPrompt(prompt, {
       premise: context.premise,
-      context_package: context.contextPackage,
+      context_package: contextPackage,
       scene_title: context.scene.title,
       scene_summary: context.scene.metadata.summary,
       current_scene_summary: context.scene.metadata.summary,
@@ -225,6 +324,7 @@ export async function streamLocalGeneration(
         candidateText,
         inputTokens: completion.inputTokens,
         outputTokens: completion.outputTokens,
+        contextFallback: resolvedContext.fallback,
         ...touchUpdatedAt,
       })
       .where(eq(generations.id, generationId));
@@ -235,7 +335,7 @@ export async function streamLocalGeneration(
       candidateText,
       inputTokens: completion.inputTokens,
       outputTokens: completion.outputTokens,
-      contextFallback: false,
+      contextFallback: resolvedContext.fallback,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {

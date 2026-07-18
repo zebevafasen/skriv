@@ -1,7 +1,6 @@
 import { Readable } from "node:stream";
 import {
   type ChatContextSource,
-  type CompendiumEntry,
   chatStreamEventSchema,
   chatThreadSchema,
   compendiumEntrySchema,
@@ -12,7 +11,7 @@ import {
 import {
   approximateTokens,
   discoverEntries,
-  findMentions,
+  discoverReferences,
   formatManuscriptLabel,
   normalizeEntry,
   renderPrompt,
@@ -72,21 +71,6 @@ function entryContract(row: typeof compendiumEntries.$inferSelect) {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   });
-}
-
-export function mentionActivatedEntryIds(
-  entries: Array<Pick<CompendiumEntry, "id" | "activationMode">>,
-  matchedIds: ReadonlySet<string>,
-) {
-  return new Set(
-    entries
-      .filter(
-        (entry) =>
-          (entry.activationMode === "mention" || entry.activationMode === "smart") &&
-          matchedIds.has(entry.id),
-      )
-      .map((entry) => entry.id),
-  );
 }
 
 async function resolveManualContext(
@@ -277,8 +261,17 @@ async function buildMessages(
     .filter((m) => m.role === "assistant")
     .map((m) => m.content)
     .join("\n");
-  const matchedUserIds = new Set(findMentions(userScan, entries).flatMap((m) => m.entryIds));
-  const forcedIds = mentionActivatedEntryIds(entries, matchedUserIds);
+  const userReferences = discoverReferences({
+    entries,
+    scanText: userScan,
+    maxDepth: settings.recursionDepth,
+  });
+  const userReferenceIds = new Set(userReferences.map((reference) => reference.entry.id));
+  const directUserIds = new Set(
+    userReferences
+      .filter((reference) => reference.recursionDepth === 0)
+      .map((reference) => reference.entry.id),
+  );
   const canonicalText = manual.pieces.map((piece) => piece.text).join("\n\n");
   const automatic = discoverEntries({
     entries,
@@ -287,16 +280,22 @@ async function buildMessages(
     maxDepth: settings.recursionDepth,
   });
   const automaticIds = new Set(automatic.map((item) => item.entry.id));
-  const assistantMatches = new Set(findMentions(assistantScan, entries).flatMap((m) => m.entryIds));
+  const assistantMatches = new Set(
+    discoverReferences({ entries, scanText: assistantScan, maxDepth: 0 }).map(
+      (reference) => reference.entry.id,
+    ),
+  );
   const compendiumPieces: ChatContextPiece[] = entries
     .filter(
       (entry) =>
         !manual.manuallySelectedEntryIds.has(entry.id) &&
-        (forcedIds.has(entry.id) || automaticIds.has(entry.id)),
+        (userReferenceIds.has(entry.id) || automaticIds.has(entry.id)),
     )
     .map((entry) => {
       const discovered = automatic.find((item) => item.entry.id === entry.id);
-      const userMentioned = forcedIds.has(entry.id);
+      const userMentioned = directUserIds.has(entry.id);
+      const userReference = userReferences.find((reference) => reference.entry.id === entry.id);
+      const userReferenced = Boolean(userReference);
       const corroborated =
         assistantMatches.has(entry.id) && (userMentioned || automaticIds.has(entry.id));
       return {
@@ -305,11 +304,15 @@ async function buildMessages(
         provenance: {
           reason: userMentioned
             ? "user_mention"
-            : discovered?.activationSource === "always"
-              ? "always"
-              : "recursive",
-          source: userMentioned ? "Current or previous user message" : "Canonical selected context",
-          depth: discovered?.recursionDepth ?? 0,
+            : userReferenced
+              ? "recursive"
+              : discovered?.activationSource === "always"
+                ? "always"
+                : "recursive",
+          source: userReferenced
+            ? "Current or previous user message via Compendium reference"
+            : "Canonical selected context",
+          depth: userReference?.recursionDepth ?? discovered?.recursionDepth ?? 0,
         },
         text: `[${userMentioned ? "User-mentioned" : "Automatically activated"} Compendium entry]\n${normalizeEntry(entry)}`,
       } satisfies ChatContextPiece;

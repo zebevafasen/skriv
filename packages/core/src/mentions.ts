@@ -12,6 +12,10 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function phrasePattern(value: string): string {
+  return value.trim().split(/\s+/u).map(escapeRegExp).join("\\s+");
+}
+
 export function findMentions(
   text: string,
   entries: readonly CompendiumEntry[],
@@ -25,7 +29,7 @@ export function findMentions(
       if (!phrase.trim()) return [];
       const flags = entry.caseSensitive ? "gu" : "giu";
       const pattern = new RegExp(
-        `(?<![\\p{L}\\p{N}_])${escapeRegExp(phrase.trim())}(?![\\p{L}\\p{N}_])`,
+        `(?<![\\p{L}\\p{N}_])${phrasePattern(phrase)}(?![\\p{L}\\p{N}_])`,
         flags,
       );
       return [...text.matchAll(pattern)].map((match) => ({
@@ -39,7 +43,7 @@ export function findMentions(
     for (const term of terms) {
       const flags = entry.caseSensitive ? "gu" : "giu";
       const pattern = new RegExp(
-        `(?<![\\p{L}\\p{N}_])${escapeRegExp(term)}(?![\\p{L}\\p{N}_])`,
+        `(?<![\\p{L}\\p{N}_])${phrasePattern(term)}(?![\\p{L}\\p{N}_])`,
         flags,
       );
       for (const match of text.matchAll(pattern)) {

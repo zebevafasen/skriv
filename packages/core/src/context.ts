@@ -1,4 +1,9 @@
-import type { CompendiumContent, CompendiumEntry, ContextFragment } from "@skriv/contracts";
+import type {
+  CompendiumContent,
+  CompendiumEntry,
+  ContextFragment,
+  SceneMetadata,
+} from "@skriv/contracts";
 import { findMentions } from "./mentions.js";
 
 export type ContextDiscoveryInput = {
@@ -29,6 +34,29 @@ export type DiscoveredReference = {
   recursionDepth: number;
   priority: number;
 };
+
+export type CompendiumContextPlan = {
+  fixedFragments: ContextFragment[];
+  smartFragments: ContextFragment[];
+};
+
+export const DEFAULT_COMPENDIUM_CONTEXT_TOKEN_BUDGET = 8_000;
+
+export function sceneCompendiumEntryIds(
+  metadata: Partial<
+    Pick<
+      SceneMetadata,
+      "povEntryId" | "locationEntryId" | "presentCharacterEntryIds" | "manualCompendiumEntryIds"
+    >
+  >,
+): string[] {
+  return [
+    metadata.povEntryId,
+    metadata.locationEntryId,
+    ...(metadata.presentCharacterEntryIds ?? []),
+    ...(metadata.manualCompendiumEntryIds ?? []),
+  ].filter((id): id is string => Boolean(id));
+}
 
 export function normalizeCompendiumContent(content: CompendiumContent): string {
   if (content.kind === "text") return content.text;
@@ -228,4 +256,132 @@ export function budgetFragments(
     }
   }
   return selected;
+}
+
+export function planCompendiumContext({
+  entries,
+  scanText,
+  referenceText = "",
+  pinnedEntryIds = [],
+  scenePresenceEntryIds = [],
+  maxDepth = 2,
+  includeSmartCandidates = false,
+  tokenBudget = DEFAULT_COMPENDIUM_CONTEXT_TOKEN_BUDGET,
+}: ContextDiscoveryInput & {
+  referenceText?: string;
+  pinnedEntryIds?: string[];
+  tokenBudget?: number;
+}): CompendiumContextPlan {
+  const discovered = discoverEntries({
+    entries,
+    scanText,
+    scenePresenceEntryIds,
+    maxDepth,
+    includeSmartCandidates,
+  });
+  const byId = new Map(discovered.map((item) => [item.entry.id, item]));
+  for (const reference of discoverReferences({
+    entries,
+    scanText: referenceText,
+    pinnedEntryIds,
+    maxDepth,
+  })) {
+    const candidate: DiscoveredEntry = {
+      entry: reference.entry,
+      activationSource: reference.recursionDepth === 0 ? "direct" : "recursive",
+      recursionDepth: reference.recursionDepth,
+      priority: reference.priority,
+    };
+    const existing = byId.get(reference.entry.id);
+    if (!existing || candidate.priority > existing.priority)
+      byId.set(reference.entry.id, candidate);
+  }
+  const fragments = [...byId.values()]
+    .sort((left, right) => right.priority - left.priority)
+    .flatMap(segmentEntry);
+  const fixedFragments = budgetFragments(
+    fragments.filter((fragment) => fragment.activationSource !== "smart"),
+    tokenBudget,
+  );
+  const used = fixedFragments.reduce(
+    (sum, fragment) => sum + approximateTokens(fragment.text) + 12,
+    0,
+  );
+  const smartFragments = budgetFragments(
+    fragments.filter((fragment) => fragment.activationSource === "smart"),
+    Math.max(0, tokenBudget - used),
+  );
+  return { fixedFragments, smartFragments };
+}
+
+export function selectCompendiumContextFragments(
+  plan: CompendiumContextPlan,
+  selectedSmartFragmentIds: readonly string[],
+  tokenBudget = DEFAULT_COMPENDIUM_CONTEXT_TOKEN_BUDGET,
+): ContextFragment[] {
+  const selectedIds = new Set(selectedSmartFragmentIds);
+  return budgetFragments(
+    [
+      ...plan.fixedFragments,
+      ...plan.smartFragments.filter((fragment) => selectedIds.has(fragment.id)),
+    ],
+    tokenBudget,
+  );
+}
+
+export function formatCompendiumFragments(fragments: ContextFragment[]): string {
+  if (fragments.length === 0) return "No Compendium context was selected.";
+  return fragments
+    .map(
+      (fragment) => `[Source: ${fragment.entryName}; Fragment: ${fragment.id}]\n${fragment.text}`,
+    )
+    .join("\n\n");
+}
+
+function truncateReferenceBlock(block: string, tokenLimit: number): string {
+  if (approximateTokens(block) <= tokenLimit) return block;
+  const marker = "\n\n[Truncated to fit the Compendium context budget]";
+  const characterLimit = Math.max(0, tokenLimit * 4 - marker.length);
+  return `${block.slice(0, characterLimit).trimEnd()}${marker}`;
+}
+
+export function formatCompendiumReferences(
+  references: DiscoveredReference[],
+  tokenBudget = DEFAULT_COMPENDIUM_CONTEXT_TOKEN_BUDGET,
+): string {
+  if (references.length === 0) return "No Compendium reference material was selected.";
+  const roots = references.filter((reference) => reference.recursionDepth === 0);
+  const recursive = references.filter((reference) => reference.recursionDepth > 0);
+  const blocks: string[] = [];
+  let remaining = tokenBudget;
+  const format = (reference: DiscoveredReference) =>
+    [
+      "----- CANONICAL COMPENDIUM REFERENCE -----",
+      `[Entry Name: ${reference.entry.name}]`,
+      `[Entry Type: ${reference.entry.typeId}]`,
+      `[Reference Source: ${reference.referenceSource}]`,
+      `[Recursion Depth: ${reference.recursionDepth}]`,
+      "",
+      normalizeCompendiumContent(reference.entry.content),
+      "----- END COMPENDIUM REFERENCE -----",
+    ].join("\n");
+
+  roots.forEach((reference, index) => {
+    const share = Math.max(1, Math.floor(remaining / (roots.length - index)));
+    const block = truncateReferenceBlock(format(reference), share);
+    blocks.push(block);
+    remaining = Math.max(0, remaining - approximateTokens(block));
+  });
+  for (const reference of recursive) {
+    if (remaining <= 0) break;
+    const block = format(reference);
+    if (approximateTokens(block) <= remaining) {
+      blocks.push(block);
+      remaining -= approximateTokens(block);
+    } else if (remaining >= 64) {
+      blocks.push(truncateReferenceBlock(block, remaining));
+      remaining = 0;
+    }
+  }
+  return blocks.join("\n\n");
 }

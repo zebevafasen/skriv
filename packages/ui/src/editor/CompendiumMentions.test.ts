@@ -75,6 +75,21 @@ describe("CompendiumMentions", () => {
     editor.destroy();
   });
 
+  it("underlines one visible mention consistently across adjacent rich-text nodes", () => {
+    const harbor = entry({ id: crypto.randomUUID(), name: "New Harbor City" });
+    const element = document.createElement("div");
+    const editor = new Editor({
+      element,
+      extensions: [StarterKit, CompendiumMentions.configure({ entries: [harbor] })],
+      content: "<p>New Harbor <strong>City</strong></p>",
+    });
+
+    const decorated = [...element.querySelectorAll<HTMLElement>(".compendium-mention")];
+    expect(decorated.map((node) => node.textContent).join("")).toBe("New Harbor City");
+    expect(new Set(decorated.map((node) => node.dataset.entryIds))).toEqual(new Set([harbor.id]));
+    editor.destroy();
+  });
+
   it("can debounce rescanning large editor documents", () => {
     vi.useFakeTimers();
     const zebe = entry({ id: crypto.randomUUID(), name: "Zebe" });

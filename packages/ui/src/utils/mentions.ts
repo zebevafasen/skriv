@@ -1,16 +1,24 @@
 import type { CompendiumEntry } from "@skriv/contracts";
-import { findMentions } from "@skriv/core";
+import { findMentions, type MentionMatch } from "@skriv/core";
 
 export type CompendiumMentionSegment =
   | { kind: "text"; from: number; to: number; text: string }
   | { kind: "mention"; from: number; to: number; text: string; entryIds: string[] };
+
+export function compendiumMentionMatches(
+  text: string,
+  entries: readonly CompendiumEntry[],
+  options: { includeUntracked?: boolean } = {},
+): MentionMatch[] {
+  return findMentions(text, entries, options);
+}
 
 export function compendiumMentionSegments(
   text: string,
   entries: readonly CompendiumEntry[],
   options: { includeUntracked?: boolean } = {},
 ): CompendiumMentionSegment[] {
-  const matches = findMentions(text, entries, options);
+  const matches = compendiumMentionMatches(text, entries, options);
   const segments: CompendiumMentionSegment[] = [];
   let cursor = 0;
 

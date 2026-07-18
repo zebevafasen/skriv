@@ -8,6 +8,8 @@ import {
 } from "@skriv/contracts";
 import {
   appendCompendiumContent,
+  discoverReferences,
+  formatCompendiumReferences,
   parseCompendiumExtraction,
   prepareCompendiumExtractionSuggestions,
   protectedProtocolMessage,
@@ -200,19 +202,25 @@ export async function handleIdeationRoutes(
       .select()
       .from(compendiumEntries)
       .where(eq(compendiumEntries.projectId, projectId));
-    const available = new Set(
-      references.filter((item) => !item.singletonKey).map((item) => item.id),
-    );
+    const referenceEntries = references
+      .filter((item) => !item.singletonKey)
+      .map((item) => entryResponse(item));
+    const available = new Set(referenceEntries.map((item) => item.id));
     if (
       new Set(input.contextEntryIds).size !== input.contextEntryIds.length ||
       input.contextEntryIds.some((id) => !available.has(id))
     ) {
       throw new AppError("One or more context entries were not found.", "BAD_REQUEST");
     }
-    const selectedContext = references
-      .filter((item) => input.contextEntryIds.includes(item.id))
-      .map((item) => `${item.name}: ${JSON.stringify(item.content)}`)
-      .join("\n");
+    const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
+    const selectedContext = formatCompendiumReferences(
+      discoverReferences({
+        entries: referenceEntries,
+        scanText: input.instructions,
+        pinnedEntryIds: input.contextEntryIds,
+        maxDepth: settings?.recursionDepth ?? 2,
+      }),
+    );
     const workflow = input.mode === "entity" ? "ideation.entity" : "ideation.premise";
     const prompt = await resolvePrompt(db, workflow);
     const model = await modelFor(db, input.modelOverride);

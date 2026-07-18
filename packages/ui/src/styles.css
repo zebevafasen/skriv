@@ -2890,6 +2890,8 @@ label small {
 }
 
 .compendium-mention {
+  color: inherit;
+  background: transparent;
   text-decoration-line: underline;
   text-decoration-style: dotted;
   text-decoration-color: var(--accent);
@@ -2901,7 +2903,7 @@ label small {
 
 .compendium-mention:hover {
   color: var(--accent-bright);
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  background: transparent;
 }
 
 .continuous-compendium-mention {

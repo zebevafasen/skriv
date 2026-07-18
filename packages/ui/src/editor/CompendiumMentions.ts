@@ -1,9 +1,9 @@
 import type { CompendiumEntry } from "@skriv/contracts";
-import { findMentions } from "@skriv/core";
 import { type Editor, Extension } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { compendiumMentionMatches } from "../utils/mentions.js";
 
 type CompendiumMentionState = {
   entries: readonly CompendiumEntry[];
@@ -30,10 +30,11 @@ function mentionDecorations(
 ): DecorationSet {
   const decorations: Decoration[] = [];
   document.descendants((node, position) => {
-    if (!node.isText || !node.text) return;
-    for (const match of findMentions(node.text, entries, { includeUntracked })) {
+    if (!node.isTextblock) return;
+    const text = node.textBetween(0, node.content.size, "\n", "\ufffc");
+    for (const match of compendiumMentionMatches(text, entries, { includeUntracked })) {
       decorations.push(
-        Decoration.inline(position + match.from, position + match.to, {
+        Decoration.inline(position + 1 + match.from, position + 1 + match.to, {
           class: "compendium-mention",
           nodeName: "mark",
           spellcheck: "false",
@@ -41,6 +42,7 @@ function mentionDecorations(
         }),
       );
     }
+    return false;
   });
   return DecorationSet.create(document, decorations);
 }

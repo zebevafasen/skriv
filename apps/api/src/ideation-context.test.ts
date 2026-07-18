@@ -2,15 +2,12 @@ import type { CompendiumEntry, PromptDefinition } from "@skriv/contracts";
 import {
   appendCompendiumContent,
   discoverReferences,
+  formatCompendiumReferences,
   indexCompendiumEntryNames,
   parseCompendiumExtraction,
 } from "@skriv/core";
 import { describe, expect, it } from "vitest";
-import {
-  formatIdeationContext,
-  hasInvalidIdeationReferenceIds,
-  ideationPromptMessages,
-} from "./routes/ideation.js";
+import { hasInvalidIdeationReferenceIds, ideationPromptMessages } from "./routes/ideation.js";
 
 function entry(name: string, content: string): CompendiumEntry {
   return {
@@ -58,10 +55,10 @@ describe("Ideation Compendium context", () => {
       scanText: "Use First.",
       maxDepth: 2,
     });
-    const formatted = formatIdeationContext(references, 180);
+    const formatted = formatCompendiumReferences(references, 180);
     expect(formatted).toContain("[Entry Name: First]");
     expect(formatted).toContain("[Reference Source: mentioned]");
-    expect(formatted).toContain("[Truncated to fit the Ideation context budget]");
+    expect(formatted).toContain("[Truncated to fit the Compendium context budget]");
     expect(formatted).not.toContain("[Entry Name: Second]");
   });
 

@@ -12,11 +12,10 @@ import {
   workflowKeySchema,
 } from "@skriv/contracts";
 import {
-  approximateTokens,
   appendCompendiumContent,
   discoverReferences,
   findTemplateVariables,
-  normalizeCompendiumContent,
+  formatCompendiumReferences,
   parseCompendiumExtraction,
   prepareCompendiumExtractionSuggestions,
   protectedProtocolMessage,
@@ -78,7 +77,6 @@ const entityRequestSchema = draftIngredientsSchema.extend({
   count: z.number().int().min(1).max(5).default(3),
 });
 const generateRequestSchema = z.union([entityRequestSchema, premiseRequestSchema]);
-const IDEATION_CONTEXT_TOKEN_BUDGET = 8_000;
 const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
   kind: z.enum(["genre", "theme", "tag"]),
@@ -106,56 +104,6 @@ async function metadataEntries(context: AppContext, projectId: string) {
   return new Map(
     rows.filter((row) => row.singletonKey).map((row) => [row.singletonKey as string, row]),
   );
-}
-
-function truncateContextBlock(block: string, tokenLimit: number): string {
-  if (approximateTokens(block) <= tokenLimit) return block;
-  const marker = "\n\n[Truncated to fit the Ideation context budget]";
-  const characterLimit = Math.max(0, tokenLimit * 4 - marker.length);
-  return `${block.slice(0, characterLimit).trimEnd()}${marker}`;
-}
-
-export function formatIdeationContext(
-  references: ReturnType<typeof discoverReferences>,
-  tokenBudget = IDEATION_CONTEXT_TOKEN_BUDGET,
-): string {
-  if (references.length === 0) return "No Compendium reference material was selected.";
-  const roots = references.filter((reference) => reference.recursionDepth === 0);
-  const recursive = references.filter((reference) => reference.recursionDepth > 0);
-  const blocks: string[] = [];
-  let remaining = tokenBudget;
-
-  const format = (reference: (typeof references)[number]) =>
-    [
-      "----- CANONICAL COMPENDIUM REFERENCE -----",
-      `[Entry Name: ${reference.entry.name}]`,
-      `[Entry Type: ${reference.entry.typeId}]`,
-      `[Reference Source: ${reference.referenceSource}]`,
-      `[Recursion Depth: ${reference.recursionDepth}]`,
-      "",
-      normalizeCompendiumContent(reference.entry.content),
-      "----- END COMPENDIUM REFERENCE -----",
-    ].join("\n");
-
-  roots.forEach((reference, index) => {
-    const rootsLeft = roots.length - index;
-    const share = Math.max(1, Math.floor(remaining / rootsLeft));
-    const block = truncateContextBlock(format(reference), share);
-    blocks.push(block);
-    remaining = Math.max(0, remaining - approximateTokens(block));
-  });
-  for (const reference of recursive) {
-    if (remaining <= 0) break;
-    const block = format(reference);
-    if (approximateTokens(block) <= remaining) {
-      blocks.push(block);
-      remaining -= approximateTokens(block);
-    } else if (remaining >= 64) {
-      blocks.push(truncateContextBlock(block, remaining));
-      remaining = 0;
-    }
-  }
-  return blocks.join("\n\n");
 }
 
 export function ideationPromptMessages(
@@ -502,7 +450,7 @@ export async function registerIdeationRoutes(
         error: { code: "BAD_REQUEST", message: "One or more context entries were not found." },
       });
     }
-    const selectedContext = formatIdeationContext(
+    const selectedContext = formatCompendiumReferences(
       discoverReferences({
         entries: referenceEntries,
         scanText: input.instructions,

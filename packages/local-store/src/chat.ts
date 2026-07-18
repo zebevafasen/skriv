@@ -8,12 +8,20 @@ import {
   updateChatThreadInputSchema,
 } from "@skriv/contracts";
 import { resolvePrompt } from "./settings-prompts.js";
-import { protectedProtocolMessage, renderPrompt } from "@skriv/core";
+import {
+  discoverReferences,
+  formatCompendiumFragments,
+  formatCompendiumReferences,
+  planCompendiumContext,
+  protectedProtocolMessage,
+  renderPrompt,
+} from "@skriv/core";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { LocalDatabase } from "./database.js";
 import { cancelNativeAi, streamNativeAi } from "./native-ai.js";
 import {
   acts,
+  aiSettings,
   chapters,
   chatMessages,
   chatThreads,
@@ -122,8 +130,9 @@ async function selectedProjectContext(
   db: LocalDatabase,
   projectId: string,
   sources: ChatContextSource[],
+  referenceText: string,
+  recursionDepth: number,
 ): Promise<string> {
-  if (!sources.length) return "No project context was explicitly selected.";
   const actRows = await db.select().from(acts).where(eq(acts.projectId, projectId));
   const chapterRows = actRows.length
     ? await db
@@ -152,39 +161,41 @@ async function selectedProjectContext(
     .from(compendiumEntries)
     .where(eq(compendiumEntries.projectId, projectId));
   const sections: string[] = [];
+  const ambientText: string[] = [];
+  const pinnedEntryIds = new Set<string>();
   const addScenes = (label: string, rows: typeof sceneRows) => {
-    sections.push(
-      `${label}:\n${rows
-        .map(
-          (scene) =>
-            `## ${scene.title || "Untitled Scene"}\nSummary: ${scene.metadata.summary}\n${scene.plainText}`,
-        )
-        .join("\n\n")}`,
-    );
+    const text = `${label}:\n${rows
+      .map(
+        (scene) =>
+          `## ${scene.title || "Untitled Scene"}\nSummary: ${scene.metadata.summary}\n${scene.plainText}`,
+      )
+      .join("\n\n")}`;
+    sections.push(text);
+    ambientText.push(text);
   };
   for (const source of sources) {
     if (source.kind === "manuscript") addScenes("Manuscript", sceneRows);
     else if (source.kind === "outline") {
-      sections.push(
-        `Outline:\n${actRows
-          .map(
-            (act) =>
-              `${act.title || "Untitled Act"}\n${chapterRows
-                .filter((chapter) => chapter.actId === act.id)
-                .map(
-                  (chapter) =>
-                    `  ${chapter.title || "Untitled Chapter"}\n${sceneRows
-                      .filter((scene) => scene.chapterId === chapter.id)
-                      .map(
-                        (scene) =>
-                          `    ${scene.title || "Untitled Scene"}: ${scene.metadata.summary}`,
-                      )
-                      .join("\n")}`,
-                )
-                .join("\n")}`,
-          )
-          .join("\n")}`,
-      );
+      const text = `Outline:\n${actRows
+        .map(
+          (act) =>
+            `${act.title || "Untitled Act"}\n${chapterRows
+              .filter((chapter) => chapter.actId === act.id)
+              .map(
+                (chapter) =>
+                  `  ${chapter.title || "Untitled Chapter"}\n${sceneRows
+                    .filter((scene) => scene.chapterId === chapter.id)
+                    .map(
+                      (scene) =>
+                        `    ${scene.title || "Untitled Scene"}: ${scene.metadata.summary}`,
+                    )
+                    .join("\n")}`,
+              )
+              .join("\n")}`,
+        )
+        .join("\n")}`;
+      sections.push(text);
+      ambientText.push(text);
     } else if (source.kind === "act") {
       const chapterIds = chapterRows
         .filter((chapter) => chapter.actId === source.id)
@@ -203,21 +214,46 @@ async function selectedProjectContext(
         "Selected Scene",
         sceneRows.filter((scene) => scene.id === source.id),
       );
-    } else {
-      const selected =
-        source.kind === "compendium_all"
-          ? entries
-          : source.kind === "compendium_type"
-            ? entries.filter((entry) => entry.typeId === source.typeId)
-            : entries.filter((entry) => entry.id === source.id);
-      sections.push(
-        `Compendium:\n${selected
-          .map((entry) => `${entry.name} (${entry.typeId}): ${JSON.stringify(entry.content)}`)
-          .join("\n")}`,
-      );
-    }
+    } else if (source.kind === "compendium_all")
+      entries.forEach((entry) => {
+        pinnedEntryIds.add(entry.id);
+      });
+    else if (source.kind === "compendium_type")
+      entries
+        .filter((entry) => entry.typeId === source.typeId)
+        .forEach((entry) => {
+          pinnedEntryIds.add(entry.id);
+        });
+    else pinnedEntryIds.add(source.id);
   }
-  return sections.join("\n\n").slice(0, 160_000);
+  const referenceEntries = entries
+    .filter((entry) => entry.typeId !== "project.instructions")
+    .map((entry) => ({ ...entry, singleton: entry.singletonKey !== null }));
+  const references = discoverReferences({
+    entries: referenceEntries,
+    scanText: referenceText,
+    pinnedEntryIds: [...pinnedEntryIds],
+    maxDepth: recursionDepth,
+  });
+  const referencedIds = new Set(references.map((reference) => reference.entry.id));
+  const ambientPlan = planCompendiumContext({
+    entries: referenceEntries,
+    scanText: ambientText.join("\n"),
+    maxDepth: recursionDepth,
+  });
+  const ambientFragments = ambientPlan.fixedFragments.filter(
+    (fragment) => !referencedIds.has(fragment.entryId),
+  );
+  const compendiumSections: string[] = [];
+  if (references.length)
+    compendiumSections.push(`Compendium:\n${formatCompendiumReferences(references)}`);
+  if (ambientFragments.length)
+    compendiumSections.push(
+      `Automatically activated Compendium:\n${formatCompendiumFragments(ambientFragments)}`,
+    );
+  const resolvedSections = [...compendiumSections, ...sections];
+  if (!resolvedSections.length) return "No project context was explicitly selected or mentioned.";
+  return resolvedSections.join("\n\n").slice(0, 160_000);
 }
 
 export async function streamLocalChat(
@@ -305,7 +341,19 @@ export async function streamLocalChat(
     assistantMessage,
     ...(replacedMessageId ? { replacedMessageId } : {}),
   });
-  const projectContext = await selectedProjectContext(db, thread.projectId, thread.contextSources);
+  const [settings] = await db.select().from(aiSettings).where(eq(aiSettings.id, 1)).limit(1);
+  const referenceText = [...history, userMessage]
+    .filter((message) => message.role === "user")
+    .slice(-16)
+    .map((message) => message.content)
+    .join("\n");
+  const projectContext = await selectedProjectContext(
+    db,
+    thread.projectId,
+    thread.contextSources,
+    referenceText,
+    settings?.recursionDepth ?? 2,
+  );
   const prompt = await resolvePrompt(db, "chat.respond");
   const promptMessages = [
     protectedProtocolMessage("chat.respond"),

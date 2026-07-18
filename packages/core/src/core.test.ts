@@ -4,8 +4,12 @@ import {
   discoverEntries,
   discoverReferences,
   findMentions,
+  formatCompendiumFragments,
+  formatCompendiumReferences,
   manuscriptLabels,
+  planCompendiumContext,
   renderPrompt,
+  sceneCompendiumEntryIds,
   segmentEntry,
   validatePromptDefinition,
 } from "./index.js";
@@ -75,6 +79,23 @@ describe("mention matching", () => {
     expect(
       findMentions("announcement Ann met Anna Bell", [ann, anna]).map((match) => match.text),
     ).toEqual(["Ann", "Anna Bell"]);
+  });
+
+  it("matches phrase whitespace inserted by contenteditable editors", () => {
+    const harbor = entry({
+      id: crypto.randomUUID(),
+      name: "New Harbor City",
+      aliases: ["New Harbor"],
+    });
+
+    expect(findMentions("New Harbor\u00a0City", [harbor])).toEqual([
+      expect.objectContaining({
+        from: 0,
+        to: 15,
+        text: "New Harbor\u00a0City",
+        entryIds: [harbor.id],
+      }),
+    ]);
   });
 
   it("keeps ambiguous entry identities", () => {
@@ -163,8 +184,22 @@ describe("manuscript labels", () => {
 });
 
 describe("context discovery", () => {
+  it("normalizes Scene Compendium presence when older metadata omits array fields", () => {
+    expect(sceneCompendiumEntryIds({})).toEqual([]);
+    expect(
+      sceneCompendiumEntryIds({
+        povEntryId: "pov",
+        locationEntryId: "location",
+      }),
+    ).toEqual(["pov", "location"]);
+  });
+
   it("discovers recursive references and excludes never-active entries", () => {
-    const nora = entry({ id: crypto.randomUUID(), name: "Nora" });
+    const nora = entry({
+      id: crypto.randomUUID(),
+      name: "Nora",
+      content: { kind: "text", text: "A trusted investigator." },
+    });
     const julia = entry({
       id: crypto.randomUUID(),
       name: "Julia",
@@ -228,6 +263,63 @@ describe("context discovery", () => {
         pinnedEntryIds: [secret.id],
       })[0],
     ).toEqual(expect.objectContaining({ entry: secret, referenceSource: "pinned" }));
+  });
+
+  it("plans deliberate AI-input mentions as fixed context even when automatic tracking is off", () => {
+    const nora = entry({
+      id: crypto.randomUUID(),
+      name: "Nora",
+      content: { kind: "text", text: "A trusted investigator." },
+    });
+    const julia = entry({
+      id: crypto.randomUUID(),
+      name: "Julia",
+      aliases: ["Jules"],
+      trackingEnabled: false,
+      activationMode: "smart",
+      content: { kind: "text", text: "Jules trusts Nora." },
+    });
+    const plan = planCompendiumContext({
+      entries: [julia, nora],
+      scanText: "",
+      referenceText: "Ask Jules to investigate.",
+      includeSmartCandidates: true,
+      maxDepth: 2,
+    });
+    expect(plan.fixedFragments.map((fragment) => fragment.entryId)).toEqual([julia.id, nora.id]);
+    expect(plan.smartFragments).toEqual([]);
+  });
+
+  it("uses scene associations in the same default plan while preserving Never include", () => {
+    const present = entry({
+      id: crypto.randomUUID(),
+      name: "Present",
+      trackingEnabled: false,
+      content: { kind: "text", text: "Present at the current scene." },
+    });
+    const secret = entry({
+      id: crypto.randomUUID(),
+      name: "Secret",
+      activationMode: "never",
+    });
+    const plan = planCompendiumContext({
+      entries: [present, secret],
+      scanText: "",
+      scenePresenceEntryIds: [present.id, secret.id],
+    });
+    expect(plan.fixedFragments.map((fragment) => fragment.entryId)).toEqual([present.id]);
+  });
+
+  it("formats references and generation fragments through shared context formatters", () => {
+    const julia = entry({
+      id: crypto.randomUUID(),
+      name: "Julia",
+      content: { kind: "text", text: "A cartographer." },
+    });
+    const references = discoverReferences({ entries: [julia], scanText: "Ask Julia." });
+    const plan = planCompendiumContext({ entries: [julia], scanText: "Julia arrived." });
+    expect(formatCompendiumReferences(references)).toContain("[Entry Name: Julia]");
+    expect(formatCompendiumFragments(plan.fixedFragments)).toContain("[Source: Julia;");
   });
 });
 
